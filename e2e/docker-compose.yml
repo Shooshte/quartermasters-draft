@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: quartermasters-draft
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: e2e/Dockerfile
+    command: pnpm --filter @qd/db db:push
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/quartermasters-draft
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  seed:
+    build:
+      context: ..
+      dockerfile: e2e/Dockerfile
+    command: pnpm --filter @qd/db db:seed
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/quartermasters-draft
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  app:
+    build:
+      context: ..
+      dockerfile: e2e/Dockerfile
+    command: node apps/web/.output/server/index.mjs
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/quartermasters-draft
+      BETTER_AUTH_SECRET: e2e-test-secret-do-not-use-in-production
+      BETTER_AUTH_URL: http://localhost:3000
+      PORT: "3000"
+      HOST: "0.0.0.0"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 10

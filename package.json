@@ -7,13 +7,17 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e",
+    "test:e2e": "pnpm --filter @qd/e2e test:e2e",
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
-    "db:seed": "turbo run db:seed"
+    "db:push": "pnpm --filter @qd/db db:push",
+    "db:seed": "pnpm --filter @qd/db db:seed"
   },
   "devDependencies": {
     "turbo": "^2.8.13",
     "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
   }
 }

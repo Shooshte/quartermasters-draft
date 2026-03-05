@@ -1,0 +1,12 @@
+{
+  "name": "@qd/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "./scripts/run-e2e.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

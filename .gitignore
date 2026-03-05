@@ -18,3 +18,13 @@ dist/
 
 # coverage
 coverage/
+
+# playwright
+playwright-report/
+test-results/
+
+# nitro
+.nitro/
+
+# misc
+.DS_Store

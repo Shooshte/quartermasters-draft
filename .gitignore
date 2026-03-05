@@ -1,0 +1,20 @@
+.idea/
+.claude/
+
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+.output/
+
+# turbo
+.turbo/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# coverage
+coverage/

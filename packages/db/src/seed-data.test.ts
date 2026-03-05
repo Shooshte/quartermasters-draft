@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import { buildSeedData } from "./seed-data";
+
+const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
+
+describe("seed data", () => {
+  it("creates GM user with correct email and role", () => {
+    const { users } = buildSeedData(FAKE_HASH);
+    const gm = users.find((u) => u.email === "gm@example.com");
+    expect(gm).toBeDefined();
+    expect(gm!.role).toBe("gm");
+    expect(gm!.name).toBe("Test GM");
+    expect(gm!.id).toBe("seed-gm-001");
+  });
+
+  it("creates Player user with correct email and role", () => {
+    const { users } = buildSeedData(FAKE_HASH);
+    const player = users.find((u) => u.email === "player@example.com");
+    expect(player).toBeDefined();
+    expect(player!.role).toBe("player");
+    expect(player!.name).toBe("Test Player");
+    expect(player!.id).toBe("seed-player-001");
+  });
+
+  it("creates account records for each user", () => {
+    const { accounts } = buildSeedData(FAKE_HASH);
+    expect(accounts).toHaveLength(2);
+  });
+
+  it("creates account with providerId 'credential' and accountId matching userId", () => {
+    const { accounts } = buildSeedData(FAKE_HASH);
+    for (const account of accounts) {
+      expect(account.providerId).toBe("credential");
+      expect(account.accountId).toBe(account.userId);
+    }
+  });
+
+  it("sets the hashed password on each account", () => {
+    const { accounts } = buildSeedData(FAKE_HASH);
+    for (const account of accounts) {
+      expect(account.password).toBe(FAKE_HASH);
+    }
+  });
+
+  it("maps account userId to matching user id", () => {
+    const { users, accounts } = buildSeedData(FAKE_HASH);
+    const userIds = users.map((u) => u.id);
+    for (const account of accounts) {
+      expect(userIds).toContain(account.userId);
+    }
+  });
+});

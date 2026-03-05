@@ -19,9 +19,11 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "better-auth": "^1.5.3",
     "drizzle-orm": "^0.45.1",
     "postgres": "^3.4.8"
   },
@@ -29,6 +31,7 @@
     "@types/node": "^22.16.0",
     "dotenv": "^16.5.0",
     "drizzle-kit": "^0.31.9",
-    "tsx": "^4.20.3"
+    "tsx": "^4.20.3",
+    "vitest": "^4.0.18"
   }
 }

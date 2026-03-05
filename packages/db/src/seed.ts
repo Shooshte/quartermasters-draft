@@ -1,38 +1,26 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { hashPassword } from "better-auth/crypto";
 
 import * as schema from "./schema";
+import { buildSeedData } from "./seed-data";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle({ client, schema });
 
-const now = new Date();
-
-const testGm = {
-  id: "seed-gm-001",
-  name: "Test GM",
-  email: "gm@example.com",
-  emailVerified: false,
-  role: "gm" as const,
-  createdAt: now,
-  updatedAt: now,
-};
-
-const testPlayer = {
-  id: "seed-player-001",
-  name: "Test Player",
-  email: "player@example.com",
-  emailVerified: false,
-  role: "player" as const,
-  createdAt: now,
-  updatedAt: now,
-};
-
 try {
-  await db.insert(schema.user).values(testGm).onConflictDoNothing();
-  await db.insert(schema.user).values(testPlayer).onConflictDoNothing();
-  console.log("Seeded test GM and Player users");
+  const hashedPassword = await hashPassword("password123");
+  const { users, accounts } = buildSeedData(hashedPassword);
+
+  for (const user of users) {
+    await db.insert(schema.user).values(user).onConflictDoNothing();
+  }
+  for (const account of accounts) {
+    await db.insert(schema.account).values(account).onConflictDoNothing();
+  }
+
+  console.log("Seeded test GM and Player users with account records");
   await client.end();
   process.exit(0);
 } catch (error) {

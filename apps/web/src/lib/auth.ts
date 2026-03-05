@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@qd/db";
 import * as schema from "@qd/db/schema";
+import { authConfig } from "./auth-config";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -13,18 +14,7 @@ export const auth = betterAuth({
       verification: schema.verification,
     },
   }),
-  emailAndPassword: {
-    enabled: true,
-  },
-  user: {
-    additionalFields: {
-      role: {
-        type: "string",
-        defaultValue: "player",
-        input: false,
-      },
-    },
-  },
+  ...authConfig,
 });
 
 export type Session = typeof auth.$Infer.Session;

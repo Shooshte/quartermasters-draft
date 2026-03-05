@@ -1,0 +1,159 @@
+import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import type { UserRole } from "@qd/shared";
+import { authClient } from "~/lib/auth-client";
+import { getRedirectTarget } from "~/lib/route-utils";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Checkbox } from "~/components/ui/checkbox";
+
+type LoginSearch = {
+  next?: string;
+};
+
+export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): LoginSearch => ({
+    next: typeof search.next === "string" ? search.next : undefined,
+  }),
+  component: LoginPage,
+});
+
+function LoginPage() {
+  const navigate = useNavigate();
+  const { next } = useSearch({ from: "/login" });
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
+
+  // Redirect already-authenticated users
+  useEffect(() => {
+    if (sessionLoading || !session?.user) return;
+    const role = (session.user as { role?: string }).role as UserRole;
+    const target = getRedirectTarget(role, next);
+    navigate({ to: target.path });
+  }, [session, sessionLoading, next, navigate]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    setIsSubmitting(true);
+
+    try {
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        rememberMe,
+      });
+
+      if (result.error) {
+        setError("Invalid credentials");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Fetch the session to get user role
+      const sessionResult = await authClient.getSession();
+
+      if (!sessionResult.data?.user) {
+        setError("Invalid credentials");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const role = (sessionResult.data.user as { role?: string }).role as UserRole;
+      const target = getRedirectTarget(role, next);
+
+      if (target.notice) {
+        setNotice(target.notice);
+      }
+
+      navigate({ to: target.path });
+    } catch {
+      setError("Invalid credentials");
+      setIsSubmitting(false);
+    }
+  }
+
+  // Don't render form while checking session or if already authenticated
+  if (sessionLoading || session?.user) {
+    return null;
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Log in</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+              />
+              <Label htmlFor="remember" className="text-sm font-normal">
+                Remember me
+              </Label>
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+
+            {notice && (
+              <p className="text-sm text-muted-foreground" role="status">
+                {notice}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
+  );
+}

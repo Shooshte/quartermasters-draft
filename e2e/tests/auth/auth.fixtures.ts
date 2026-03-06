@@ -50,7 +50,7 @@ export async function expectPath(page: Page, path: string) {
 /** Assert URL contains specific query params */
 export async function expectQueryParams(
   page: Page,
-  params: Record<string, string>,
+  params: Record<string, string | null>,
 ) {
   const url = new URL(page.url());
   for (const [key, value] of Object.entries(params)) {

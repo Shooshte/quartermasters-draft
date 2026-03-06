@@ -54,7 +54,7 @@ test.describe("Role-Based Access Control", () => {
     await page.waitForURL("**/403");
     expect(page.url()).toContain("/403");
     await expect(page.getByText("Access Denied")).toBeVisible();
-    await expect(page.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
       "href",
       expect.stringContaining("/play"),
     );

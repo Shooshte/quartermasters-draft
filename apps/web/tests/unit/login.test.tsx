@@ -239,6 +239,13 @@ describe("Login page", () => {
   });
 
   it("shows notice when external next URL is rejected after login", async () => {
+    const assignSpy = vi.fn();
+    vi.stubGlobal("location", {
+      ...window.location,
+      assign: assignSpy,
+      origin: "http://localhost:3000",
+    });
+
     mockSignIn.mockResolvedValue({ data: { session: {} } });
     mockGetSession.mockResolvedValue({
       data: { user: { id: "1", role: "gm" } },
@@ -259,10 +266,13 @@ describe("Login page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent(
-        "Invalid return URL",
-      );
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/create");
+      expect(url.searchParams.get("notice")).toBe("Invalid return URL");
     });
+
+    vi.unstubAllGlobals();
   });
 
   it("redirects to /403 when player logs in with forbidden next", async () => {

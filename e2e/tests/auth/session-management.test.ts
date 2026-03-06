@@ -29,14 +29,22 @@ test.describe("Session Management", () => {
     await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/create");
 
-    // Clear session cookies to simulate expiration
+    // Corrupt session cookies to simulate expiration (cookie present but invalid)
+    const gmCookies = await context.cookies();
     await context.clearCookies();
+    await context.addCookies(
+      gmCookies.map((c) =>
+        c.name.includes("better-auth")
+          ? { ...c, value: "invalid-" + c.value }
+          : c,
+      ),
+    );
 
     await page.goto("/create");
     await page.waitForURL("**/login**");
     await expectPath(page, "/login");
-    // The app should redirect with a next param
-    await expectQueryParams(page, { next: "/create" });
+    await expectQueryParams(page, { next: "/create", reason: "expired" });
+    await expect(page.getByText("Session expired, please log in to continue")).toBeVisible();
     await context.close();
   });
 
@@ -48,13 +56,22 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/play");
 
-    // Clear session cookies to simulate expiration
+    // Corrupt session cookies to simulate expiration (cookie present but invalid)
+    const playerCookies = await context.cookies();
     await context.clearCookies();
+    await context.addCookies(
+      playerCookies.map((c) =>
+        c.name.includes("better-auth")
+          ? { ...c, value: "invalid-" + c.value }
+          : c,
+      ),
+    );
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
     await expectPath(page, "/login");
-    await expectQueryParams(page, { next: "/play" });
+    await expectQueryParams(page, { next: "/play", reason: "expired" });
+    await expect(page.getByText("Session expired, please log in to continue")).toBeVisible();
     await context.close();
   });
 
@@ -80,13 +97,21 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
     await page.waitForURL("**/play");
 
-    // Clear cookies to simulate 30-day expiration
+    // Corrupt session cookies to simulate 30-day expiration (cookie present but invalid)
+    const rmCookies = await context.cookies();
     await context.clearCookies();
+    await context.addCookies(
+      rmCookies.map((c) =>
+        c.name.includes("better-auth")
+          ? { ...c, value: "invalid-" + c.value }
+          : c,
+      ),
+    );
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
     await expectPath(page, "/login");
-    await expectQueryParams(page, { next: "/play" });
+    await expectQueryParams(page, { next: "/play", reason: "expired" });
     await context.close();
   });
 

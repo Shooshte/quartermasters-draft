@@ -83,12 +83,20 @@ async function renderAuthenticatedLayout() {
 }
 
 describe("Logout functionality", () => {
+  const assignSpy = vi.fn();
+
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("location", {
+      ...window.location,
+      assign: assignSpy,
+      origin: "http://localhost:3000",
+    });
   });
 
   it("renders a logout button in the authenticated layout", async () => {
@@ -122,7 +130,7 @@ describe("Logout functionality", () => {
   it("redirects to /login after successful sign-out", async () => {
     mockSignOut.mockResolvedValue({});
 
-    const router = await renderAuthenticatedLayout();
+    await renderAuthenticatedLayout();
 
     await waitFor(() => {
       expect(
@@ -133,14 +141,16 @@ describe("Logout functionality", () => {
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/login");
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
     });
   });
 
   it("redirects to /login?next=<route> when logged out from a protected route", async () => {
     mockSignOut.mockResolvedValue({});
 
-    const router = await renderAuthenticatedLayoutAt("/replay/abc445");
+    await renderAuthenticatedLayoutAt("/replay/abc445");
 
     await waitFor(() => {
       expect(
@@ -151,16 +161,17 @@ describe("Logout functionality", () => {
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/login");
-      const search = router.state.location.search as { next?: string };
-      expect(search.next).toBe("/replay/abc445");
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/replay/abc445");
     });
   });
 
   it("redirects to /login without next param when logged out from /403", async () => {
     mockSignOut.mockResolvedValue({});
 
-    const router = await renderAuthenticatedLayoutAt("/403");
+    await renderAuthenticatedLayoutAt("/403");
 
     await waitFor(() => {
       expect(
@@ -171,9 +182,10 @@ describe("Logout functionality", () => {
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/login");
-      const search = router.state.location.search as { next?: string };
-      expect(search.next).toBeUndefined();
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBeNull();
     });
   });
 });

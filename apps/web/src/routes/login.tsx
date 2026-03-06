@@ -15,18 +15,20 @@ import { Checkbox } from "~/components/ui/checkbox";
 
 type LoginSearch = {
   next?: string;
+  reason?: string;
 };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     next: typeof search.next === "string" ? search.next : undefined,
+    reason: typeof search.reason === "string" ? search.reason : undefined,
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { next } = useSearch({ from: "/login" });
+  const { next, reason } = useSearch({ from: "/login" });
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,10 +81,12 @@ function LoginPage() {
       const target = getRedirectTarget(role, next);
 
       if (target.notice) {
-        setNotice(target.notice);
+        const url = new URL(target.path, window.location.origin);
+        url.searchParams.set("notice", target.notice);
+        window.location.assign(url.toString());
+      } else {
+        navigate({ to: target.path });
       }
-
-      navigate({ to: target.path });
     } catch {
       setError("Invalid credentials");
       setIsSubmitting(false);
@@ -136,6 +140,12 @@ function LoginPage() {
                 Remember me
               </Label>
             </div>
+
+            {reason === "expired" && (
+              <p className="text-sm text-muted-foreground">
+                Session expired, please log in to continue
+              </p>
+            )}
 
             {error && (
               <p className="text-sm text-destructive" role="alert">

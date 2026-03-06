@@ -17,11 +17,7 @@ test.describe("Route Protection", () => {
       await page.goto(route);
       await page.waitForURL("**/login**");
       await expectPath(page, "/login");
-
-      // Root "/" may not pass a next param since it's the default
-      if (route !== "/") {
-        await expectQueryParams(page, { next: route });
-      }
+      await expectQueryParams(page, { next: route });
     });
   }
 });

@@ -44,7 +44,13 @@ function LoginPage() {
     const dbRole = (session.user as { role?: string }).role ?? "player";
     const role = mapDbRole(dbRole);
     const target = getRedirectTarget(role, next);
-    navigate({ to: target.path });
+    if (target.notice) {
+      const url = new URL(target.path, window.location.origin);
+      url.searchParams.set("notice", target.notice);
+      window.location.assign(url.toString());
+    } else {
+      navigate({ to: target.path });
+    }
   }, [session, sessionLoading, next, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {

@@ -32,9 +32,15 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const Route = createFileRoute("/_authenticated")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    notice: typeof search.notice === "string" ? search.notice : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const ALLOWED_NOTICES = new Set(["Invalid return URL"]);
+    return {
+      notice:
+        typeof search.notice === "string" && ALLOWED_NOTICES.has(search.notice)
+          ? search.notice
+          : undefined,
+    };
+  },
   beforeLoad: async ({ location }) => {
     const result = await getAuthSession();
     if (!result.authenticated) {
@@ -60,7 +66,6 @@ function AuthenticatedLayout() {
   async function handleLogout() {
     setLoggingOut(true);
     const currentPath = router.state.location.pathname;
-    const currentHref = router.state.location.href;
     try {
       await authClient.signOut();
       const excludedPaths = ["/", "/login", "/403"];

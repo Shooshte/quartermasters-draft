@@ -138,7 +138,7 @@ describe("Login page", () => {
 
   it("redirects already-authenticated GM to /create", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
@@ -164,7 +164,7 @@ describe("Login page", () => {
 
   it("redirects authenticated user to valid next param", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
@@ -191,7 +191,7 @@ describe("Login page", () => {
   it("redirects to role default after successful login", async () => {
     mockSignIn.mockResolvedValue({ data: { session: {} } });
     mockGetSession.mockResolvedValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
     });
 
     const router = await renderLoginRoute();
@@ -216,7 +216,7 @@ describe("Login page", () => {
   it("honours next param after successful login", async () => {
     mockSignIn.mockResolvedValue({ data: { session: {} } });
     mockGetSession.mockResolvedValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
     });
 
     const router = await renderLoginRoute("?next=/play");
@@ -241,7 +241,7 @@ describe("Login page", () => {
   it("shows notice when external next URL is rejected after login", async () => {
     mockSignIn.mockResolvedValue({ data: { session: {} } });
     mockGetSession.mockResolvedValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
     });
 
     await renderLoginRoute("?next=https://example.com");

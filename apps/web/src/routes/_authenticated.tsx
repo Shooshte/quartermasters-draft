@@ -46,9 +46,9 @@ function AuthenticatedLayout() {
 
   async function handleLogout() {
     setLoggingOut(true);
+    const currentPath = router.state.location.pathname;
     try {
       await authClient.signOut();
-      const currentPath = router.state.location.pathname;
       const excludedPaths = ["/", "/login", "/403"];
       const nextParam = excludedPaths.includes(currentPath)
         ? undefined

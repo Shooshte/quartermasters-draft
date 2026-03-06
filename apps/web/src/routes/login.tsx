@@ -34,7 +34,6 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: session, isPending: sessionLoading } = authClient.useSession();
@@ -51,7 +50,6 @@ function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setNotice(null);
     setIsSubmitting(true);
 
     try {
@@ -150,12 +148,6 @@ function LoginPage() {
             {error && (
               <p className="text-sm text-destructive" role="alert">
                 {error}
-              </p>
-            )}
-
-            {notice && (
-              <p className="text-sm text-muted-foreground" role="status">
-                {notice}
               </p>
             )}
 

@@ -31,7 +31,8 @@ const routeRoleMap: Record<string, UserRole> = {
 
 /** Check if a role can access a given route path. */
 export function canAccessRoute(role: UserRole, path: string): boolean {
-  const requiredRole = routeRoleMap[path];
+  const pathname = path.split("?")[0];
+  const requiredRole = routeRoleMap[pathname];
   if (!requiredRole) return true;
   return role === requiredRole;
 }

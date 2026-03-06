@@ -66,7 +66,7 @@ function AuthenticatedLayout() {
       const excludedPaths = ["/", "/login", "/403"];
       const url = new URL("/login", window.location.origin);
       if (!excludedPaths.includes(currentPath)) {
-        url.searchParams.set("next", currentHref);
+        url.searchParams.set("next", currentPath);
       }
       window.location.assign(url.toString());
     } catch {

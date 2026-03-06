@@ -12,13 +12,13 @@ test.describe("403 Forbidden Page", () => {
     await expect(
       page.getByText("You do not have permission to access this page"),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
       "href",
       expect.stringContaining("/play"),
     );
   });
 
-  test("/403 is accessible to a player and shows correct default link", async ({
+  test("/403 is accessible to a player and shows 'Go to Play' link", async ({
     playerPage: page,
   }) => {
     await page.goto("/403");
@@ -28,13 +28,13 @@ test.describe("403 Forbidden Page", () => {
     await expect(
       page.getByText("You do not have permission to access this page"),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
       "href",
       expect.stringContaining("/play"),
     );
   });
 
-  test("/403 is accessible to a game master and shows correct default link", async ({
+  test("/403 is accessible to a game master and shows 'Go to Create' link", async ({
     gmPage: page,
   }) => {
     await page.goto("/403");
@@ -44,7 +44,7 @@ test.describe("403 Forbidden Page", () => {
     await expect(
       page.getByText("You do not have permission to access this page"),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /go to create/i })).toHaveAttribute(
       "href",
       expect.stringContaining("/create"),
     );

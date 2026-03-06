@@ -9,7 +9,7 @@ Feature: 403 Forbidden Page
     Then I should see the 403 forbidden page
     And the URL should be "/403"
     And I should see an access denied message
-    And I should see a link to my default page "/play"
+    And I should see a link labeled "Go to Play" pointing to "/play"
 
   Scenario Outline: /403 is accessible to any authenticated user
     Given I am logged in as a "<role>"
@@ -17,9 +17,9 @@ Feature: 403 Forbidden Page
     Then the page should render without error
     And I should see the 403 forbidden page
     And I should see an access denied message
-    And I should see a link to my default page "<default>"
+    And I should see a link labeled "<linkText>" pointing to "<default>"
 
     Examples:
-      | role        | default |
-      | player      | /play   |
-      | game master | /create |
+      | role        | default | linkText      |
+      | player      | /play   | Go to Play    |
+      | game master | /create | Go to Create  |

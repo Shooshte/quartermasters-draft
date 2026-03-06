@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useRouter, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
@@ -20,7 +20,7 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
         ? (h as any).get("cookie") ?? ""
         : h.cookie ?? "",
     );
-    const hadSession = cookieHeader.includes("better-auth");
+    const hadSession = cookieHeader.split(";").some(c => c.trim().startsWith("better-auth."));
     return { authenticated: false as const, hadSession };
   }
   const dbRole = (session.user as { role?: string }).role ?? "player";
@@ -44,7 +44,11 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
     const result = await getAuthSession();
     if (!result.authenticated) {
-      const search: Record<string, string> = { next: location.href };
+      const excludedPaths = ["/", "/login", "/403"];
+      const search: Record<string, string> = {};
+      if (!excludedPaths.includes(location.pathname)) {
+        search.next = location.href;
+      }
       if (result.hadSession) {
         search.reason = "expired";
       }
@@ -66,12 +70,13 @@ function AuthenticatedLayout() {
   async function handleLogout() {
     setLoggingOut(true);
     const currentPath = router.state.location.pathname;
+    const currentHref = router.state.location.href;
     try {
       await authClient.signOut();
       const excludedPaths = ["/", "/login", "/403"];
       const url = new URL("/login", window.location.origin);
       if (!excludedPaths.includes(currentPath)) {
-        url.searchParams.set("next", currentPath);
+        url.searchParams.set("next", currentHref);
       }
       window.location.assign(url.toString());
     } catch {

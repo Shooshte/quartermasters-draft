@@ -144,6 +144,7 @@ describe("Logout functionality", () => {
       expect(assignSpy).toHaveBeenCalled();
       const url = new URL(assignSpy.mock.calls[0][0]);
       expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/dashboard");
     });
   });
 
@@ -165,6 +166,27 @@ describe("Logout functionality", () => {
       const url = new URL(assignSpy.mock.calls[0][0]);
       expect(url.pathname).toBe("/login");
       expect(url.searchParams.get("next")).toBe("/replay/abc445");
+    });
+  });
+
+  it("preserves query params in the next param when logging out", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    await renderAuthenticatedLayoutAt("/replay/abc445?tab=details");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/replay/abc445?tab=details");
     });
   });
 

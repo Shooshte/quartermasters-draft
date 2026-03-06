@@ -34,7 +34,7 @@ vi.mock("@tanstack/react-start/server", () => ({
   getRequestHeaders: vi.fn(),
 }));
 
-async function renderAuthenticatedLayout() {
+async function renderAuthenticatedLayoutAt(path: string) {
   const { Route: AuthRoute } = await import(
     "../../src/routes/_authenticated.tsx"
   );
@@ -50,6 +50,16 @@ async function renderAuthenticatedLayout() {
     path: "/dashboard",
     component: () => <div data-testid="dashboard">Dashboard</div>,
   });
+  const replayRoute = createRoute({
+    getParentRoute: () => authenticatedRoute,
+    path: "/replay/$id",
+    component: () => <div data-testid="replay">Replay</div>,
+  });
+  const forbiddenRoute = createRoute({
+    getParentRoute: () => authenticatedRoute,
+    path: "/403",
+    component: () => <div data-testid="forbidden">Forbidden</div>,
+  });
   const loginRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/login",
@@ -58,14 +68,18 @@ async function renderAuthenticatedLayout() {
 
   const router = createRouter({
     routeTree: rootRoute.addChildren([
-      authenticatedRoute.addChildren([dashboardRoute]),
+      authenticatedRoute.addChildren([dashboardRoute, replayRoute, forbiddenRoute]),
       loginRoute,
     ]),
-    history: createMemoryHistory({ initialEntries: ["/dashboard"] }),
+    history: createMemoryHistory({ initialEntries: [path] }),
   });
 
   render(<RouterProvider router={router} />);
   return router;
+}
+
+async function renderAuthenticatedLayout() {
+  return renderAuthenticatedLayoutAt("/dashboard");
 }
 
 describe("Logout functionality", () => {
@@ -120,6 +134,46 @@ describe("Logout functionality", () => {
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");
+    });
+  });
+
+  it("redirects to /login?next=<route> when logged out from a protected route", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    const router = await renderAuthenticatedLayoutAt("/replay/abc445");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+      const search = router.state.location.search as { next?: string };
+      expect(search.next).toBe("/replay/abc445");
+    });
+  });
+
+  it("redirects to /login without next param when logged out from /403", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    const router = await renderAuthenticatedLayoutAt("/403");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+      const search = router.state.location.search as { next?: string };
+      expect(search.next).toBeUndefined();
     });
   });
 });

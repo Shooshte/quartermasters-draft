@@ -39,7 +39,7 @@ export async function loginAsPlayer(page: Page, options?: { rememberMe?: boolean
 /** Click the logout button in the header */
 export async function logout(page: Page) {
   await page.getByRole("button", { name: "Log out" }).click();
-  await page.waitForURL("**/login");
+  await page.waitForURL("**/login**");
 }
 
 /** Assert we're on a given path */

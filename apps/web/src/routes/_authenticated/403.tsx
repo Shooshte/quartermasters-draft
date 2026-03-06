@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { authClient } from "~/lib/auth-client";
 import { getDefaultRoute } from "~/lib/route-utils";
-import { type UserRole } from "@qd/shared";
+import { UserRole } from "@qd/shared";
 import {
   Card,
   CardHeader,
@@ -19,6 +19,12 @@ function ForbiddenPage() {
   const { data: session } = authClient.useSession();
   const role = session?.user?.role as UserRole | undefined;
   const defaultRoute = role ? getDefaultRoute(role) : "/";
+  const linkText =
+    role === UserRole.GAME_MASTER
+      ? "Go to Create"
+      : role === UserRole.PLAYER
+        ? "Go to Play"
+        : "Go to Dashboard";
 
   return (
     <main className="flex min-h-screen items-center justify-center">
@@ -33,7 +39,7 @@ function ForbiddenPage() {
         </CardHeader>
         <CardFooter className="justify-center">
           <Button asChild>
-            <Link to={defaultRoute}>Go to Dashboard</Link>
+            <Link to={defaultRoute}>{linkText}</Link>
           </Button>
         </CardFooter>
       </Card>

@@ -190,6 +190,27 @@ describe("Logout functionality", () => {
     });
   });
 
+  it("strips transient notice param from next when logging out", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    await renderAuthenticatedLayoutAt("/dashboard?notice=Invalid+return+URL");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/dashboard");
+    });
+  });
+
   it("redirects to /login without next param when logged out from /403", async () => {
     mockSignOut.mockResolvedValue({});
 

@@ -26,10 +26,10 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
     const session = await getAuthSession();
     if (!session) {
-      const nextParam =
-        location.href !== "/" && location.href !== "/login"
-          ? { next: location.href }
-          : undefined;
+      const excludedPaths = ["/", "/login", "/403"];
+      const nextParam = excludedPaths.includes(location.href)
+        ? undefined
+        : { next: location.href };
       throw redirect({
         to: "/login",
         search: nextParam,

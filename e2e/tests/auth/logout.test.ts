@@ -52,4 +52,58 @@ test.describe("Logout", () => {
     await expectQueryParams(page, { next: "/play" });
     await context.close();
   });
+
+  test("game master logout from /replay/abc445 redirects to /login?next=/replay/abc445", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await loginAsGM(page);
+    await page.goto("/replay/abc445");
+    await logout(page);
+    await expectPath(page, "/login");
+    await expectQueryParams(page, { next: "/replay/abc445" });
+    await context.close();
+  });
+
+  test("player logout from /replay/abc445 redirects to /login?next=/replay/abc445", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await loginAsPlayer(page);
+    await page.goto("/replay/abc445");
+    await logout(page);
+    await expectPath(page, "/login");
+    await expectQueryParams(page, { next: "/replay/abc445" });
+    await context.close();
+  });
+
+  test("game master logout from /403 redirects to /login without next param", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await loginAsGM(page);
+    await page.goto("/403");
+    await logout(page);
+    await expectPath(page, "/login");
+    const url = new URL(page.url());
+    expect(url.searchParams.get("next")).toBeNull();
+    await context.close();
+  });
+
+  test("player logout from /403 redirects to /login without next param", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await loginAsPlayer(page);
+    await page.goto("/403");
+    await logout(page);
+    await expectPath(page, "/login");
+    const url = new URL(page.url());
+    expect(url.searchParams.get("next")).toBeNull();
+    await context.close();
+  });
 });

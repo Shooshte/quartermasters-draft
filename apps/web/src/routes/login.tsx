@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import type { UserRole } from "@qd/shared";
 import { authClient } from "~/lib/auth-client";
-import { getRedirectTarget } from "~/lib/route-utils";
+import { getRedirectTarget, mapDbRole } from "~/lib/route-utils";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -16,24 +15,25 @@ import { Checkbox } from "~/components/ui/checkbox";
 
 type LoginSearch = {
   next?: string;
+  reason?: string;
 };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     next: typeof search.next === "string" ? search.next : undefined,
+    reason: typeof search.reason === "string" ? search.reason : undefined,
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { next } = useSearch({ from: "/login" });
+  const { next, reason } = useSearch({ from: "/login" });
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: session, isPending: sessionLoading } = authClient.useSession();
@@ -41,15 +41,21 @@ function LoginPage() {
   // Redirect already-authenticated users
   useEffect(() => {
     if (sessionLoading || !session?.user) return;
-    const role = (session.user as { role?: string }).role as UserRole;
+    const dbRole = (session.user as { role?: string }).role ?? "player";
+    const role = mapDbRole(dbRole);
     const target = getRedirectTarget(role, next);
-    navigate({ to: target.path });
+    if (target.notice) {
+      const url = new URL(target.path, window.location.origin);
+      url.searchParams.set("notice", target.notice);
+      window.location.assign(url.toString());
+    } else {
+      navigate({ to: target.path });
+    }
   }, [session, sessionLoading, next, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setNotice(null);
     setIsSubmitting(true);
 
     try {
@@ -74,14 +80,17 @@ function LoginPage() {
         return;
       }
 
-      const role = (sessionResult.data.user as { role?: string }).role as UserRole;
+      const dbRole = (sessionResult.data.user as { role?: string }).role ?? "player";
+      const role = mapDbRole(dbRole);
       const target = getRedirectTarget(role, next);
 
       if (target.notice) {
-        setNotice(target.notice);
+        const url = new URL(target.path, window.location.origin);
+        url.searchParams.set("notice", target.notice);
+        window.location.assign(url.toString());
+      } else {
+        navigate({ to: target.path });
       }
-
-      navigate({ to: target.path });
     } catch {
       setError("Invalid credentials");
       setIsSubmitting(false);
@@ -136,15 +145,15 @@ function LoginPage() {
               </Label>
             </div>
 
-            {error && (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
+            {reason === "expired" && (
+              <p className="text-sm text-muted-foreground">
+                Session expired, please log in to continue
               </p>
             )}
 
-            {notice && (
-              <p className="text-sm text-muted-foreground" role="status">
-                {notice}
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
               </p>
             )}
 

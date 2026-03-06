@@ -58,7 +58,7 @@ describe("403 Forbidden page", () => {
 
   it("renders access denied heading", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
@@ -73,7 +73,7 @@ describe("403 Forbidden page", () => {
 
   it("renders forbidden message", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
@@ -86,22 +86,22 @@ describe("403 Forbidden page", () => {
     });
   });
 
-  it("shows link to /create for GM users", async () => {
+  it("shows 'Go to Create' link to /create for GM users", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
     await renderForbiddenRoute();
 
     await waitFor(() => {
-      const link = screen.getByRole("link", { name: /go to dashboard/i });
+      const link = screen.getByRole("link", { name: /go to create/i });
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute("href", "/create");
     });
   });
 
-  it("shows link to /play for player users", async () => {
+  it("shows 'Go to Play' link to /play for player users", async () => {
     mockUseSession.mockReturnValue({
       data: { user: { id: "2", role: "player" } },
       isPending: false,
@@ -110,7 +110,7 @@ describe("403 Forbidden page", () => {
     await renderForbiddenRoute();
 
     await waitFor(() => {
-      const link = screen.getByRole("link", { name: /go to dashboard/i });
+      const link = screen.getByRole("link", { name: /go to play/i });
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute("href", "/play");
     });

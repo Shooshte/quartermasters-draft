@@ -34,7 +34,7 @@ vi.mock("@tanstack/react-start/server", () => ({
   getRequestHeaders: vi.fn(),
 }));
 
-async function renderAuthenticatedLayout() {
+async function renderAuthenticatedLayoutAt(path: string) {
   const { Route: AuthRoute } = await import(
     "../../src/routes/_authenticated.tsx"
   );
@@ -50,6 +50,16 @@ async function renderAuthenticatedLayout() {
     path: "/dashboard",
     component: () => <div data-testid="dashboard">Dashboard</div>,
   });
+  const replayRoute = createRoute({
+    getParentRoute: () => authenticatedRoute,
+    path: "/replay/$id",
+    component: () => <div data-testid="replay">Replay</div>,
+  });
+  const forbiddenRoute = createRoute({
+    getParentRoute: () => authenticatedRoute,
+    path: "/403",
+    component: () => <div data-testid="forbidden">Forbidden</div>,
+  });
   const loginRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/login",
@@ -58,23 +68,35 @@ async function renderAuthenticatedLayout() {
 
   const router = createRouter({
     routeTree: rootRoute.addChildren([
-      authenticatedRoute.addChildren([dashboardRoute]),
+      authenticatedRoute.addChildren([dashboardRoute, replayRoute, forbiddenRoute]),
       loginRoute,
     ]),
-    history: createMemoryHistory({ initialEntries: ["/dashboard"] }),
+    history: createMemoryHistory({ initialEntries: [path] }),
   });
 
   render(<RouterProvider router={router} />);
   return router;
 }
 
+async function renderAuthenticatedLayout() {
+  return renderAuthenticatedLayoutAt("/dashboard");
+}
+
 describe("Logout functionality", () => {
+  const assignSpy = vi.fn();
+
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("location", {
+      ...window.location,
+      assign: assignSpy,
+      origin: "http://localhost:3000",
+    });
   });
 
   it("renders a logout button in the authenticated layout", async () => {
@@ -108,7 +130,7 @@ describe("Logout functionality", () => {
   it("redirects to /login after successful sign-out", async () => {
     mockSignOut.mockResolvedValue({});
 
-    const router = await renderAuthenticatedLayout();
+    await renderAuthenticatedLayout();
 
     await waitFor(() => {
       expect(
@@ -119,7 +141,94 @@ describe("Logout functionality", () => {
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/login");
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/dashboard");
+    });
+  });
+
+  it("redirects to /login?next=<route> when logged out from a protected route", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    await renderAuthenticatedLayoutAt("/replay/abc445");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/replay/abc445");
+    });
+  });
+
+  it("preserves query params in the next param when logging out", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    await renderAuthenticatedLayoutAt("/replay/abc445?tab=details");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/replay/abc445?tab=details");
+    });
+  });
+
+  it("strips transient notice param from next when logging out", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    await renderAuthenticatedLayoutAt("/dashboard?notice=Invalid+return+URL");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBe("/dashboard");
+    });
+  });
+
+  it("redirects to /login without next param when logged out from /403", async () => {
+    mockSignOut.mockResolvedValue({});
+
+    await renderAuthenticatedLayoutAt("/403");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /log\s*out/i }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalled();
+      const url = new URL(assignSpy.mock.calls[0][0]);
+      expect(url.pathname).toBe("/login");
+      expect(url.searchParams.get("next")).toBeNull();
     });
   });
 });

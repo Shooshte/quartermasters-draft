@@ -68,10 +68,10 @@ test.describe("Login", () => {
       await page.getByLabel("Email").fill(GM_EMAIL);
       await page.getByLabel("Password").fill(GM_PASSWORD);
 
-      const submitButton = page.getByRole("button", { name: "Sign in" });
+      const submitButton = page.locator('button[type="submit"]');
       await submitButton.click();
 
-      // Button should be disabled immediately after click
+      // Button should be disabled immediately after click (text changes to "Signing in…")
       await expect(submitButton).toBeDisabled();
     });
 
@@ -86,7 +86,7 @@ test.describe("Login", () => {
       await page.waitForURL("**/403");
       await expectPath(page, "/403");
       await expect(page.getByText("Access Denied")).toBeVisible();
-      await expect(page.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
         "href",
         expect.stringContaining("/play"),
       );
@@ -98,7 +98,7 @@ test.describe("Login", () => {
       await page.getByLabel("Password").fill(GM_PASSWORD);
       await page.getByRole("button", { name: "Sign in" }).click();
 
-      await page.waitForURL("**/create");
+      await page.waitForURL("**/create?**");
       await expectPath(page, "/create");
       await expect(page.getByRole("status")).toContainText(
         "Invalid return URL",
@@ -157,7 +157,7 @@ test.describe("Login", () => {
       await page.waitForURL("**/403");
       await expectPath(page, "/403");
       await expect(page.getByText("Access Denied")).toBeVisible();
-      await expect(page.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
+      await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
         "href",
         expect.stringContaining("/play"),
       );

@@ -58,7 +58,7 @@ describe("403 Forbidden page", () => {
 
   it("renders access denied heading", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
@@ -73,7 +73,7 @@ describe("403 Forbidden page", () => {
 
   it("renders forbidden message", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 
@@ -88,7 +88,7 @@ describe("403 Forbidden page", () => {
 
   it("shows 'Go to Create' link to /create for GM users", async () => {
     mockUseSession.mockReturnValue({
-      data: { user: { id: "1", role: "game_master" } },
+      data: { user: { id: "1", role: "gm" } },
       isPending: false,
     });
 

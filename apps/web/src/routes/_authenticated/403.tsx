@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { authClient } from "~/lib/auth-client";
-import { getDefaultRoute } from "~/lib/route-utils";
+import { getDefaultRoute, mapDbRole } from "~/lib/route-utils";
 import { UserRole } from "@qd/shared";
 import {
   Card,
@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/403")({
 
 function ForbiddenPage() {
   const { data: session } = authClient.useSession();
-  const role = session?.user?.role as UserRole | undefined;
+  const dbRole = session?.user?.role as string | undefined;
+  const role = dbRole ? mapDbRole(dbRole) : undefined;
   const defaultRoute = role ? getDefaultRoute(role) : "/";
   const linkText =
     role === UserRole.GAME_MASTER

@@ -4,8 +4,23 @@ import {
   canAccessRoute,
   isValidNextUrl,
   getRedirectTarget,
+  mapDbRole,
 } from "../../src/lib/route-utils";
 import { UserRole } from "@qd/shared";
+
+describe("mapDbRole", () => {
+  it("maps 'gm' to game_master", () => {
+    expect(mapDbRole("gm")).toBe(UserRole.GAME_MASTER);
+  });
+
+  it("maps 'player' to player", () => {
+    expect(mapDbRole("player")).toBe(UserRole.PLAYER);
+  });
+
+  it("defaults unknown roles to player", () => {
+    expect(mapDbRole("unknown")).toBe(UserRole.PLAYER);
+  });
+});
 
 describe("getDefaultRoute", () => {
   it("returns /create for game_master", () => {

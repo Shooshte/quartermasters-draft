@@ -1,5 +1,17 @@
 import { type UserRole, UserRole as Roles } from "@qd/shared";
 
+/** Map database role values to shared UserRole type. */
+const dbRoleToUserRole: Record<string, UserRole> = {
+  gm: Roles.GAME_MASTER,
+  player: Roles.PLAYER,
+};
+
+export function mapDbRole(dbRole: string): UserRole {
+  const mapped = dbRoleToUserRole[dbRole];
+  if (!mapped) return Roles.PLAYER; // safe default
+  return mapped;
+}
+
 /** Default landing page per role after login. */
 export function getDefaultRoute(role: UserRole): string {
   switch (role) {

@@ -1,7 +1,11 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { useState } from "react";
 import { auth } from "~/lib/auth";
+import { authClient } from "~/lib/auth-client";
+import { mapDbRole } from "~/lib/route-utils";
+import { Button } from "~/components/ui/button";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
@@ -11,8 +15,10 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
   if (!session) {
     return null;
   }
+  const dbRole = (session.user as { role?: string }).role ?? "player";
   return {
     userId: session.user.id,
+    userRole: mapDbRole(dbRole),
   };
 });
 
@@ -29,10 +35,38 @@ export const Route = createFileRoute("/_authenticated")({
         search: nextParam,
       });
     }
+    return { userRole: session.userRole };
   },
   component: AuthenticatedLayout,
 });
 
 function AuthenticatedLayout() {
-  return <Outlet />;
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await authClient.signOut();
+      await router.navigate({ to: "/login" });
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
+  return (
+    <div>
+      <header className="flex items-center justify-end p-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          disabled={loggingOut}
+        >
+          {loggingOut ? "Logging out…" : "Log out"}
+        </Button>
+      </header>
+      <Outlet />
+    </div>
+  );
 }

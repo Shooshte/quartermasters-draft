@@ -12,8 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedPlayRouteImport } from './routes/_authenticated/play'
+import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
+import { Route as Authenticated403RouteImport } from './routes/_authenticated/403'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
+import { Route as AuthenticatedReplayIdRouteImport } from './routes/_authenticated/replay.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -29,6 +33,21 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPlayRoute = AuthenticatedPlayRouteImport.update({
+  id: '/play',
+  path: '/play',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const Authenticated403Route = Authenticated403RouteImport.update({
+  id: '/403',
+  path: '/403',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
@@ -39,16 +58,29 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedReplayIdRoute = AuthenticatedReplayIdRouteImport.update({
+  id: '/replay/$id',
+  path: '/replay/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/403': typeof Authenticated403Route
+  '/create': typeof AuthenticatedCreateRoute
+  '/play': typeof AuthenticatedPlayRoute
+  '/replay/$id': typeof AuthenticatedReplayIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/403': typeof Authenticated403Route
+  '/create': typeof AuthenticatedCreateRoute
+  '/play': typeof AuthenticatedPlayRoute
   '/': typeof AuthenticatedIndexRoute
+  '/replay/$id': typeof AuthenticatedReplayIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
@@ -56,20 +88,44 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/403': typeof Authenticated403Route
+  '/_authenticated/create': typeof AuthenticatedCreateRoute
+  '/_authenticated/play': typeof AuthenticatedPlayRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/replay/$id': typeof AuthenticatedReplayIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/api/auth/$' | '/api/trpc/$'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/403'
+    | '/create'
+    | '/play'
+    | '/replay/$id'
+    | '/api/auth/$'
+    | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/api/auth/$' | '/api/trpc/$'
+  to:
+    | '/login'
+    | '/403'
+    | '/create'
+    | '/play'
+    | '/'
+    | '/replay/$id'
+    | '/api/auth/$'
+    | '/api/trpc/$'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/403'
+    | '/_authenticated/create'
+    | '/_authenticated/play'
     | '/_authenticated/'
+    | '/_authenticated/replay/$id'
     | '/api/auth/$'
     | '/api/trpc/$'
   fileRoutesById: FileRoutesById
@@ -104,6 +160,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/play': {
+      id: '/_authenticated/play'
+      path: '/play'
+      fullPath: '/play'
+      preLoaderRoute: typeof AuthenticatedPlayRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/create': {
+      id: '/_authenticated/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof AuthenticatedCreateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/403': {
+      id: '/_authenticated/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof Authenticated403RouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
@@ -118,15 +195,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/replay/$id': {
+      id: '/_authenticated/replay/$id'
+      path: '/replay/$id'
+      fullPath: '/replay/$id'
+      preLoaderRoute: typeof AuthenticatedReplayIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  Authenticated403Route: typeof Authenticated403Route
+  AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
+  AuthenticatedPlayRoute: typeof AuthenticatedPlayRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedReplayIdRoute: typeof AuthenticatedReplayIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  Authenticated403Route: Authenticated403Route,
+  AuthenticatedCreateRoute: AuthenticatedCreateRoute,
+  AuthenticatedPlayRoute: AuthenticatedPlayRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedReplayIdRoute: AuthenticatedReplayIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

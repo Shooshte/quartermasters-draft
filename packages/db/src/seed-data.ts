@@ -37,45 +37,59 @@ export function buildSeedData(hashedPassword: string) {
 
 export const effectTemplateSeedData = [
   {
-    name: "TODO_BUFF_INSTANT",
+    name: "Barbarian Roar",
     effectType: "buff" as const,
     timingType: "instant" as const,
-    durationMs: 0, // TODO: real duration
-    meleeDmg: 1.0, // TODO: real value
+    durationMs: 5000,
+    meleeDmg: 20.5
   },
   {
-    name: "TODO_BUFF_INTERVAL",
+    name: "Rage",
     effectType: "buff" as const,
     timingType: "interval" as const,
-    intervalMs: 1000, // TODO: real interval
-    triggerCount: 3, // TODO: real count
-    meleeDmg: 1.0, // TODO: real value
+    intervalMs: 1000,
+    triggerCount: 5,
+    meleeDmg: 10.0,
+    rangedDmg: 10.0,
+    speed: 0.5
   },
   {
-    name: "TODO_DEBUFF_INSTANT",
+    name: "Exhaust",
     effectType: "debuff" as const,
     timingType: "instant" as const,
-    durationMs: 0, // TODO: real duration
-    speed: -1.0, // TODO: real value
+    durationMs: 10000,
+    speed: -0.2,
+    dodge: -0.2,
+    criticalChange: -25,
+    meleeDmg: -5,
+    rangedDmg: -5,
   },
   {
-    name: "TODO_HEALING_INSTANT",
+    name: "Mend",
     effectType: "healing" as const,
     timingType: "instant" as const,
-    directHealing: 1.0, // TODO: real value
+    directHealing: 10.25
   },
   {
-    name: "TODO_HEALING_INTERVAL",
+    name: "Bandage",
     effectType: "healing" as const,
     timingType: "interval" as const,
-    intervalMs: 1000, // TODO: real interval
-    triggerCount: 3, // TODO: real count
-    health: 1.0, // TODO: real value
+    intervalMs: 5000,
+    triggerCount: 5,
+    health: 10.0,
   },
   {
-    name: "TODO_DAMAGE_INSTANT",
+    name: "Arcane Damage",
     effectType: "damage" as const,
     timingType: "instant" as const,
-    directSpellDmg: 1.0, // TODO: real value
+    directSpellDmg: 8.5,
   },
+  {
+    name: "Sizzling Flesh",
+    effectType: "damage" as const,
+    timingType: "interval" as const,
+    intervalMs: 1000,
+    triggerCount: 2,
+    directSpellDmg: 12.5,
+  }
 ];

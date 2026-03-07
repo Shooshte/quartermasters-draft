@@ -84,12 +84,15 @@ describe("effectTemplateSeedData", () => {
     for (const template of intervalRecords) {
       expect(template.intervalMs).toBeDefined();
       expect(template.triggerCount).toBeDefined();
+    }
   });
 
   it("instant records do not have intervalMs set", () => {
     const instantRecords = effectTemplateSeedData.filter((t) => t.timingType === "instant");
     expect(instantRecords.length).toBeGreaterThan(0);
+    for (const template of instantRecords) {
       expect(template.intervalMs).toBeUndefined();
+    }
   });
 
   it("healing records have directHealing or health set", () => {

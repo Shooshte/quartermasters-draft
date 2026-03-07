@@ -1,1 +1,0 @@
-ALTER TABLE "effect_templates" ADD CONSTRAINT "duration_ms_positive" CHECK ("effect_templates"."duration_ms" IS NULL OR "effect_templates"."duration_ms" > 0);

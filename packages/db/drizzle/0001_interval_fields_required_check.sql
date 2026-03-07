@@ -1,1 +1,0 @@
-ALTER TABLE "effect_templates" ADD CONSTRAINT "interval_fields_required" CHECK ("effect_templates"."timing_type" != 'interval' OR ("effect_templates"."interval_ms" IS NOT NULL AND "effect_templates"."trigger_count" IS NOT NULL));

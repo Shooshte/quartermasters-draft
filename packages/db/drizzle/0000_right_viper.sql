@@ -41,7 +41,10 @@ CREATE TABLE "effect_templates" (
 	"direct_spell_dmg" real,
 	CONSTRAINT "effect_templates_name_unique" UNIQUE("name"),
 	CONSTRAINT "interval_ms_positive" CHECK ("effect_templates"."interval_ms" IS NULL OR "effect_templates"."interval_ms" > 0),
-	CONSTRAINT "trigger_count_positive" CHECK ("effect_templates"."trigger_count" IS NULL OR "effect_templates"."trigger_count" > 0)
+	CONSTRAINT "trigger_count_positive" CHECK ("effect_templates"."trigger_count" IS NULL OR "effect_templates"."trigger_count" > 0),
+	CONSTRAINT "duration_ms_positive" CHECK ("effect_templates"."duration_ms" IS NULL OR "effect_templates"."duration_ms" > 0),
+	CONSTRAINT "interval_fields_required" CHECK ("effect_templates"."timing_type" != 'interval' OR ("effect_templates"."interval_ms" IS NOT NULL AND "effect_templates"."trigger_count" IS NOT NULL)),
+	CONSTRAINT "instant_fields_forbidden" CHECK ("effect_templates"."timing_type" != 'instant' OR ("effect_templates"."interval_ms" IS NULL AND "effect_templates"."trigger_count" IS NULL))
 );
 --> statement-breakpoint
 CREATE TABLE "session" (

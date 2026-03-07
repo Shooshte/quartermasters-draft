@@ -8,27 +8,6 @@
       "when": 1772919270719,
       "tag": "0000_right_viper",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1772919270720,
-      "tag": "0001_interval_fields_required_check",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772921834589,
-      "tag": "0002_grey_shocker",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1772922046020,
-      "tag": "0003_careful_fat_cobra",
-      "breakpoints": true
     }
   ]
 }

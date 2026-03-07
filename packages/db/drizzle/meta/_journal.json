@@ -22,6 +22,13 @@
       "when": 1772921834589,
       "tag": "0002_grey_shocker",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772922046020,
+      "tag": "0003_careful_fat_cobra",
+      "breakpoints": true
     }
   ]
 }

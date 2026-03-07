@@ -1,0 +1,1 @@
+ALTER TABLE "effect_templates" ADD CONSTRAINT "instant_fields_forbidden" CHECK ("effect_templates"."timing_type" != 'instant' OR ("effect_templates"."interval_ms" IS NULL AND "effect_templates"."trigger_count" IS NULL));

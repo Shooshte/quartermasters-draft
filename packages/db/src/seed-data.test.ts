@@ -87,11 +87,12 @@ describe("effectTemplateSeedData", () => {
     }
   });
 
-  it("instant records do not have intervalMs set", () => {
+  it("instant records do not have intervalMs or triggerCount set", () => {
     const instantRecords = effectTemplateSeedData.filter((t) => t.timingType === "instant");
     expect(instantRecords.length).toBeGreaterThan(0);
     for (const template of instantRecords) {
       expect(template.intervalMs).toBeUndefined();
+      expect(template.triggerCount).toBeUndefined();
     }
   });
 

@@ -114,6 +114,7 @@ export const effectTemplates = pgTable(
   (table) => [
     check("interval_ms_positive", sql`${table.intervalMs} IS NULL OR ${table.intervalMs} > 0`),
     check("trigger_count_positive", sql`${table.triggerCount} IS NULL OR ${table.triggerCount} > 0`),
+    check("duration_ms_positive", sql`${table.durationMs} IS NULL OR ${table.durationMs} > 0`),
     check("interval_fields_required", sql`${table.timingType} != 'interval' OR (${table.intervalMs} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`),
   ],
 );

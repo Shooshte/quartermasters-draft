@@ -98,17 +98,15 @@ describe("effectTemplateSeedData", () => {
   it("healing records have directHealing or health set", () => {
     const healingRecords = effectTemplateSeedData.filter((t) => t.effectType === "healing");
     for (const template of healingRecords) {
-      const t = template as { directHealing?: number; health?: number };
-      expect(t.directHealing !== undefined || t.health !== undefined).toBe(true);
+      expect(template.directHealing !== undefined || template.health !== undefined).toBe(true);
     }
   });
 
   it("damage records have a direct damage field set", () => {
     const damageRecords = effectTemplateSeedData.filter((t) => t.effectType === "damage");
     for (const template of damageRecords) {
-      const t = template as { directSpellDmg?: number; directMeleeDmg?: number; directRangedDmg?: number };
       expect(
-        t.directSpellDmg !== undefined || t.directMeleeDmg !== undefined || t.directRangedDmg !== undefined,
+        template.directSpellDmg !== undefined || template.directMeleeDmg !== undefined || template.directRangedDmg !== undefined,
       ).toBe(true);
     }
   });

@@ -60,7 +60,7 @@ export const effectTemplateSeedData = [
     durationMs: 10000,
     speed: -0.2,
     dodge: -0.2,
-    criticalChange: -25,
+    criticalChance: -25,
     meleeDmg: -5,
     rangedDmg: -5,
   },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData } from "./seed-data";
+import { buildSeedData, effectTemplateSeedData } from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -47,6 +47,69 @@ describe("seed data", () => {
     const userIds = users.map((u) => u.id);
     for (const account of accounts) {
       expect(userIds).toContain(account.userId);
+    }
+  });
+});
+
+describe("effectTemplateSeedData", () => {
+  it("has 6 effect template records", () => {
+    expect(effectTemplateSeedData).toHaveLength(6);
+  });
+
+  it("each record has required fields: name, timingType, effectType", () => {
+    for (const template of effectTemplateSeedData) {
+      expect(template.name).toBeDefined();
+      expect(template.timingType).toBeDefined();
+      expect(template.effectType).toBeDefined();
+    }
+  });
+
+  it("covers all four effectType values", () => {
+    const effectTypes = effectTemplateSeedData.map((t) => t.effectType);
+    expect(effectTypes).toContain("buff");
+    expect(effectTypes).toContain("debuff");
+    expect(effectTypes).toContain("healing");
+    expect(effectTypes).toContain("damage");
+  });
+
+  it("covers both timingType values", () => {
+    const timingTypes = effectTemplateSeedData.map((t) => t.timingType);
+    expect(timingTypes).toContain("instant");
+    expect(timingTypes).toContain("interval");
+  });
+
+  it("interval records have intervalMs and triggerCount set", () => {
+    const intervalRecords = effectTemplateSeedData.filter((t) => t.timingType === "interval");
+    expect(intervalRecords.length).toBeGreaterThan(0);
+    for (const template of intervalRecords) {
+      expect((template as { intervalMs?: number }).intervalMs).toBeDefined();
+      expect((template as { triggerCount?: number }).triggerCount).toBeDefined();
+    }
+  });
+
+  it("instant records do not have intervalMs set", () => {
+    const instantRecords = effectTemplateSeedData.filter((t) => t.timingType === "instant");
+    expect(instantRecords.length).toBeGreaterThan(0);
+    for (const template of instantRecords) {
+      expect((template as { intervalMs?: number }).intervalMs).toBeUndefined();
+    }
+  });
+
+  it("healing records have directHealing or health set", () => {
+    const healingRecords = effectTemplateSeedData.filter((t) => t.effectType === "healing");
+    for (const template of healingRecords) {
+      const t = template as { directHealing?: number; health?: number };
+      expect(t.directHealing !== undefined || t.health !== undefined).toBe(true);
+    }
+  });
+
+  it("damage records have a direct damage field set", () => {
+    const damageRecords = effectTemplateSeedData.filter((t) => t.effectType === "damage");
+    for (const template of damageRecords) {
+      const t = template as { directSpellDmg?: number; directMeleeDmg?: number; directRangedDmg?: number };
+      expect(
+        t.directSpellDmg !== undefined || t.directMeleeDmg !== undefined || t.directRangedDmg !== undefined,
+      ).toBe(true);
     }
   });
 });

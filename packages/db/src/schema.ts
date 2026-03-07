@@ -1,6 +1,9 @@
-import { boolean, index, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, check, index, integer, pgEnum, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["gm", "player"]);
+export const timingTypeEnum = pgEnum("timing_type", ["instant", "interval"]);
+export const effectTypeEnum = pgEnum("effect_type", ["buff", "debuff", "healing", "damage"]);
 
 export const user = pgTable(
   "user",
@@ -81,4 +84,35 @@ export const verification = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+export const effectTemplates = pgTable(
+  "effect_templates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    timingType: timingTypeEnum("timing_type").notNull(),
+    intervalMs: integer("interval_ms"),
+    triggerCount: integer("trigger_count"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+    meleeDmg: real("melee_dmg"),
+    health: real("health"),
+    rangedDmg: real("ranged_dmg"),
+    manaRegen: real("mana_regen"),
+    spellDmg: real("spell_dmg"),
+    speed: real("speed"),
+    dodge: real("dodge"),
+    criticalChance: real("critical_chance"),
+    effectType: effectTypeEnum("effect_type").notNull().default("buff"),
+    durationMs: integer("duration_ms"),
+    directHealing: real("direct_healing"),
+    directMeleeDmg: real("direct_melee_dmg"),
+    directRangedDmg: real("direct_ranged_dmg"),
+    directSpellDmg: real("direct_spell_dmg"),
+  },
+  (table) => [
+    check("interval_ms_positive", sql`${table.intervalMs} IS NULL OR ${table.intervalMs} > 0`),
+    check("trigger_count_positive", sql`${table.triggerCount} IS NULL OR ${table.triggerCount} > 0`),
+  ],
 );

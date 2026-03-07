@@ -4,7 +4,7 @@ import postgres from "postgres";
 import { hashPassword } from "better-auth/crypto";
 
 import * as schema from "./schema";
-import { buildSeedData } from "./seed-data";
+import { buildSeedData, effectTemplateSeedData } from "./seed-data";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle({ client, schema });
@@ -18,6 +18,9 @@ try {
   }
   for (const account of accounts) {
     await db.insert(schema.account).values(account).onConflictDoNothing();
+  }
+  for (const template of effectTemplateSeedData) {
+    await db.insert(schema.effectTemplates).values(template).onConflictDoNothing();
   }
 
   console.log("Seeded test GM and Player users with account records");

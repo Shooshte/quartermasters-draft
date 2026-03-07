@@ -34,3 +34,48 @@ export function buildSeedData(hashedPassword: string) {
 
   return { users, accounts };
 }
+
+export const effectTemplateSeedData = [
+  {
+    name: "TODO_BUFF_INSTANT",
+    effectType: "buff" as const,
+    timingType: "instant" as const,
+    durationMs: 0, // TODO: real duration
+    meleeDmg: 1.0, // TODO: real value
+  },
+  {
+    name: "TODO_BUFF_INTERVAL",
+    effectType: "buff" as const,
+    timingType: "interval" as const,
+    intervalMs: 1000, // TODO: real interval
+    triggerCount: 3, // TODO: real count
+    meleeDmg: 1.0, // TODO: real value
+  },
+  {
+    name: "TODO_DEBUFF_INSTANT",
+    effectType: "debuff" as const,
+    timingType: "instant" as const,
+    durationMs: 0, // TODO: real duration
+    speed: -1.0, // TODO: real value
+  },
+  {
+    name: "TODO_HEALING_INSTANT",
+    effectType: "healing" as const,
+    timingType: "instant" as const,
+    directHealing: 1.0, // TODO: real value
+  },
+  {
+    name: "TODO_HEALING_INTERVAL",
+    effectType: "healing" as const,
+    timingType: "interval" as const,
+    intervalMs: 1000, // TODO: real interval
+    triggerCount: 3, // TODO: real count
+    health: 1.0, // TODO: real value
+  },
+  {
+    name: "TODO_DAMAGE_INSTANT",
+    effectType: "damage" as const,
+    timingType: "instant" as const,
+    directSpellDmg: 1.0, // TODO: real value
+  },
+];

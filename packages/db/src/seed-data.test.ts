@@ -52,8 +52,8 @@ describe("seed data", () => {
 });
 
 describe("effectTemplateSeedData", () => {
-  it("has 6 effect template records", () => {
-    expect(effectTemplateSeedData).toHaveLength(6);
+  it("has 7 effect template records", () => {
+    expect(effectTemplateSeedData).toHaveLength(7);
   });
 
   it("each record has required fields: name, timingType, effectType", () => {

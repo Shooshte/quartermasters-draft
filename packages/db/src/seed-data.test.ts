@@ -82,9 +82,8 @@ describe("effectTemplateSeedData", () => {
     const intervalRecords = effectTemplateSeedData.filter((t) => t.timingType === "interval");
     expect(intervalRecords.length).toBeGreaterThan(0);
     for (const template of intervalRecords) {
-      expect((template as { intervalMs?: number }).intervalMs).toBeDefined();
-      expect((template as { triggerCount?: number }).triggerCount).toBeDefined();
-    }
+      expect(template.intervalMs).toBeDefined();
+      expect(template.triggerCount).toBeDefined();
   });
 
   it("instant records do not have intervalMs set", () => {

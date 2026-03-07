@@ -19,9 +19,7 @@ try {
   for (const account of accounts) {
     await db.insert(schema.account).values(account).onConflictDoNothing();
   }
-  for (const template of effectTemplateSeedData) {
-    await db.insert(schema.effectTemplates).values(template).onConflictDoNothing();
-  }
+  await db.insert(schema.effectTemplates).values(effectTemplateSeedData).onConflictDoNothing();
 
   console.log("Seeded users, accounts, and effect templates");
   await client.end();

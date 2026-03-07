@@ -8,6 +8,13 @@
       "when": 1772919270719,
       "tag": "0000_right_viper",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772919270720,
+      "tag": "0001_interval_fields_required_check",
+      "breakpoints": true
     }
   ]
 }

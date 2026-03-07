@@ -1,3 +1,5 @@
+import { effectTemplates } from "./schema";
+
 const now = new Date();
 
 export function buildSeedData(hashedPassword: string) {
@@ -35,7 +37,7 @@ export function buildSeedData(hashedPassword: string) {
   return { users, accounts };
 }
 
-export const effectTemplateSeedData = [
+export const effectTemplateSeedData: (typeof effectTemplates.$inferInsert)[] = [
   {
     name: "Barbarian Roar",
     effectType: "buff" as const,

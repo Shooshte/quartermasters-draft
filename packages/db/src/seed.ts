@@ -23,7 +23,7 @@ try {
     await db.insert(schema.effectTemplates).values(template).onConflictDoNothing();
   }
 
-  console.log("Seeded test GM and Player users with account records");
+  console.log("Seeded users, accounts, and effect templates");
   await client.end();
   process.exit(0);
 } catch (error) {

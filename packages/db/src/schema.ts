@@ -90,7 +90,7 @@ export const effectTemplates = pgTable(
   "effect_templates",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull(),
+    name: text("name").notNull().unique(),
     timingType: timingTypeEnum("timing_type").notNull(),
     intervalMs: integer("interval_ms"),
     triggerCount: integer("trigger_count"),

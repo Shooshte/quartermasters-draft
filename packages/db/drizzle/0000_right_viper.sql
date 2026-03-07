@@ -39,6 +39,7 @@ CREATE TABLE "effect_templates" (
 	"direct_melee_dmg" real,
 	"direct_ranged_dmg" real,
 	"direct_spell_dmg" real,
+	CONSTRAINT "effect_templates_name_unique" UNIQUE("name"),
 	CONSTRAINT "interval_ms_positive" CHECK ("effect_templates"."interval_ms" IS NULL OR "effect_templates"."interval_ms" > 0),
 	CONSTRAINT "trigger_count_positive" CHECK ("effect_templates"."trigger_count" IS NULL OR "effect_templates"."trigger_count" > 0)
 );

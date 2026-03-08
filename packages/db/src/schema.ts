@@ -86,8 +86,8 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const effectTemplates = pgTable(
-  "effect_templates",
+export const effects = pgTable(
+  "effects",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull().unique(),

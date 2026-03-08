@@ -145,3 +145,32 @@ export const spellsEffects = pgTable(
     unique("spells_effects_spell_id_sequence_order_unique").on(table.spellId, table.sequenceOrder),
   ],
 );
+
+export const items = pgTable("items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  meleeDmg: real("melee_dmg").notNull().default(0),
+  rangedDmg: real("ranged_dmg").notNull().default(0),
+  manaRegen: real("mana_regen").notNull().default(0),
+  spellDmg: real("spell_dmg").notNull().default(0),
+  dodge: real("dodge").notNull().default(0),
+  criticalChance: real("critical_chance").notNull().default(0),
+  activationManaCost: real("activation_mana_cost").notNull().default(0),
+  activationHealthCost: real("activation_health_cost").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const itemsSpells = pgTable(
+  "items_spells",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemId: uuid("item_id").notNull().references(() => items.id, { onDelete: "cascade" }),
+    spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    index("items_spells_item_id_idx").on(table.itemId),
+    index("items_spells_spell_id_idx").on(table.spellId),
+    unique("items_spells_item_id_spell_id_unique").on(table.itemId, table.spellId),
+  ],
+);

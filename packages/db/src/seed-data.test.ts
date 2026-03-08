@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData, effectSeedData, spellSeedData, spellsEffectsSeedData } from "./seed-data";
+import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, spellSeedData, spellsEffectsSeedData } from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -189,6 +189,85 @@ describe("spellsEffectsSeedData", () => {
       const key = `${record.spellId}:${record.sequenceOrder}`;
       expect(seen.has(key)).toBe(false);
       seen.add(key);
+    }
+  });
+});
+
+describe("itemSeedData", () => {
+  it("has 3 item records", () => {
+    expect(itemSeedData).toHaveLength(3);
+  });
+
+  it("each record has required fields: name and all stat fields defined", () => {
+    for (const item of itemSeedData) {
+      expect(item.name).toBeDefined();
+      expect(item.meleeDmg).toBeDefined();
+      expect(item.rangedDmg).toBeDefined();
+      expect(item.manaRegen).toBeDefined();
+      expect(item.spellDmg).toBeDefined();
+      expect(item.dodge).toBeDefined();
+      expect(item.criticalChance).toBeDefined();
+      expect(item.activationManaCost).toBeDefined();
+      expect(item.activationHealthCost).toBeDefined();
+    }
+  });
+
+  it("all names are unique", () => {
+    const names = itemSeedData.map((i) => i.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const item of itemSeedData) {
+      expect(item.id).toBeDefined();
+      expect(typeof item.id).toBe("string");
+    }
+  });
+
+  it("all stat fields are numbers", () => {
+    for (const item of itemSeedData) {
+      expect(typeof item.meleeDmg).toBe("number");
+      expect(typeof item.rangedDmg).toBe("number");
+      expect(typeof item.manaRegen).toBe("number");
+      expect(typeof item.spellDmg).toBe("number");
+      expect(typeof item.dodge).toBe("number");
+      expect(typeof item.criticalChance).toBe("number");
+      expect(typeof item.activationManaCost).toBe("number");
+      expect(typeof item.activationHealthCost).toBe("number");
+    }
+  });
+});
+
+describe("itemsSpellsSeedData", () => {
+  it("has 2 records", () => {
+    expect(itemsSpellsSeedData).toHaveLength(2);
+  });
+
+  it("each record has required fields: itemId, spellId", () => {
+    for (const record of itemsSpellsSeedData) {
+      expect(record.itemId).toBeDefined();
+      expect(record.spellId).toBeDefined();
+    }
+  });
+
+  it("all itemId values reference items in itemSeedData", () => {
+    const itemIds = new Set(itemSeedData.map((i) => i.id));
+    for (const record of itemsSpellsSeedData) {
+      expect(itemIds.has(record.itemId)).toBe(true);
+    }
+  });
+
+  it("all spellId values reference spells in spellSeedData", () => {
+    const spellIds = new Set(spellSeedData.map((s) => s.id));
+    for (const record of itemsSpellsSeedData) {
+      expect(spellIds.has(record.spellId)).toBe(true);
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const record of itemsSpellsSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
     }
   });
 });

@@ -122,7 +122,7 @@ describe("effectSeedData", () => {
 
 describe("spellSeedData", () => {
   it("has expected number of spell records", () => {
-    expect(spellSeedData.length).toBeGreaterThanOrEqual(2);
+    expect(spellSeedData.length).toEqual(3);
   });
 
   it("each record has required fields: name, targetPolicy", () => {

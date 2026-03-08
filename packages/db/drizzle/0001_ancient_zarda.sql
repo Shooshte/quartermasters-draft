@@ -14,6 +14,7 @@ CREATE TABLE "spells_effects" (
 	"spell_id" uuid NOT NULL,
 	"effect_template_id" uuid NOT NULL,
 	"sequence_order" integer NOT NULL,
+	CONSTRAINT "spells_effects_spell_id_sequence_order_unique" UNIQUE("spell_id","sequence_order"),
 	CONSTRAINT "sequence_order_positive" CHECK ("spells_effects"."sequence_order" > 0)
 );
 --> statement-breakpoint

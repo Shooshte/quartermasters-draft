@@ -1,5 +1,5 @@
 {
-  "id": "738962f6-a29d-4ab2-a3aa-13f572d68c6a",
+  "id": "e4d603d7-78b7-4a31-bc04-5a514be11b60",
   "prevId": "33b09f38-96eb-47ec-843b-ecb493c19fd4",
   "version": "7",
   "dialect": "postgresql",
@@ -569,7 +569,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "spells_effects_spell_id_sequence_order_unique": {
+          "name": "spells_effects_spell_id_sequence_order_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "spell_id",
+            "sequence_order"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "sequence_order_positive": {

@@ -12,15 +12,8 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1772997273756,
-      "tag": "0001_familiar_hydra",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772997805621,
-      "tag": "0002_optimal_proemial_gods",
+      "when": 1772998383652,
+      "tag": "0001_ancient_zarda",
       "breakpoints": true
     }
   ]

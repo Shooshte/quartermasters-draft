@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - When changing behavior, include or update unit tests and integration tests.
 - Follow test-driven-development. Add unit tests before implementation, check that they fail, then write implementation that passes the test.
 - Prefer explicit error handling over silent failures.
+- Use deterministic IDs for seed data
 
 ## Definition of Done (for agent tasks)
 

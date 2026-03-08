@@ -15,6 +15,13 @@
       "when": 1772998383652,
       "tag": "0001_ancient_zarda",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772999056285,
+      "tag": "0002_tan_clint_barton",
+      "breakpoints": true
     }
   ]
 }

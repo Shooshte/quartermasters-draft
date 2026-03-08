@@ -1,4 +1,4 @@
-import { effects, spells, spellsEffects } from "./schema";
+import { effects, items, itemsSpells, spells, spellsEffects } from "./schema";
 
 const now = new Date();
 
@@ -154,5 +154,57 @@ export const spellsEffectsSeedData: (typeof spellsEffects.$inferInsert)[] = [
     spellId: "b0000000-0000-0000-0000-000000000003",
     effectTemplateId: "a0000000-0000-0000-0000-000000000005", // Bandage
     sequenceOrder: 2,
+  },
+];
+
+export const itemSeedData: (typeof items.$inferInsert)[] = [
+  {
+    id: "d0000000-0000-0000-0000-000000000001",
+    name: "Iron Sword",
+    meleeDmg: 15,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    dodge: 0,
+    criticalChance: 5,
+    activationManaCost: 0,
+    activationHealthCost: 0,
+  },
+  {
+    id: "d0000000-0000-0000-0000-000000000002",
+    name: "Oak Staff",
+    meleeDmg: 0,
+    rangedDmg: 0,
+    manaRegen: 3,
+    spellDmg: 12,
+    dodge: 0,
+    criticalChance: 0,
+    activationManaCost: 0,
+    activationHealthCost: 0,
+  },
+  {
+    id: "d0000000-0000-0000-0000-000000000003",
+    name: "Leather Shield",
+    meleeDmg: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    dodge: 10,
+    criticalChance: 0,
+    activationManaCost: 5,
+    activationHealthCost: 0,
+  },
+];
+
+export const itemsSpellsSeedData: (typeof itemsSpells.$inferInsert)[] = [
+  {
+    id: "e0000000-0000-0000-0000-000000000001",
+    itemId: "d0000000-0000-0000-0000-000000000002", // Oak Staff
+    spellId: "b0000000-0000-0000-0000-000000000001", // Fireball
+  },
+  {
+    id: "e0000000-0000-0000-0000-000000000002",
+    itemId: "d0000000-0000-0000-0000-000000000003", // Leather Shield
+    spellId: "b0000000-0000-0000-0000-000000000003", // Healing Touch
   },
 ];

@@ -127,8 +127,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.effect_templates": {
-      "name": "effect_templates",
+    "public.effects": {
+      "name": "effects",
       "schema": "",
       "columns": {
         "id": {
@@ -268,8 +268,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "effect_templates_name_unique": {
-          "name": "effect_templates_name_unique",
+        "effects_name_unique": {
+          "name": "effects_name_unique",
           "nullsNotDistinct": false,
           "columns": [
             "name"
@@ -280,23 +280,23 @@
       "checkConstraints": {
         "interval_ms_positive": {
           "name": "interval_ms_positive",
-          "value": "\"effect_templates\".\"interval_ms\" IS NULL OR \"effect_templates\".\"interval_ms\" > 0"
+          "value": "\"effects\".\"interval_ms\" IS NULL OR \"effects\".\"interval_ms\" > 0"
         },
         "trigger_count_positive": {
           "name": "trigger_count_positive",
-          "value": "\"effect_templates\".\"trigger_count\" IS NULL OR \"effect_templates\".\"trigger_count\" > 0"
+          "value": "\"effects\".\"trigger_count\" IS NULL OR \"effects\".\"trigger_count\" > 0"
         },
         "duration_ms_positive": {
           "name": "duration_ms_positive",
-          "value": "\"effect_templates\".\"duration_ms\" IS NULL OR \"effect_templates\".\"duration_ms\" > 0"
+          "value": "\"effects\".\"duration_ms\" IS NULL OR \"effects\".\"duration_ms\" > 0"
         },
         "interval_fields_required": {
           "name": "interval_fields_required",
-          "value": "\"effect_templates\".\"timing_type\" != 'interval' OR (\"effect_templates\".\"interval_ms\" IS NOT NULL AND \"effect_templates\".\"trigger_count\" IS NOT NULL)"
+          "value": "\"effects\".\"timing_type\" != 'interval' OR (\"effects\".\"interval_ms\" IS NOT NULL AND \"effects\".\"trigger_count\" IS NOT NULL)"
         },
         "instant_fields_forbidden": {
           "name": "instant_fields_forbidden",
-          "value": "\"effect_templates\".\"timing_type\" != 'instant' OR (\"effect_templates\".\"interval_ms\" IS NULL AND \"effect_templates\".\"trigger_count\" IS NULL)"
+          "value": "\"effects\".\"timing_type\" != 'instant' OR (\"effects\".\"interval_ms\" IS NULL AND \"effects\".\"trigger_count\" IS NULL)"
         }
       },
       "isRLSEnabled": false

@@ -1,5 +1,5 @@
 {
-  "id": "ddbb8cb4-ac13-4f0f-8d93-f0502b8429a0",
+  "id": "59b92ede-90db-409f-9f76-096b29c07971",
   "prevId": "e4d603d7-78b7-4a31-bc04-5a514be11b60",
   "version": "7",
   "dialect": "postgresql",
@@ -490,7 +490,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "items_spells_item_id_spell_id_unique": {
+          "name": "items_spells_item_id_spell_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "item_id",
+            "spell_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -171,5 +171,6 @@ export const itemsSpells = pgTable(
   (table) => [
     index("items_spells_item_id_idx").on(table.itemId),
     index("items_spells_spell_id_idx").on(table.spellId),
+    unique("items_spells_item_id_spell_id_unique").on(table.itemId, table.spellId),
   ],
 );

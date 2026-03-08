@@ -17,7 +17,8 @@ CREATE TABLE "items" (
 CREATE TABLE "items_spells" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"item_id" uuid NOT NULL,
-	"spell_id" uuid NOT NULL
+	"spell_id" uuid NOT NULL,
+	CONSTRAINT "items_spells_item_id_spell_id_unique" UNIQUE("item_id","spell_id")
 );
 --> statement-breakpoint
 ALTER TABLE "items_spells" ADD CONSTRAINT "items_spells_item_id_items_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

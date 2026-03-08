@@ -4,6 +4,7 @@ import { boolean, check, index, integer, pgEnum, pgTable, real, text, timestamp,
 export const roleEnum = pgEnum("role", ["gm", "player"]);
 export const timingTypeEnum = pgEnum("timing_type", ["instant", "interval"]);
 export const effectTypeEnum = pgEnum("effect_type", ["buff", "debuff", "healing", "damage"]);
+export const targetPolicyEnum = pgEnum("target_policy", ["highest_health", "lowest_health", "highest_damage", "random"]);
 
 export const user = pgTable(
   "user",
@@ -117,5 +118,29 @@ export const effects = pgTable(
     check("duration_ms_positive", sql`${table.durationMs} IS NULL OR ${table.durationMs} > 0`),
     check("interval_fields_required", sql`${table.timingType} != 'interval' OR (${table.intervalMs} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`),
     check("instant_fields_forbidden", sql`${table.timingType} != 'instant' OR (${table.intervalMs} IS NULL AND ${table.triggerCount} IS NULL)`),
+  ],
+);
+
+export const spells = pgTable("spells", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  targetPolicy: targetPolicyEnum("target_policy").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const spellsEffects = pgTable(
+  "spells_effects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
+    effectTemplateId: uuid("effect_template_id").notNull().references(() => effects.id, { onDelete: "cascade" }),
+    sequenceOrder: integer("sequence_order").notNull(),
+  },
+  (table) => [
+    index("spells_effects_spell_id_idx").on(table.spellId),
+    index("spells_effects_effect_template_id_idx").on(table.effectTemplateId),
+    check("sequence_order_positive", sql`${table.sequenceOrder} > 0`),
   ],
 );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData, effectSeedData } from "./seed-data";
+import { buildSeedData, effectSeedData, spellSeedData, spellsEffectsSeedData } from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -109,6 +109,70 @@ describe("effectSeedData", () => {
       expect(
         template.directSpellDmg !== undefined || template.directMeleeDmg !== undefined || template.directRangedDmg !== undefined,
       ).toBe(true);
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const effect of effectSeedData) {
+      expect(effect.id).toBeDefined();
+      expect(typeof effect.id).toBe("string");
+    }
+  });
+});
+
+describe("spellSeedData", () => {
+  it("has expected number of spell records", () => {
+    expect(spellSeedData.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("each record has required fields: name, targetPolicy", () => {
+    for (const spell of spellSeedData) {
+      expect(spell.name).toBeDefined();
+      expect(spell.targetPolicy).toBeDefined();
+    }
+  });
+
+  it("all names are unique", () => {
+    const names = spellSeedData.map((s) => s.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("covers multiple targetPolicy values", () => {
+    const policies = new Set(spellSeedData.map((s) => s.targetPolicy));
+    expect(policies.size).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("spellsEffectsSeedData", () => {
+  it("has expected number of records", () => {
+    expect(spellsEffectsSeedData.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("each record has required fields: spellId, effectTemplateId, sequenceOrder", () => {
+    for (const record of spellsEffectsSeedData) {
+      expect(record.spellId).toBeDefined();
+      expect(record.effectTemplateId).toBeDefined();
+      expect(record.sequenceOrder).toBeDefined();
+    }
+  });
+
+  it("sequenceOrder is > 0 for all records", () => {
+    for (const record of spellsEffectsSeedData) {
+      expect(record.sequenceOrder).toBeGreaterThan(0);
+    }
+  });
+
+  it("all spellId values reference spells in spellSeedData", () => {
+    const spellIds = new Set(spellSeedData.map((s) => s.id));
+    for (const record of spellsEffectsSeedData) {
+      expect(spellIds.has(record.spellId)).toBe(true);
+    }
+  });
+
+  it("all effectTemplateId values reference effects in effectSeedData", () => {
+    const effectIds = new Set(effectSeedData.map((e) => e.id));
+    for (const record of spellsEffectsSeedData) {
+      expect(effectIds.has(record.effectTemplateId)).toBe(true);
     }
   });
 });

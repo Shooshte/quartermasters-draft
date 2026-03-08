@@ -126,26 +126,31 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
 
 export const spellsEffectsSeedData: (typeof spellsEffects.$inferInsert)[] = [
   {
+    id: "c0000000-0000-0000-0000-000000000001",
     spellId: "b0000000-0000-0000-0000-000000000001",
     effectTemplateId: "a0000000-0000-0000-0000-000000000006", // Arcane Damage
     sequenceOrder: 1,
   },
   {
+    id: "c0000000-0000-0000-0000-000000000002",
     spellId: "b0000000-0000-0000-0000-000000000001",
     effectTemplateId: "a0000000-0000-0000-0000-000000000007", // Sizzling Flesh
     sequenceOrder: 2,
   },
   {
+    id: "c0000000-0000-0000-0000-000000000003",
     spellId: "b0000000-0000-0000-0000-000000000002",
     effectTemplateId: "a0000000-0000-0000-0000-000000000001", // Barbarian Roar
     sequenceOrder: 1,
   },
   {
+    id: "c0000000-0000-0000-0000-000000000004",
     spellId: "b0000000-0000-0000-0000-000000000003",
     effectTemplateId: "a0000000-0000-0000-0000-000000000004", // Mend
     sequenceOrder: 1,
   },
   {
+    id: "c0000000-0000-0000-0000-000000000005",
     spellId: "b0000000-0000-0000-0000-000000000003",
     effectTemplateId: "a0000000-0000-0000-0000-000000000005", // Bandage
     sequenceOrder: 2,

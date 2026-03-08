@@ -1,0 +1,1 @@
+ALTER TABLE "spells_effects" ADD CONSTRAINT "spells_effects_spell_id_sequence_order_unique" UNIQUE("spell_id","sequence_order");

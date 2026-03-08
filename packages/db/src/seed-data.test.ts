@@ -175,4 +175,20 @@ describe("spellsEffectsSeedData", () => {
       expect(effectIds.has(record.effectTemplateId)).toBe(true);
     }
   });
+
+  it("each record has a deterministic id", () => {
+    for (const record of spellsEffectsSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
+    }
+  });
+
+  it("no duplicate sequenceOrder within the same spell", () => {
+    const seen = new Set<string>();
+    for (const record of spellsEffectsSeedData) {
+      const key = `${record.spellId}:${record.sequenceOrder}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
 });

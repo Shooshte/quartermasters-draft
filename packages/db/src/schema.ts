@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgEnum, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgEnum, pgTable, real, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["gm", "player"]);
 export const timingTypeEnum = pgEnum("timing_type", ["instant", "interval"]);
@@ -142,5 +142,6 @@ export const spellsEffects = pgTable(
     index("spells_effects_spell_id_idx").on(table.spellId),
     index("spells_effects_effect_template_id_idx").on(table.effectTemplateId),
     check("sequence_order_positive", sql`${table.sequenceOrder} > 0`),
+    unique("spells_effects_spell_id_sequence_order_unique").on(table.spellId, table.sequenceOrder),
   ],
 );

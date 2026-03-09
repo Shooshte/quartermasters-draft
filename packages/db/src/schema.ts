@@ -186,6 +186,8 @@ export const units = pgTable("units", {
   speed: real("speed").notNull().default(0),
   dodge: real("dodge").notNull().default(0),
   criticalChance: real("critical_chance").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 export const unitsItems = pgTable(

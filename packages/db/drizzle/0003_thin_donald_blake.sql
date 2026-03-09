@@ -9,6 +9,8 @@ CREATE TABLE "units" (
 	"speed" real DEFAULT 0 NOT NULL,
 	"dodge" real DEFAULT 0 NOT NULL,
 	"critical_chance" real DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "units_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint

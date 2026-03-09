@@ -36,9 +36,9 @@ describe("ScenarioLibraryList", () => {
     expect(screen.getByText("No scenario records yet")).toBeInTheDocument();
   });
 
-  it("renders nothing when items is empty on page > 1", () => {
-    const { container } = render(<ScenarioLibraryList {...defaultProps} items={[]} page={2} />);
-    expect(container.innerHTML).toBe("");
+  it("shows loading state when items is empty on page > 1", () => {
+    render(<ScenarioLibraryList {...defaultProps} items={[]} page={2} />);
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
   it("renders items with name and formatted updatedAt date", () => {

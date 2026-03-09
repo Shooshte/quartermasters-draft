@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@qd/api";
 import { trpc } from "~/lib/trpc";
 import {
   type TabName,
@@ -171,8 +173,9 @@ export function useCreatePageState(
   };
 
   // Scenario list computed values
-  const scenarioListItems = scenariosList.data?.items ?? [];
-  const scenarioTotalCount = scenariosList.data?.totalCount ?? 0;
+  type ScenarioListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["scenarios"]["list"];
+  const scenarioListItems: ScenarioListOutput["items"] = scenariosList.data?.items ?? [];
+  const scenarioTotalCount: ScenarioListOutput["totalCount"] = scenariosList.data?.totalCount ?? 0;
   const scenarioTotalPages = Math.max(1, Math.ceil(scenarioTotalCount / SCENARIOS_PAGE_SIZE));
 
   // URL-driven initialization for entity_id

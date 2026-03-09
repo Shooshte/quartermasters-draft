@@ -79,7 +79,11 @@ export function ScenarioLibraryList({
   }
 
   if (items.length === 0) {
-    return null;
+    return (
+      <div className={`${LIBRARY_LIST_HEIGHT} p-4 text-sm text-muted-foreground`}>
+        Loading...
+      </div>
+    );
   }
 
   const handleSort = (column: ScenarioSortBy) => {

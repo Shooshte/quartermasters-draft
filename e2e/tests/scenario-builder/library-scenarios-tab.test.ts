@@ -139,7 +139,8 @@ test.describe("Scenarios Library Tab — Pagination", () => {
 // ─── Sorting ────────────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Sorting", () => {
-  test("default sort order is by name ascending", async ({ gmPage }) => {
+  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
+    await resetDb();
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 

@@ -19,7 +19,7 @@ CREATE TABLE "units_items" (
 	"item_id" uuid NOT NULL,
 	"unit_id" uuid NOT NULL,
 	"priority" integer DEFAULT 1 NOT NULL,
-	CONSTRAINT "units_items_unit_id_item_id_priority_unique" UNIQUE("unit_id","item_id","priority"),
+	CONSTRAINT "units_items_unit_id_priority_unique" UNIQUE("unit_id","priority"),
 	CONSTRAINT "units_items_priority_positive" CHECK ("units_items"."priority" > 0)
 );
 --> statement-breakpoint

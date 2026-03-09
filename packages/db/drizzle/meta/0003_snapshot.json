@@ -1,6 +1,6 @@
 {
-  "id": "4dae02ec-aac2-4780-9ada-1e5702fecd5b",
-  "prevId": "5113af9c-b8b3-4ea0-8e6a-6099451f5abe",
+  "id": "21b2d887-3ad6-4060-940c-6ec6d2e2061a",
+  "prevId": "4dae02ec-aac2-4780-9ada-1e5702fecd5b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -988,12 +988,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "units_items_unit_id_item_id_priority_unique": {
-          "name": "units_items_unit_id_item_id_priority_unique",
+        "units_items_unit_id_priority_unique": {
+          "name": "units_items_unit_id_priority_unique",
           "nullsNotDistinct": false,
           "columns": [
             "unit_id",
-            "item_id",
             "priority"
           ]
         }

@@ -357,10 +357,10 @@ describe("unitsItemsSeedData", () => {
     }
   });
 
-  it("no duplicate (unitId, itemId, priority) combinations", () => {
+  it("no duplicate (unitId, priority) combinations", () => {
     const seen = new Set<string>();
     for (const record of unitsItemsSeedData) {
-      const key = `${record.unitId}:${record.itemId}:${record.priority}`;
+      const key = `${record.unitId}:${record.priority}`;
       expect(seen.has(key)).toBe(false);
       seen.add(key);
     }

@@ -202,6 +202,6 @@ export const unitsItems = pgTable(
     index("units_items_item_id_idx").on(table.itemId),
     index("units_items_unit_id_idx").on(table.unitId),
     check("units_items_priority_positive", sql`${table.priority} > 0`),
-    unique("units_items_unit_id_item_id_priority_unique").on(table.unitId, table.itemId, table.priority),
+    unique("units_items_unit_id_priority_unique").on(table.unitId, table.priority),
   ],
 );

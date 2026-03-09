@@ -1,15 +1,25 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LibraryList } from "./library-list";
-import { TABS, TAB_TO_SINGULAR, type TabName } from "./types";
+import { ScenarioLibraryList } from "./scenario-library-list";
+import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir } from "./types";
 
 interface LibraryPanelProps {
   activeTab: TabName;
   perTabSelection: Record<TabName, string | null>;
-  listData: Record<TabName, { items: { id: string; name: string }[] } | undefined>;
+  listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined>;
   listLoading: Record<TabName, boolean>;
   onTabChange: (tab: TabName) => void;
   onSelectRecord: (tab: TabName, id: string) => void;
   onCreateNew: (tab: TabName) => void;
+  // Scenario-specific props
+  scenarioListItems: { id: string; name: string; updatedAt: Date; createdAt: Date }[];
+  scenarioPage: number;
+  scenarioTotalPages: number;
+  scenarioSortBy: ScenarioSortBy;
+  scenarioSortDir: ScenarioSortDir;
+  onScenarioPageChange: (page: number) => void;
+  onScenarioSortChange: (sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => void;
+  onDeleteScenario: (id: string, name: string) => void;
 }
 
 export function LibraryPanel({
@@ -20,6 +30,14 @@ export function LibraryPanel({
   onTabChange,
   onSelectRecord,
   onCreateNew,
+  scenarioListItems,
+  scenarioPage,
+  scenarioTotalPages,
+  scenarioSortBy,
+  scenarioSortDir,
+  onScenarioPageChange,
+  onScenarioSortChange,
+  onDeleteScenario,
 }: LibraryPanelProps) {
   return (
     <div data-testid="library-panel">
@@ -34,7 +52,7 @@ export function LibraryPanel({
             </TabsTrigger>
           ))}
         </TabsList>
-        {TABS.map((tab) => (
+        {ENTITY_TABS.map((tab) => (
           <TabsContent key={tab} value={tab}>
             <LibraryList
               items={listData[tab]?.items ?? []}
@@ -46,6 +64,25 @@ export function LibraryPanel({
             />
           </TabsContent>
         ))}
+        <TabsContent value="Scenarios">
+          <ScenarioLibraryList
+            items={scenarioListItems}
+            isLoading={listLoading.Scenarios}
+            selectedId={perTabSelection.Scenarios}
+            page={scenarioPage}
+            totalPages={scenarioTotalPages}
+            sortBy={scenarioSortBy}
+            sortDir={scenarioSortDir}
+            onSelect={(id) => onSelectRecord("Scenarios", id)}
+            onCreateNew={() => onCreateNew("Scenarios")}
+            onDelete={(id) => {
+              const item = scenarioListItems.find((s) => s.id === id);
+              onDeleteScenario(id, item?.name ?? "");
+            }}
+            onPageChange={onScenarioPageChange}
+            onSortChange={onScenarioSortChange}
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );

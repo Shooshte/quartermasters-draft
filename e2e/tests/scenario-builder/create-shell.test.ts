@@ -59,7 +59,7 @@ test.describe("Create Shell — URL Parameters", () => {
     );
     // Scenario should be selected in library
     await expect(
-      gmPage.getByRole("option", { name: "Ambush at Dawn" }),
+      gmPage.getByRole("row", { name: "Ambush at Dawn" }),
     ).toHaveAttribute("aria-selected", "true");
     await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
   });
@@ -202,19 +202,14 @@ test.describe("Create Shell — URL Parameters", () => {
 // ─── Browsing by Tab ─────────────────────────────────────────────────────────
 
 test.describe("Create Shell — Browsing by Tab", () => {
-  const tabTests = [
+  const entityTabTests = [
     { tab: "Effects", records: ["Barbarian Roar", "Rage"], singular: "Effect" },
     { tab: "Spells", records: ["Battle Cry", "Fireball"], singular: "Spell" },
     { tab: "Items", records: ["Iron Sword", "Oak Staff"], singular: "Item" },
     { tab: "Units", records: ["Barbarian", "Mage"], singular: "Unit" },
-    {
-      tab: "Scenarios",
-      records: ["Ambush at Dawn", "Castle Siege"],
-      singular: "Scenario",
-    },
   ] as const;
 
-  for (const { tab, records, singular } of tabTests) {
+  for (const { tab, records, singular } of entityTabTests) {
     test(`${tab} tab shows records and New button`, async ({ gmPage }) => {
       await gmPage.goto("/create");
       await gmPage.getByRole("tab", { name: tab }).click();
@@ -230,6 +225,21 @@ test.describe("Create Shell — Browsing by Tab", () => {
       ).toBeVisible();
     });
   }
+
+  test("Scenarios tab shows records and New button", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    await expect(gmPage.getByRole("tab", { name: "Scenarios" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    for (const name of ["Ambush at Dawn", "Castle Siege"]) {
+      await expect(gmPage.getByRole("row", { name })).toBeVisible();
+    }
+    await expect(
+      gmPage.getByRole("button", { name: "New Scenario" }),
+    ).toBeVisible();
+  });
 });
 
 // ─── Tab Switching Memory ────────────────────────────────────────────────────
@@ -332,7 +342,7 @@ test.describe("Create Shell — Record Selection", () => {
     );
 
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await gmPage.getByRole("option", { name: "Ambush at Dawn" }).click();
+    await gmPage.getByRole("row", { name: "Ambush at Dawn" }).click();
 
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
       "Ambush at Dawn",
@@ -403,7 +413,7 @@ test.describe("Create Shell — Create Actions", () => {
     );
 
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await gmPage.getByRole("option", { name: "Ambush at Dawn" }).click();
+    await gmPage.getByRole("row", { name: "Ambush at Dawn" }).click();
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
       "Ambush at Dawn",
     );
@@ -580,7 +590,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
     await gmPage
       .getByTestId("scenario-name-input")
       .fill("Ambush at Dawn Updated");
-    await gmPage.getByRole("option", { name: "Castle Siege" }).click();
+    await gmPage.getByRole("row", { name: "Castle Siege" }).click();
 
     await expect(
       gmPage.getByTestId("unsaved-changes-dialog"),
@@ -591,7 +601,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
       "Ambush at Dawn Updated",
     );
     await expect(
-      gmPage.getByRole("option", { name: "Ambush at Dawn" }),
+      gmPage.getByRole("row", { name: "Ambush at Dawn" }),
     ).toHaveAttribute("aria-selected", "true");
   });
 
@@ -606,7 +616,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
     await gmPage
       .getByTestId("scenario-name-input")
       .fill("Ambush at Dawn Updated");
-    await gmPage.getByRole("option", { name: "Castle Siege" }).click();
+    await gmPage.getByRole("row", { name: "Castle Siege" }).click();
 
     await expect(
       gmPage.getByTestId("unsaved-changes-dialog"),
@@ -617,7 +627,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
       "Castle Siege",
     );
     await expect(
-      gmPage.getByRole("option", { name: "Castle Siege" }),
+      gmPage.getByRole("row", { name: "Castle Siege" }),
     ).toHaveAttribute("aria-selected", "true");
   });
 

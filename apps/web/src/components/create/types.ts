@@ -37,6 +37,10 @@ export const TAB_TO_SINGULAR: Record<TabName, string> = {
   Scenarios: "Scenario",
 };
 
+export const SCENARIOS_PAGE_SIZE = 10;
+export type ScenarioSortBy = "name" | "updatedAt";
+export type ScenarioSortDir = "asc" | "desc";
+
 export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";
 
 export interface WorkspaceState {

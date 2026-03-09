@@ -1,11 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@qd/api";
 import { trpc } from "~/lib/trpc";
 import {
   type TabName,
+  type EntityTab,
   type WorkspaceState,
   type EntityType,
+  type ScenarioSortBy,
+  type ScenarioSortDir,
   DEFAULT_TAB,
+  SCENARIOS_PAGE_SIZE,
   ENTITY_TABS,
   ENTITY_TYPE_TO_TAB,
   TAB_TO_ENTITY_TYPE,
@@ -45,8 +51,23 @@ export interface CreatePageState {
   updateScenarioField: (field: string, value: unknown) => void;
   confirmDiscard: () => void;
   cancelDiscard: () => void;
-  listData: Record<TabName, { items: { id: string; name: string }[] } | undefined>;
+  listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined>;
   listLoading: Record<TabName, boolean>;
+  // Scenario list specific
+  scenarioListItems: { id: string; name: string; updatedAt: Date; createdAt: Date }[];
+  scenarioPage: number;
+  scenarioTotalPages: number;
+  scenarioSortBy: ScenarioSortBy;
+  scenarioSortDir: ScenarioSortDir;
+  setScenarioSort: (sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => void;
+  setScenarioPage: (page: number) => void;
+  // Delete
+  isDeleteDialogOpen: boolean;
+  deleteTarget: { id: string; name: string } | null;
+  deleteError: string | null;
+  requestDeleteScenario: (id: string, name: string) => void;
+  confirmDeleteScenario: () => void;
+  cancelDeleteScenario: () => void;
 }
 
 export function useCreatePageState(
@@ -57,6 +78,7 @@ export function useCreatePageState(
   },
   navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void,
 ): CreatePageState {
+  const queryClient = useQueryClient();
   const initialTab = isValidTab(search.tab) ? search.tab : DEFAULT_TAB;
 
   const [activeTab, setActiveTabState] = useState<TabName>(initialTab);
@@ -71,6 +93,16 @@ export function useCreatePageState(
   const [scenarioWorkspace, setScenarioWorkspace] = useState<WorkspaceState>(createIdleWorkspace());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+
+  // Scenario list state
+  const [scenarioPage, setScenarioPage] = useState(1);
+  const [scenarioSortBy, setScenarioSortBy] = useState<ScenarioSortBy>("name");
+  const [scenarioSortDir, setScenarioSortDir] = useState<ScenarioSortDir>("asc");
+
+  // Delete state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Lazy loading: only fire the active tab's query on cold load,
   // then enable the remaining tabs once the active one settles.
@@ -97,8 +129,13 @@ export function useCreatePageState(
     enabled: activeTab === "Units" || backgroundEnabled,
   });
   const scenariosList = useQuery({
-    queryKey: ["scenarioBuilder", "scenarios", "list"],
-    queryFn: () => trpc.scenarioBuilder.scenarios.list.query({}),
+    queryKey: ["scenarioBuilder", "scenarios", "list", scenarioPage, scenarioSortBy, scenarioSortDir],
+    queryFn: () => trpc.scenarioBuilder.scenarios.list.query({
+      page: scenarioPage,
+      limit: SCENARIOS_PAGE_SIZE,
+      sortBy: scenarioSortBy,
+      sortDir: scenarioSortDir,
+    }),
     enabled: activeTab === "Scenarios" || backgroundEnabled,
   });
 
@@ -120,12 +157,11 @@ export function useCreatePageState(
     }
   }, [backgroundEnabled, activeTabIsLoading]);
 
-  const listData: Record<TabName, { items: { id: string; name: string }[] } | undefined> = {
+  const listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined> = {
     Effects: effectsList.data as { items: { id: string; name: string }[] } | undefined,
     Spells: spellsList.data as { items: { id: string; name: string }[] } | undefined,
     Items: itemsList.data as { items: { id: string; name: string }[] } | undefined,
     Units: unitsList.data as { items: { id: string; name: string }[] } | undefined,
-    Scenarios: scenariosList.data as { items: { id: string; name: string }[] } | undefined,
   };
 
   const listLoading: Record<TabName, boolean> = {
@@ -136,14 +172,26 @@ export function useCreatePageState(
     Scenarios: scenariosList.isLoading,
   };
 
+  // Scenario list computed values
+  type ScenarioListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["scenarios"]["list"];
+  const scenarioListItems: ScenarioListOutput["items"] = scenariosList.data?.items ?? [];
+  const scenarioTotalCount: ScenarioListOutput["totalCount"] = scenariosList.data?.totalCount ?? 0;
+  const scenarioTotalPages = Math.max(1, Math.ceil(scenarioTotalCount / SCENARIOS_PAGE_SIZE));
+
   // URL-driven initialization for entity_id
   const entityInitRef = useRef(false);
   const prevEntityIdRef = useRef(search.entity_id);
+  // Skip URL-driven reset when we ourselves triggered the navigation (e.g. create mode)
+  const skipEntityResetRef = useRef(false);
 
   // Reset entity workspace when entity_id URL param changes
   useEffect(() => {
     if (search.entity_id !== prevEntityIdRef.current) {
       prevEntityIdRef.current = search.entity_id;
+      if (skipEntityResetRef.current) {
+        skipEntityResetRef.current = false;
+        return;
+      }
       entityInitRef.current = false;
       setEntityWorkspace(createIdleWorkspace());
     }
@@ -239,11 +287,16 @@ export function useCreatePageState(
   // URL-driven scenario initialization
   const scenarioInitRef = useRef(false);
   const prevScenarioIdRef = useRef(search.scenario_id);
+  const skipScenarioResetRef = useRef(false);
 
   // Reset scenario workspace when scenario_id URL param changes
   useEffect(() => {
     if (search.scenario_id !== prevScenarioIdRef.current) {
       prevScenarioIdRef.current = search.scenario_id;
+      if (skipScenarioResetRef.current) {
+        skipScenarioResetRef.current = false;
+        return;
+      }
       scenarioInitRef.current = false;
       setScenarioWorkspace(createIdleWorkspace());
     }
@@ -395,6 +448,7 @@ export function useCreatePageState(
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
+          skipScenarioResetRef.current = true;
           navigate?.({
             search: (prev) => {
               const next = { ...prev };
@@ -414,6 +468,7 @@ export function useCreatePageState(
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
+          skipEntityResetRef.current = true;
           navigate?.({
             search: (prev) => {
               const next = { ...prev };
@@ -487,6 +542,69 @@ export function useCreatePageState(
     setPendingAction(null);
   }, []);
 
+  // Scenario sort/page actions
+  const setScenarioSort = useCallback((sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => {
+    setScenarioSortBy(sortBy);
+    setScenarioSortDir(sortDir);
+    setScenarioPage(1);
+  }, []);
+
+  const setScenarioPageAction = useCallback((page: number) => {
+    setScenarioPage(page);
+  }, []);
+
+  // Delete actions
+  const requestDeleteScenario = useCallback((id: string, name: string) => {
+    setDeleteTarget({ id, name });
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const confirmDeleteScenario = useCallback(async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeleteError(null);
+      await trpc.scenarioBuilder.scenarios.delete.mutate({ id: deleteTarget.id });
+
+      // If deleted scenario is currently open, clear workspace
+      if (scenarioWorkspace.entityId === deleteTarget.id) {
+        setScenarioWorkspace(createIdleWorkspace());
+        setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
+        skipScenarioResetRef.current = true;
+        navigate?.({
+          search: (prev) => {
+            const next = { ...prev };
+            delete next.scenario_id;
+            return next;
+          },
+          replace: true,
+        });
+      }
+
+      // Invalidate scenario list queries
+      await queryClient.invalidateQueries({
+        queryKey: ["scenarioBuilder", "scenarios", "list"],
+      });
+
+      // If we were on a page > 1 and that page might now be empty, go back
+      const newTotalCount = scenarioTotalCount - 1;
+      const newTotalPages = Math.max(1, Math.ceil(newTotalCount / SCENARIOS_PAGE_SIZE));
+      if (scenarioPage > newTotalPages) {
+        setScenarioPage(newTotalPages);
+      }
+
+      setDeleteTarget(null);
+      setIsDeleteDialogOpen(false);
+    } catch {
+      setDeleteError("Failed to delete scenario. Please try again.");
+    }
+  }, [deleteTarget, scenarioWorkspace.entityId, navigate, queryClient, scenarioTotalCount, scenarioPage]);
+
+  const cancelDeleteScenario = useCallback(() => {
+    setDeleteTarget(null);
+    setIsDeleteDialogOpen(false);
+    setDeleteError(null);
+  }, []);
+
   return {
     activeTab,
     perTabSelection,
@@ -503,5 +621,20 @@ export function useCreatePageState(
     cancelDiscard,
     listData,
     listLoading,
+    // Scenario list specific
+    scenarioListItems,
+    scenarioPage,
+    scenarioTotalPages,
+    scenarioSortBy,
+    scenarioSortDir,
+    setScenarioSort,
+    setScenarioPage: setScenarioPageAction,
+    // Delete
+    isDeleteDialogOpen,
+    deleteTarget,
+    deleteError,
+    requestDeleteScenario,
+    confirmDeleteScenario,
+    cancelDeleteScenario,
   };
 }

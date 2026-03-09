@@ -1,20 +1,43 @@
 import { TRPCError } from "@trpc/server";
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { listInput } from "./shared";
+
+const scenarioListInput = z.object({
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(500).default(10),
+  sortBy: z.enum(["name", "updatedAt"]).default("name"),
+  sortDir: z.enum(["asc", "desc"]).default("asc"),
+}).default({});
 
 export const scenariosRouter = router({
-  list: gmProcedure.input(listInput).query(async ({ input }) => {
+  list: gmProcedure.input(scenarioListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
-    const items = await db
-      .select({ id: scenarios.id, name: scenarios.name, updatedAt: scenarios.updatedAt })
-      .from(scenarios)
-      .orderBy(asc(scenarios.name))
-      .limit(input.limit)
-      .offset(offset);
-    return { items, page: input.page, limit: input.limit };
+    const sortColumn = input.sortBy === "updatedAt" ? scenarios.updatedAt : scenarios.name;
+    const sortFn = input.sortDir === "desc" ? desc : asc;
+
+    const [items, countResult] = await Promise.all([
+      db
+        .select({
+          id: scenarios.id,
+          name: scenarios.name,
+          updatedAt: scenarios.updatedAt,
+          createdAt: scenarios.createdAt,
+        })
+        .from(scenarios)
+        .orderBy(sortFn(sortColumn), asc(scenarios.id))
+        .limit(input.limit)
+        .offset(offset),
+      db.select({ count: count() }).from(scenarios),
+    ]);
+
+    return {
+      items,
+      page: input.page,
+      limit: input.limit,
+      totalCount: countResult[0].count,
+    };
   }),
 
   get: gmProcedure
@@ -82,5 +105,18 @@ export const scenariosRouter = router({
             })),
         })),
       };
+    }),
+
+  delete: gmProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input }) => {
+      const deleted = await db
+        .delete(scenarios)
+        .where(eq(scenarios.id, input.id))
+        .returning({ id: scenarios.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
+      }
+      return { success: true };
     }),
 });

@@ -12,7 +12,8 @@ CREATE TABLE "scenarios_rows" (
 	"scenario_id" uuid NOT NULL,
 	"row_type" "row_type" NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "scenarios_rows_scenario_id_row_type_unique" UNIQUE("scenario_id","row_type")
 );
 --> statement-breakpoint
 CREATE TABLE "scenarios_rows_units" (

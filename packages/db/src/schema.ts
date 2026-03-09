@@ -227,9 +227,13 @@ export const scenariosRows = pgTable(
   },
   (table) => [
     index("scenarios_rows_scenario_id_idx").on(table.scenarioId),
+    unique("scenarios_rows_scenario_id_row_type_unique").on(table.scenarioId, table.rowType),
   ],
 );
 
+// Unique on (rowId, slot) — not (rowId, unitId) — so the same unit can occupy
+// multiple slots within the same row and appear in multiple rows within the
+// same scenario (e.g., fielding duplicate squads or versatile units).
 export const scenariosRowsUnits = pgTable(
   "scenarios_rows_units",
   {

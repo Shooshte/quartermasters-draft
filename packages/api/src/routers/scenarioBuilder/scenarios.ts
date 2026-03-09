@@ -7,14 +7,14 @@ import { gmProcedure, router } from "../../trpc";
 const scenarioListInput = z.object({
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(500).default(10),
-  sortBy: z.enum(["name", "createdAt"]).default("name"),
+  sortBy: z.enum(["name", "updatedAt"]).default("name"),
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});
 
 export const scenariosRouter = router({
   list: gmProcedure.input(scenarioListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
-    const sortColumn = input.sortBy === "createdAt" ? scenarios.createdAt : scenarios.name;
+    const sortColumn = input.sortBy === "updatedAt" ? scenarios.updatedAt : scenarios.name;
     const sortFn = input.sortDir === "desc" ? desc : asc;
 
     const [items, countResult] = await Promise.all([

@@ -62,10 +62,10 @@ describe("ScenarioLibraryList", () => {
     expect(onCreateNew).toHaveBeenCalled();
   });
 
-  it("shows sort controls for Name and Created", () => {
+  it("shows sort controls for Name and Last Update", () => {
     render(<ScenarioLibraryList {...defaultProps} />);
     expect(screen.getByRole("button", { name: /Name/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Created/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Last Update/ })).toBeInTheDocument();
   });
 
   it("clicking active sort column toggles direction", async () => {
@@ -78,8 +78,8 @@ describe("ScenarioLibraryList", () => {
   it("clicking inactive sort column activates it ascending", async () => {
     const onSortChange = vi.fn();
     render(<ScenarioLibraryList {...defaultProps} sortBy="name" sortDir="asc" onSortChange={onSortChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /Created/ }));
-    expect(onSortChange).toHaveBeenCalledWith("createdAt", "asc");
+    await userEvent.click(screen.getByRole("button", { name: /Last Update/ }));
+    expect(onSortChange).toHaveBeenCalledWith("updatedAt", "asc");
   });
 
   it("shows pagination controls", () => {

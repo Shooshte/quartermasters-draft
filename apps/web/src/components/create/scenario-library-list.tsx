@@ -104,9 +104,9 @@ export function ScenarioLibraryList({
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort("createdAt")}>
-                  Created
-                  <SortIndicator active={sortBy === "createdAt"} dir={sortDir} />
+                <Button variant="ghost" size="sm" onClick={() => handleSort("updatedAt")}>
+                  Last Update
+                  <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
                 </Button>
               </TableHead>
               <TableHead className="w-10" />

@@ -117,7 +117,7 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.scenarios.list({
-        sortBy: "createdAt",
+        sortBy: "updatedAt",
         sortDir: "desc",
       });
       expect(result.page).toBe(1);

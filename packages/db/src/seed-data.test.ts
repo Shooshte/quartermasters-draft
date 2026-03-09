@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, spellSeedData, spellsEffectsSeedData } from "./seed-data";
+import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, spellSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -268,6 +268,101 @@ describe("itemsSpellsSeedData", () => {
     for (const record of itemsSpellsSeedData) {
       expect(record.id).toBeDefined();
       expect(typeof record.id).toBe("string");
+    }
+  });
+});
+
+describe("unitSeedData", () => {
+  it("has 3 unit records", () => {
+    expect(unitSeedData).toHaveLength(3);
+  });
+
+  it("each record has required fields: name and all stat fields", () => {
+    for (const unit of unitSeedData) {
+      expect(unit.name).toBeDefined();
+      expect(unit.meleeDmg).toBeDefined();
+      expect(unit.health).toBeDefined();
+      expect(unit.rangedDmg).toBeDefined();
+      expect(unit.manaRegen).toBeDefined();
+      expect(unit.spellDmg).toBeDefined();
+      expect(unit.speed).toBeDefined();
+      expect(unit.dodge).toBeDefined();
+      expect(unit.criticalChance).toBeDefined();
+    }
+  });
+
+  it("all names are unique", () => {
+    const names = unitSeedData.map((u) => u.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const unit of unitSeedData) {
+      expect(unit.id).toBeDefined();
+      expect(typeof unit.id).toBe("string");
+    }
+  });
+
+  it("all stat fields are numbers", () => {
+    for (const unit of unitSeedData) {
+      expect(typeof unit.meleeDmg).toBe("number");
+      expect(typeof unit.health).toBe("number");
+      expect(typeof unit.rangedDmg).toBe("number");
+      expect(typeof unit.manaRegen).toBe("number");
+      expect(typeof unit.spellDmg).toBe("number");
+      expect(typeof unit.speed).toBe("number");
+      expect(typeof unit.dodge).toBe("number");
+      expect(typeof unit.criticalChance).toBe("number");
+    }
+  });
+});
+
+describe("unitsItemsSeedData", () => {
+  it("has at least 2 records", () => {
+    expect(unitsItemsSeedData.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("each record has required fields: unitId, itemId, priority", () => {
+    for (const record of unitsItemsSeedData) {
+      expect(record.unitId).toBeDefined();
+      expect(record.itemId).toBeDefined();
+      expect(record.priority).toBeDefined();
+    }
+  });
+
+  it("all unitId values reference units in unitSeedData", () => {
+    const unitIds = new Set(unitSeedData.map((u) => u.id));
+    for (const record of unitsItemsSeedData) {
+      expect(unitIds.has(record.unitId)).toBe(true);
+    }
+  });
+
+  it("all itemId values reference items in itemSeedData", () => {
+    const itemIds = new Set(itemSeedData.map((i) => i.id));
+    for (const record of unitsItemsSeedData) {
+      expect(itemIds.has(record.itemId)).toBe(true);
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const record of unitsItemsSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
+    }
+  });
+
+  it("priority is > 0 for all records", () => {
+    for (const record of unitsItemsSeedData) {
+      expect(record.priority).toBeGreaterThan(0);
+    }
+  });
+
+  it("no duplicate (unitId, itemId, priority) combinations", () => {
+    const seen = new Set<string>();
+    for (const record of unitsItemsSeedData) {
+      const key = `${record.unitId}:${record.itemId}:${record.priority}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
     }
   });
 });

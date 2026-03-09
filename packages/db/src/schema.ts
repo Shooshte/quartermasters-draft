@@ -174,3 +174,32 @@ export const itemsSpells = pgTable(
     unique("items_spells_item_id_spell_id_unique").on(table.itemId, table.spellId),
   ],
 );
+
+export const units = pgTable("units", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  meleeDmg: real("melee_dmg").notNull().default(0),
+  health: real("health").notNull().default(0),
+  rangedDmg: real("ranged_dmg").notNull().default(0),
+  manaRegen: real("mana_regen").notNull().default(0),
+  spellDmg: real("spell_dmg").notNull().default(0),
+  speed: real("speed").notNull().default(0),
+  dodge: real("dodge").notNull().default(0),
+  criticalChance: real("critical_chance").notNull().default(0),
+});
+
+export const unitsItems = pgTable(
+  "units_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemId: uuid("item_id").notNull().references(() => items.id, { onDelete: "cascade" }),
+    unitId: uuid("unit_id").notNull().references(() => units.id, { onDelete: "cascade" }),
+    priority: integer("priority").notNull().default(1),
+  },
+  (table) => [
+    index("units_items_item_id_idx").on(table.itemId),
+    index("units_items_unit_id_idx").on(table.unitId),
+    check("units_items_priority_positive", sql`${table.priority} > 0`),
+    unique("units_items_unit_id_item_id_priority_unique").on(table.unitId, table.itemId, table.priority),
+  ],
+);

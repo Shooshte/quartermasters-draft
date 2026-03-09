@@ -4,7 +4,7 @@ import postgres from "postgres";
 import { hashPassword } from "better-auth/crypto";
 
 import * as schema from "./schema";
-import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, spellSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
+import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, scenarioSeedData, scenariosRowsSeedData, scenariosRowsUnitsSeedData, spellSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle({ client, schema });
@@ -26,8 +26,11 @@ try {
   await db.insert(schema.itemsSpells).values(itemsSpellsSeedData).onConflictDoNothing();
   await db.insert(schema.units).values(unitSeedData).onConflictDoNothing();
   await db.insert(schema.unitsItems).values(unitsItemsSeedData).onConflictDoNothing();
+  await db.insert(schema.scenarios).values(scenarioSeedData).onConflictDoNothing();
+  await db.insert(schema.scenariosRows).values(scenariosRowsSeedData).onConflictDoNothing();
+  await db.insert(schema.scenariosRowsUnits).values(scenariosRowsUnitsSeedData).onConflictDoNothing();
 
-  console.log("Seeded users, accounts, effects, spells, spells_effects, items, items_spells, units, and units_items");
+  console.log("Seeded users, accounts, effects, spells, spells_effects, items, items_spells, units, units_items, scenarios, scenarios_rows, and scenarios_rows_units");
   await client.end();
   process.exit(0);
 } catch (error) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, spellSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
+import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, scenarioSeedData, scenariosRowsSeedData, scenariosRowsUnitsSeedData, spellSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -361,6 +361,115 @@ describe("unitsItemsSeedData", () => {
     const seen = new Set<string>();
     for (const record of unitsItemsSeedData) {
       const key = `${record.unitId}:${record.priority}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
+});
+
+describe("scenarioSeedData", () => {
+  it("has 1 scenario record", () => {
+    expect(scenarioSeedData).toHaveLength(1);
+  });
+
+  it("each record has required fields: name", () => {
+    for (const record of scenarioSeedData) {
+      expect(record.name).toBeDefined();
+    }
+  });
+
+  it("all names are unique", () => {
+    const names = scenarioSeedData.map((s) => s.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const record of scenarioSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
+    }
+  });
+});
+
+describe("scenariosRowsSeedData", () => {
+  it("has 4 records", () => {
+    expect(scenariosRowsSeedData).toHaveLength(4);
+  });
+
+  it("each record has required fields: scenarioId, rowType", () => {
+    for (const record of scenariosRowsSeedData) {
+      expect(record.scenarioId).toBeDefined();
+      expect(record.rowType).toBeDefined();
+    }
+  });
+
+  it("covers all four rowType values", () => {
+    const rowTypes = scenariosRowsSeedData.map((r) => r.rowType);
+    expect(rowTypes).toContain("support");
+    expect(rowTypes).toContain("ranged");
+    expect(rowTypes).toContain("melee");
+    expect(rowTypes).toContain("tank");
+  });
+
+  it("all scenarioId values reference scenarios in scenarioSeedData", () => {
+    const scenarioIds = new Set(scenarioSeedData.map((s) => s.id));
+    for (const record of scenariosRowsSeedData) {
+      expect(scenarioIds.has(record.scenarioId)).toBe(true);
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const record of scenariosRowsSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
+    }
+  });
+});
+
+describe("scenariosRowsUnitsSeedData", () => {
+  it("has 3 records", () => {
+    expect(scenariosRowsUnitsSeedData).toHaveLength(3);
+  });
+
+  it("each record has required fields: rowId, unitId, slot", () => {
+    for (const record of scenariosRowsUnitsSeedData) {
+      expect(record.rowId).toBeDefined();
+      expect(record.unitId).toBeDefined();
+      expect(record.slot).toBeDefined();
+    }
+  });
+
+  it("slot >= 1 for all records", () => {
+    for (const record of scenariosRowsUnitsSeedData) {
+      expect(record.slot).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("all rowId values reference rows in scenariosRowsSeedData", () => {
+    const rowIds = new Set(scenariosRowsSeedData.map((r) => r.id));
+    for (const record of scenariosRowsUnitsSeedData) {
+      expect(rowIds.has(record.rowId)).toBe(true);
+    }
+  });
+
+  it("all unitId values reference units in unitSeedData", () => {
+    const unitIds = new Set(unitSeedData.map((u) => u.id));
+    for (const record of scenariosRowsUnitsSeedData) {
+      expect(unitIds.has(record.unitId)).toBe(true);
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const record of scenariosRowsUnitsSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
+    }
+  });
+
+  it("no duplicate (rowId, slot) combinations", () => {
+    const seen = new Set<string>();
+    for (const record of scenariosRowsUnitsSeedData) {
+      const key = `${record.rowId}:${record.slot}`;
       expect(seen.has(key)).toBe(false);
       seen.add(key);
     }

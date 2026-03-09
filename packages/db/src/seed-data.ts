@@ -1,4 +1,4 @@
-import { effects, items, itemsSpells, spells, spellsEffects } from "./schema";
+import { effects, items, itemsSpells, spells, spellsEffects, units, unitsItems } from "./schema";
 
 const now = new Date();
 
@@ -206,5 +206,65 @@ export const itemsSpellsSeedData: (typeof itemsSpells.$inferInsert)[] = [
     id: "e0000000-0000-0000-0000-000000000002",
     itemId: "d0000000-0000-0000-0000-000000000003", // Leather Shield
     spellId: "b0000000-0000-0000-0000-000000000003", // Healing Touch
+  },
+];
+
+export const unitSeedData: (typeof units.$inferInsert)[] = [
+  {
+    id: "f0000000-0000-0000-0000-000000000001",
+    name: "Barbarian",
+    meleeDmg: 25,
+    health: 120,
+    rangedDmg: 5,
+    manaRegen: 1,
+    spellDmg: 0,
+    speed: 0.8,
+    dodge: 5,
+    criticalChance: 10,
+  },
+  {
+    id: "f0000000-0000-0000-0000-000000000002",
+    name: "Mage",
+    meleeDmg: 5,
+    health: 70,
+    rangedDmg: 10,
+    manaRegen: 8,
+    spellDmg: 30,
+    speed: 0.6,
+    dodge: 3,
+    criticalChance: 15,
+  },
+  {
+    id: "f0000000-0000-0000-0000-000000000003",
+    name: "Ranger",
+    meleeDmg: 10,
+    health: 90,
+    rangedDmg: 25,
+    manaRegen: 3,
+    spellDmg: 5,
+    speed: 1.0,
+    dodge: 12,
+    criticalChance: 20,
+  },
+];
+
+export const unitsItemsSeedData: (typeof unitsItems.$inferInsert)[] = [
+  {
+    id: "g0000000-0000-0000-0000-000000000001",
+    unitId: "f0000000-0000-0000-0000-000000000001", // Barbarian
+    itemId: "d0000000-0000-0000-0000-000000000001", // Iron Sword
+    priority: 1,
+  },
+  {
+    id: "g0000000-0000-0000-0000-000000000002",
+    unitId: "f0000000-0000-0000-0000-000000000002", // Mage
+    itemId: "d0000000-0000-0000-0000-000000000002", // Oak Staff
+    priority: 1,
+  },
+  {
+    id: "g0000000-0000-0000-0000-000000000003",
+    unitId: "f0000000-0000-0000-0000-000000000003", // Ranger
+    itemId: "d0000000-0000-0000-0000-000000000003", // Leather Shield
+    priority: 1,
   },
 ];

@@ -22,7 +22,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
     <Card data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto">
       <CardHeader>
         <CardTitle>
-          {mode === "idle" && "Scenario"}
+          {(mode === "idle" || mode === "loading") && "Scenario"}
           {mode === "not-found" && "Scenario"}
           {mode === "create" && "New Scenario"}
           {mode === "edit" && `Scenario: ${formValues.name as string}`}
@@ -32,6 +32,12 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
         {mode === "idle" && (
           <p className="text-sm text-muted-foreground" data-testid="scenario-idle">
             Select a scenario from the library
+          </p>
+        )}
+
+        {mode === "loading" && (
+          <p className="text-sm text-muted-foreground" data-testid="scenario-loading">
+            Loading…
           </p>
         )}
 

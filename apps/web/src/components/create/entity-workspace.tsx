@@ -15,7 +15,7 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
     <Card data-testid="entity-workspace" className="flex flex-1 flex-col overflow-auto">
       <CardHeader>
         <CardTitle>
-          {mode === "idle" && "Entity"}
+          {(mode === "idle" || mode === "loading") && "Entity"}
           {mode === "not-found" && "Entity"}
           {mode === "create" && `New ${capitalize(entityType ?? "")}`}
           {mode === "edit" && `${capitalize(entityType ?? "")}: ${formValues.name as string}`}
@@ -25,6 +25,12 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
         {mode === "idle" && (
           <p className="text-sm text-muted-foreground" data-testid="entity-idle">
             Select an entity from the library
+          </p>
+        )}
+
+        {mode === "loading" && (
+          <p className="text-sm text-muted-foreground" data-testid="entity-loading">
+            Loading…
           </p>
         )}
 

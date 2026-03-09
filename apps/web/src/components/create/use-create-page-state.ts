@@ -111,12 +111,14 @@ export function useCreatePageState(
     Scenarios: scenariosList,
   };
 
+  const activeTabIsLoading = queryByTab[activeTab].isLoading;
+
   useEffect(() => {
     if (backgroundEnabled) return;
-    if (!queryByTab[activeTab].isLoading) {
+    if (!activeTabIsLoading) {
       setBackgroundEnabled(true);
     }
-  }, [backgroundEnabled, activeTab, queryByTab[activeTab].isLoading]);
+  }, [backgroundEnabled, activeTabIsLoading]);
 
   const listData: Record<TabName, { items: { id: string; name: string }[] } | undefined> = {
     Effects: effectsList.data as { items: { id: string; name: string }[] } | undefined,
@@ -290,13 +292,27 @@ export function useCreatePageState(
     navigate?.({ search: (prev) => ({ ...prev, tab }), replace: true });
   }, [navigate]);
 
+  // Track the most recently requested IDs to discard stale responses
+  const pendingEntityIdRef = useRef<string | null>(null);
+  const pendingScenarioIdRef = useRef<string | null>(null);
+
   const loadEntity = useCallback(
     async (tab: TabName, id: string) => {
       if (!isEntityTab(tab)) return;
       const entityType = TAB_TO_ENTITY_TYPE[tab];
       const routerKey = TAB_TO_ROUTER_KEY[tab];
+      pendingEntityIdRef.current = id;
+      setEntityWorkspace({
+        mode: "loading",
+        entityType,
+        entityId: id,
+        data: null,
+        formValues: {},
+        isDirty: false,
+      });
       try {
         const data = await trpc.scenarioBuilder[routerKey].get.query({ id });
+        if (pendingEntityIdRef.current !== id) return; // stale — discard
         const entityData = data as Record<string, unknown>;
         setEntityWorkspace({
           mode: "edit",
@@ -309,6 +325,7 @@ export function useCreatePageState(
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
         navigate?.({ search: (prev) => ({ ...prev, entity_id: id }), replace: true });
       } catch {
+        if (pendingEntityIdRef.current !== id) return; // stale — discard
         setEntityWorkspace({
           mode: "not-found",
           entityType: entityType,
@@ -323,8 +340,18 @@ export function useCreatePageState(
   );
 
   const loadScenario = useCallback(async (id: string) => {
+    pendingScenarioIdRef.current = id;
+    setScenarioWorkspace({
+      mode: "loading",
+      entityType: "scenario",
+      entityId: id,
+      data: null,
+      formValues: {},
+      isDirty: false,
+    });
     try {
       const data = await trpc.scenarioBuilder.scenarios.get.query({ id });
+      if (pendingScenarioIdRef.current !== id) return; // stale — discard
       const scenarioData = data as Record<string, unknown>;
       setScenarioWorkspace({
         mode: "edit",
@@ -337,6 +364,7 @@ export function useCreatePageState(
       setPerTabSelection((prev) => ({ ...prev, Scenarios: id }));
       navigate?.({ search: (prev) => ({ ...prev, scenario_id: id }), replace: true });
     } catch {
+      if (pendingScenarioIdRef.current !== id) return; // stale — discard
       setScenarioWorkspace({
         mode: "not-found",
         entityType: "scenario",

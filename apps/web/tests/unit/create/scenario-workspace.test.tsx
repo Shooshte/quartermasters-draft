@@ -23,6 +23,17 @@ describe("ScenarioWorkspace", () => {
     expect(screen.getByText("Select a scenario from the library")).toBeInTheDocument();
   });
 
+  it("shows loading state", () => {
+    render(
+      <ScenarioWorkspace
+        workspace={makeWorkspace({ mode: "loading" })}
+        onFieldChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("scenario-loading")).toBeInTheDocument();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+  });
+
   it("shows not-found state", () => {
     render(
       <ScenarioWorkspace

@@ -37,7 +37,7 @@ export const TAB_TO_SINGULAR: Record<TabName, string> = {
   Scenarios: "Scenario",
 };
 
-export type WorkspaceMode = "idle" | "create" | "edit" | "not-found";
+export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";
 
 export interface WorkspaceState {
   mode: WorkspaceMode;

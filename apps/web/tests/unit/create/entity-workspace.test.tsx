@@ -23,6 +23,17 @@ describe("EntityWorkspace", () => {
     expect(screen.getByText("Select an entity from the library")).toBeInTheDocument();
   });
 
+  it("shows loading state", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({ mode: "loading" })}
+        onFieldChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("entity-loading")).toBeInTheDocument();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+  });
+
   it("shows not-found state", () => {
     render(
       <EntityWorkspace

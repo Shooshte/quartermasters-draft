@@ -228,6 +228,167 @@ describe("useCreatePageState — lazy loading", () => {
   });
 });
 
+describe("useCreatePageState — loading state", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEffectsList.mockResolvedValue({ items: [] });
+    mockSpellsList.mockResolvedValue({ items: [] });
+    mockItemsList.mockResolvedValue({ items: [] });
+    mockUnitsList.mockResolvedValue({ items: [] });
+    mockScenariosList.mockResolvedValue({ items: [] });
+    mockEffectsGet.mockRejectedValue(new Error("not found"));
+    mockSpellsGet.mockRejectedValue(new Error("not found"));
+    mockItemsGet.mockRejectedValue(new Error("not found"));
+    mockUnitsGet.mockRejectedValue(new Error("not found"));
+    mockScenariosGet.mockRejectedValue(new Error("not found"));
+  });
+
+  it("entity workspace enters loading mode while fetching", async () => {
+    let resolveGet!: (v: Record<string, unknown>) => void;
+    mockSpellsGet.mockImplementation(
+      () => new Promise((resolve) => { resolveGet = resolve; }),
+    );
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.selectRecord("Spells", "s1");
+    });
+
+    // Workspace should be in loading mode while the request is in flight
+    expect(result.current.entityWorkspace.mode).toBe("loading");
+
+    // Resolve and verify it transitions to edit
+    await act(async () => {
+      resolveGet({ id: "s1", name: "Fireball", damage: 50 });
+    });
+
+    expect(result.current.entityWorkspace.mode).toBe("edit");
+  });
+
+  it("scenario workspace enters loading mode while fetching", async () => {
+    let resolveGet!: (v: Record<string, unknown>) => void;
+    mockScenariosGet.mockImplementation(
+      () => new Promise((resolve) => { resolveGet = resolve; }),
+    );
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.selectRecord("Scenarios", "sc1");
+    });
+
+    expect(result.current.scenarioWorkspace.mode).toBe("loading");
+
+    await act(async () => {
+      resolveGet({ id: "sc1", name: "Ambush", difficulty: "hard" });
+    });
+
+    expect(result.current.scenarioWorkspace.mode).toBe("edit");
+  });
+});
+
+describe("useCreatePageState — race condition protection", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEffectsList.mockResolvedValue({ items: [] });
+    mockSpellsList.mockResolvedValue({ items: [] });
+    mockItemsList.mockResolvedValue({ items: [] });
+    mockUnitsList.mockResolvedValue({ items: [] });
+    mockScenariosList.mockResolvedValue({ items: [] });
+    mockEffectsGet.mockRejectedValue(new Error("not found"));
+    mockSpellsGet.mockRejectedValue(new Error("not found"));
+    mockItemsGet.mockRejectedValue(new Error("not found"));
+    mockUnitsGet.mockRejectedValue(new Error("not found"));
+    mockScenariosGet.mockRejectedValue(new Error("not found"));
+  });
+
+  it("discards stale entity response when a newer selection is made", async () => {
+    let resolveFirst!: (v: Record<string, unknown>) => void;
+    let resolveSecond!: (v: Record<string, unknown>) => void;
+
+    mockSpellsGet
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve; }));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    // Select record A
+    act(() => {
+      result.current.selectRecord("Spells", "s1");
+    });
+
+    // Immediately select record B (before A resolves)
+    act(() => {
+      result.current.selectRecord("Spells", "s2");
+    });
+
+    // B resolves first
+    await act(async () => {
+      resolveSecond({ id: "s2", name: "Ice Bolt", damage: 30 });
+    });
+
+    expect(result.current.entityWorkspace.entityId).toBe("s2");
+
+    // A resolves late — should be discarded
+    await act(async () => {
+      resolveFirst({ id: "s1", name: "Fireball", damage: 50 });
+    });
+
+    // Workspace should still show B, not A
+    expect(result.current.entityWorkspace.entityId).toBe("s2");
+    expect((result.current.entityWorkspace.formValues as Record<string, unknown>).name).toBe("Ice Bolt");
+  });
+
+  it("discards stale scenario response when a newer selection is made", async () => {
+    let resolveFirst!: (v: Record<string, unknown>) => void;
+    let resolveSecond!: (v: Record<string, unknown>) => void;
+
+    mockScenariosGet
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve; }));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    // Select scenario A
+    act(() => {
+      result.current.selectRecord("Scenarios", "sc1");
+    });
+
+    // Immediately select scenario B
+    act(() => {
+      result.current.selectRecord("Scenarios", "sc2");
+    });
+
+    // B resolves first
+    await act(async () => {
+      resolveSecond({ id: "sc2", name: "Siege", difficulty: "easy" });
+    });
+
+    expect(result.current.scenarioWorkspace.entityId).toBe("sc2");
+
+    // A resolves late — should be discarded
+    await act(async () => {
+      resolveFirst({ id: "sc1", name: "Ambush", difficulty: "hard" });
+    });
+
+    expect(result.current.scenarioWorkspace.entityId).toBe("sc2");
+    expect((result.current.scenarioWorkspace.formValues as Record<string, unknown>).name).toBe("Siege");
+  });
+});
+
 describe("useCreatePageState — URL param change resets", () => {
   beforeEach(() => {
     vi.clearAllMocks();

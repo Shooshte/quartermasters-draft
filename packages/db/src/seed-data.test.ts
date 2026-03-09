@@ -318,8 +318,8 @@ describe("unitSeedData", () => {
 });
 
 describe("unitsItemsSeedData", () => {
-  it("has at least 2 records", () => {
-    expect(unitsItemsSeedData.length).toBeGreaterThanOrEqual(2);
+  it("has 3 records", () => {
+    expect(unitsItemsSeedData.length).toEqual(3);
   });
 
   it("each record has required fields: unitId, itemId, priority", () => {

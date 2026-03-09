@@ -190,6 +190,8 @@ export const units = pgTable("units", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
+// Unique on (unitId, priority) — not (unitId, itemId) — so the same item
+// can be assigned to a unit at different priority slots (e.g., dual-wielding).
 export const unitsItems = pgTable(
   "units_items",
   {

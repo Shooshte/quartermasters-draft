@@ -5,6 +5,7 @@ export const roleEnum = pgEnum("role", ["gm", "player"]);
 export const timingTypeEnum = pgEnum("timing_type", ["instant", "interval"]);
 export const effectTypeEnum = pgEnum("effect_type", ["buff", "debuff", "healing", "damage"]);
 export const targetPolicyEnum = pgEnum("target_policy", ["highest_health", "lowest_health", "highest_damage", "random"]);
+export const rowTypeEnum = pgEnum("row_type", ["support", "ranged", "melee", "tank"]);
 
 export const user = pgTable(
   "user",
@@ -205,5 +206,48 @@ export const unitsItems = pgTable(
     index("units_items_unit_id_idx").on(table.unitId),
     check("units_items_priority_positive", sql`${table.priority} > 0`),
     unique("units_items_unit_id_priority_unique").on(table.unitId, table.priority),
+  ],
+);
+
+export const scenarios = pgTable("scenarios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const scenariosRows = pgTable(
+  "scenarios_rows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    scenarioId: uuid("scenario_id").notNull().references(() => scenarios.id, { onDelete: "cascade" }),
+    rowType: rowTypeEnum("row_type").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("scenarios_rows_scenario_id_idx").on(table.scenarioId),
+    unique("scenarios_rows_scenario_id_row_type_unique").on(table.scenarioId, table.rowType),
+  ],
+);
+
+// Unique on (rowId, slot) — not (rowId, unitId) — so the same unit can occupy
+// multiple slots within the same row and appear in multiple rows within the
+// same scenario (e.g., fielding duplicate squads or versatile units).
+export const scenariosRowsUnits = pgTable(
+  "scenarios_rows_units",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    rowId: uuid("row_id").notNull().references(() => scenariosRows.id, { onDelete: "cascade" }),
+    unitId: uuid("unit_id").notNull().references(() => units.id, { onDelete: "cascade" }),
+    slot: integer("slot").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("scenarios_rows_units_row_id_idx").on(table.rowId),
+    index("scenarios_rows_units_unit_id_idx").on(table.unitId),
+    check("scenarios_rows_units_slot_positive", sql`${table.slot} >= 1`),
+    unique("scenarios_rows_units_row_id_slot_unique").on(table.rowId, table.slot),
   ],
 );

@@ -1,4 +1,4 @@
-import { effects, items, itemsSpells, spells, spellsEffects, units, unitsItems } from "./schema";
+import { effects, items, itemsSpells, scenarios, scenariosRows, scenariosRowsUnits, spells, spellsEffects, units, unitsItems } from "./schema";
 
 const now = new Date();
 
@@ -266,5 +266,56 @@ export const unitsItemsSeedData: (typeof unitsItems.$inferInsert)[] = [
     unitId: "f0000000-0000-0000-0000-000000000003", // Ranger
     itemId: "d0000000-0000-0000-0000-000000000003", // Leather Shield
     priority: 1,
+  },
+];
+
+export const scenarioSeedData: (typeof scenarios.$inferInsert)[] = [
+  {
+    id: "h0000000-0000-0000-0000-000000000001",
+    name: "Ambush at Dawn",
+  },
+];
+
+export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
+  {
+    id: "i0000000-0000-0000-0000-000000000001",
+    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "tank" as const,
+  },
+  {
+    id: "i0000000-0000-0000-0000-000000000002",
+    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "melee" as const,
+  },
+  {
+    id: "i0000000-0000-0000-0000-000000000003",
+    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "ranged" as const,
+  },
+  {
+    id: "i0000000-0000-0000-0000-000000000004",
+    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "support" as const,
+  },
+];
+
+export const scenariosRowsUnitsSeedData: (typeof scenariosRowsUnits.$inferInsert)[] = [
+  {
+    id: "j0000000-0000-0000-0000-000000000001",
+    rowId: "i0000000-0000-0000-0000-000000000002", // melee row
+    unitId: "f0000000-0000-0000-0000-000000000001", // Barbarian
+    slot: 1,
+  },
+  {
+    id: "j0000000-0000-0000-0000-000000000002",
+    rowId: "i0000000-0000-0000-0000-000000000003", // ranged row
+    unitId: "f0000000-0000-0000-0000-000000000002", // Mage
+    slot: 1,
+  },
+  {
+    id: "j0000000-0000-0000-0000-000000000003",
+    rowId: "i0000000-0000-0000-0000-000000000004", // support row
+    unitId: "f0000000-0000-0000-0000-000000000003", // Ranger
+    slot: 1,
   },
 ];

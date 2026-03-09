@@ -274,6 +274,10 @@ export const scenarioSeedData: (typeof scenarios.$inferInsert)[] = [
     id: "a2000000-0000-0000-0000-000000000001",
     name: "Ambush at Dawn",
   },
+  {
+    id: "a2000000-0000-0000-0000-000000000002",
+    name: "Castle Siege",
+  },
 ];
 
 export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
@@ -295,6 +299,26 @@ export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
   {
     id: "a3000000-0000-0000-0000-000000000004",
     scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "support" as const,
+  },
+  {
+    id: "a3000000-0000-0000-0000-000000000005",
+    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
+    rowType: "tank" as const,
+  },
+  {
+    id: "a3000000-0000-0000-0000-000000000006",
+    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
+    rowType: "melee" as const,
+  },
+  {
+    id: "a3000000-0000-0000-0000-000000000007",
+    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
+    rowType: "ranged" as const,
+  },
+  {
+    id: "a3000000-0000-0000-0000-000000000008",
+    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
     rowType: "support" as const,
   },
 ];

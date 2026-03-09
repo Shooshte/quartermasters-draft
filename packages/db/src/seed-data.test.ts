@@ -368,8 +368,8 @@ describe("unitsItemsSeedData", () => {
 });
 
 describe("scenarioSeedData", () => {
-  it("has 1 scenario record", () => {
-    expect(scenarioSeedData).toHaveLength(1);
+  it("has 2 scenario records", () => {
+    expect(scenarioSeedData).toHaveLength(2);
   });
 
   it("each record has required fields: name", () => {
@@ -392,8 +392,8 @@ describe("scenarioSeedData", () => {
 });
 
 describe("scenariosRowsSeedData", () => {
-  it("has 4 records", () => {
-    expect(scenariosRowsSeedData).toHaveLength(4);
+  it("has 8 records", () => {
+    expect(scenariosRowsSeedData).toHaveLength(8);
   });
 
   it("each record has required fields: scenarioId, rowType", () => {

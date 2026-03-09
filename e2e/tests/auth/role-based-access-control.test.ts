@@ -17,7 +17,7 @@ test.describe("Role-Based Access Control", () => {
     test("game master can access /create", async ({ gmPage: page }) => {
       await page.goto("/create");
       await expect(page).toHaveURL(/\/create/);
-      await expect(page.getByRole("heading", { name: "Create Game" })).toBeVisible();
+      await expect(page.getByTestId("entity-workspace")).toBeVisible();
     });
 
     test("game master can access /play", async ({ gmPage: page }) => {

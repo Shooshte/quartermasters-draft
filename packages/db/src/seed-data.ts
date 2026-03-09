@@ -250,19 +250,19 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
 
 export const unitsItemsSeedData: (typeof unitsItems.$inferInsert)[] = [
   {
-    id: "g0000000-0000-0000-0000-000000000001",
+    id: "a1000000-0000-0000-0000-000000000001",
     unitId: "f0000000-0000-0000-0000-000000000001", // Barbarian
     itemId: "d0000000-0000-0000-0000-000000000001", // Iron Sword
     priority: 1,
   },
   {
-    id: "g0000000-0000-0000-0000-000000000002",
+    id: "a1000000-0000-0000-0000-000000000002",
     unitId: "f0000000-0000-0000-0000-000000000002", // Mage
     itemId: "d0000000-0000-0000-0000-000000000002", // Oak Staff
     priority: 1,
   },
   {
-    id: "g0000000-0000-0000-0000-000000000003",
+    id: "a1000000-0000-0000-0000-000000000003",
     unitId: "f0000000-0000-0000-0000-000000000003", // Ranger
     itemId: "d0000000-0000-0000-0000-000000000003", // Leather Shield
     priority: 1,
@@ -271,50 +271,50 @@ export const unitsItemsSeedData: (typeof unitsItems.$inferInsert)[] = [
 
 export const scenarioSeedData: (typeof scenarios.$inferInsert)[] = [
   {
-    id: "h0000000-0000-0000-0000-000000000001",
+    id: "a2000000-0000-0000-0000-000000000001",
     name: "Ambush at Dawn",
   },
 ];
 
 export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
   {
-    id: "i0000000-0000-0000-0000-000000000001",
-    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    id: "a3000000-0000-0000-0000-000000000001",
+    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
     rowType: "tank" as const,
   },
   {
-    id: "i0000000-0000-0000-0000-000000000002",
-    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    id: "a3000000-0000-0000-0000-000000000002",
+    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
     rowType: "melee" as const,
   },
   {
-    id: "i0000000-0000-0000-0000-000000000003",
-    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    id: "a3000000-0000-0000-0000-000000000003",
+    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
     rowType: "ranged" as const,
   },
   {
-    id: "i0000000-0000-0000-0000-000000000004",
-    scenarioId: "h0000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    id: "a3000000-0000-0000-0000-000000000004",
+    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
     rowType: "support" as const,
   },
 ];
 
 export const scenariosRowsUnitsSeedData: (typeof scenariosRowsUnits.$inferInsert)[] = [
   {
-    id: "j0000000-0000-0000-0000-000000000001",
-    rowId: "i0000000-0000-0000-0000-000000000002", // melee row
+    id: "a4000000-0000-0000-0000-000000000001",
+    rowId: "a3000000-0000-0000-0000-000000000002", // melee row
     unitId: "f0000000-0000-0000-0000-000000000001", // Barbarian
     slot: 1,
   },
   {
-    id: "j0000000-0000-0000-0000-000000000002",
-    rowId: "i0000000-0000-0000-0000-000000000003", // ranged row
+    id: "a4000000-0000-0000-0000-000000000002",
+    rowId: "a3000000-0000-0000-0000-000000000003", // ranged row
     unitId: "f0000000-0000-0000-0000-000000000002", // Mage
     slot: 1,
   },
   {
-    id: "j0000000-0000-0000-0000-000000000003",
-    rowId: "i0000000-0000-0000-0000-000000000004", // support row
+    id: "a4000000-0000-0000-0000-000000000003",
+    rowId: "a3000000-0000-0000-0000-000000000004", // support row
     unitId: "f0000000-0000-0000-0000-000000000003", // Ranger
     slot: 1,
   },

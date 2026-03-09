@@ -17,8 +17,16 @@ describe("mapDbRole", () => {
     expect(mapDbRole("player")).toBe(UserRole.PLAYER);
   });
 
-  it("defaults unknown roles to player", () => {
-    expect(mapDbRole("unknown")).toBe(UserRole.PLAYER);
+  it("returns null for unknown roles", () => {
+    expect(mapDbRole("unknown")).toBeNull();
+  });
+
+  it("returns null for null input", () => {
+    expect(mapDbRole(null)).toBeNull();
+  });
+
+  it("returns null for undefined input", () => {
+    expect(mapDbRole(undefined)).toBeNull();
   });
 });
 

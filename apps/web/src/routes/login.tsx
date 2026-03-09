@@ -42,7 +42,7 @@ function LoginPage() {
   useEffect(() => {
     if (sessionLoading || !session?.user) return;
     const dbRole = (session.user as { role?: string }).role ?? "player";
-    const role = mapDbRole(dbRole);
+    const role = mapDbRole(dbRole)!;
     const target = getRedirectTarget(role, next);
     if (target.notice) {
       const url = new URL(target.path, window.location.origin);
@@ -81,7 +81,7 @@ function LoginPage() {
       }
 
       const dbRole = (sessionResult.data.user as { role?: string }).role ?? "player";
-      const role = mapDbRole(dbRole);
+      const role = mapDbRole(dbRole)!;
       const target = getRedirectTarget(role, next);
 
       if (target.notice) {

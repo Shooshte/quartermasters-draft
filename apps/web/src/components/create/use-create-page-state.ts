@@ -136,6 +136,16 @@ export function useCreatePageState(
 
   // URL-driven initialization for entity_id
   const entityInitRef = useRef(false);
+  const prevEntityIdRef = useRef(search.entity_id);
+
+  // Reset entity workspace when entity_id URL param changes
+  useEffect(() => {
+    if (search.entity_id !== prevEntityIdRef.current) {
+      prevEntityIdRef.current = search.entity_id;
+      entityInitRef.current = false;
+      setEntityWorkspace(createIdleWorkspace());
+    }
+  }, [search.entity_id]);
 
   // Try to detect entity type when entity_id is provided without tab
   const entityDetectEffects = useQuery({
@@ -174,7 +184,7 @@ export function useCreatePageState(
       { type: "unit" as EntityType, query: entityDetectUnits },
     ];
 
-    const allSettled = detectors.every((d) => !d.query.isLoading);
+    const allSettled = detectors.every((d) => d.query.isFetched);
     if (!allSettled) return;
 
     entityInitRef.current = true;
@@ -214,18 +224,28 @@ export function useCreatePageState(
   }, [
     search.entity_id,
     search.tab,
-    entityDetectEffects.isLoading,
+    entityDetectEffects.isFetched,
     entityDetectEffects.data,
-    entityDetectSpells.isLoading,
+    entityDetectSpells.isFetched,
     entityDetectSpells.data,
-    entityDetectItems.isLoading,
+    entityDetectItems.isFetched,
     entityDetectItems.data,
-    entityDetectUnits.isLoading,
+    entityDetectUnits.isFetched,
     entityDetectUnits.data,
   ]);
 
   // URL-driven scenario initialization
   const scenarioInitRef = useRef(false);
+  const prevScenarioIdRef = useRef(search.scenario_id);
+
+  // Reset scenario workspace when scenario_id URL param changes
+  useEffect(() => {
+    if (search.scenario_id !== prevScenarioIdRef.current) {
+      prevScenarioIdRef.current = search.scenario_id;
+      scenarioInitRef.current = false;
+      setScenarioWorkspace(createIdleWorkspace());
+    }
+  }, [search.scenario_id]);
   const scenarioQuery = useQuery({
     queryKey: ["scenarioBuilder", "scenarios", "get", search.scenario_id],
     queryFn: () => trpc.scenarioBuilder.scenarios.get.query({ id: search.scenario_id! }),
@@ -235,7 +255,7 @@ export function useCreatePageState(
 
   useEffect(() => {
     if (!search.scenario_id || scenarioInitRef.current) return;
-    if (scenarioQuery.isLoading) return;
+    if (!scenarioQuery.isFetched) return;
 
     scenarioInitRef.current = true;
 
@@ -263,7 +283,7 @@ export function useCreatePageState(
         isDirty: false,
       });
     }
-  }, [search.scenario_id, search.tab, activeTab, scenarioQuery.isLoading, scenarioQuery.data]);
+  }, [search.scenario_id, search.tab, activeTab, scenarioQuery.isFetched, scenarioQuery.data]);
 
   const setActiveTab = useCallback((tab: TabName) => {
     setActiveTabState(tab);

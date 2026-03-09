@@ -227,3 +227,119 @@ describe("useCreatePageState — lazy loading", () => {
     });
   });
 });
+
+describe("useCreatePageState — URL param change resets", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEffectsList.mockResolvedValue({ items: [] });
+    mockSpellsList.mockResolvedValue({ items: [] });
+    mockItemsList.mockResolvedValue({ items: [] });
+    mockUnitsList.mockResolvedValue({ items: [] });
+    mockScenariosList.mockResolvedValue({ items: [] });
+    mockEffectsGet.mockRejectedValue(new Error("not found"));
+    mockSpellsGet.mockRejectedValue(new Error("not found"));
+    mockItemsGet.mockRejectedValue(new Error("not found"));
+    mockUnitsGet.mockRejectedValue(new Error("not found"));
+    mockScenariosGet.mockRejectedValue(new Error("not found"));
+  });
+
+  it("reloads entity when entity_id URL param changes", async () => {
+    mockSpellsGet
+      .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })
+      .mockResolvedValueOnce({ id: "s2", name: "Ice Bolt", damage: 30 });
+
+    const search = { tab: "Spells" as const, entity_id: "s1" };
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search } },
+    );
+
+    // Wait for entity A to load
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+      expect(result.current.entityWorkspace.entityId).toBe("s1");
+    });
+
+    // Navigate to a different entity_id
+    rerender({ search: { tab: "Spells", entity_id: "s2" } });
+
+    // Entity B should load
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.entityId).toBe("s2");
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+    });
+  });
+
+  it("resets entity workspace to idle when entity_id is removed", async () => {
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 });
+
+    const search = { tab: "Spells" as const, entity_id: "s1" };
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+    });
+
+    // Remove entity_id from URL
+    rerender({ search: { tab: "Spells" } });
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("idle");
+      expect(result.current.entityWorkspace.entityId).toBeNull();
+    });
+  });
+
+  it("reloads scenario when scenario_id URL param changes", async () => {
+    mockScenariosGet
+      .mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" })
+      .mockResolvedValueOnce({ id: "sc2", name: "Siege", difficulty: "easy" });
+
+    const search = { tab: "Scenarios" as const, scenario_id: "sc1" };
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+      expect(result.current.scenarioWorkspace.entityId).toBe("sc1");
+    });
+
+    // Navigate to different scenario_id
+    rerender({ search: { tab: "Scenarios", scenario_id: "sc2" } });
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.entityId).toBe("sc2");
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+    });
+  });
+
+  it("resets scenario workspace to idle when scenario_id is removed", async () => {
+    mockScenariosGet.mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" });
+
+    const search = { tab: "Scenarios" as const, scenario_id: "sc1" };
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+    });
+
+    // Remove scenario_id from URL
+    rerender({ search: { tab: "Scenarios" } });
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.mode).toBe("idle");
+      expect(result.current.scenarioWorkspace.entityId).toBeNull();
+    });
+  });
+});

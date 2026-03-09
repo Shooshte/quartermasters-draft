@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useCreatePageState } from "./use-create-page-state";
 import { EntityWorkspace } from "./entity-workspace";
 import { ScenarioWorkspace } from "./scenario-workspace";
@@ -13,7 +14,8 @@ interface CreatePageProps {
 }
 
 export function CreatePage({ search }: CreatePageProps) {
-  const state = useCreatePageState(search);
+  const navigate = useNavigate();
+  const state = useCreatePageState(search, navigate);
 
   return (
     <main className="flex flex-col gap-4 p-4 h-[calc(100vh-60px)]">

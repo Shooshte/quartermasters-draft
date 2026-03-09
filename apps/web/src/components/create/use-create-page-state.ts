@@ -38,11 +38,14 @@ export interface CreatePageState {
   listLoading: Record<TabName, boolean>;
 }
 
-export function useCreatePageState(search: {
-  tab?: string;
-  entity_id?: string;
-  scenario_id?: string;
-}): CreatePageState {
+export function useCreatePageState(
+  search: {
+    tab?: string;
+    entity_id?: string;
+    scenario_id?: string;
+  },
+  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void,
+): CreatePageState {
   const initialTab = isValidTab(search.tab) ? search.tab : DEFAULT_TAB;
 
   const [activeTab, setActiveTabState] = useState<TabName>(initialTab);
@@ -229,7 +232,8 @@ export function useCreatePageState(search: {
 
   const setActiveTab = useCallback((tab: TabName) => {
     setActiveTabState(tab);
-  }, []);
+    navigate?.({ search: (prev) => ({ ...prev, tab }), replace: true });
+  }, [navigate]);
 
   const loadEntity = useCallback(
     async (tab: TabName, id: string) => {
@@ -248,6 +252,7 @@ export function useCreatePageState(search: {
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
+        navigate?.({ search: (prev) => ({ ...prev, entity_id: id }), replace: true });
       } catch {
         setEntityWorkspace({
           mode: "not-found",
@@ -259,7 +264,7 @@ export function useCreatePageState(search: {
         });
       }
     },
-    [],
+    [navigate],
   );
 
   const loadScenario = useCallback(async (id: string) => {
@@ -275,6 +280,7 @@ export function useCreatePageState(search: {
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Scenarios: id }));
+      navigate?.({ search: (prev) => ({ ...prev, scenario_id: id }), replace: true });
     } catch {
       setScenarioWorkspace({
         mode: "not-found",
@@ -285,7 +291,7 @@ export function useCreatePageState(search: {
         isDirty: false,
       });
     }
-  }, []);
+  }, [navigate]);
 
   const executePendingAction = useCallback(
     (action: PendingAction) => {
@@ -306,6 +312,14 @@ export function useCreatePageState(search: {
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
+          navigate?.({
+            search: (prev) => {
+              const next = { ...prev };
+              delete next.scenario_id;
+              return next;
+            },
+            replace: true,
+          });
         } else if (isEntityTab(action.tab)) {
           const entityType = TAB_TO_ENTITY_TYPE[action.tab];
           setEntityWorkspace({
@@ -317,10 +331,18 @@ export function useCreatePageState(search: {
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
+          navigate?.({
+            search: (prev) => {
+              const next = { ...prev };
+              delete next.entity_id;
+              return next;
+            },
+            replace: true,
+          });
         }
       }
     },
-    [loadEntity, loadScenario],
+    [loadEntity, loadScenario, navigate],
   );
 
   const selectRecord = useCallback(

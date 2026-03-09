@@ -377,3 +377,75 @@ Feature: Scenario builder page shell
       And I should be able to cancel creating a new scenario
       And the "Ambush at Dawn" record should remain selected in the visible library
       And the scenario workspace should continue showing "Ambush at Dawn Updated"
+
+  Rule: The library list always displays a fixed-height area for exactly 10 rows
+
+    Scenario: The library list area has a fixed height and scrolls when content overflows
+      Given I am on the "/create" page
+      When I view the library panel
+      Then the list area should have a fixed height for exactly 10 rows
+      And the list area should scroll vertically when more than 10 records exist
+
+    Scenario: Loading and empty states occupy the same fixed-height area
+      Given no effect records exist
+      And I am on the "/create" page
+      When I click the "Effects" tab
+      Then the empty state should be displayed inside the fixed-height list area
+
+  Rule: User interactions update URL search parameters
+
+    Scenario: Changing the active tab updates the tab URL parameter
+      Given I am on the "/create" page
+      When I click the "Spells" tab
+      Then the URL should contain "tab=Spells"
+
+    Scenario Outline: Selecting an entity updates the entity_id URL parameter
+      Given a <entity_type> named "<record_name>" exists
+      And I am on the "/create" page
+      And I have opened the "<tab_name>" tab
+      When I select the <entity_type> "<record_name>"
+      Then the URL should contain "entity_id=" followed by the <entity_type> "<record_name>" id
+
+      Examples:
+        | tab_name | entity_type | record_name    |
+        | Effects  | effect      | Barbarian Roar |
+        | Spells   | spell       | Fireball       |
+        | Items    | item        | Iron Sword     |
+        | Units    | unit        | Barbarian      |
+
+    Scenario: Selecting a scenario updates the scenario_id URL parameter
+      Given a scenario named "Ambush at Dawn" exists
+      And I am on the "/create" page
+      And I have opened the "Scenarios" tab
+      When I select the scenario "Ambush at Dawn"
+      Then the URL should contain "scenario_id=" followed by the scenario "Ambush at Dawn" id
+
+    Scenario: Creating a new entity removes entity_id from the URL
+      Given a spell named "Fireball" exists
+      And I am on the "/create" page
+      And I have opened the "Spells" tab
+      And I select the spell "Fireball"
+      When I click "New Spell"
+      Then the URL should not contain "entity_id"
+
+    Scenario: Creating a new scenario removes scenario_id from the URL
+      Given a scenario named "Ambush at Dawn" exists
+      And I am on the "/create" page
+      And I have opened the "Scenarios" tab
+      And I select the scenario "Ambush at Dawn"
+      When I click "New Scenario"
+      Then the URL should not contain "scenario_id"
+
+    Scenario: Tab changes preserve existing entity_id and scenario_id parameters
+      Given a spell named "Fireball" exists
+      And a scenario named "Ambush at Dawn" exists
+      And I am on the "/create" page with the spell "Fireball" and scenario "Ambush at Dawn" loaded
+      When I click the "Items" tab
+      Then the URL should contain "tab=Items"
+      And the URL should still contain "entity_id"
+      And the URL should still contain "scenario_id"
+
+    Scenario: URL parameters are updated without adding browser history entries
+      Given I am on the "/create" page
+      When I click the "Spells" tab
+      Then the URL should be updated using replace (no new history entry)

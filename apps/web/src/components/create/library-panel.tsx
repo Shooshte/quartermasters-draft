@@ -22,7 +22,7 @@ export function LibraryPanel({
   onCreateNew,
 }: LibraryPanelProps) {
   return (
-    <div data-testid="library-panel" className="min-h-[200px]">
+    <div data-testid="library-panel">
       <Tabs
         value={activeTab}
         onValueChange={(val) => onTabChange(val as TabName)}

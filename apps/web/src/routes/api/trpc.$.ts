@@ -20,7 +20,7 @@ async function handler({ request }: { request: Request }) {
 
       return {
         userId: session.user.id,
-        userRole: mapDbRole((session.user as { role?: string }).role ?? "player"),
+        userRole: mapDbRole((session.user as { role?: string }).role),
       };
     },
   });

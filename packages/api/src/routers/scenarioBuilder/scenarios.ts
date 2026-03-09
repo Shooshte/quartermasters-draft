@@ -1,15 +1,20 @@
 import { TRPCError } from "@trpc/server";
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
+import { listInput } from "./shared";
 
 export const scenariosRouter = router({
-  list: gmProcedure.query(async () => {
-    return db
+  list: gmProcedure.input(listInput).query(async ({ input }) => {
+    const offset = (input.page - 1) * input.limit;
+    const items = await db
       .select({ id: scenarios.id, name: scenarios.name, updatedAt: scenarios.updatedAt })
       .from(scenarios)
-      .orderBy(asc(scenarios.name));
+      .orderBy(asc(scenarios.name))
+      .limit(input.limit)
+      .offset(offset);
+    return { items, page: input.page, limit: input.limit };
   }),
 
   get: gmProcedure
@@ -27,9 +32,8 @@ export const scenariosRouter = router({
       const rows = await db
         .select({ id: scenariosRows.id, rowType: scenariosRows.rowType })
         .from(scenariosRows)
-        .where(eq(scenariosRows.scenarioId, input.id));
-
-      rows.sort((a, b) => a.rowType.localeCompare(b.rowType));
+        .where(eq(scenariosRows.scenarioId, input.id))
+        .orderBy(asc(sql`${scenariosRows.rowType}::text`));
 
       const rowIds = rows.map((r) => r.id);
 

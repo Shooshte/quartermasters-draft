@@ -27,7 +27,7 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
   return {
     authenticated: true as const,
     userId: session.user.id,
-    userRole: mapDbRole(dbRole),
+    userRole: mapDbRole(dbRole)!,
   };
 });
 

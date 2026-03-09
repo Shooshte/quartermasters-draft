@@ -3,13 +3,18 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, items, itemsSpells } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
+import { listInput } from "./shared";
 
 export const itemsRouter = router({
-  list: gmProcedure.query(async () => {
-    return db
+  list: gmProcedure.input(listInput).query(async ({ input }) => {
+    const offset = (input.page - 1) * input.limit;
+    const rows = await db
       .select({ id: items.id, name: items.name, updatedAt: items.updatedAt })
       .from(items)
-      .orderBy(asc(items.name));
+      .orderBy(asc(items.name))
+      .limit(input.limit)
+      .offset(offset);
+    return { items: rows, page: input.page, limit: input.limit };
   }),
 
   get: gmProcedure

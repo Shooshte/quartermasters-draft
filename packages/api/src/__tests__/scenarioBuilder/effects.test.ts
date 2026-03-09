@@ -23,7 +23,9 @@ const anonCtx: Context = { userId: null, userRole: null };
 function chainable(data: unknown) {
   const chain: Record<string, unknown> = {};
   chain.from = vi.fn().mockReturnValue(chain);
-  chain.orderBy = vi.fn().mockResolvedValue(data);
+  chain.orderBy = vi.fn().mockReturnValue(chain);
+  chain.limit = vi.fn().mockReturnValue(chain);
+  chain.offset = vi.fn().mockResolvedValue(data);
   chain.where = vi.fn().mockReturnValue(chain);
   chain.then = (resolve: (v: unknown) => void) => resolve(data);
   return chain;
@@ -49,7 +51,7 @@ describe("effectsRouter", () => {
       });
     });
 
-    it("returns effects ordered by name", async () => {
+    it("returns effects ordered by name with pagination", async () => {
       const mockEffects = [
         { id: "1", name: "Alpha", updatedAt: new Date() },
         { id: "2", name: "Beta", updatedAt: new Date() },
@@ -58,7 +60,30 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.list();
-      expect(result).toEqual(mockEffects);
+      expect(result.items).toEqual(mockEffects);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(100);
+    });
+
+    it("uses default pagination when no input provided", async () => {
+      mockSelect.mockReturnValue(chainable([]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.effects.list();
+      expect(result).toEqual({ items: [], page: 1, limit: 100 });
+    });
+
+    it("respects custom page and limit", async () => {
+      const mockEffects = [
+        { id: "3", name: "Gamma", updatedAt: new Date() },
+      ];
+      mockSelect.mockReturnValue(chainable(mockEffects));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.effects.list({ page: 2, limit: 10 });
+      expect(result.items).toEqual(mockEffects);
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(10);
     });
   });
 

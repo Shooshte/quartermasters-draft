@@ -6,10 +6,9 @@ const dbRoleToUserRole: Record<string, UserRole> = {
   player: Roles.PLAYER,
 };
 
-export function mapDbRole(dbRole: string): UserRole {
-  const mapped = dbRoleToUserRole[dbRole];
-  if (!mapped) return Roles.PLAYER; // safe default
-  return mapped;
+export function mapDbRole(dbRole: string | null | undefined): UserRole | null {
+  if (!dbRole) return null;
+  return dbRoleToUserRole[dbRole] ?? null;
 }
 
 /** Default landing page per role after login. */

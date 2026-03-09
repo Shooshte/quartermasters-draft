@@ -16,12 +16,14 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data).toHaveLength(7);
+    expect(data.items).toHaveLength(7);
+    expect(data.page).toBe(1);
+    expect(data.limit).toBe(100);
     // Alphabetical order
-    const names = data.map((e: { name: string }) => e.name);
+    const names = data.items.map((e: { name: string }) => e.name);
     expect(names).toEqual([...names].sort());
     // Each item has expected shape
-    for (const item of data) {
+    for (const item of data.items) {
       expect(item).toHaveProperty("id");
       expect(item).toHaveProperty("name");
       expect(item).toHaveProperty("updatedAt");
@@ -44,8 +46,10 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.spells.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data).toHaveLength(3);
-    const names = data.map((s: { name: string }) => s.name);
+    expect(data.items).toHaveLength(3);
+    expect(data.page).toBe(1);
+    expect(data.limit).toBe(100);
+    const names = data.items.map((s: { name: string }) => s.name);
     expect(names).toEqual([...names].sort());
   });
 
@@ -68,8 +72,10 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.items.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data).toHaveLength(3);
-    const names = data.map((i: { name: string }) => i.name);
+    expect(data.items).toHaveLength(3);
+    expect(data.page).toBe(1);
+    expect(data.limit).toBe(100);
+    const names = data.items.map((i: { name: string }) => i.name);
     expect(names).toEqual([...names].sort());
   });
 
@@ -88,8 +94,10 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.units.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data).toHaveLength(3);
-    const names = data.map((u: { name: string }) => u.name);
+    expect(data.items).toHaveLength(3);
+    expect(data.page).toBe(1);
+    expect(data.limit).toBe(100);
+    const names = data.items.map((u: { name: string }) => u.name);
     expect(names).toEqual([...names].sort());
   });
 
@@ -108,8 +116,10 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.scenarios.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data).toHaveLength(1);
-    expect(data[0].name).toBe("Ambush at Dawn");
+    expect(data.items).toHaveLength(1);
+    expect(data.page).toBe(1);
+    expect(data.limit).toBe(100);
+    expect(data.items[0].name).toBe("Ambush at Dawn");
   });
 
   test("GM can get scenario with rows and assignments", async ({ gmPage }) => {

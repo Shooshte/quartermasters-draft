@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter, type Context } from "@qd/api";
-import type { UserRole } from "@qd/shared";
 import { auth } from "~/lib/auth";
+import { mapDbRole } from "~/lib/route-utils";
 
 async function handler({ request }: { request: Request }) {
   return fetchRequestHandler({
@@ -20,7 +20,7 @@ async function handler({ request }: { request: Request }) {
 
       return {
         userId: session.user.id,
-        userRole: (session.user as { role?: string }).role as UserRole | null,
+        userRole: mapDbRole((session.user as { role?: string }).role ?? "player"),
       };
     },
   });

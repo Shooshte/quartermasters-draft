@@ -1,19 +1,25 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { canAccessRoute } from "~/lib/route-utils";
+import { CreatePage } from "~/components/create/create-page";
 
 export const Route = createFileRoute("/_authenticated/create")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    scenario_id:
+      typeof search.scenario_id === "string" ? search.scenario_id : undefined,
+    entity_id:
+      typeof search.entity_id === "string" ? search.entity_id : undefined,
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
   beforeLoad: ({ context }) => {
     if (!canAccessRoute(context.userRole, "/create")) {
-      throw redirect({ to: "/403" });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      throw redirect({ to: "/403" } as any);
     }
   },
-  component: CreatePage,
+  component: CreatePageRoute,
 });
 
-function CreatePage() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center">
-      <h1 className="text-4xl font-bold">Create Game</h1>
-    </main>
-  );
+function CreatePageRoute() {
+  const search = Route.useSearch();
+  return <CreatePage search={search} />;
 }

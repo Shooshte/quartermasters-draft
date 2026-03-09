@@ -178,11 +178,17 @@ export function useCreatePageState(
   // URL-driven initialization for entity_id
   const entityInitRef = useRef(false);
   const prevEntityIdRef = useRef(search.entity_id);
+  // Skip URL-driven reset when we ourselves triggered the navigation (e.g. create mode)
+  const skipEntityResetRef = useRef(false);
 
   // Reset entity workspace when entity_id URL param changes
   useEffect(() => {
     if (search.entity_id !== prevEntityIdRef.current) {
       prevEntityIdRef.current = search.entity_id;
+      if (skipEntityResetRef.current) {
+        skipEntityResetRef.current = false;
+        return;
+      }
       entityInitRef.current = false;
       setEntityWorkspace(createIdleWorkspace());
     }
@@ -278,11 +284,16 @@ export function useCreatePageState(
   // URL-driven scenario initialization
   const scenarioInitRef = useRef(false);
   const prevScenarioIdRef = useRef(search.scenario_id);
+  const skipScenarioResetRef = useRef(false);
 
   // Reset scenario workspace when scenario_id URL param changes
   useEffect(() => {
     if (search.scenario_id !== prevScenarioIdRef.current) {
       prevScenarioIdRef.current = search.scenario_id;
+      if (skipScenarioResetRef.current) {
+        skipScenarioResetRef.current = false;
+        return;
+      }
       scenarioInitRef.current = false;
       setScenarioWorkspace(createIdleWorkspace());
     }
@@ -434,6 +445,7 @@ export function useCreatePageState(
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
+          skipScenarioResetRef.current = true;
           navigate?.({
             search: (prev) => {
               const next = { ...prev };
@@ -453,6 +465,7 @@ export function useCreatePageState(
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
+          skipEntityResetRef.current = true;
           navigate?.({
             search: (prev) => {
               const next = { ...prev };
@@ -553,6 +566,7 @@ export function useCreatePageState(
       if (scenarioWorkspace.entityId === deleteTarget.id) {
         setScenarioWorkspace(createIdleWorkspace());
         setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
+        skipScenarioResetRef.current = true;
         navigate?.({
           search: (prev) => {
             const next = { ...prev };

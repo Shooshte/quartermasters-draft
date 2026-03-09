@@ -78,7 +78,7 @@ Feature: Scenario builder scenarios library tab
   # Rule: The list can be sorted
   # ─────────────────────────────────────────────
 
-  Rule: The game master can sort scenarios by name or creation date
+  Rule: The game master can sort scenarios by name or last update date
 
     Scenario: Default sort order is by name ascending
       Given the seed scenarios exist:
@@ -96,26 +96,26 @@ Feature: Scenario builder scenarios library tab
       When I sort by "Name" descending
       Then "Castle Siege" should appear before "Ambush at Dawn"
 
-    Scenario: Sort by creation date ascending
-      # Seed scenarios share the same DB-assigned createdAt timestamp.
-      # This scenario requires scenarios with distinct creation dates,
+    Scenario: Sort by last update date ascending
+      # Seed scenarios share the same DB-assigned updatedAt timestamp.
+      # This scenario requires scenarios with distinct update dates,
       # so additional records are created with explicit timestamps.
-      Given the following scenarios exist with explicit creation dates:
-        | name              | created_at           |
+      Given the following scenarios exist with explicit update dates:
+        | name              | updated_at           |
         | Ambush at Dawn    | 2025-04-01T00:00:00Z |
         | Castle Siege      | 2025-05-01T00:00:00Z |
         | Zombie Horde      | 2025-06-01T00:00:00Z |
-      When I sort by "Created" ascending
+      When I sort by "Last Update" ascending
       Then "Ambush at Dawn" should appear before "Castle Siege"
       And "Castle Siege" should appear before "Zombie Horde"
 
-    Scenario: Sort by creation date descending
-      Given the following scenarios exist with explicit creation dates:
-        | name              | created_at           |
+    Scenario: Sort by last update date descending
+      Given the following scenarios exist with explicit update dates:
+        | name              | updated_at           |
         | Ambush at Dawn    | 2025-04-01T00:00:00Z |
         | Castle Siege      | 2025-05-01T00:00:00Z |
         | Zombie Horde      | 2025-06-01T00:00:00Z |
-      When I sort by "Created" descending
+      When I sort by "Last Update" descending
       Then "Zombie Horde" should appear before "Castle Siege"
       And "Castle Siege" should appear before "Ambush at Dawn"
 

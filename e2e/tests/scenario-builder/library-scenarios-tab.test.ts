@@ -128,8 +128,8 @@ test.describe("Scenarios Library Tab — Pagination", () => {
     await gmPage.getByRole("button", { name: "Next page" }).click();
     await expect(gmPage.getByRole("option", { name: /Zombie Horde/ })).toBeVisible();
 
-    // Change sort to Created
-    await gmPage.getByRole("button", { name: /Created/ }).click();
+    // Change sort to Last Update
+    await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
     // Should be back on page 1
     await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
@@ -165,12 +165,12 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     expect(second).toBe("Jungle Trek");
   });
 
-  test("sort by creation date ascending", async ({ gmPage }) => {
+  test("sort by last update date ascending", async ({ gmPage }) => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
-    // Click Created to sort by createdAt ascending
-    await gmPage.getByRole("button", { name: /Created/ }).click();
+    // Click Last Update to sort by updatedAt ascending
+    await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
     const options = gmPage.getByRole("option");
     const first = await options.nth(0).getAttribute("aria-label");
@@ -182,13 +182,13 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     expect(third).toBe("Zombie Horde");
   });
 
-  test("sort by creation date descending", async ({ gmPage }) => {
+  test("sort by last update date descending", async ({ gmPage }) => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
-    // Click Created to sort ascending, then click again for descending
-    await gmPage.getByRole("button", { name: /Created/ }).click();
-    await gmPage.getByRole("button", { name: /Created/ }).click();
+    // Click Last Update to sort ascending, then click again for descending
+    await gmPage.getByRole("button", { name: /Last Update/ }).click();
+    await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
     const options = gmPage.getByRole("option");
     const first = await options.nth(0).getAttribute("aria-label");

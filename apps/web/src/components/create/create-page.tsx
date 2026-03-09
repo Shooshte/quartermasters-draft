@@ -4,6 +4,7 @@ import { EntityWorkspace } from "./entity-workspace";
 import { ScenarioWorkspace } from "./scenario-workspace";
 import { LibraryPanel } from "./library-panel";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
+import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 
 interface CreatePageProps {
   search: {
@@ -37,11 +38,25 @@ export function CreatePage({ search }: CreatePageProps) {
         onTabChange={state.setActiveTab}
         onSelectRecord={state.selectRecord}
         onCreateNew={state.createNew}
+        scenarioListItems={state.scenarioListItems}
+        scenarioPage={state.scenarioPage}
+        scenarioTotalPages={state.scenarioTotalPages}
+        scenarioSortBy={state.scenarioSortBy}
+        scenarioSortDir={state.scenarioSortDir}
+        onScenarioPageChange={state.setScenarioPage}
+        onScenarioSortChange={state.setScenarioSort}
+        onDeleteScenario={state.requestDeleteScenario}
       />
       <UnsavedChangesDialog
         open={state.isDialogOpen}
         onCancel={state.cancelDiscard}
         onDiscard={state.confirmDiscard}
+      />
+      <DeleteConfirmDialog
+        open={state.isDeleteDialogOpen}
+        scenarioName={state.deleteTarget?.name ?? ""}
+        onCancel={state.cancelDeleteScenario}
+        onConfirm={state.confirmDeleteScenario}
       />
     </main>
   );

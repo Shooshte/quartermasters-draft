@@ -7,7 +7,8 @@ const mockListQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 const mockGetQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 
 const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
-        mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet } = vi.hoisted(() => {
+        mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
+        mockScenariosDelete } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
@@ -18,9 +19,11 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
   const mockItemsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosGet = vi.fn().mockRejectedValue(new Error("not found"));
+  const mockScenariosDelete = vi.fn().mockResolvedValue({ success: true });
   return {
     mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
+    mockScenariosDelete,
   };
 });
 
@@ -31,7 +34,7 @@ vi.mock("~/lib/trpc", () => ({
       spells: { list: { query: mockSpellsList }, get: { query: mockSpellsGet } },
       items: { list: { query: mockItemsList }, get: { query: mockItemsGet } },
       units: { list: { query: mockUnitsList }, get: { query: mockUnitsGet } },
-      scenarios: { list: { query: mockScenariosList }, get: { query: mockScenariosGet } },
+      scenarios: { list: { query: mockScenariosList }, get: { query: mockScenariosGet }, delete: { mutate: mockScenariosDelete } },
     },
   },
 }));
@@ -51,19 +54,24 @@ function createWrapper() {
   };
 }
 
+function resetMocks() {
+  vi.clearAllMocks();
+  mockEffectsList.mockResolvedValue({ items: [] });
+  mockSpellsList.mockResolvedValue({ items: [] });
+  mockItemsList.mockResolvedValue({ items: [] });
+  mockUnitsList.mockResolvedValue({ items: [] });
+  mockScenariosList.mockResolvedValue({ items: [], totalCount: 0 });
+  mockEffectsGet.mockRejectedValue(new Error("not found"));
+  mockSpellsGet.mockRejectedValue(new Error("not found"));
+  mockItemsGet.mockRejectedValue(new Error("not found"));
+  mockUnitsGet.mockRejectedValue(new Error("not found"));
+  mockScenariosGet.mockRejectedValue(new Error("not found"));
+  mockScenariosDelete.mockResolvedValue({ success: true });
+}
+
 describe("useCreatePageState — isDirty (full form surface)", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockEffectsList.mockResolvedValue({ items: [] });
-    mockSpellsList.mockResolvedValue({ items: [] });
-    mockItemsList.mockResolvedValue({ items: [] });
-    mockUnitsList.mockResolvedValue({ items: [] });
-    mockScenariosList.mockResolvedValue({ items: [] });
-    mockEffectsGet.mockRejectedValue(new Error("not found"));
-    mockSpellsGet.mockRejectedValue(new Error("not found"));
-    mockItemsGet.mockRejectedValue(new Error("not found"));
-    mockUnitsGet.mockRejectedValue(new Error("not found"));
-    mockScenariosGet.mockRejectedValue(new Error("not found"));
+    resetMocks();
   });
 
   it("entity isDirty is false when formValues match original data", async () => {
@@ -146,17 +154,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
 
 describe("useCreatePageState — lazy loading", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockEffectsList.mockResolvedValue({ items: [] });
-    mockSpellsList.mockResolvedValue({ items: [] });
-    mockItemsList.mockResolvedValue({ items: [] });
-    mockUnitsList.mockResolvedValue({ items: [] });
-    mockScenariosList.mockResolvedValue({ items: [] });
-    mockEffectsGet.mockRejectedValue(new Error("not found"));
-    mockSpellsGet.mockRejectedValue(new Error("not found"));
-    mockItemsGet.mockRejectedValue(new Error("not found"));
-    mockUnitsGet.mockRejectedValue(new Error("not found"));
-    mockScenariosGet.mockRejectedValue(new Error("not found"));
+    resetMocks();
   });
 
   it("on cold load with Scenarios tab, only scenarios list query fires initially", async () => {
@@ -230,17 +228,7 @@ describe("useCreatePageState — lazy loading", () => {
 
 describe("useCreatePageState — loading state", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockEffectsList.mockResolvedValue({ items: [] });
-    mockSpellsList.mockResolvedValue({ items: [] });
-    mockItemsList.mockResolvedValue({ items: [] });
-    mockUnitsList.mockResolvedValue({ items: [] });
-    mockScenariosList.mockResolvedValue({ items: [] });
-    mockEffectsGet.mockRejectedValue(new Error("not found"));
-    mockSpellsGet.mockRejectedValue(new Error("not found"));
-    mockItemsGet.mockRejectedValue(new Error("not found"));
-    mockUnitsGet.mockRejectedValue(new Error("not found"));
-    mockScenariosGet.mockRejectedValue(new Error("not found"));
+    resetMocks();
   });
 
   it("entity workspace enters loading mode while fetching", async () => {
@@ -296,17 +284,7 @@ describe("useCreatePageState — loading state", () => {
 
 describe("useCreatePageState — race condition protection", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockEffectsList.mockResolvedValue({ items: [] });
-    mockSpellsList.mockResolvedValue({ items: [] });
-    mockItemsList.mockResolvedValue({ items: [] });
-    mockUnitsList.mockResolvedValue({ items: [] });
-    mockScenariosList.mockResolvedValue({ items: [] });
-    mockEffectsGet.mockRejectedValue(new Error("not found"));
-    mockSpellsGet.mockRejectedValue(new Error("not found"));
-    mockItemsGet.mockRejectedValue(new Error("not found"));
-    mockUnitsGet.mockRejectedValue(new Error("not found"));
-    mockScenariosGet.mockRejectedValue(new Error("not found"));
+    resetMocks();
   });
 
   it("discards stale entity response when a newer selection is made", async () => {
@@ -391,17 +369,7 @@ describe("useCreatePageState — race condition protection", () => {
 
 describe("useCreatePageState — URL param change resets", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockEffectsList.mockResolvedValue({ items: [] });
-    mockSpellsList.mockResolvedValue({ items: [] });
-    mockItemsList.mockResolvedValue({ items: [] });
-    mockUnitsList.mockResolvedValue({ items: [] });
-    mockScenariosList.mockResolvedValue({ items: [] });
-    mockEffectsGet.mockRejectedValue(new Error("not found"));
-    mockSpellsGet.mockRejectedValue(new Error("not found"));
-    mockItemsGet.mockRejectedValue(new Error("not found"));
-    mockUnitsGet.mockRejectedValue(new Error("not found"));
-    mockScenariosGet.mockRejectedValue(new Error("not found"));
+    resetMocks();
   });
 
   it("reloads entity when entity_id URL param changes", async () => {
@@ -502,5 +470,161 @@ describe("useCreatePageState — URL param change resets", () => {
       expect(result.current.scenarioWorkspace.mode).toBe("idle");
       expect(result.current.scenarioWorkspace.entityId).toBeNull();
     });
+  });
+});
+
+describe("useCreatePageState — scenario list features", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("exposes scenario sort and page state with defaults", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    expect(result.current.scenarioSortBy).toBe("name");
+    expect(result.current.scenarioSortDir).toBe("asc");
+    expect(result.current.scenarioPage).toBe(1);
+  });
+
+  it("setScenarioSort updates sort and resets page to 1", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.setScenarioPage(2);
+    });
+    expect(result.current.scenarioPage).toBe(2);
+
+    act(() => {
+      result.current.setScenarioSort("createdAt", "desc");
+    });
+    expect(result.current.scenarioSortBy).toBe("createdAt");
+    expect(result.current.scenarioSortDir).toBe("desc");
+    expect(result.current.scenarioPage).toBe(1);
+  });
+
+  it("setScenarioPage updates page", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.setScenarioPage(3);
+    });
+    expect(result.current.scenarioPage).toBe(3);
+  });
+
+  it("scenarioTotalPages is computed from totalCount", async () => {
+    mockScenariosList.mockResolvedValue({
+      items: Array.from({ length: 10 }, (_, i) => ({
+        id: `s${i}`,
+        name: `Scenario ${i}`,
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      })),
+      totalCount: 25,
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.scenarioTotalPages).toBe(3);
+    });
+  });
+});
+
+describe("useCreatePageState — delete scenario", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("requestDeleteScenario opens delete dialog", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush at Dawn");
+    });
+
+    expect(result.current.isDeleteDialogOpen).toBe(true);
+    expect(result.current.deleteTarget).toEqual({ id: "sc1", name: "Ambush at Dawn" });
+  });
+
+  it("cancelDeleteScenario closes delete dialog", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush at Dawn");
+    });
+    expect(result.current.isDeleteDialogOpen).toBe(true);
+
+    act(() => {
+      result.current.cancelDeleteScenario();
+    });
+    expect(result.current.isDeleteDialogOpen).toBe(false);
+    expect(result.current.deleteTarget).toBeNull();
+  });
+
+  it("confirmDeleteScenario calls delete and closes dialog", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush at Dawn");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteScenario();
+    });
+
+    expect(mockScenariosDelete).toHaveBeenCalledWith({ id: "sc1" });
+    expect(result.current.isDeleteDialogOpen).toBe(false);
+    expect(result.current.deleteTarget).toBeNull();
+  });
+
+  it("deleting the open scenario clears workspace", async () => {
+    mockScenariosGet.mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" });
+    const mockNavigate = vi.fn();
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, mockNavigate),
+      { wrapper: createWrapper() },
+    );
+
+    // Load a scenario
+    await act(async () => {
+      result.current.selectRecord("Scenarios", "sc1");
+    });
+
+    expect(result.current.scenarioWorkspace.entityId).toBe("sc1");
+
+    // Request delete
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush");
+    });
+
+    // Confirm
+    await act(async () => {
+      await result.current.confirmDeleteScenario();
+    });
+
+    expect(result.current.scenarioWorkspace.mode).toBe("idle");
+    expect(result.current.scenarioWorkspace.entityId).toBeNull();
   });
 });

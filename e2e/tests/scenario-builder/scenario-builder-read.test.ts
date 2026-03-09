@@ -112,15 +112,17 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Scenarios ────────────────────────────────────────────────────
 
-  test("GM can list scenarios (2 records)", async ({ gmPage }) => {
+  test("GM can list scenarios (paginated, 10 per page)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.scenarios.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(2);
+    expect(data.items).toHaveLength(10);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(100);
+    expect(data.limit).toBe(10);
+    expect(data.totalCount).toBe(11);
+    // Default sort: name ascending
     expect(data.items[0].name).toBe("Ambush at Dawn");
-    expect(data.items[1].name).toBe("Castle Siege");
+    expect(data.items[1].name).toBe("Bridge Defense");
   });
 
   test("GM can get scenario with rows and assignments", async ({ gmPage }) => {

@@ -61,6 +61,7 @@ export interface CreatePageState {
   // Delete
   isDeleteDialogOpen: boolean;
   deleteTarget: { id: string; name: string } | null;
+  deleteError: string | null;
   requestDeleteScenario: (id: string, name: string) => void;
   confirmDeleteScenario: () => void;
   cancelDeleteScenario: () => void;
@@ -98,6 +99,7 @@ export function useCreatePageState(
   // Delete state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Lazy loading: only fire the active tab's query on cold load,
   // then enable the remaining tabs once the active one settles.
@@ -169,13 +171,8 @@ export function useCreatePageState(
   };
 
   // Scenario list computed values
-  const scenarioListItems = (scenariosList.data?.items ?? []) as {
-    id: string;
-    name: string;
-    updatedAt: Date;
-    createdAt: Date;
-  }[];
-  const scenarioTotalCount = (scenariosList.data as { totalCount?: number } | undefined)?.totalCount ?? 0;
+  const scenarioListItems = scenariosList.data?.items ?? [];
+  const scenarioTotalCount = scenariosList.data?.totalCount ?? 0;
   const scenarioTotalPages = Math.max(1, Math.ceil(scenarioTotalCount / SCENARIOS_PAGE_SIZE));
 
   // URL-driven initialization for entity_id
@@ -549,6 +546,7 @@ export function useCreatePageState(
   const confirmDeleteScenario = useCallback(async () => {
     if (!deleteTarget) return;
     try {
+      setDeleteError(null);
       await trpc.scenarioBuilder.scenarios.delete.mutate({ id: deleteTarget.id });
 
       // If deleted scenario is currently open, clear workspace
@@ -576,15 +574,18 @@ export function useCreatePageState(
       if (scenarioPage > newTotalPages) {
         setScenarioPage(newTotalPages);
       }
-    } finally {
+
       setDeleteTarget(null);
       setIsDeleteDialogOpen(false);
+    } catch {
+      setDeleteError("Failed to delete scenario. Please try again.");
     }
   }, [deleteTarget, scenarioWorkspace.entityId, navigate, queryClient, scenarioTotalCount, scenarioPage]);
 
   const cancelDeleteScenario = useCallback(() => {
     setDeleteTarget(null);
     setIsDeleteDialogOpen(false);
+    setDeleteError(null);
   }, []);
 
   return {
@@ -614,6 +615,7 @@ export function useCreatePageState(
     // Delete
     isDeleteDialogOpen,
     deleteTarget,
+    deleteError,
     requestDeleteScenario,
     confirmDeleteScenario,
     cancelDeleteScenario,

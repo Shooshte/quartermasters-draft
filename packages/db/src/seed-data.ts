@@ -274,56 +274,67 @@ export const scenarioSeedData: (typeof scenarios.$inferInsert)[] = [
     id: "a2000000-0000-0000-0000-000000000001",
     name: "Ambush at Dawn",
     createdAt: new Date("2025-04-01T00:00:00Z"),
+    updatedAt: new Date("2025-04-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000002",
     name: "Castle Siege",
     createdAt: new Date("2025-05-01T00:00:00Z"),
+    updatedAt: new Date("2025-05-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000003",
     name: "Bridge Defense",
     createdAt: new Date("2025-07-01T00:00:00Z"),
+    updatedAt: new Date("2025-07-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000004",
     name: "Dragon's Lair",
     createdAt: new Date("2025-08-01T00:00:00Z"),
+    updatedAt: new Date("2025-08-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000005",
     name: "Eclipse Ritual",
     createdAt: new Date("2025-09-01T00:00:00Z"),
+    updatedAt: new Date("2025-09-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000006",
     name: "Forest Ambush",
     createdAt: new Date("2025-10-01T00:00:00Z"),
+    updatedAt: new Date("2025-10-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000007",
     name: "Goblin Raid",
     createdAt: new Date("2025-11-01T00:00:00Z"),
+    updatedAt: new Date("2025-11-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000008",
     name: "Harbor Assault",
     createdAt: new Date("2025-12-01T00:00:00Z"),
+    updatedAt: new Date("2025-12-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000009",
     name: "Ice Cavern",
     createdAt: new Date("2026-01-01T00:00:00Z"),
+    updatedAt: new Date("2026-01-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000010",
     name: "Jungle Trek",
     createdAt: new Date("2026-02-01T00:00:00Z"),
+    updatedAt: new Date("2026-02-01T00:00:00Z"),
   },
   {
     id: "a2000000-0000-0000-0000-000000000011",
     name: "Zombie Horde",
     createdAt: new Date("2025-06-01T00:00:00Z"),
+    updatedAt: new Date("2025-06-01T00:00:00Z"),
   },
 ];
 

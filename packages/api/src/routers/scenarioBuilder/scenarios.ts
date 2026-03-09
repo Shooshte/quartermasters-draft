@@ -26,7 +26,7 @@ export const scenariosRouter = router({
           createdAt: scenarios.createdAt,
         })
         .from(scenarios)
-        .orderBy(sortFn(sortColumn))
+        .orderBy(sortFn(sortColumn), asc(scenarios.id))
         .limit(input.limit)
         .offset(offset),
       db.select({ count: count() }).from(scenarios),

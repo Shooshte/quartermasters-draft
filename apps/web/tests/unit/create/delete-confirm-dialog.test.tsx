@@ -56,4 +56,17 @@ describe("DeleteConfirmDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(onConfirm).toHaveBeenCalled();
   });
+
+  it("renders error message when errorMessage prop is provided", () => {
+    render(
+      <DeleteConfirmDialog
+        open={true}
+        scenarioName="Ambush at Dawn"
+        errorMessage="Failed to delete scenario. Please try again."
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Failed to delete scenario. Please try again.")).toBeInTheDocument();
+  });
 });

@@ -55,6 +55,7 @@ export function CreatePage({ search }: CreatePageProps) {
       <DeleteConfirmDialog
         open={state.isDeleteDialogOpen}
         scenarioName={state.deleteTarget?.name ?? ""}
+        errorMessage={state.deleteError}
         onCancel={state.cancelDeleteScenario}
         onConfirm={state.confirmDeleteScenario}
       />

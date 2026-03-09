@@ -501,9 +501,9 @@ describe("useCreatePageState — scenario list features", () => {
     expect(result.current.scenarioPage).toBe(2);
 
     act(() => {
-      result.current.setScenarioSort("createdAt", "desc");
+      result.current.setScenarioSort("updatedAt", "desc");
     });
-    expect(result.current.scenarioSortBy).toBe("createdAt");
+    expect(result.current.scenarioSortBy).toBe("updatedAt");
     expect(result.current.scenarioSortDir).toBe("desc");
     expect(result.current.scenarioPage).toBe(1);
   });
@@ -596,6 +596,52 @@ describe("useCreatePageState — delete scenario", () => {
     expect(mockScenariosDelete).toHaveBeenCalledWith({ id: "sc1" });
     expect(result.current.isDeleteDialogOpen).toBe(false);
     expect(result.current.deleteTarget).toBeNull();
+  });
+
+  it("confirmDeleteScenario sets deleteError on mutation failure", async () => {
+    mockScenariosDelete.mockRejectedValueOnce(new Error("Network error"));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush at Dawn");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteScenario();
+    });
+
+    expect(result.current.deleteError).toBe("Failed to delete scenario. Please try again.");
+    expect(result.current.isDeleteDialogOpen).toBe(true);
+    expect(result.current.deleteTarget).toEqual({ id: "sc1", name: "Ambush at Dawn" });
+  });
+
+  it("deleteError is cleared when cancel is called", async () => {
+    mockScenariosDelete.mockRejectedValueOnce(new Error("Network error"));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush at Dawn");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteScenario();
+    });
+
+    expect(result.current.deleteError).toBe("Failed to delete scenario. Please try again.");
+
+    act(() => {
+      result.current.cancelDeleteScenario();
+    });
+
+    expect(result.current.deleteError).toBeNull();
   });
 
   it("deleting the open scenario clears workspace", async () => {

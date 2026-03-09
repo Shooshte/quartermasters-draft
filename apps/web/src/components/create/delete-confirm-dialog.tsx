@@ -12,11 +12,12 @@ import {
 interface DeleteConfirmDialogProps {
   open: boolean;
   scenarioName: string;
+  errorMessage?: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export function DeleteConfirmDialog({ open, scenarioName, onCancel, onConfirm }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({ open, scenarioName, errorMessage, onCancel, onConfirm }: DeleteConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <AlertDialogContent data-testid="delete-confirm-dialog">
@@ -25,6 +26,7 @@ export function DeleteConfirmDialog({ open, scenarioName, onCancel, onConfirm }:
           <AlertDialogDescription>
             Are you sure you want to delete &quot;{scenarioName}&quot;? This action cannot be undone.
           </AlertDialogDescription>
+          {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

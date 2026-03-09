@@ -9,10 +9,21 @@ import {
   ENTITY_TABS,
   ENTITY_TYPE_TO_TAB,
   TAB_TO_ENTITY_TYPE,
+  TAB_TO_ROUTER_KEY,
   isValidTab,
   isEntityTab,
   createIdleWorkspace,
 } from "./types";
+
+function computeIsDirty(
+  formValues: Record<string, unknown>,
+  originalData: Record<string, unknown> | null,
+): boolean {
+  return Object.keys(formValues).some((key) => {
+    const original = originalData ? originalData[key] : "";
+    return formValues[key] !== original;
+  });
+}
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -61,27 +72,51 @@ export function useCreatePageState(
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
-  // List queries for all tabs
+  // Lazy loading: only fire the active tab's query on cold load,
+  // then enable the remaining tabs once the active one settles.
+  const [backgroundEnabled, setBackgroundEnabled] = useState(false);
+
   const effectsList = useQuery({
     queryKey: ["scenarioBuilder", "effects", "list"],
     queryFn: () => trpc.scenarioBuilder.effects.list.query({}),
+    enabled: activeTab === "Effects" || backgroundEnabled,
   });
   const spellsList = useQuery({
     queryKey: ["scenarioBuilder", "spells", "list"],
     queryFn: () => trpc.scenarioBuilder.spells.list.query({}),
+    enabled: activeTab === "Spells" || backgroundEnabled,
   });
   const itemsList = useQuery({
     queryKey: ["scenarioBuilder", "items", "list"],
     queryFn: () => trpc.scenarioBuilder.items.list.query({}),
+    enabled: activeTab === "Items" || backgroundEnabled,
   });
   const unitsList = useQuery({
     queryKey: ["scenarioBuilder", "units", "list"],
     queryFn: () => trpc.scenarioBuilder.units.list.query({}),
+    enabled: activeTab === "Units" || backgroundEnabled,
   });
   const scenariosList = useQuery({
     queryKey: ["scenarioBuilder", "scenarios", "list"],
     queryFn: () => trpc.scenarioBuilder.scenarios.list.query({}),
+    enabled: activeTab === "Scenarios" || backgroundEnabled,
   });
+
+  // Enable background loading once the active tab's query settles
+  const queryByTab: Record<TabName, { isLoading: boolean }> = {
+    Effects: effectsList,
+    Spells: spellsList,
+    Items: itemsList,
+    Units: unitsList,
+    Scenarios: scenariosList,
+  };
+
+  useEffect(() => {
+    if (backgroundEnabled) return;
+    if (!queryByTab[activeTab].isLoading) {
+      setBackgroundEnabled(true);
+    }
+  }, [backgroundEnabled, activeTab, queryByTab[activeTab].isLoading]);
 
   const listData: Record<TabName, { items: { id: string; name: string }[] } | undefined> = {
     Effects: effectsList.data as { items: { id: string; name: string }[] } | undefined,
@@ -239,7 +274,7 @@ export function useCreatePageState(
     async (tab: TabName, id: string) => {
       if (!isEntityTab(tab)) return;
       const entityType = TAB_TO_ENTITY_TYPE[tab];
-      const routerKey = tab.toLowerCase() as "effects" | "spells" | "items" | "units";
+      const routerKey = TAB_TO_ROUTER_KEY[tab];
       try {
         const data = await trpc.scenarioBuilder[routerKey].get.query({ id });
         const entityData = data as Record<string, unknown>;
@@ -378,8 +413,7 @@ export function useCreatePageState(
   const updateEntityField = useCallback((field: string, value: unknown) => {
     setEntityWorkspace((prev) => {
       const newFormValues = { ...prev.formValues, [field]: value };
-      const originalName = prev.data ? (prev.data as Record<string, unknown>).name : "";
-      const isDirty = newFormValues.name !== originalName;
+      const isDirty = computeIsDirty(newFormValues, prev.data);
       return { ...prev, formValues: newFormValues, isDirty };
     });
   }, []);
@@ -387,8 +421,7 @@ export function useCreatePageState(
   const updateScenarioField = useCallback((field: string, value: unknown) => {
     setScenarioWorkspace((prev) => {
       const newFormValues = { ...prev.formValues, [field]: value };
-      const originalName = prev.data ? (prev.data as Record<string, unknown>).name : "";
-      const isDirty = newFormValues.name !== originalName;
+      const isDirty = computeIsDirty(newFormValues, prev.data);
       return { ...prev, formValues: newFormValues, isDirty };
     });
   }, []);

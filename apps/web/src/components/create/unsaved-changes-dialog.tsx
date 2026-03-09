@@ -26,7 +26,7 @@ export function UnsavedChangesDialog({ open, onCancel, onDiscard }: UnsavedChang
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={onDiscard}>
             Discard
           </AlertDialogAction>

@@ -1,12 +1,12 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LibraryList } from "./library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
-import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type ScenarioSortBy, type ScenarioSortDir } from "./types";
+import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir } from "./types";
 
 interface LibraryPanelProps {
   activeTab: TabName;
   perTabSelection: Record<TabName, string | null>;
-  listData: Record<TabName, { items: { id: string; name: string }[] } | undefined>;
+  listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined>;
   listLoading: Record<TabName, boolean>;
   onTabChange: (tab: TabName) => void;
   onSelectRecord: (tab: TabName, id: string) => void;

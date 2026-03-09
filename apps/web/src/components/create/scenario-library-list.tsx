@@ -78,6 +78,10 @@ export function ScenarioLibraryList({
     );
   }
 
+  if (items.length === 0) {
+    return null;
+  }
+
   const handleSort = (column: ScenarioSortBy) => {
     if (column === sortBy) {
       onSortChange(sortBy, sortDir === "asc" ? "desc" : "asc");
@@ -116,7 +120,6 @@ export function ScenarioLibraryList({
             {items.map((item) => (
               <TableRow
                 key={item.id}
-                role="option"
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
                 className={`cursor-pointer ${

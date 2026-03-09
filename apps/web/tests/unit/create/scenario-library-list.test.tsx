@@ -36,22 +36,27 @@ describe("ScenarioLibraryList", () => {
     expect(screen.getByText("No scenario records yet")).toBeInTheDocument();
   });
 
+  it("renders nothing when items is empty on page > 1", () => {
+    const { container } = render(<ScenarioLibraryList {...defaultProps} items={[]} page={2} />);
+    expect(container.innerHTML).toBe("");
+  });
+
   it("renders items with name and formatted updatedAt date", () => {
     render(<ScenarioLibraryList {...defaultProps} />);
-    expect(screen.getByRole("option", { name: /Ambush at Dawn/ })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: /Castle Siege/ })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /Ambush at Dawn/ })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /Castle Siege/ })).toBeInTheDocument();
   });
 
   it("marks selected item with aria-selected", () => {
     render(<ScenarioLibraryList {...defaultProps} selectedId="1" />);
-    expect(screen.getByRole("option", { name: /Ambush at Dawn/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("option", { name: /Castle Siege/ })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("row", { name: /Ambush at Dawn/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("row", { name: /Castle Siege/ })).toHaveAttribute("aria-selected", "false");
   });
 
   it("calls onSelect when clicking a row", async () => {
     const onSelect = vi.fn();
     render(<ScenarioLibraryList {...defaultProps} onSelect={onSelect} />);
-    await userEvent.click(screen.getByRole("option", { name: /Ambush at Dawn/ }));
+    await userEvent.click(screen.getByRole("row", { name: /Ambush at Dawn/ }));
     expect(onSelect).toHaveBeenCalledWith("1");
   });
 

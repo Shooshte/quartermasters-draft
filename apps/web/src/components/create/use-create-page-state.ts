@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import {
   type TabName,
+  type EntityTab,
   type WorkspaceState,
   type EntityType,
   type ScenarioSortBy,
@@ -48,7 +49,7 @@ export interface CreatePageState {
   updateScenarioField: (field: string, value: unknown) => void;
   confirmDiscard: () => void;
   cancelDiscard: () => void;
-  listData: Record<TabName, { items: { id: string; name: string }[] } | undefined>;
+  listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined>;
   listLoading: Record<TabName, boolean>;
   // Scenario list specific
   scenarioListItems: { id: string; name: string; updatedAt: Date; createdAt: Date }[];
@@ -154,12 +155,11 @@ export function useCreatePageState(
     }
   }, [backgroundEnabled, activeTabIsLoading]);
 
-  const listData: Record<TabName, { items: { id: string; name: string }[] } | undefined> = {
+  const listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined> = {
     Effects: effectsList.data as { items: { id: string; name: string }[] } | undefined,
     Spells: spellsList.data as { items: { id: string; name: string }[] } | undefined,
     Items: itemsList.data as { items: { id: string; name: string }[] } | undefined,
     Units: unitsList.data as { items: { id: string; name: string }[] } | undefined,
-    Scenarios: scenariosList.data as { items: { id: string; name: string }[] } | undefined,
   };
 
   const listLoading: Record<TabName, boolean> = {

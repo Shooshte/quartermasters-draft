@@ -11,20 +11,21 @@ import { Button } from "~/components/ui/button";
 
 interface DeleteConfirmDialogProps {
   open: boolean;
-  scenarioName: string;
+  entityName: string;
+  entityLabel?: string;
   errorMessage?: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export function DeleteConfirmDialog({ open, scenarioName, errorMessage, onCancel, onConfirm }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({ open, entityName, entityLabel = "record", errorMessage, onCancel, onConfirm }: DeleteConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <AlertDialogContent data-testid="delete-confirm-dialog">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete scenario</AlertDialogTitle>
+          <AlertDialogTitle>Delete {entityLabel}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete &quot;{scenarioName}&quot;? This action cannot be undone.
+            Are you sure you want to delete &quot;{entityName}&quot;? This action cannot be undone.
           </AlertDialogDescription>
           {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
         </AlertDialogHeader>

@@ -2,7 +2,10 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LibraryList } from "./library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
-import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir } from "./types";
+import { EffectLibraryList } from "./effect-library-list";
+import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir, type EffectSortBy, type EffectSortDir } from "./types";
+
+const GENERIC_ENTITY_TABS = ENTITY_TABS.filter((t) => t !== "Effects") as readonly EntityTab[];
 
 interface LibraryPanelProps {
   activeTab: TabName;
@@ -21,6 +24,15 @@ interface LibraryPanelProps {
   onScenarioPageChange: (page: number) => void;
   onScenarioSortChange: (sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => void;
   onDeleteScenario: (id: string, name: string) => void;
+  // Effect-specific props
+  effectListItems: { id: string; name: string; timingType: string; effectType: string }[];
+  effectPage: number;
+  effectTotalPages: number;
+  effectSortBy: EffectSortBy;
+  effectSortDir: EffectSortDir;
+  onEffectPageChange: (page: number) => void;
+  onEffectSortChange: (sortBy: EffectSortBy, sortDir: EffectSortDir) => void;
+  onDeleteEffect: (id: string, name: string) => void;
 }
 
 export function LibraryPanel({
@@ -39,6 +51,14 @@ export function LibraryPanel({
   onScenarioPageChange,
   onScenarioSortChange,
   onDeleteScenario,
+  effectListItems,
+  effectPage,
+  effectTotalPages,
+  effectSortBy,
+  effectSortDir,
+  onEffectPageChange,
+  onEffectSortChange,
+  onDeleteEffect,
 }: LibraryPanelProps) {
   return (
     <Card data-testid="library-panel" className="flex flex-1 flex-col overflow-auto pb-0">
@@ -54,7 +74,26 @@ export function LibraryPanel({
               </TabsTrigger>
             ))}
           </TabsList>
-          {ENTITY_TABS.map((tab) => (
+          <TabsContent value="Effects">
+            <EffectLibraryList
+              items={effectListItems}
+              isLoading={listLoading.Effects}
+              selectedId={perTabSelection.Effects}
+              page={effectPage}
+              totalPages={effectTotalPages}
+              sortBy={effectSortBy}
+              sortDir={effectSortDir}
+              onSelect={(id) => onSelectRecord("Effects", id)}
+              onCreateNew={() => onCreateNew("Effects")}
+              onDelete={(id) => {
+                const item = effectListItems.find((e) => e.id === id);
+                onDeleteEffect(id, item?.name ?? "");
+              }}
+              onPageChange={onEffectPageChange}
+              onSortChange={onEffectSortChange}
+            />
+          </TabsContent>
+          {GENERIC_ENTITY_TABS.map((tab) => (
             <TabsContent key={tab} value={tab}>
               <LibraryList
                 items={listData[tab]?.items ?? []}

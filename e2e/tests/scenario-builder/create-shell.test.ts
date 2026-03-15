@@ -202,8 +202,22 @@ test.describe("Create Shell — URL Parameters", () => {
 // ─── Browsing by Tab ─────────────────────────────────────────────────────────
 
 test.describe("Create Shell — Browsing by Tab", () => {
+  test("Effects tab shows records and New button", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Effects" }).click();
+    await expect(gmPage.getByRole("tab", { name: "Effects" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    for (const name of ["Barbarian Roar", "Rage"]) {
+      await expect(gmPage.getByRole("row", { name })).toBeVisible();
+    }
+    await expect(
+      gmPage.getByRole("button", { name: "New Effect" }),
+    ).toBeVisible();
+  });
+
   const entityTabTests = [
-    { tab: "Effects", records: ["Barbarian Roar", "Rage"], singular: "Effect" },
     { tab: "Spells", records: ["Battle Cry", "Fireball"], singular: "Spell" },
     { tab: "Items", records: ["Iron Sword", "Oak Staff"], singular: "Item" },
     { tab: "Units", records: ["Barbarian", "Mage"], singular: "Unit" },
@@ -302,8 +316,29 @@ test.describe("Create Shell — Tab Switching Memory", () => {
 // ─── Record Selection ────────────────────────────────────────────────────────
 
 test.describe("Create Shell — Record Selection", () => {
+  test("selecting Barbarian Roar on Effects tab loads entity workspace", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+
+    await gmPage.getByRole("tab", { name: "Effects" }).click();
+    const roarRow = gmPage.getByRole("row", { name: "Barbarian Roar" });
+    await roarRow.getByRole("button", { name: /Edit/ }).click();
+
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Roar");
+    await expect(
+      gmPage.getByRole("row", { name: "Barbarian Roar" }),
+    ).toHaveAttribute("aria-selected", "true");
+    // Scenario workspace unchanged
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+  });
+
   const entityTests = [
-    { tab: "Effects", name: "Barbarian Roar" },
     { tab: "Spells", name: "Fireball" },
     { tab: "Items", name: "Iron Sword" },
     { tab: "Units", name: "Barbarian" },
@@ -358,8 +393,40 @@ test.describe("Create Shell — Record Selection", () => {
 // ─── Create Actions ──────────────────────────────────────────────────────────
 
 test.describe("Create Shell — Create Actions", () => {
+  test("New Effect clears selection and opens create mode", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+
+    await gmPage.getByRole("tab", { name: "Effects" }).click();
+    const roarRow = gmPage.getByRole("row", { name: "Barbarian Roar" });
+    await roarRow.getByRole("button", { name: /Edit/ }).click();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Barbarian Roar",
+    );
+
+    await gmPage.getByRole("button", { name: "New Effect" }).click();
+    // Selection cleared
+    const rows = gmPage.locator('tr[aria-selected]');
+    const count = await rows.count();
+    for (let i = 0; i < count; i++) {
+      await expect(rows.nth(i)).toHaveAttribute(
+        "aria-selected",
+        "false",
+      );
+    }
+    // Entity workspace in create mode with empty name
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("");
+    // Scenario workspace unchanged
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+  });
+
   const entityTests = [
-    { tab: "Effects", singular: "Effect", record: "Barbarian Roar" },
     { tab: "Spells", singular: "Spell", record: "Fireball" },
     { tab: "Items", singular: "Item", record: "Iron Sword" },
     { tab: "Units", singular: "Unit", record: "Barbarian" },

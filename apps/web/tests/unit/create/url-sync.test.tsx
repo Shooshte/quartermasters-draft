@@ -91,7 +91,7 @@ describe("URL parameter sync", () => {
 
     const searchFn = navigate.mock.calls[0][0].search;
     const result2 = searchFn({ tab: "Effects" });
-    expect(result2).toEqual({ tab: "Effects", entity_id: "e1" });
+    expect(result2).toEqual({ tab: "Effects", effect_id: "e1" });
   });
 
   it("selectRecord for scenario calls navigate with scenario_id", async () => {

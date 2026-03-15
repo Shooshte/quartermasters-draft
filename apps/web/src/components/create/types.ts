@@ -41,6 +41,10 @@ export const SCENARIOS_PAGE_SIZE = 10;
 export type ScenarioSortBy = "name" | "updatedAt";
 export type ScenarioSortDir = "asc" | "desc";
 
+export const EFFECTS_PAGE_SIZE = 10;
+export type EffectSortBy = "name" | "timingType" | "effectType";
+export type EffectSortDir = "asc" | "desc";
+
 export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";
 
 export interface WorkspaceState {

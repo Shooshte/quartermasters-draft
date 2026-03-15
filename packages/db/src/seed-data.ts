@@ -100,7 +100,40 @@ export const effectSeedData: (typeof effects.$inferInsert)[] = [
     intervalMs: 1000,
     triggerCount: 2,
     directSpellDmg: 12.5,
-  }
+  },
+  {
+    id: "a0000000-0000-0000-0000-000000000008",
+    name: "Frostbite",
+    effectType: "damage" as const,
+    timingType: "instant" as const,
+    directSpellDmg: 15.0,
+  },
+  {
+    id: "a0000000-0000-0000-0000-000000000009",
+    name: "Guardian Shield",
+    effectType: "buff" as const,
+    timingType: "instant" as const,
+    durationMs: 8000,
+    dodge: 0.3,
+  },
+  {
+    id: "a0000000-0000-0000-0000-000000000010",
+    name: "Poison Cloud",
+    effectType: "debuff" as const,
+    timingType: "interval" as const,
+    intervalMs: 2000,
+    triggerCount: 3,
+    directSpellDmg: 5.0,
+  },
+  {
+    id: "a0000000-0000-0000-0000-000000000011",
+    name: "Rejuvenation",
+    effectType: "healing" as const,
+    timingType: "interval" as const,
+    intervalMs: 3000,
+    triggerCount: 4,
+    health: 8.0,
+  },
 ];
 
 export const spellSeedData: (typeof spells.$inferInsert)[] = [

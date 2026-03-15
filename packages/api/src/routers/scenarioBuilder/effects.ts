@@ -21,6 +21,10 @@ export const effectsRouter = router({
     } as const;
     const sortColumn = sortColumnMap[input.sortBy];
     const sortFn = input.sortDir === "desc" ? desc : asc;
+    const orderClauses =
+      input.sortBy === "name"
+        ? [sortFn(sortColumn)]
+        : [sortFn(sortColumn), asc(effects.name)];
 
     const [items, countResult] = await Promise.all([
       db
@@ -32,7 +36,7 @@ export const effectsRouter = router({
           updatedAt: effects.updatedAt,
         })
         .from(effects)
-        .orderBy(sortFn(sortColumn), asc(effects.name))
+        .orderBy(...orderClauses)
         .limit(input.limit)
         .offset(offset),
       db.select({ count: count() }).from(effects),

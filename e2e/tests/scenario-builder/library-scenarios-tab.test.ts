@@ -66,7 +66,7 @@ test.describe("Scenarios Library Tab — Pagination", () => {
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
     // Page 1 should show 10 items
-    const options = gmPage.locator('[aria-selected]');
+    const options = gmPage.locator('tr[aria-selected]');
     await expect(options).toHaveCount(10);
 
     // Pagination controls visible
@@ -144,7 +144,7 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
-    const options = gmPage.locator('[aria-selected]');
+    const options = gmPage.locator('tr[aria-selected]');
     const first = await options.nth(0).getAttribute("aria-label");
     const second = await options.nth(1).getAttribute("aria-label");
     expect(first).toBe("Ambush at Dawn");
@@ -158,7 +158,7 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     // Click Name to toggle to descending
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
-    const options = gmPage.locator('[aria-selected]');
+    const options = gmPage.locator('tr[aria-selected]');
     const first = await options.nth(0).getAttribute("aria-label");
     const second = await options.nth(1).getAttribute("aria-label");
     // Descending: Zombie Horde, Jungle Trek, ...
@@ -173,7 +173,7 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     // Click Last Update to sort by updatedAt ascending
     await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
-    const options = gmPage.locator('[aria-selected]');
+    const options = gmPage.locator('tr[aria-selected]');
     const first = await options.nth(0).getAttribute("aria-label");
     const second = await options.nth(1).getAttribute("aria-label");
     const third = await options.nth(2).getAttribute("aria-label");
@@ -191,7 +191,7 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Last Update/ }).click();
     await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
-    const options = gmPage.locator('[aria-selected]');
+    const options = gmPage.locator('tr[aria-selected]');
     const first = await options.nth(0).getAttribute("aria-label");
     const second = await options.nth(1).getAttribute("aria-label");
     // Newest first: Jungle Trek (2026-02), Ice Cavern (2026-01)
@@ -206,14 +206,14 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
     // Default: Name ascending — Ambush at Dawn first
-    await expect(gmPage.locator('[aria-selected]').nth(0)).toHaveAttribute(
+    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
       "Ambush at Dawn",
     );
 
     // Click Name to toggle to descending
     await gmPage.getByRole("button", { name: /Name/ }).click();
-    await expect(gmPage.locator('[aria-selected]').nth(0)).toHaveAttribute(
+    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
       "Zombie Horde",
     );
@@ -373,14 +373,14 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('[aria-selected]')).toHaveCount(10);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
     // Only Zombie Horde on page 2
     await expect(gmPage.getByRole("row", { name: /Zombie Horde/ })).toBeVisible();
-    await expect(gmPage.locator('[aria-selected]')).toHaveCount(1);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
 
     // Delete it
     const zombieRow = gmPage.getByRole("row", { name: /Zombie Horde/ });

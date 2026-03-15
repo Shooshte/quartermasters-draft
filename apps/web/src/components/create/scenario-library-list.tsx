@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowDown, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUp, ArrowDown, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -104,20 +104,20 @@ export function ScenarioLibraryList({
       <div className={`overflow-y-auto`}>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort("name")}>
+                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("name")}>
                   Name
                   <SortIndicator active={sortBy === "name"} dir={sortDir} />
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort("updatedAt")}>
+                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("updatedAt")}>
                   Last Update
                   <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
                 </Button>
               </TableHead>
-              <TableHead className="w-10" />
+              <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,28 +126,35 @@ export function ScenarioLibraryList({
                 key={item.id}
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
-                className={`cursor-pointer ${
+                className={`hover:bg-transparent ${
                   item.id === selectedId ? "bg-accent font-medium" : ""
                 }`}
-                onClick={() => onSelect(item.id)}
               >
                 <TableCell>{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {formatDate(item.updatedAt)}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    aria-label={`Delete ${item.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(item.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 cursor-pointer"
+                      aria-label={`Edit ${item.name}`}
+                      onClick={() => onSelect(item.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 cursor-pointer"
+                      aria-label={`Delete ${item.name}`}
+                      onClick={() => onDelete(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

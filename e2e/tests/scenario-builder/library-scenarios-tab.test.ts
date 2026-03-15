@@ -223,11 +223,12 @@ test.describe("Scenarios Library Tab — Sorting", () => {
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Selection", () => {
-  test("select a scenario from the list", async ({ gmPage }) => {
+  test("select a scenario from the list via edit button", async ({ gmPage }) => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
-    await gmPage.getByRole("row", { name: "Ambush at Dawn" }).click();
+    const ambushRow = gmPage.getByRole("row", { name: "Ambush at Dawn" });
+    await ambushRow.getByRole("button", { name: /Edit/ }).click();
 
     // Selected in list
     await expect(
@@ -258,8 +259,9 @@ test.describe("Scenarios Library Tab — Unsaved Changes", () => {
     // Make changes
     await gmPage.getByTestId("scenario-name-input").fill("Ambush at Dawn Updated");
 
-    // Try to select Castle Siege
-    await gmPage.getByRole("row", { name: "Castle Siege" }).click();
+    // Try to select Castle Siege via edit button
+    const castleRow = gmPage.getByRole("row", { name: "Castle Siege" });
+    await castleRow.getByRole("button", { name: /Edit/ }).click();
 
     // Dialog appears
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
@@ -284,7 +286,8 @@ test.describe("Scenarios Library Tab — Unsaved Changes", () => {
     );
 
     await gmPage.getByTestId("scenario-name-input").fill("Ambush at Dawn Updated");
-    await gmPage.getByRole("row", { name: "Castle Siege" }).click();
+    const castleRow2 = gmPage.getByRole("row", { name: "Castle Siege" });
+    await castleRow2.getByRole("button", { name: /Edit/ }).click();
 
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
     await gmPage.getByRole("button", { name: "Discard" }).click();

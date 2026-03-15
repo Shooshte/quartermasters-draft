@@ -12,13 +12,13 @@ async function parseTrpcResponse(response: Awaited<ReturnType<import("@playwrigh
 test.describe("Scenario Builder Read API — GM access", () => {
   // ── Effects ──────────────────────────────────────────────────────
 
-  test("GM can list effects (7 records, alphabetical)", async ({ gmPage }) => {
+  test("GM can list effects (10 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(7);
+    expect(data.items).toHaveLength(10);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(100);
+    expect(data.limit).toBe(10);
     // Alphabetical order
     const names = data.items.map((e: { name: string }) => e.name);
     expect(names).toEqual([...names].sort());

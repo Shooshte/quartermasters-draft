@@ -17,6 +17,7 @@ interface UseWorkspaceLoaderOptions {
   search: {
     tab?: string;
     entity_id?: string;
+    effect_id?: string;
     scenario_id?: string;
   };
   activeTab: TabName;
@@ -150,6 +151,64 @@ export function useWorkspaceLoader({
     entityDetectUnits.data,
   ]);
 
+  // URL-driven initialization for effect_id
+  const effectInitRef = useRef(false);
+  const prevEffectIdRef = useRef(search.effect_id);
+
+  useEffect(() => {
+    if (search.effect_id !== prevEffectIdRef.current) {
+      prevEffectIdRef.current = search.effect_id;
+      if (skipEntityResetRef.current) {
+        skipEntityResetRef.current = false;
+        return;
+      }
+      effectInitRef.current = false;
+      setEntityWorkspace(createIdleWorkspace());
+    }
+  }, [search.effect_id]);
+
+  const effectQuery = useQuery({
+    queryKey: ["scenarioBuilder", "effects", "get", search.effect_id],
+    queryFn: () => trpc.scenarioBuilder.effects.get.query({ id: search.effect_id! }),
+    enabled: !!search.effect_id && !effectInitRef.current,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!search.effect_id || effectInitRef.current) return;
+    if (!effectQuery.isFetched) return;
+
+    effectInitRef.current = true;
+
+    if (effectQuery.data) {
+      const entityData = effectQuery.data as { name: string; [key: string]: unknown };
+      if (!search.tab) {
+        setActiveTabState("Effects");
+      }
+      setEntityWorkspace({
+        mode: "edit",
+        entityType: "effect",
+        entityId: search.effect_id,
+        data: entityData,
+        formValues: { name: entityData.name },
+        isDirty: false,
+      });
+      const tabToCheck = isValidTab(search.tab) ? search.tab : "Effects";
+      if (tabToCheck === "Effects") {
+        setPerTabSelection((prev) => ({ ...prev, Effects: search.effect_id! }));
+      }
+    } else {
+      setEntityWorkspace({
+        mode: "not-found",
+        entityType: "effect",
+        entityId: search.effect_id,
+        data: null,
+        formValues: {},
+        isDirty: false,
+      });
+    }
+  }, [search.effect_id, search.tab, setActiveTabState, effectQuery.isFetched, effectQuery.data]);
+
   // URL-driven scenario initialization
   const scenarioInitRef = useRef(false);
   const prevScenarioIdRef = useRef(search.scenario_id);
@@ -235,7 +294,8 @@ export function useWorkspaceLoader({
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
-        navigate?.({ search: (prev) => ({ ...prev, entity_id: id }), replace: true });
+        const urlParam = tab === "Effects" ? "effect_id" : "entity_id";
+        navigate?.({ search: (prev) => ({ ...prev, [urlParam]: id }), replace: true });
       } catch {
         if (pendingEntityIdRef.current !== id) return;
         setEntityWorkspace({
@@ -328,10 +388,11 @@ export function useWorkspaceLoader({
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
           skipEntityResetRef.current = true;
+          const paramToRemove = action.tab === "Effects" ? "effect_id" : "entity_id";
           navigate?.({
             search: (prev) => {
               const next = { ...prev };
-              delete next.entity_id;
+              delete next[paramToRemove];
               return next;
             },
             replace: true,
@@ -360,10 +421,12 @@ export function useWorkspaceLoader({
 
   return {
     entityWorkspace,
+    setEntityWorkspace,
     scenarioWorkspace,
     perTabSelection,
     setScenarioWorkspace,
     setPerTabSelection,
+    skipEntityResetRef,
     skipScenarioResetRef,
     loadEntity,
     loadScenario,

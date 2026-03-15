@@ -10,6 +10,7 @@ interface CreatePageProps {
   search: {
     tab?: string;
     entity_id?: string;
+    effect_id?: string;
     scenario_id?: string;
   };
 }
@@ -46,6 +47,14 @@ export function CreatePage({ search }: CreatePageProps) {
         onScenarioPageChange={state.setScenarioPage}
         onScenarioSortChange={state.setScenarioSort}
         onDeleteScenario={state.requestDeleteScenario}
+        effectListItems={state.effectListItems}
+        effectPage={state.effectPage}
+        effectTotalPages={state.effectTotalPages}
+        effectSortBy={state.effectSortBy}
+        effectSortDir={state.effectSortDir}
+        onEffectPageChange={state.setEffectPage}
+        onEffectSortChange={state.setEffectSort}
+        onDeleteEffect={state.requestDeleteEffect}
       />
       <UnsavedChangesDialog
         open={state.isDialogOpen}
@@ -54,10 +63,19 @@ export function CreatePage({ search }: CreatePageProps) {
       />
       <DeleteConfirmDialog
         open={state.isDeleteDialogOpen}
-        scenarioName={state.deleteTarget?.name ?? ""}
+        entityName={state.deleteTarget?.name ?? ""}
+        entityLabel="scenario"
         errorMessage={state.deleteError}
         onCancel={state.cancelDeleteScenario}
         onConfirm={state.confirmDeleteScenario}
+      />
+      <DeleteConfirmDialog
+        open={state.isDeleteEffectDialogOpen}
+        entityName={state.deleteEffectTarget?.name ?? ""}
+        entityLabel="effect"
+        errorMessage={state.deleteEffectError}
+        onCancel={state.cancelDeleteEffect}
+        onConfirm={state.confirmDeleteEffect}
       />
     </main>
   );

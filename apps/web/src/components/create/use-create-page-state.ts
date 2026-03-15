@@ -5,12 +5,16 @@ import {
   type WorkspaceState,
   type ScenarioSortBy,
   type ScenarioSortDir,
+  type EffectSortBy,
+  type EffectSortDir,
   DEFAULT_TAB,
   isValidTab,
 } from "./types";
 import { useDiscardDialog } from "./hooks/use-discard-dialog";
 import { useDeleteDialog } from "./hooks/use-delete-dialog";
+import { useDeleteEffectDialog } from "./hooks/use-delete-effect-dialog";
 import { useScenarioList } from "./hooks/use-scenario-list";
+import { useEffectList } from "./hooks/use-effect-list";
 import { useEntityListQueries } from "./hooks/use-entity-list-queries";
 import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
 
@@ -44,19 +48,35 @@ export interface CreatePageState {
   scenarioSortDir: ScenarioSortDir;
   setScenarioSort: (sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => void;
   setScenarioPage: (page: number) => void;
-  // Delete
+  // Effect list specific
+  effectListItems: { id: string; name: string; timingType: string; effectType: string; updatedAt: Date }[];
+  effectPage: number;
+  effectTotalPages: number;
+  effectSortBy: EffectSortBy;
+  effectSortDir: EffectSortDir;
+  setEffectSort: (sortBy: EffectSortBy, sortDir: EffectSortDir) => void;
+  setEffectPage: (page: number) => void;
+  // Delete scenario
   isDeleteDialogOpen: boolean;
   deleteTarget: { id: string; name: string } | null;
   deleteError: string | null;
   requestDeleteScenario: (id: string, name: string) => void;
   confirmDeleteScenario: () => void;
   cancelDeleteScenario: () => void;
+  // Delete effect
+  isDeleteEffectDialogOpen: boolean;
+  deleteEffectTarget: { id: string; name: string } | null;
+  deleteEffectError: string | null;
+  requestDeleteEffect: (id: string, name: string) => void;
+  confirmDeleteEffect: () => void;
+  cancelDeleteEffect: () => void;
 }
 
 export function useCreatePageState(
   search: {
     tab?: string;
     entity_id?: string;
+    effect_id?: string;
     scenario_id?: string;
   },
   navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void,
@@ -73,10 +93,12 @@ export function useCreatePageState(
   // Workspace loading (entity + scenario + perTabSelection)
   const {
     entityWorkspace,
+    setEntityWorkspace,
     scenarioWorkspace,
     perTabSelection,
     setScenarioWorkspace,
     setPerTabSelection,
+    skipEntityResetRef,
     skipScenarioResetRef,
     loadEntity,
     loadScenario,
@@ -88,12 +110,16 @@ export function useCreatePageState(
   // Scenario list (pagination, sorting, query)
   const scenarioList = useScenarioList(activeTab === "Scenarios", backgroundEnabled);
 
+  // Effect list (pagination, sorting, query)
+  const effectList = useEffectList(activeTab === "Effects", backgroundEnabled);
+
   // Entity list queries (lazy loading)
   const { listData, entityListLoading } = useEntityListQueries(activeTab, backgroundEnabled);
 
   // Compute combined loading and enable background after active tab settles
   const allLoading: Record<TabName, boolean> = {
     ...entityListLoading,
+    Effects: effectList.effectsList.isLoading,
     Scenarios: scenarioList.scenariosList.isLoading,
   };
 
@@ -109,7 +135,7 @@ export function useCreatePageState(
   // Discard dialog
   const discard = useDiscardDialog();
 
-  // Delete dialog
+  // Delete scenario dialog
   const deleteDialog = useDeleteDialog({
     scenarioWorkspace,
     setScenarioWorkspace,
@@ -119,6 +145,18 @@ export function useCreatePageState(
     scenarioTotalCount: scenarioList.scenarioTotalCount,
     scenarioPage: scenarioList.scenarioPage,
     setScenarioPage: scenarioList.setScenarioPage,
+  });
+
+  // Delete effect dialog
+  const deleteEffectDialog = useDeleteEffectDialog({
+    entityWorkspace,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    navigate,
+    effectTotalCount: effectList.effectTotalCount,
+    effectPage: effectList.effectPage,
+    setEffectPage: effectList.setEffectPage,
   });
 
   // Selection with dirty check
@@ -179,7 +217,17 @@ export function useCreatePageState(
     scenarioSortDir: scenarioList.scenarioSortDir,
     setScenarioSort: scenarioList.setScenarioSort,
     setScenarioPage: scenarioList.setScenarioPage,
-    // Delete
+    // Effect list specific
+    effectListItems: effectList.effectListItems,
+    effectPage: effectList.effectPage,
+    effectTotalPages: effectList.effectTotalPages,
+    effectSortBy: effectList.effectSortBy,
+    effectSortDir: effectList.effectSortDir,
+    setEffectSort: effectList.setEffectSort,
+    setEffectPage: effectList.setEffectPage,
+    // Delete scenario
     ...deleteDialog,
+    // Delete effect
+    ...deleteEffectDialog,
   };
 }

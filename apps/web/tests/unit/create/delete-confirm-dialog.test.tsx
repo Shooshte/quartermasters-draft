@@ -8,7 +8,7 @@ describe("DeleteConfirmDialog", () => {
     render(
       <DeleteConfirmDialog
         open={true}
-        scenarioName="Ambush at Dawn"
+        entityName="Ambush at Dawn"
         onCancel={vi.fn()}
         onConfirm={vi.fn()}
       />,
@@ -21,7 +21,7 @@ describe("DeleteConfirmDialog", () => {
     render(
       <DeleteConfirmDialog
         open={false}
-        scenarioName="Ambush at Dawn"
+        entityName="Ambush at Dawn"
         onCancel={vi.fn()}
         onConfirm={vi.fn()}
       />,
@@ -34,7 +34,7 @@ describe("DeleteConfirmDialog", () => {
     render(
       <DeleteConfirmDialog
         open={true}
-        scenarioName="Ambush at Dawn"
+        entityName="Ambush at Dawn"
         onCancel={onCancel}
         onConfirm={vi.fn()}
       />,
@@ -48,7 +48,7 @@ describe("DeleteConfirmDialog", () => {
     render(
       <DeleteConfirmDialog
         open={true}
-        scenarioName="Ambush at Dawn"
+        entityName="Ambush at Dawn"
         onCancel={vi.fn()}
         onConfirm={onConfirm}
       />,
@@ -61,7 +61,7 @@ describe("DeleteConfirmDialog", () => {
     render(
       <DeleteConfirmDialog
         open={true}
-        scenarioName="Ambush at Dawn"
+        entityName="Ambush at Dawn"
         errorMessage="Failed to delete scenario. Please try again."
         onCancel={vi.fn()}
         onConfirm={vi.fn()}

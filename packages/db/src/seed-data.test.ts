@@ -52,8 +52,8 @@ describe("seed data", () => {
 });
 
 describe("effectSeedData", () => {
-  it("has 7 effect records", () => {
-    expect(effectSeedData).toHaveLength(7);
+  it("has 11 effect records", () => {
+    expect(effectSeedData).toHaveLength(11);
   });
 
   it("each record has required fields: name, timingType, effectType", () => {

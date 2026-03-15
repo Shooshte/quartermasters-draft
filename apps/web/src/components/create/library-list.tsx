@@ -1,7 +1,5 @@
 import { Button } from "~/components/ui/button";
 
-// 10 rows × 32px (20px line-height + 12px padding) + 9 gaps × 2px = 338px
-export const LIBRARY_LIST_HEIGHT = "h-[338px]";
 
 interface LibraryListProps {
   items: { id: string; name: string }[];
@@ -22,7 +20,7 @@ export function LibraryList({
 }: LibraryListProps) {
   if (isLoading) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} p-4 text-sm text-muted-foreground`} data-testid="library-list-area">
+      <div className={`p-4 text-sm text-muted-foreground`} data-testid="library-list-area">
         Loading...
       </div>
     );
@@ -30,7 +28,7 @@ export function LibraryList({
 
   if (items.length === 0) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} flex flex-col items-center justify-center gap-2 p-4`} data-testid="library-list-area">
+      <div className={`flex flex-col items-center justify-center gap-2 p-4`} data-testid="library-list-area">
         <div data-testid="empty-list">
           <p className="text-sm text-muted-foreground">
             No {singularLabel.toLowerCase()} records yet
@@ -50,7 +48,7 @@ export function LibraryList({
           New {singularLabel}
         </Button>
       </div>
-      <ul className={`${LIBRARY_LIST_HEIGHT} flex flex-col gap-0.5 overflow-y-auto px-2 pb-2`} role="listbox">
+      <ul className={`flex flex-col gap-0.5 overflow-y-auto px-2 pb-2`} role="listbox">
         {items.map((item) => (
           <li
             key={item.id}

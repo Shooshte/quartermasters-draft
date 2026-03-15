@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { LIBRARY_LIST_HEIGHT } from "./library-list";
+
 import type { ScenarioSortBy, ScenarioSortDir } from "./types";
 
 interface ScenarioLibraryListProps {
@@ -59,7 +59,7 @@ export function ScenarioLibraryList({
 }: ScenarioLibraryListProps) {
   if (isLoading) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} p-4 text-sm text-muted-foreground`}>
+      <div className={`p-4 text-sm text-muted-foreground`}>
         Loading...
       </div>
     );
@@ -67,7 +67,7 @@ export function ScenarioLibraryList({
 
   if (items.length === 0 && page === 1) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} flex flex-col items-center justify-center gap-2 p-4`}>
+      <div className={`flex flex-col items-center justify-center gap-2 p-4`}>
         <div data-testid="empty-list">
           <p className="text-sm text-muted-foreground">No scenario records yet</p>
         </div>
@@ -80,7 +80,7 @@ export function ScenarioLibraryList({
 
   if (items.length === 0) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} p-4 text-sm text-muted-foreground`}>
+      <div className={`p-4 text-sm text-muted-foreground`}>
         Loading...
       </div>
     );
@@ -101,7 +101,7 @@ export function ScenarioLibraryList({
           New Scenario
         </Button>
       </div>
-      <div className={`${LIBRARY_LIST_HEIGHT} overflow-y-auto`}>
+      <div className={`overflow-y-auto`}>
         <Table>
           <TableHeader>
             <TableRow>

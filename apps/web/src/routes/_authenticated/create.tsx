@@ -12,8 +12,7 @@ export const Route = createFileRoute("/_authenticated/create")({
   }),
   beforeLoad: ({ context }) => {
     if (!canAccessRoute(context.userRole, "/create")) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      throw redirect({ to: "/403" } as any);
+      throw redirect({ to: "/403" });
     }
   },
   component: CreatePageRoute,

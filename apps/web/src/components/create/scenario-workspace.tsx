@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { capitalize } from "~/lib/string-utils";
 import type { WorkspaceState } from "./types";
 
 const ROW_TYPES = ["Tank", "Melee", "Ranged", "Support"] as const;
@@ -13,9 +14,10 @@ interface ScenarioWorkspaceProps {
 export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspaceProps) {
   const { mode, formValues, data } = workspace;
 
+  type ScenarioRow = { id: string; rowType: string; assignments: unknown[] };
   const rows =
-    mode === "edit" && data && Array.isArray((data as Record<string, unknown>).rows)
-      ? ((data as Record<string, unknown>).rows as { id: string; rowType: string; assignments: unknown[] }[])
+    mode === "edit" && data && Array.isArray(data.rows)
+      ? (data.rows as ScenarioRow[])
       : null;
 
   return (
@@ -25,7 +27,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
           {(mode === "idle" || mode === "loading") && "Scenario"}
           {mode === "not-found" && "Scenario"}
           {mode === "create" && "New Scenario"}
-          {mode === "edit" && `Scenario: ${formValues.name as string}`}
+          {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
@@ -54,7 +56,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
               <Input
                 id="scenario-name"
                 data-testid="scenario-name-input"
-                value={(formValues.name as string) ?? ""}
+                value={formValues.name ?? ""}
                 onChange={(e) => onFieldChange("name", e.target.value)}
               />
             </div>
@@ -90,8 +92,4 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
       </CardContent>
     </Card>
   );
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

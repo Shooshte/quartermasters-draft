@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { capitalize } from "~/lib/string-utils";
 import type { WorkspaceState } from "./types";
 
 interface EntityWorkspaceProps {
@@ -18,7 +19,7 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
           {(mode === "idle" || mode === "loading") && "Entity"}
           {mode === "not-found" && "Entity"}
           {mode === "create" && `New ${capitalize(entityType ?? "")}`}
-          {mode === "edit" && `${capitalize(entityType ?? "")}: ${formValues.name as string}`}
+          {mode === "edit" && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
@@ -47,7 +48,7 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
               <Input
                 id="entity-name"
                 data-testid="entity-name-input"
-                value={(formValues.name as string) ?? ""}
+                value={formValues.name ?? ""}
                 onChange={(e) => onFieldChange("name", e.target.value)}
               />
             </div>
@@ -56,8 +57,4 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
       </CardContent>
     </Card>
   );
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

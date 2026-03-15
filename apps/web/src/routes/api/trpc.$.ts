@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter, type Context } from "@qd/api";
 import { auth } from "~/lib/auth";
-import { mapDbRole } from "~/lib/route-utils";
+import { getUserRole, mapDbRole } from "~/lib/route-utils";
 
 async function handler({ request }: { request: Request }) {
   return fetchRequestHandler({
@@ -20,7 +20,7 @@ async function handler({ request }: { request: Request }) {
 
       return {
         userId: session.user.id,
-        userRole: mapDbRole((session.user as { role?: string }).role),
+        userRole: mapDbRole(getUserRole(session.user)),
       };
     },
   });

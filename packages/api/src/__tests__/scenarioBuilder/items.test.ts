@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import type { Context } from "../../trpc";
+import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDb = { select: mockSelect };
@@ -15,21 +15,6 @@ const { itemsRouter } = await import(
 );
 
 const createCaller = createCallerFactory(router({ items: itemsRouter }));
-
-const gmCtx: Context = { userId: "gm-1", userRole: "game_master" };
-const playerCtx: Context = { userId: "player-1", userRole: "player" };
-const anonCtx: Context = { userId: null, userRole: null };
-
-function chainable(data: unknown) {
-  const chain: Record<string, unknown> = {};
-  chain.from = vi.fn().mockReturnValue(chain);
-  chain.orderBy = vi.fn().mockReturnValue(chain);
-  chain.limit = vi.fn().mockReturnValue(chain);
-  chain.offset = vi.fn().mockResolvedValue(data);
-  chain.where = vi.fn().mockReturnValue(chain);
-  chain.then = (resolve: (v: unknown) => void) => resolve(data);
-  return chain;
-}
 
 describe("itemsRouter", () => {
   beforeEach(() => {

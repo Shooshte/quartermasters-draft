@@ -229,7 +229,7 @@ Feature: Scenario builder page shell
       And I am on the "/create" page
       And I have loaded the spell "Fireball" in the entity workspace
       And I have opened the "Scenarios" tab
-      When I select the scenario "Ambush at Dawn"
+      When I click the edit button for the scenario "Ambush at Dawn"
       Then the "Ambush at Dawn" record should be selected in the visible library
       And the scenario workspace should load the scenario "Ambush at Dawn" in edit mode
       And the entity workspace should continue showing the spell "Fireball"
@@ -262,7 +262,7 @@ Feature: Scenario builder page shell
       And I am on the "/create" page
       And I have loaded the spell "Fireball" in the entity workspace
       And I have opened the "Scenarios" tab
-      And I select the scenario "Ambush at Dawn"
+      And I click the edit button for the scenario "Ambush at Dawn"
       When I click "New Scenario"
       Then no record should be selected in the visible library
       And the scenario workspace should open in create mode for a new scenario
@@ -349,7 +349,7 @@ Feature: Scenario builder page shell
       And I have opened the "Scenarios" tab
       And I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I change the scenario name field to "Ambush at Dawn Updated"
-      And I select the scenario "Castle Siege"
+      And I click the edit button for the scenario "Castle Siege"
       Then I should be warned about unsaved changes
       And I should be able to cancel loading the different scenario
       And the "Ambush at Dawn" record should remain selected in the visible library
@@ -361,7 +361,7 @@ Feature: Scenario builder page shell
       And I have opened the "Scenarios" tab
       And I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I change the scenario name field to "Ambush at Dawn Updated"
-      And I select the scenario "Castle Siege"
+      And I click the edit button for the scenario "Castle Siege"
       And I choose to discard my unsaved changes
       Then the "Castle Siege" record should be selected in the visible library
       And the scenario workspace should load the scenario "Castle Siege" in edit mode
@@ -417,7 +417,7 @@ Feature: Scenario builder page shell
       Given a scenario named "Ambush at Dawn" exists
       And I am on the "/create" page
       And I have opened the "Scenarios" tab
-      When I select the scenario "Ambush at Dawn"
+      When I click the edit button for the scenario "Ambush at Dawn"
       Then the URL should contain "scenario_id=" followed by the scenario "Ambush at Dawn" id
 
     Scenario: Creating a new entity removes entity_id from the URL
@@ -432,7 +432,7 @@ Feature: Scenario builder page shell
       Given a scenario named "Ambush at Dawn" exists
       And I am on the "/create" page
       And I have opened the "Scenarios" tab
-      And I select the scenario "Ambush at Dawn"
+      And I click the edit button for the scenario "Ambush at Dawn"
       When I click "New Scenario"
       Then the URL should not contain "scenario_id"
 

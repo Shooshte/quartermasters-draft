@@ -1,3 +1,4 @@
+import { Card, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LibraryList } from "./library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
@@ -40,50 +41,52 @@ export function LibraryPanel({
   onDeleteScenario,
 }: LibraryPanelProps) {
   return (
-    <div data-testid="library-panel">
-      <Tabs
-        value={activeTab}
-        onValueChange={(val) => onTabChange(val as TabName)}
-      >
-        <TabsList>
-          {TABS.map((tab) => (
-            <TabsTrigger key={tab} value={tab}>
-              {tab}
-            </TabsTrigger>
+    <Card data-testid="library-panel" className="flex flex-1 flex-col overflow-auto pb-0">
+      <CardContent className="flex-1">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => onTabChange(val as TabName)}
+        >
+          <TabsList>
+            {TABS.map((tab) => (
+              <TabsTrigger key={tab} value={tab}>
+                {tab}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {ENTITY_TABS.map((tab) => (
+            <TabsContent key={tab} value={tab}>
+              <LibraryList
+                items={listData[tab]?.items ?? []}
+                isLoading={listLoading[tab]}
+                selectedId={perTabSelection[tab]}
+                singularLabel={TAB_TO_SINGULAR[tab]}
+                onSelect={(id) => onSelectRecord(tab, id)}
+                onCreateNew={() => onCreateNew(tab)}
+              />
+            </TabsContent>
           ))}
-        </TabsList>
-        {ENTITY_TABS.map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <LibraryList
-              items={listData[tab]?.items ?? []}
-              isLoading={listLoading[tab]}
-              selectedId={perTabSelection[tab]}
-              singularLabel={TAB_TO_SINGULAR[tab]}
-              onSelect={(id) => onSelectRecord(tab, id)}
-              onCreateNew={() => onCreateNew(tab)}
+          <TabsContent value="Scenarios">
+            <ScenarioLibraryList
+              items={scenarioListItems}
+              isLoading={listLoading.Scenarios}
+              selectedId={perTabSelection.Scenarios}
+              page={scenarioPage}
+              totalPages={scenarioTotalPages}
+              sortBy={scenarioSortBy}
+              sortDir={scenarioSortDir}
+              onSelect={(id) => onSelectRecord("Scenarios", id)}
+              onCreateNew={() => onCreateNew("Scenarios")}
+              onDelete={(id) => {
+                const item = scenarioListItems.find((s) => s.id === id);
+                onDeleteScenario(id, item?.name ?? "");
+              }}
+              onPageChange={onScenarioPageChange}
+              onSortChange={onScenarioSortChange}
             />
           </TabsContent>
-        ))}
-        <TabsContent value="Scenarios">
-          <ScenarioLibraryList
-            items={scenarioListItems}
-            isLoading={listLoading.Scenarios}
-            selectedId={perTabSelection.Scenarios}
-            page={scenarioPage}
-            totalPages={scenarioTotalPages}
-            sortBy={scenarioSortBy}
-            sortDir={scenarioSortDir}
-            onSelect={(id) => onSelectRecord("Scenarios", id)}
-            onCreateNew={() => onCreateNew("Scenarios")}
-            onDelete={(id) => {
-              const item = scenarioListItems.find((s) => s.id === id);
-              onDeleteScenario(id, item?.name ?? "");
-            }}
-            onPageChange={onScenarioPageChange}
-            onSortChange={onScenarioSortChange}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }

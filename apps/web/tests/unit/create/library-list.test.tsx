@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { LibraryList, LIBRARY_LIST_HEIGHT } from "~/components/create/library-list";
+import { LibraryList } from "~/components/create/library-list";
 
 const items = [
   { id: "1", name: "Alpha" },
@@ -118,10 +118,6 @@ describe("LibraryList", () => {
     expect(onCreateNew).toHaveBeenCalled();
   });
 
-  it("exports a LIBRARY_LIST_HEIGHT constant", () => {
-    expect(LIBRARY_LIST_HEIGHT).toBe("h-[338px]");
-  });
-
   it("applies overflow-y-auto to the listbox", () => {
     render(
       <LibraryList
@@ -135,36 +131,5 @@ describe("LibraryList", () => {
     );
     const listbox = screen.getByRole("listbox");
     expect(listbox.className).toContain("overflow-y-auto");
-    expect(listbox.className).toContain("h-[338px]");
-  });
-
-  it("wraps loading state in a fixed-height container", () => {
-    render(
-      <LibraryList
-        items={[]}
-        isLoading={true}
-        selectedId={null}
-        singularLabel="Effect"
-        onSelect={vi.fn()}
-        onCreateNew={vi.fn()}
-      />,
-    );
-    const area = screen.getByTestId("library-list-area");
-    expect(area.className).toContain("h-[338px]");
-  });
-
-  it("wraps empty state in a fixed-height container", () => {
-    render(
-      <LibraryList
-        items={[]}
-        isLoading={false}
-        selectedId={null}
-        singularLabel="Effect"
-        onSelect={vi.fn()}
-        onCreateNew={vi.fn()}
-      />,
-    );
-    const area = screen.getByTestId("library-list-area");
-    expect(area.className).toContain("h-[338px]");
   });
 });

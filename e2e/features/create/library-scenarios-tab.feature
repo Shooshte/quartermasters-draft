@@ -136,7 +136,7 @@ Feature: Scenario builder scenarios library tab
 
     Scenario: Select a scenario from the list
       Given the seed scenario "Ambush at Dawn" exists with id "a2000000-0000-0000-0000-000000000001"
-      When I select the scenario "Ambush at Dawn"
+      When I click the edit button for the scenario "Ambush at Dawn"
       Then the "Ambush at Dawn" record should be selected in the scenarios list
       And the scenario workspace should load the scenario "Ambush at Dawn" in edit mode
       And the URL should contain "scenario_id=a2000000-0000-0000-0000-000000000001"
@@ -148,7 +148,7 @@ Feature: Scenario builder scenarios library tab
         | a2000000-0000-0000-0000-000000000002 | Castle Siege   |
       And I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I change the scenario name field to "Ambush at Dawn Updated"
-      And I select the scenario "Castle Siege"
+      And I click the edit button for the scenario "Castle Siege"
       Then I should be warned about unsaved changes
       And I should be able to cancel loading the different scenario
       And the "Ambush at Dawn" record should remain selected in the scenarios list
@@ -161,7 +161,7 @@ Feature: Scenario builder scenarios library tab
         | a2000000-0000-0000-0000-000000000002 | Castle Siege   |
       And I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I change the scenario name field to "Ambush at Dawn Updated"
-      And I select the scenario "Castle Siege"
+      And I click the edit button for the scenario "Castle Siege"
       And I choose to discard my unsaved changes
       Then the "Castle Siege" record should be selected in the scenarios list
       And the scenario workspace should load the scenario "Castle Siege" in edit mode

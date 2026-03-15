@@ -342,7 +342,8 @@ test.describe("Create Shell — Record Selection", () => {
     );
 
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await gmPage.getByRole("row", { name: "Ambush at Dawn" }).click();
+    const ambushRow = gmPage.getByRole("row", { name: "Ambush at Dawn" });
+    await ambushRow.getByRole("button", { name: /Edit/ }).click();
 
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
       "Ambush at Dawn",
@@ -413,7 +414,8 @@ test.describe("Create Shell — Create Actions", () => {
     );
 
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await gmPage.getByRole("row", { name: "Ambush at Dawn" }).click();
+    const ambushRow2 = gmPage.getByRole("row", { name: "Ambush at Dawn" });
+    await ambushRow2.getByRole("button", { name: /Edit/ }).click();
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
       "Ambush at Dawn",
     );
@@ -590,7 +592,8 @@ test.describe("Create Shell — Unsaved Changes", () => {
     await gmPage
       .getByTestId("scenario-name-input")
       .fill("Ambush at Dawn Updated");
-    await gmPage.getByRole("row", { name: "Castle Siege" }).click();
+    const castleRow = gmPage.getByRole("row", { name: "Castle Siege" });
+    await castleRow.getByRole("button", { name: /Edit/ }).click();
 
     await expect(
       gmPage.getByTestId("unsaved-changes-dialog"),
@@ -616,7 +619,8 @@ test.describe("Create Shell — Unsaved Changes", () => {
     await gmPage
       .getByTestId("scenario-name-input")
       .fill("Ambush at Dawn Updated");
-    await gmPage.getByRole("row", { name: "Castle Siege" }).click();
+    const castleRow2 = gmPage.getByRole("row", { name: "Castle Siege" });
+    await castleRow2.getByRole("button", { name: /Edit/ }).click();
 
     await expect(
       gmPage.getByTestId("unsaved-changes-dialog"),

@@ -53,11 +53,17 @@ describe("ScenarioLibraryList", () => {
     expect(screen.getByRole("row", { name: /Castle Siege/ })).toHaveAttribute("aria-selected", "false");
   });
 
-  it("calls onSelect when clicking a row", async () => {
+  it("calls onSelect when clicking the edit button", async () => {
     const onSelect = vi.fn();
     render(<ScenarioLibraryList {...defaultProps} onSelect={onSelect} />);
-    await userEvent.click(screen.getByRole("row", { name: /Ambush at Dawn/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Edit Ambush at Dawn/ }));
     expect(onSelect).toHaveBeenCalledWith("1");
+  });
+
+  it("shows edit button per row", () => {
+    render(<ScenarioLibraryList {...defaultProps} />);
+    const editButtons = screen.getAllByRole("button", { name: /Edit/ });
+    expect(editButtons).toHaveLength(2);
   });
 
   it("calls onCreateNew when clicking New Scenario button", async () => {

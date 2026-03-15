@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowDown, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUp, ArrowDown, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { LIBRARY_LIST_HEIGHT } from "./library-list";
+
 import type { ScenarioSortBy, ScenarioSortDir } from "./types";
 
 interface ScenarioLibraryListProps {
@@ -59,7 +59,7 @@ export function ScenarioLibraryList({
 }: ScenarioLibraryListProps) {
   if (isLoading) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} p-4 text-sm text-muted-foreground`}>
+      <div className={`p-4 text-sm text-muted-foreground`}>
         Loading...
       </div>
     );
@@ -67,7 +67,7 @@ export function ScenarioLibraryList({
 
   if (items.length === 0 && page === 1) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} flex flex-col items-center justify-center gap-2 p-4`}>
+      <div className={`flex flex-col items-center justify-center gap-2 p-4`}>
         <div data-testid="empty-list">
           <p className="text-sm text-muted-foreground">No scenario records yet</p>
         </div>
@@ -80,7 +80,7 @@ export function ScenarioLibraryList({
 
   if (items.length === 0) {
     return (
-      <div className={`${LIBRARY_LIST_HEIGHT} p-4 text-sm text-muted-foreground`}>
+      <div className={`p-4 text-sm text-muted-foreground`}>
         Loading...
       </div>
     );
@@ -101,23 +101,23 @@ export function ScenarioLibraryList({
           New Scenario
         </Button>
       </div>
-      <div className={`${LIBRARY_LIST_HEIGHT} overflow-y-auto`}>
+      <div className={`overflow-y-auto`}>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort("name")}>
+                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("name")}>
                   Name
                   <SortIndicator active={sortBy === "name"} dir={sortDir} />
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort("updatedAt")}>
+                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("updatedAt")}>
                   Last Update
                   <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
                 </Button>
               </TableHead>
-              <TableHead className="w-10" />
+              <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,35 +126,42 @@ export function ScenarioLibraryList({
                 key={item.id}
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
-                className={`cursor-pointer ${
+                className={`hover:bg-transparent ${
                   item.id === selectedId ? "bg-accent font-medium" : ""
                 }`}
-                onClick={() => onSelect(item.id)}
               >
                 <TableCell>{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {formatDate(item.updatedAt)}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    aria-label={`Delete ${item.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(item.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 cursor-pointer"
+                      aria-label={`Edit ${item.name}`}
+                      onClick={() => onSelect(item.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 cursor-pointer"
+                      aria-label={`Delete ${item.name}`}
+                      onClick={() => onDelete(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between px-2 pb-2">
+      <div className="flex items-center justify-center gap-2 px-2 pb-2">
         <Button
           variant="outline"
           size="sm"

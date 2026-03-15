@@ -8,13 +8,13 @@ import { listInput } from "./shared";
 export const spellsRouter = router({
   list: gmProcedure.input(listInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
-    const items = await db
+    const rows = await db
       .select({ id: spells.id, name: spells.name, updatedAt: spells.updatedAt })
       .from(spells)
       .orderBy(asc(spells.name))
       .limit(input.limit)
       .offset(offset);
-    return { items, page: input.page, limit: input.limit };
+    return { items: rows, page: input.page, limit: input.limit };
   }),
 
   get: gmProcedure

@@ -1,5 +1,10 @@
 import { type UserRole, UserRole as Roles } from "@qd/shared";
 
+/** Extract the database role string from a Better Auth user object. */
+export function getUserRole(user: Record<string, unknown>): string {
+  return (user as { role?: string }).role ?? "player";
+}
+
 /** Map database role values to shared UserRole type. */
 const dbRoleToUserRole: Record<string, UserRole> = {
   gm: Roles.GAME_MASTER,

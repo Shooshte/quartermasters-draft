@@ -4,7 +4,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
 import { auth } from "~/lib/auth";
 import { authClient } from "~/lib/auth-client";
-import { mapDbRole } from "~/lib/route-utils";
+import { getUserRole, mapDbRole } from "~/lib/route-utils";
 import { Button } from "~/components/ui/button";
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -23,7 +23,7 @@ const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
     const hadSession = cookieHeader.split(";").some(c => c.trim().startsWith("better-auth."));
     return { authenticated: false as const, hadSession };
   }
-  const dbRole = (session.user as { role?: string }).role ?? "player";
+  const dbRole = getUserRole(session.user);
   return {
     authenticated: true as const,
     userId: session.user.id,

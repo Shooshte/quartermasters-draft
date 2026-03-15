@@ -3,9 +3,9 @@ import { asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
+import { listInputSchema } from "./shared";
 
-const scenarioListInput = z.object({
-  page: z.number().int().min(1).default(1),
+const scenarioListInput = listInputSchema.extend({
   limit: z.number().int().min(1).max(500).default(10),
   sortBy: z.enum(["name", "updatedAt"]).default("name"),
   sortDir: z.enum(["asc", "desc"]).default("asc"),

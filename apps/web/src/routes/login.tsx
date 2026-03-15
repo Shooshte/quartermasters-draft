@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { authClient } from "~/lib/auth-client";
-import { getRedirectTarget, mapDbRole } from "~/lib/route-utils";
+import { getRedirectTarget, getUserRole, mapDbRole } from "~/lib/route-utils";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -41,7 +41,7 @@ function LoginPage() {
   // Redirect already-authenticated users
   useEffect(() => {
     if (sessionLoading || !session?.user) return;
-    const dbRole = (session.user as { role?: string }).role ?? "player";
+    const dbRole = getUserRole(session.user);
     const role = mapDbRole(dbRole)!;
     const target = getRedirectTarget(role, next);
     if (target.notice) {
@@ -80,7 +80,7 @@ function LoginPage() {
         return;
       }
 
-      const dbRole = (sessionResult.data.user as { role?: string }).role ?? "player";
+      const dbRole = getUserRole(sessionResult.data.user);
       const role = mapDbRole(dbRole)!;
       const target = getRedirectTarget(role, next);
 

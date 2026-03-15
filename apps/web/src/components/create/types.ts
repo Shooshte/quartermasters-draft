@@ -45,10 +45,10 @@ export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found"
 
 export interface WorkspaceState {
   mode: WorkspaceMode;
-  entityType: string | null;
+  entityType: EntityType | "scenario" | null;
   entityId: string | null;
-  data: Record<string, unknown> | null;
-  formValues: Record<string, unknown>;
+  data: { name: string; [key: string]: unknown } | null;
+  formValues: { name?: string; [key: string]: unknown };
   isDirty: boolean;
 }
 

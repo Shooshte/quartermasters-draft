@@ -354,7 +354,30 @@ export function useWorkspaceLoader({
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
         const urlParam = tab === "Effects" ? "effect_id" : tab === "Spells" ? "spell_id" : "entity_id";
-        navigate?.({ search: (prev) => ({ ...prev, [urlParam]: id }), replace: true });
+
+        // Sync prev-refs and init-refs so URL-driven effects don't reset/refetch
+        const paramRefs = {
+          effect_id: { prev: prevEffectIdRef, init: effectInitRef },
+          spell_id: { prev: prevSpellIdRef, init: spellInitRef },
+          entity_id: { prev: prevEntityIdRef, init: entityInitRef },
+        } as const;
+        paramRefs[urlParam as keyof typeof paramRefs].prev.current = id;
+        paramRefs[urlParam as keyof typeof paramRefs].init.current = true;
+        for (const [param, refs] of Object.entries(paramRefs)) {
+          if (param !== urlParam) refs.prev.current = undefined;
+        }
+
+        navigate?.({
+          search: (prev) => {
+            const next = { ...prev };
+            delete next.effect_id;
+            delete next.spell_id;
+            delete next.entity_id;
+            next[urlParam] = id;
+            return next;
+          },
+          replace: true,
+        });
       } catch {
         if (pendingEntityIdRef.current !== id) return;
         setEntityWorkspace({

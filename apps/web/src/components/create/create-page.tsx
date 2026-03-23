@@ -11,6 +11,7 @@ interface CreatePageProps {
     tab?: string;
     entity_id?: string;
     effect_id?: string;
+    spell_id?: string;
     scenario_id?: string;
   };
 }
@@ -55,6 +56,14 @@ export function CreatePage({ search }: CreatePageProps) {
         onEffectPageChange={state.setEffectPage}
         onEffectSortChange={state.setEffectSort}
         onDeleteEffect={state.requestDeleteEffect}
+        spellListItems={state.spellListItems}
+        spellPage={state.spellPage}
+        spellTotalPages={state.spellTotalPages}
+        spellSortBy={state.spellSortBy}
+        spellSortDir={state.spellSortDir}
+        onSpellPageChange={state.setSpellPage}
+        onSpellSortChange={state.setSpellSort}
+        onDeleteSpell={state.requestDeleteSpell}
       />
       <UnsavedChangesDialog
         open={state.isDialogOpen}
@@ -76,6 +85,14 @@ export function CreatePage({ search }: CreatePageProps) {
         errorMessage={state.deleteEffectError}
         onCancel={state.cancelDeleteEffect}
         onConfirm={state.confirmDeleteEffect}
+      />
+      <DeleteConfirmDialog
+        open={state.isDeleteSpellDialogOpen}
+        entityName={state.deleteSpellTarget?.name ?? ""}
+        entityLabel="spell"
+        errorMessage={state.deleteSpellError}
+        onCancel={state.cancelDeleteSpell}
+        onConfirm={state.confirmDeleteSpell}
       />
     </main>
   );

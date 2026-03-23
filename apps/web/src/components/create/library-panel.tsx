@@ -3,9 +3,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LibraryList } from "./library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
 import { EffectLibraryList } from "./effect-library-list";
-import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir, type EffectSortBy, type EffectSortDir } from "./types";
+import { SpellLibraryList } from "./spell-library-list";
+import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir, type EffectSortBy, type EffectSortDir, type SpellSortBy, type SpellSortDir } from "./types";
 
-const GENERIC_ENTITY_TABS = ENTITY_TABS.filter((t) => t !== "Effects") as readonly EntityTab[];
+const GENERIC_ENTITY_TABS = ENTITY_TABS.filter((t) => t !== "Effects" && t !== "Spells") as readonly EntityTab[];
 
 interface LibraryPanelProps {
   activeTab: TabName;
@@ -33,6 +34,15 @@ interface LibraryPanelProps {
   onEffectPageChange: (page: number) => void;
   onEffectSortChange: (sortBy: EffectSortBy, sortDir: EffectSortDir) => void;
   onDeleteEffect: (id: string, name: string) => void;
+  // Spell-specific props
+  spellListItems: { id: string; name: string; description: string | null; targetPolicy: string; updatedAt: Date }[];
+  spellPage: number;
+  spellTotalPages: number;
+  spellSortBy: SpellSortBy;
+  spellSortDir: SpellSortDir;
+  onSpellPageChange: (page: number) => void;
+  onSpellSortChange: (sortBy: SpellSortBy, sortDir: SpellSortDir) => void;
+  onDeleteSpell: (id: string, name: string) => void;
 }
 
 export function LibraryPanel({
@@ -59,6 +69,14 @@ export function LibraryPanel({
   onEffectPageChange,
   onEffectSortChange,
   onDeleteEffect,
+  spellListItems,
+  spellPage,
+  spellTotalPages,
+  spellSortBy,
+  spellSortDir,
+  onSpellPageChange,
+  onSpellSortChange,
+  onDeleteSpell,
 }: LibraryPanelProps) {
   return (
     <Card data-testid="library-panel" className="flex flex-1 flex-col overflow-auto pb-0">
@@ -91,6 +109,25 @@ export function LibraryPanel({
               }}
               onPageChange={onEffectPageChange}
               onSortChange={onEffectSortChange}
+            />
+          </TabsContent>
+          <TabsContent value="Spells">
+            <SpellLibraryList
+              items={spellListItems}
+              isLoading={listLoading.Spells}
+              selectedId={perTabSelection.Spells}
+              page={spellPage}
+              totalPages={spellTotalPages}
+              sortBy={spellSortBy}
+              sortDir={spellSortDir}
+              onSelect={(id) => onSelectRecord("Spells", id)}
+              onCreateNew={() => onCreateNew("Spells")}
+              onDelete={(id) => {
+                const item = spellListItems.find((s) => s.id === id);
+                onDeleteSpell(id, item?.name ?? "");
+              }}
+              onPageChange={onSpellPageChange}
+              onSortChange={onSpellSortChange}
             />
           </TabsContent>
           {GENERIC_ENTITY_TABS.map((tab) => (

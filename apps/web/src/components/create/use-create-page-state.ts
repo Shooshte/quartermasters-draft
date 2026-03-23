@@ -7,14 +7,18 @@ import {
   type ScenarioSortDir,
   type EffectSortBy,
   type EffectSortDir,
+  type SpellSortBy,
+  type SpellSortDir,
   DEFAULT_TAB,
   isValidTab,
 } from "./types";
 import { useDiscardDialog } from "./hooks/use-discard-dialog";
 import { useDeleteDialog } from "./hooks/use-delete-dialog";
 import { useDeleteEffectDialog } from "./hooks/use-delete-effect-dialog";
+import { useDeleteSpellDialog } from "./hooks/use-delete-spell-dialog";
 import { useScenarioList } from "./hooks/use-scenario-list";
 import { useEffectList } from "./hooks/use-effect-list";
+import { useSpellList } from "./hooks/use-spell-list";
 import { useEntityListQueries } from "./hooks/use-entity-list-queries";
 import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
 
@@ -70,6 +74,21 @@ export interface CreatePageState {
   requestDeleteEffect: (id: string, name: string) => void;
   confirmDeleteEffect: () => void;
   cancelDeleteEffect: () => void;
+  // Spell list specific
+  spellListItems: { id: string; name: string; description: string | null; targetPolicy: string; updatedAt: Date }[];
+  spellPage: number;
+  spellTotalPages: number;
+  spellSortBy: SpellSortBy;
+  spellSortDir: SpellSortDir;
+  setSpellSort: (sortBy: SpellSortBy, sortDir: SpellSortDir) => void;
+  setSpellPage: (page: number) => void;
+  // Delete spell
+  isDeleteSpellDialogOpen: boolean;
+  deleteSpellTarget: { id: string; name: string } | null;
+  deleteSpellError: string | null;
+  requestDeleteSpell: (id: string, name: string) => void;
+  confirmDeleteSpell: () => void;
+  cancelDeleteSpell: () => void;
 }
 
 export function useCreatePageState(
@@ -77,6 +96,7 @@ export function useCreatePageState(
     tab?: string;
     entity_id?: string;
     effect_id?: string;
+    spell_id?: string;
     scenario_id?: string;
   },
   navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void,
@@ -113,6 +133,9 @@ export function useCreatePageState(
   // Effect list (pagination, sorting, query)
   const effectList = useEffectList(activeTab === "Effects", backgroundEnabled);
 
+  // Spell list (pagination, sorting, query)
+  const spellList = useSpellList(activeTab === "Spells", backgroundEnabled);
+
   // Entity list queries (lazy loading)
   const { listData, entityListLoading } = useEntityListQueries(activeTab, backgroundEnabled);
 
@@ -120,6 +143,7 @@ export function useCreatePageState(
   const allLoading: Record<TabName, boolean> = {
     ...entityListLoading,
     Effects: effectList.effectsList.isLoading,
+    Spells: spellList.spellsList.isLoading,
     Scenarios: scenarioList.scenariosList.isLoading,
   };
 
@@ -157,6 +181,18 @@ export function useCreatePageState(
     effectTotalCount: effectList.effectTotalCount,
     effectPage: effectList.effectPage,
     setEffectPage: effectList.setEffectPage,
+  });
+
+  // Delete spell dialog
+  const deleteSpellDialog = useDeleteSpellDialog({
+    entityWorkspace,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    navigate,
+    spellTotalCount: spellList.spellTotalCount,
+    spellPage: spellList.spellPage,
+    setSpellPage: spellList.setSpellPage,
   });
 
   // Selection with dirty check
@@ -225,9 +261,19 @@ export function useCreatePageState(
     effectSortDir: effectList.effectSortDir,
     setEffectSort: effectList.setEffectSort,
     setEffectPage: effectList.setEffectPage,
+    // Spell list specific
+    spellListItems: spellList.spellListItems,
+    spellPage: spellList.spellPage,
+    spellTotalPages: spellList.spellTotalPages,
+    spellSortBy: spellList.spellSortBy,
+    spellSortDir: spellList.spellSortDir,
+    setSpellSort: spellList.setSpellSort,
+    setSpellPage: spellList.setSpellPage,
     // Delete scenario
     ...deleteDialog,
     // Delete effect
     ...deleteEffectDialog,
+    // Delete spell
+    ...deleteSpellDialog,
   };
 }

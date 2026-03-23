@@ -3,11 +3,6 @@ import { trpc } from "~/lib/trpc";
 import type { TabName, EntityTab } from "../types";
 
 export function useEntityListQueries(activeTab: TabName, backgroundEnabled: boolean) {
-  const spellsList = useQuery({
-    queryKey: ["scenarioBuilder", "spells", "list"],
-    queryFn: () => trpc.scenarioBuilder.spells.list.query({}),
-    enabled: activeTab === "Spells" || backgroundEnabled,
-  });
   const itemsList = useQuery({
     queryKey: ["scenarioBuilder", "items", "list"],
     queryFn: () => trpc.scenarioBuilder.items.list.query({}),
@@ -21,14 +16,14 @@ export function useEntityListQueries(activeTab: TabName, backgroundEnabled: bool
 
   const listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined> = {
     Effects: undefined,
-    Spells: spellsList.data as { items: { id: string; name: string }[] } | undefined,
+    Spells: undefined,
     Items: itemsList.data as { items: { id: string; name: string }[] } | undefined,
     Units: unitsList.data as { items: { id: string; name: string }[] } | undefined,
   };
 
   const entityListLoading: Record<EntityTab, boolean> = {
     Effects: false,
-    Spells: spellsList.isLoading,
+    Spells: false,
     Items: itemsList.isLoading,
     Units: unitsList.isLoading,
   };

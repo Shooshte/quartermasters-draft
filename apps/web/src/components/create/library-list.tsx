@@ -1,6 +1,7 @@
 import { Pencil } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
+  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -56,7 +57,7 @@ export function LibraryList({
         </Button>
       </div>
       <div className="overflow-y-auto">
-        <table className="w-full caption-bottom text-sm">
+        <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-muted-foreground text-xs font-medium">
@@ -93,7 +94,7 @@ export function LibraryList({
               </TableRow>
             ))}
           </TableBody>
-        </table>
+        </Table>
       </div>
     </div>
   );

@@ -159,7 +159,7 @@ describe("LibraryList", () => {
         onCreateNew={vi.fn()}
       />,
     );
-    const tableContainer = screen.getByRole("table").parentElement;
-    expect(tableContainer?.className).toContain("overflow-y-auto");
+    const tableWrapper = screen.getByRole("table").closest("[data-slot='table-container']");
+    expect(tableWrapper?.parentElement?.className).toContain("overflow-y-auto");
   });
 });

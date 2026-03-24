@@ -127,7 +127,7 @@ export function ScenarioLibraryList({
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
                 className={`hover:bg-transparent ${
-                  item.id === selectedId ? "bg-accent font-medium" : ""
+                  item.id === selectedId ? "bg-accent border-l-3 border-primary font-medium" : ""
                 }`}
               >
                 <TableCell>{item.name}</TableCell>
@@ -135,7 +135,7 @@ export function ScenarioLibraryList({
                   {formatDate(item.updatedAt)}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"

@@ -21,8 +21,43 @@ export function CreatePage({ search }: CreatePageProps) {
   const state = useCreatePageState(search, navigate);
 
   return (
-    <main className="flex flex-col gap-4 p-4 h-[calc(100vh-60px)]">
-      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+    <main className="flex h-[calc(100vh-60px)]">
+      <div className="w-[42%] border-r flex flex-col">
+        <LibraryPanel
+          activeTab={state.activeTab}
+          perTabSelection={state.perTabSelection}
+          listData={state.listData}
+          listLoading={state.listLoading}
+          onTabChange={state.setActiveTab}
+          onSelectRecord={state.selectRecord}
+          onCreateNew={state.createNew}
+          scenarioListItems={state.scenarioListItems}
+          scenarioPage={state.scenarioPage}
+          scenarioTotalPages={state.scenarioTotalPages}
+          scenarioSortBy={state.scenarioSortBy}
+          scenarioSortDir={state.scenarioSortDir}
+          onScenarioPageChange={state.setScenarioPage}
+          onScenarioSortChange={state.setScenarioSort}
+          onDeleteScenario={state.requestDeleteScenario}
+          effectListItems={state.effectListItems}
+          effectPage={state.effectPage}
+          effectTotalPages={state.effectTotalPages}
+          effectSortBy={state.effectSortBy}
+          effectSortDir={state.effectSortDir}
+          onEffectPageChange={state.setEffectPage}
+          onEffectSortChange={state.setEffectSort}
+          onDeleteEffect={state.requestDeleteEffect}
+          spellListItems={state.spellListItems}
+          spellPage={state.spellPage}
+          spellTotalPages={state.spellTotalPages}
+          spellSortBy={state.spellSortBy}
+          spellSortDir={state.spellSortDir}
+          onSpellPageChange={state.setSpellPage}
+          onSpellSortChange={state.setSpellSort}
+          onDeleteSpell={state.requestDeleteSpell}
+        />
+      </div>
+      <div className="flex-1 flex flex-col gap-4 p-4 min-h-0">
         <EntityWorkspace
           workspace={state.entityWorkspace}
           onFieldChange={state.updateEntityField}
@@ -32,39 +67,6 @@ export function CreatePage({ search }: CreatePageProps) {
           onFieldChange={state.updateScenarioField}
         />
       </div>
-      <LibraryPanel
-        activeTab={state.activeTab}
-        perTabSelection={state.perTabSelection}
-        listData={state.listData}
-        listLoading={state.listLoading}
-        onTabChange={state.setActiveTab}
-        onSelectRecord={state.selectRecord}
-        onCreateNew={state.createNew}
-        scenarioListItems={state.scenarioListItems}
-        scenarioPage={state.scenarioPage}
-        scenarioTotalPages={state.scenarioTotalPages}
-        scenarioSortBy={state.scenarioSortBy}
-        scenarioSortDir={state.scenarioSortDir}
-        onScenarioPageChange={state.setScenarioPage}
-        onScenarioSortChange={state.setScenarioSort}
-        onDeleteScenario={state.requestDeleteScenario}
-        effectListItems={state.effectListItems}
-        effectPage={state.effectPage}
-        effectTotalPages={state.effectTotalPages}
-        effectSortBy={state.effectSortBy}
-        effectSortDir={state.effectSortDir}
-        onEffectPageChange={state.setEffectPage}
-        onEffectSortChange={state.setEffectSort}
-        onDeleteEffect={state.requestDeleteEffect}
-        spellListItems={state.spellListItems}
-        spellPage={state.spellPage}
-        spellTotalPages={state.spellTotalPages}
-        spellSortBy={state.spellSortBy}
-        spellSortDir={state.spellSortDir}
-        onSpellPageChange={state.setSpellPage}
-        onSpellSortChange={state.setSpellSort}
-        onDeleteSpell={state.requestDeleteSpell}
-      />
       <UnsavedChangesDialog
         open={state.isDialogOpen}
         onCancel={state.cancelDiscard}

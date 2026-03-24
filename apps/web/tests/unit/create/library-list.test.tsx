@@ -54,7 +54,7 @@ describe("LibraryList", () => {
     expect(screen.getByText("Beta")).toBeInTheDocument();
   });
 
-  it("marks selected item with aria-selected", () => {
+  it("marks selected item with aria-selected on table row", () => {
     render(
       <LibraryList
         items={items}
@@ -65,12 +65,11 @@ describe("LibraryList", () => {
         onCreateNew={vi.fn()}
       />,
     );
-    const options = screen.getAllByRole("option");
-    expect(options[0]).toHaveAttribute("aria-selected", "true");
-    expect(options[1]).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("row", { name: /Alpha/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("row", { name: /Beta/ })).toHaveAttribute("aria-selected", "false");
   });
 
-  it("calls onSelect when clicking an item", async () => {
+  it("calls onSelect when clicking a table row", async () => {
     const onSelect = vi.fn();
     render(
       <LibraryList
@@ -83,6 +82,22 @@ describe("LibraryList", () => {
       />,
     );
     await userEvent.click(screen.getByText("Alpha"));
+    expect(onSelect).toHaveBeenCalledWith("1");
+  });
+
+  it("calls onSelect when clicking the edit button", async () => {
+    const onSelect = vi.fn();
+    render(
+      <LibraryList
+        items={items}
+        isLoading={false}
+        selectedId={null}
+        singularLabel="Effect"
+        onSelect={onSelect}
+        onCreateNew={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Edit Alpha/ }));
     expect(onSelect).toHaveBeenCalledWith("1");
   });
 
@@ -118,7 +133,7 @@ describe("LibraryList", () => {
     expect(onCreateNew).toHaveBeenCalled();
   });
 
-  it("applies overflow-y-auto to the listbox", () => {
+  it("shows edit button per row", () => {
     render(
       <LibraryList
         items={items}
@@ -129,7 +144,22 @@ describe("LibraryList", () => {
         onCreateNew={vi.fn()}
       />,
     );
-    const listbox = screen.getByRole("listbox");
-    expect(listbox.className).toContain("overflow-y-auto");
+    const editButtons = screen.getAllByRole("button", { name: /Edit/ });
+    expect(editButtons).toHaveLength(2);
+  });
+
+  it("applies overflow-y-auto to the table container", () => {
+    render(
+      <LibraryList
+        items={items}
+        isLoading={false}
+        selectedId={null}
+        singularLabel="Effect"
+        onSelect={vi.fn()}
+        onCreateNew={vi.fn()}
+      />,
+    );
+    const tableWrapper = screen.getByRole("table").closest("[data-slot='table-container']");
+    expect(tableWrapper?.parentElement?.className).toContain("overflow-y-auto");
   });
 });

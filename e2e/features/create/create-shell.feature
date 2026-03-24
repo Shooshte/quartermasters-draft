@@ -380,19 +380,13 @@ Feature: Scenario builder page shell
       And the "Ambush at Dawn" record should remain selected in the visible library
       And the scenario workspace should continue showing "Ambush at Dawn Updated"
 
-  Rule: The library list always displays a fixed-height area for exactly 10 rows
+  Rule: The library list fills available space and scrolls on overflow
 
-    Scenario: The library list area has a fixed height and scrolls when content overflows
+    Scenario: The library list area fills the available sidebar height
       Given I am on the "/create" page
       When I view the library panel
-      Then the list area should have a fixed height for exactly 10 rows
-      And the list area should scroll vertically when more than 10 records exist
-
-    Scenario: Loading and empty states occupy the same fixed-height area
-      Given no effect records exist
-      And I am on the "/create" page
-      When I click the "Effects" tab
-      Then the empty state should be displayed inside the fixed-height list area
+      Then the list area should fill available vertical space
+      And the list area should scroll vertically when content overflows
 
   Rule: User interactions update URL search parameters
 

@@ -12,7 +12,7 @@ import {
 import type { SpellSortBy, SpellSortDir } from "./types";
 
 interface SpellLibraryListProps {
-  items: { id: string; name: string; description: string | null; targetPolicy: string; updatedAt: Date }[];
+  items: { id: string; name: string; targetPolicy: string }[];
   isLoading: boolean;
   selectedId: string | null;
   page: number;
@@ -33,10 +33,6 @@ function SortIndicator({ active, dir }: { active: boolean; dir: SpellSortDir }) 
   ) : (
     <ArrowDown className="ml-1 h-3 w-3 inline" />
   );
-}
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString();
 }
 
 export function SpellLibraryList({
@@ -102,25 +98,16 @@ export function SpellLibraryList({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("name")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("name")}>
                   Name
                   <SortIndicator active={sortBy === "name"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead>
-                Description
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("targetPolicy")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("targetPolicy")}>
                   Target Policy
                   <SortIndicator active={sortBy === "targetPolicy"} dir={sortDir} />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("updatedAt")}>
-                  Updated At
-                  <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead className="w-20" />
             </TableRow>
@@ -132,21 +119,15 @@ export function SpellLibraryList({
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
                 className={`hover:bg-transparent ${
-                  item.id === selectedId ? "bg-accent font-medium" : ""
+                  item.id === selectedId ? "bg-accent border-l-3 border-primary font-medium" : ""
                 }`}
               >
                 <TableCell>{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {item.description ?? ""}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
                   {item.targetPolicy}
                 </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(item.updatedAt)}
-                </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"

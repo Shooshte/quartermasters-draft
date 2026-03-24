@@ -106,16 +106,16 @@ export function ScenarioLibraryList({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("name")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("name")}>
                   Name
                   <SortIndicator active={sortBy === "name"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("updatedAt")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("updatedAt")}>
                   Last Update
                   <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead className="w-20" />
             </TableRow>
@@ -127,7 +127,7 @@ export function ScenarioLibraryList({
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
                 className={`hover:bg-transparent ${
-                  item.id === selectedId ? "bg-accent font-medium" : ""
+                  item.id === selectedId ? "bg-accent border-l-3 border-primary font-medium" : ""
                 }`}
               >
                 <TableCell>{item.name}</TableCell>
@@ -135,7 +135,7 @@ export function ScenarioLibraryList({
                   {formatDate(item.updatedAt)}
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"

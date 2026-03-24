@@ -12,7 +12,7 @@ import {
 import type { SpellSortBy, SpellSortDir } from "./types";
 
 interface SpellLibraryListProps {
-  items: { id: string; name: string; description: string | null; targetPolicy: string; updatedAt: Date }[];
+  items: { id: string; name: string; targetPolicy: string }[];
   isLoading: boolean;
   selectedId: string | null;
   page: number;

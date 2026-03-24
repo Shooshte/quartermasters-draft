@@ -18,6 +18,7 @@ interface UseWorkspaceLoaderOptions {
     tab?: string;
     entity_id?: string;
     effect_id?: string;
+    spell_id?: string;
     scenario_id?: string;
   };
   activeTab: TabName;
@@ -209,6 +210,64 @@ export function useWorkspaceLoader({
     }
   }, [search.effect_id, search.tab, setActiveTabState, effectQuery.isFetched, effectQuery.data]);
 
+  // URL-driven initialization for spell_id
+  const spellInitRef = useRef(false);
+  const prevSpellIdRef = useRef(search.spell_id);
+
+  useEffect(() => {
+    if (search.spell_id !== prevSpellIdRef.current) {
+      prevSpellIdRef.current = search.spell_id;
+      if (skipEntityResetRef.current) {
+        skipEntityResetRef.current = false;
+        return;
+      }
+      spellInitRef.current = false;
+      setEntityWorkspace(createIdleWorkspace());
+    }
+  }, [search.spell_id]);
+
+  const spellQuery = useQuery({
+    queryKey: ["scenarioBuilder", "spells", "get", search.spell_id],
+    queryFn: () => trpc.scenarioBuilder.spells.get.query({ id: search.spell_id! }),
+    enabled: !!search.spell_id && !spellInitRef.current,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!search.spell_id || spellInitRef.current) return;
+    if (!spellQuery.isFetched) return;
+
+    spellInitRef.current = true;
+
+    if (spellQuery.data) {
+      const entityData = spellQuery.data as { name: string; [key: string]: unknown };
+      if (!search.tab) {
+        setActiveTabState("Spells");
+      }
+      setEntityWorkspace({
+        mode: "edit",
+        entityType: "spell",
+        entityId: search.spell_id,
+        data: entityData,
+        formValues: { name: entityData.name },
+        isDirty: false,
+      });
+      const tabToCheck = isValidTab(search.tab) ? search.tab : "Spells";
+      if (tabToCheck === "Spells") {
+        setPerTabSelection((prev) => ({ ...prev, Spells: search.spell_id! }));
+      }
+    } else {
+      setEntityWorkspace({
+        mode: "not-found",
+        entityType: "spell",
+        entityId: search.spell_id,
+        data: null,
+        formValues: {},
+        isDirty: false,
+      });
+    }
+  }, [search.spell_id, search.tab, setActiveTabState, spellQuery.isFetched, spellQuery.data]);
+
   // URL-driven scenario initialization
   const scenarioInitRef = useRef(false);
   const prevScenarioIdRef = useRef(search.scenario_id);
@@ -294,8 +353,31 @@ export function useWorkspaceLoader({
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
-        const urlParam = tab === "Effects" ? "effect_id" : "entity_id";
-        navigate?.({ search: (prev) => ({ ...prev, [urlParam]: id }), replace: true });
+        const urlParam = tab === "Effects" ? "effect_id" : tab === "Spells" ? "spell_id" : "entity_id";
+
+        // Sync prev-refs and init-refs so URL-driven effects don't reset/refetch
+        const paramRefs = {
+          effect_id: { prev: prevEffectIdRef, init: effectInitRef },
+          spell_id: { prev: prevSpellIdRef, init: spellInitRef },
+          entity_id: { prev: prevEntityIdRef, init: entityInitRef },
+        } as const;
+        paramRefs[urlParam as keyof typeof paramRefs].prev.current = id;
+        paramRefs[urlParam as keyof typeof paramRefs].init.current = true;
+        for (const [param, refs] of Object.entries(paramRefs)) {
+          if (param !== urlParam) refs.prev.current = undefined;
+        }
+
+        navigate?.({
+          search: (prev) => {
+            const next = { ...prev };
+            delete next.effect_id;
+            delete next.spell_id;
+            delete next.entity_id;
+            next[urlParam] = id;
+            return next;
+          },
+          replace: true,
+        });
       } catch {
         if (pendingEntityIdRef.current !== id) return;
         setEntityWorkspace({
@@ -388,7 +470,7 @@ export function useWorkspaceLoader({
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
           skipEntityResetRef.current = true;
-          const paramToRemove = action.tab === "Effects" ? "effect_id" : "entity_id";
+          const paramToRemove = action.tab === "Effects" ? "effect_id" : action.tab === "Spells" ? "spell_id" : "entity_id";
           navigate?.({
             search: (prev) => {
               const next = { ...prev };

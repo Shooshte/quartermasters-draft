@@ -121,8 +121,8 @@ describe("effectSeedData", () => {
 });
 
 describe("spellSeedData", () => {
-  it("has expected number of spell records", () => {
-    expect(spellSeedData.length).toEqual(3);
+  it("has 11 spell records", () => {
+    expect(spellSeedData).toHaveLength(11);
   });
 
   it("each record has required fields: name, targetPolicy", () => {
@@ -137,9 +137,25 @@ describe("spellSeedData", () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it("covers multiple targetPolicy values", () => {
-    const policies = new Set(spellSeedData.map((s) => s.targetPolicy));
-    expect(policies.size).toBeGreaterThanOrEqual(2);
+  it("covers all 4 targetPolicy values", () => {
+    const policies = spellSeedData.map((s) => s.targetPolicy);
+    expect(policies).toContain("highest_health");
+    expect(policies).toContain("lowest_health");
+    expect(policies).toContain("highest_damage");
+    expect(policies).toContain("random");
+  });
+
+  it("description is defined on all records", () => {
+    for (const spell of spellSeedData) {
+      expect(spell.description).toBeDefined();
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const spell of spellSeedData) {
+      expect(spell.id).toBeDefined();
+      expect(typeof spell.id).toBe("string");
+    }
   });
 });
 

@@ -8,7 +8,7 @@ const mockGetQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 
 const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
         mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
-        mockScenariosDelete } = vi.hoisted(() => {
+        mockScenariosDelete, mockSpellsDelete } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
@@ -20,10 +20,11 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosDelete = vi.fn().mockResolvedValue({ success: true });
+  const mockSpellsDelete = vi.fn().mockResolvedValue({ success: true });
   return {
     mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
-    mockScenariosDelete,
+    mockScenariosDelete, mockSpellsDelete,
   };
 });
 
@@ -31,7 +32,7 @@ vi.mock("~/lib/trpc", () => ({
   trpc: {
     scenarioBuilder: {
       effects: { list: { query: mockEffectsList }, get: { query: mockEffectsGet } },
-      spells: { list: { query: mockSpellsList }, get: { query: mockSpellsGet } },
+      spells: { list: { query: mockSpellsList }, get: { query: mockSpellsGet }, delete: { mutate: mockSpellsDelete } },
       items: { list: { query: mockItemsList }, get: { query: mockItemsGet } },
       units: { list: { query: mockUnitsList }, get: { query: mockUnitsGet } },
       scenarios: { list: { query: mockScenariosList }, get: { query: mockScenariosGet }, delete: { mutate: mockScenariosDelete } },
@@ -56,8 +57,8 @@ function createWrapper() {
 
 function resetMocks() {
   vi.clearAllMocks();
-  mockEffectsList.mockResolvedValue({ items: [] });
-  mockSpellsList.mockResolvedValue({ items: [] });
+  mockEffectsList.mockResolvedValue({ items: [], totalCount: 0 });
+  mockSpellsList.mockResolvedValue({ items: [], totalCount: 0 });
   mockItemsList.mockResolvedValue({ items: [] });
   mockUnitsList.mockResolvedValue({ items: [] });
   mockScenariosList.mockResolvedValue({ items: [], totalCount: 0 });
@@ -67,6 +68,7 @@ function resetMocks() {
   mockUnitsGet.mockRejectedValue(new Error("not found"));
   mockScenariosGet.mockRejectedValue(new Error("not found"));
   mockScenariosDelete.mockResolvedValue({ success: true });
+  mockSpellsDelete.mockResolvedValue({ success: true });
 }
 
 describe("useCreatePageState — isDirty (full form surface)", () => {
@@ -672,5 +674,208 @@ describe("useCreatePageState — delete scenario", () => {
 
     expect(result.current.scenarioWorkspace.mode).toBe("idle");
     expect(result.current.scenarioWorkspace.entityId).toBeNull();
+  });
+});
+
+describe("useCreatePageState — spell list features", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("exposes spell sort and page state with defaults", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    expect(result.current.spellSortBy).toBe("name");
+    expect(result.current.spellSortDir).toBe("asc");
+    expect(result.current.spellPage).toBe(1);
+  });
+
+  it("setSpellSort updates sort and resets page to 1", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.setSpellPage(2);
+    });
+    expect(result.current.spellPage).toBe(2);
+
+    act(() => {
+      result.current.setSpellSort("targetPolicy", "desc");
+    });
+    expect(result.current.spellSortBy).toBe("targetPolicy");
+    expect(result.current.spellSortDir).toBe("desc");
+    expect(result.current.spellPage).toBe(1);
+  });
+
+  it("setSpellPage updates page", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.setSpellPage(3);
+    });
+    expect(result.current.spellPage).toBe(3);
+  });
+
+  it("spellTotalPages is computed from totalCount", async () => {
+    mockSpellsList.mockResolvedValue({
+      items: Array.from({ length: 10 }, (_, i) => ({
+        id: `sp${i}`,
+        name: `Spell ${i}`,
+        description: `Desc ${i}`,
+        targetPolicy: "random",
+        updatedAt: new Date(),
+      })),
+      totalCount: 25,
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.spellTotalPages).toBe(3);
+    });
+  });
+});
+
+describe("useCreatePageState — delete spell", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("requestDeleteSpell opens delete dialog", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
+    expect(result.current.deleteSpellTarget).toEqual({ id: "sp1", name: "Fireball" });
+  });
+
+  it("cancelDeleteSpell closes delete dialog", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
+
+    act(() => {
+      result.current.cancelDeleteSpell();
+    });
+    expect(result.current.isDeleteSpellDialogOpen).toBe(false);
+    expect(result.current.deleteSpellTarget).toBeNull();
+  });
+
+  it("confirmDeleteSpell calls delete and closes dialog", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteSpell();
+    });
+
+    expect(mockSpellsDelete).toHaveBeenCalledWith({ id: "sp1" });
+    expect(result.current.isDeleteSpellDialogOpen).toBe(false);
+    expect(result.current.deleteSpellTarget).toBeNull();
+  });
+
+  it("confirmDeleteSpell sets deleteError on mutation failure", async () => {
+    mockSpellsDelete.mockRejectedValueOnce(new Error("Network error"));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteSpell();
+    });
+
+    expect(result.current.deleteSpellError).toBe("Failed to delete spell. Please try again.");
+    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
+    expect(result.current.deleteSpellTarget).toEqual({ id: "sp1", name: "Fireball" });
+  });
+
+  it("deleteError is cleared when cancel is called", async () => {
+    mockSpellsDelete.mockRejectedValueOnce(new Error("Network error"));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteSpell();
+    });
+
+    expect(result.current.deleteSpellError).toBe("Failed to delete spell. Please try again.");
+
+    act(() => {
+      result.current.cancelDeleteSpell();
+    });
+
+    expect(result.current.deleteSpellError).toBeNull();
+  });
+
+  it("deleting the open spell clears workspace", async () => {
+    mockSpellsGet.mockResolvedValueOnce({ id: "sp1", name: "Fireball", targetPolicy: "highest_health" });
+    const mockNavigate = vi.fn();
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, mockNavigate),
+      { wrapper: createWrapper() },
+    );
+
+    // Load a spell
+    await act(async () => {
+      result.current.selectRecord("Spells", "sp1");
+    });
+
+    expect(result.current.entityWorkspace.entityId).toBe("sp1");
+
+    // Request delete
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    // Confirm
+    await act(async () => {
+      await result.current.confirmDeleteSpell();
+    });
+
+    expect(result.current.entityWorkspace.mode).toBe("idle");
+    expect(result.current.entityWorkspace.entityId).toBeNull();
   });
 });

@@ -1,0 +1,433 @@
+import { test, expect } from "../db-reset.fixture";
+
+// All tests in this file share the same database and some mutate it,
+// so they must run serially to prevent race conditions.
+test.describe.configure({ mode: "serial" });
+
+const FIREBALL_ID = "b0000000-0000-0000-0000-000000000001";
+const BATTLE_CRY_ID = "b0000000-0000-0000-0000-000000000002";
+const BASE = "http://localhost:3000/api/trpc";
+
+/** Helper to delete a spell via the tRPC mutation API */
+async function deleteSpellViaApi(
+  request: import("@playwright/test").APIRequestContext,
+  id: string,
+) {
+  return request.post(`${BASE}/scenarioBuilder.spells.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// ─── Display ────────────────────────────────────────────────────────────────
+
+test.describe("Spells Library Tab — Display", () => {
+  test("spells are displayed with name, description, target policy, and updated at", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    const fireball = gmPage.getByRole("row", { name: /Fireball/ });
+    await expect(fireball).toBeVisible();
+    await expect(fireball.getByText("highest_health")).toBeVisible();
+
+    const healingTouch = gmPage.getByRole("row", { name: /Healing Touch/ });
+    await expect(healingTouch).toBeVisible();
+    await expect(healingTouch.getByText("lowest_health")).toBeVisible();
+  });
+
+  test("empty state is shown when no spells exist", async ({
+    gmPage,
+    resetDb,
+  }) => {
+    // Delete all 11 spells via API
+    const spellIds = Array.from({ length: 11 }, (_, i) =>
+      `b0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+    );
+    for (const id of spellIds) {
+      await deleteSpellViaApi(gmPage.request, id);
+    }
+
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await expect(gmPage.getByTestId("empty-list")).toBeVisible();
+
+    // Restore DB for subsequent tests
+    await resetDb();
+  });
+});
+
+// ─── Pagination ─────────────────────────────────────────────────────────────
+
+test.describe("Spells Library Tab — Pagination", () => {
+  test("spells are displayed one page at a time with pagination controls", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Page 1 should show 10 items
+    const rows = gmPage.locator('tr[aria-selected]');
+    await expect(rows).toHaveCount(10);
+
+    // Pagination controls visible
+    await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
+    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeVisible();
+  });
+
+  test("navigate to the next page", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // First page: "Arcane Shield" visible (alphabetically first)
+    await expect(gmPage.getByRole("row", { name: /Arcane Shield/ })).toBeVisible();
+
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+
+    // Second page: only "Ignite" (alphabetically last)
+    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+    // Arcane Shield should no longer be shown
+    await expect(gmPage.getByRole("row", { name: /Arcane Shield/ })).not.toBeVisible();
+  });
+
+  test("navigate to previous page", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Go to page 2
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+
+    // Go back to page 1
+    await gmPage.getByRole("button", { name: "Previous page" }).click();
+    await expect(gmPage.getByRole("row", { name: /Arcane Shield/ })).toBeVisible();
+  });
+
+  test("Previous page control is disabled on the first page", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+  });
+
+  test("Next page control is disabled on the last page", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await expect(gmPage.getByRole("button", { name: "Next page" })).toBeDisabled();
+  });
+
+  test("pagination resets when sort order changes", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Go to page 2
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+
+    // Change sort to Target Policy
+    await gmPage.getByRole("button", { name: /Target Policy/ }).click();
+
+    // Should be back on page 1
+    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+  });
+});
+
+// ─── Sorting ────────────────────────────────────────────────────────────────
+
+test.describe("Spells Library Tab — Sorting", () => {
+  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    const rows = gmPage.locator('tr[aria-selected]');
+    const first = await rows.nth(0).getAttribute("aria-label");
+    const second = await rows.nth(1).getAttribute("aria-label");
+    // Alphabetically: Arcane Shield, Battle Cry, ...
+    expect(first).toBe("Arcane Shield");
+    expect(second).toBe("Battle Cry");
+  });
+
+  test("sort by name descending", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Click Name to toggle to descending
+    await gmPage.getByRole("button", { name: /Name/ }).click();
+
+    const rows = gmPage.locator('tr[aria-selected]');
+    const first = await rows.nth(0).getAttribute("aria-label");
+    const second = await rows.nth(1).getAttribute("aria-label");
+    // Descending: Ignite, Holy Light, ...
+    expect(first).toBe("Ignite");
+    expect(second).toBe("Holy Light");
+  });
+
+  test("sort by target policy ascending", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Click Target Policy to sort ascending
+    await gmPage.getByRole("button", { name: /Target Policy/ }).click();
+
+    const rows = gmPage.locator('tr[aria-selected]');
+    const first = await rows.nth(0).getAttribute("aria-label");
+    // PostgreSQL sorts enums by declaration order, not alphabetically
+    // Enum order: highest_health, lowest_health, highest_damage, random
+    // highest_health: Dark Pact, Fireball
+    // Secondary sort by name asc within same policy
+    expect(first).toBe("Dark Pact");
+  });
+
+  test("sort by target policy descending", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Click Target Policy twice: ascending then descending
+    await gmPage.getByRole("button", { name: /Target Policy/ }).click();
+    await gmPage.getByRole("button", { name: /Target Policy/ }).click();
+
+    const rows = gmPage.locator('tr[aria-selected]');
+    const first = await rows.nth(0).getAttribute("aria-label");
+    // random is last in enum declaration order, so first when descending
+    // random: Battle Cry, Earthquake — secondary sort by name asc
+    expect(first).toBe("Battle Cry");
+  });
+
+  test("sort by updated at ascending", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Click Updated At to sort ascending
+    await gmPage.getByRole("button", { name: /Updated At/ }).click();
+
+    const rows = gmPage.locator('tr[aria-selected]');
+    const first = await rows.nth(0).getAttribute("aria-label");
+    const second = await rows.nth(1).getAttribute("aria-label");
+    // Oldest first: Fireball (Jan), Battle Cry (Feb), ...
+    expect(first).toBe("Fireball");
+    expect(second).toBe("Battle Cry");
+  });
+
+  test("sort by updated at descending", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Click Updated At twice: ascending then descending
+    await gmPage.getByRole("button", { name: /Updated At/ }).click();
+    await gmPage.getByRole("button", { name: /Updated At/ }).click();
+
+    const rows = gmPage.locator('tr[aria-selected]');
+    const first = await rows.nth(0).getAttribute("aria-label");
+    const second = await rows.nth(1).getAttribute("aria-label");
+    // Newest first: Ignite (Nov), Holy Light (Oct), ...
+    expect(first).toBe("Ignite");
+    expect(second).toBe("Holy Light");
+  });
+
+  test("clicking the active sort column toggles direction", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Default: Name ascending — Arcane Shield first
+    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
+      "aria-label",
+      "Arcane Shield",
+    );
+
+    // Click Name to toggle to descending
+    await gmPage.getByRole("button", { name: /Name/ }).click();
+    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
+      "aria-label",
+      "Ignite",
+    );
+  });
+});
+
+// ─── Selection ──────────────────────────────────────────────────────────────
+
+test.describe("Spells Library Tab — Selection", () => {
+  test("select a spell from the list via edit button", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
+    await fireballRow.getByRole("button", { name: /Edit/ }).click();
+
+    // Selected in list
+    await expect(
+      gmPage.getByRole("row", { name: "Fireball" }),
+    ).toHaveAttribute("aria-selected", "true");
+
+    // Loaded in workspace
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Fireball",
+    );
+
+    // URL updated
+    await expect(gmPage).toHaveURL(new RegExp(`spell_id=${FIREBALL_ID}`));
+  });
+});
+
+// ─── Unsaved Changes ────────────────────────────────────────────────────────
+
+test.describe("Spells Library Tab — Unsaved Changes", () => {
+  test("warn before opening a different spell with unsaved changes", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Fireball",
+    );
+
+    // Make changes
+    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
+
+    // Try to select Battle Cry via edit button
+    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
+    await battleCryRow.getByRole("button", { name: /Edit/ }).click();
+
+    // Dialog appears
+    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
+
+    // Cancel preserves state
+    await gmPage.getByRole("button", { name: "Cancel" }).click();
+    await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
+    await expect(
+      gmPage.getByRole("row", { name: "Fireball" }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Fireball Updated",
+    );
+  });
+
+  test("discard unsaved changes and open a different spell", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Fireball",
+    );
+
+    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
+    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
+    await battleCryRow.getByRole("button", { name: /Edit/ }).click();
+
+    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
+    await gmPage.getByRole("button", { name: "Discard" }).click();
+
+    await expect(
+      gmPage.getByRole("row", { name: "Battle Cry" }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Battle Cry",
+    );
+  });
+});
+
+// ─── Deletion (serial to prevent DB race conditions) ────────────────────────
+
+test.describe.serial("Spells Library Tab — Deletion", () => {
+  test("delete a spell that is not currently open", async ({
+    gmPage,
+    resetDb,
+  }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).toBeVisible();
+
+    // Click delete on Battle Cry
+    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
+    await battleCryRow.getByRole("button", { name: /Delete/ }).click();
+
+    // Confirmation dialog
+    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
+
+    // Confirm
+    await gmPage.getByRole("button", { name: "Delete" }).click();
+
+    // Battle Cry gone
+    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).not.toBeVisible();
+
+    // Workspace should remain idle
+    await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
+  });
+
+  test("cancel deletion of a spell", async ({ gmPage, resetDb }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
+    await battleCryRow.getByRole("button", { name: /Delete/ }).click();
+
+    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
+    await gmPage.getByRole("button", { name: "Cancel" }).click();
+
+    // Battle Cry should still be visible
+    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).toBeVisible();
+  });
+
+  test("delete the currently open spell", async ({ gmPage, resetDb }) => {
+    await resetDb();
+    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Fireball",
+    );
+
+    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
+    await fireballRow.getByRole("button", { name: /Delete/ }).click();
+
+    await gmPage.getByRole("button", { name: "Delete" }).click();
+
+    // Should be gone from list
+    await expect(gmPage.getByRole("row", { name: "Fireball" })).not.toBeVisible();
+
+    // Workspace cleared
+    await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
+
+    // URL should not contain spell_id
+    expect(gmPage.url()).not.toContain("spell_id");
+  });
+
+  test("deleting the last spell on a page returns to the previous page", async ({
+    gmPage,
+    resetDb,
+  }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+
+    // Verify we have 2 pages
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
+
+    // Go to page 2
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+
+    // Only Ignite on page 2
+    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
+
+    // Delete it
+    const igniteRow = gmPage.getByRole("row", { name: /Ignite/ });
+    await igniteRow.getByRole("button", { name: /Delete/ }).click();
+    await gmPage.getByRole("button", { name: "Delete" }).click();
+
+    // Should be returned to page 1
+    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    await expect(gmPage.getByRole("row", { name: /Arcane Shield/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Ignite/ })).not.toBeVisible();
+
+    // Restore DB for subsequent test files
+    await resetDb();
+  });
+});

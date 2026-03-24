@@ -45,6 +45,10 @@ export const EFFECTS_PAGE_SIZE = 10;
 export type EffectSortBy = "name" | "timingType" | "effectType";
 export type EffectSortDir = "asc" | "desc";
 
+export const SPELLS_PAGE_SIZE = 10;
+export type SpellSortBy = "name" | "targetPolicy" | "updatedAt";
+export type SpellSortDir = "asc" | "desc";
+
 export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";
 
 export interface WorkspaceState {

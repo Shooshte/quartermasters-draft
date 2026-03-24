@@ -118,6 +118,27 @@ describe("URL parameter sync", () => {
 
   it("createNew for entity removes entity_id from URL", () => {
     const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, navigate),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+
+    const searchFn = navigate.mock.calls[0][0].search;
+    const result2 = searchFn({ tab: "Items", entity_id: "old-id", scenario_id: "s1" });
+    expect(result2).not.toHaveProperty("entity_id");
+    expect(result2).toHaveProperty("scenario_id", "s1");
+  });
+
+  it("createNew for spell removes spell_id from URL", () => {
+    const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, navigate),
       { wrapper: createWrapper() },
     );
@@ -132,8 +153,8 @@ describe("URL parameter sync", () => {
     });
 
     const searchFn = navigate.mock.calls[0][0].search;
-    const result2 = searchFn({ tab: "Spells", entity_id: "old-id", scenario_id: "s1" });
-    expect(result2).not.toHaveProperty("entity_id");
+    const result2 = searchFn({ tab: "Spells", spell_id: "old-id", scenario_id: "s1" });
+    expect(result2).not.toHaveProperty("spell_id");
     expect(result2).toHaveProperty("scenario_id", "s1");
   });
 

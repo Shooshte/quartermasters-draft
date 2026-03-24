@@ -46,7 +46,7 @@ export type EffectSortBy = "name" | "timingType" | "effectType";
 export type EffectSortDir = "asc" | "desc";
 
 export const SPELLS_PAGE_SIZE = 10;
-export type SpellSortBy = "name" | "targetPolicy" | "updatedAt";
+export type SpellSortBy = "name" | "targetPolicy";
 export type SpellSortDir = "asc" | "desc";
 
 export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";

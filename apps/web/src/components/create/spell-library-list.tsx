@@ -35,10 +35,6 @@ function SortIndicator({ active, dir }: { active: boolean; dir: SpellSortDir }) 
   );
 }
 
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString();
-}
-
 export function SpellLibraryList({
   items,
   isLoading,
@@ -108,18 +104,9 @@ export function SpellLibraryList({
                 </button>
               </TableHead>
               <TableHead>
-                Description
-              </TableHead>
-              <TableHead>
                 <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("targetPolicy")}>
                   Target Policy
                   <SortIndicator active={sortBy === "targetPolicy"} dir={sortDir} />
-                </button>
-              </TableHead>
-              <TableHead>
-                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("updatedAt")}>
-                  Updated At
-                  <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
                 </button>
               </TableHead>
               <TableHead className="w-20" />
@@ -137,13 +124,7 @@ export function SpellLibraryList({
               >
                 <TableCell>{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {item.description ?? ""}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
                   {item.targetPolicy}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(item.updatedAt)}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">

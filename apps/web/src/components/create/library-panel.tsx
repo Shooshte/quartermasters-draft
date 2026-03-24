@@ -1,4 +1,3 @@
-import { Card, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { LibraryList } from "./library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
@@ -79,12 +78,12 @@ export function LibraryPanel({
   onDeleteSpell,
 }: LibraryPanelProps) {
   return (
-    <Card data-testid="library-panel" className="flex flex-1 flex-col overflow-auto pb-0">
-      <CardContent className="flex-1">
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) => onTabChange(val as TabName)}
-        >
+    <div data-testid="library-panel" className="flex flex-1 flex-col p-4 overflow-hidden">
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => onTabChange(val as TabName)}
+        className="flex flex-1 flex-col min-h-0"
+      >
           <TabsList>
             {TABS.map((tab) => (
               <TabsTrigger key={tab} value={tab}>
@@ -92,7 +91,7 @@ export function LibraryPanel({
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="Effects">
+          <TabsContent value="Effects" className="flex-1 min-h-0 overflow-auto">
             <EffectLibraryList
               items={effectListItems}
               isLoading={listLoading.Effects}
@@ -111,7 +110,7 @@ export function LibraryPanel({
               onSortChange={onEffectSortChange}
             />
           </TabsContent>
-          <TabsContent value="Spells">
+          <TabsContent value="Spells" className="flex-1 min-h-0 overflow-auto">
             <SpellLibraryList
               items={spellListItems}
               isLoading={listLoading.Spells}
@@ -131,7 +130,7 @@ export function LibraryPanel({
             />
           </TabsContent>
           {GENERIC_ENTITY_TABS.map((tab) => (
-            <TabsContent key={tab} value={tab}>
+            <TabsContent key={tab} value={tab} className="flex-1 min-h-0 overflow-auto">
               <LibraryList
                 items={listData[tab]?.items ?? []}
                 isLoading={listLoading[tab]}
@@ -142,7 +141,7 @@ export function LibraryPanel({
               />
             </TabsContent>
           ))}
-          <TabsContent value="Scenarios">
+          <TabsContent value="Scenarios" className="flex-1 min-h-0 overflow-auto">
             <ScenarioLibraryList
               items={scenarioListItems}
               isLoading={listLoading.Scenarios}
@@ -161,8 +160,7 @@ export function LibraryPanel({
               onSortChange={onScenarioSortChange}
             />
           </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+      </Tabs>
+    </div>
   );
 }

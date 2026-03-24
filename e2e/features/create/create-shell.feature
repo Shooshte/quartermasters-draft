@@ -5,8 +5,10 @@ Feature: Scenario builder page shell
   So that I can manage reusable entities and scenarios from one place
 
   The "/create" route accepts the optional query parameters "scenario_id",
-  "entity_id", and "tab".
-  The "scenario_id" and "entity_id" parameters are UUIDs.
+  "entity_id", "effect_id", "spell_id", and "tab".
+  The "scenario_id", "entity_id", "effect_id", and "spell_id" parameters are UUIDs.
+  The "effect_id" and "spell_id" parameters are type-specific alternatives to
+  "entity_id" for effects and spells respectively.
   The "tab" parameter accepts the exact tab labels "Effects", "Spells",
   "Items", "Units", and "Scenarios".
 
@@ -399,19 +401,19 @@ Feature: Scenario builder page shell
       When I click the "Spells" tab
       Then the URL should contain "tab=Spells"
 
-    Scenario Outline: Selecting an entity updates the entity_id URL parameter
+    Scenario Outline: Selecting an entity updates the URL with the type-specific ID parameter
       Given a <entity_type> named "<record_name>" exists
       And I am on the "/create" page
       And I have opened the "<tab_name>" tab
       When I select the <entity_type> "<record_name>"
-      Then the URL should contain "entity_id=" followed by the <entity_type> "<record_name>" id
+      Then the URL should contain "<url_param>=" followed by the <entity_type> "<record_name>" id
 
       Examples:
-        | tab_name | entity_type | record_name    |
-        | Effects  | effect      | Barbarian Roar |
-        | Spells   | spell       | Fireball       |
-        | Items    | item        | Iron Sword     |
-        | Units    | unit        | Barbarian      |
+        | tab_name | entity_type | record_name    | url_param |
+        | Effects  | effect      | Barbarian Roar | effect_id |
+        | Spells   | spell       | Fireball       | spell_id  |
+        | Items    | item        | Iron Sword     | entity_id |
+        | Units    | unit        | Barbarian      | entity_id |
 
     Scenario: Selecting a scenario updates the scenario_id URL parameter
       Given a scenario named "Ambush at Dawn" exists
@@ -420,13 +422,13 @@ Feature: Scenario builder page shell
       When I click the edit button for the scenario "Ambush at Dawn"
       Then the URL should contain "scenario_id=" followed by the scenario "Ambush at Dawn" id
 
-    Scenario: Creating a new entity removes entity_id from the URL
+    Scenario: Creating a new entity removes the entity ID parameter from the URL
       Given a spell named "Fireball" exists
       And I am on the "/create" page
       And I have opened the "Spells" tab
       And I select the spell "Fireball"
       When I click "New Spell"
-      Then the URL should not contain "entity_id"
+      Then the URL should not contain "spell_id"
 
     Scenario: Creating a new scenario removes scenario_id from the URL
       Given a scenario named "Ambush at Dawn" exists
@@ -436,13 +438,13 @@ Feature: Scenario builder page shell
       When I click "New Scenario"
       Then the URL should not contain "scenario_id"
 
-    Scenario: Tab changes preserve existing entity_id and scenario_id parameters
+    Scenario: Tab changes preserve existing entity ID and scenario_id parameters
       Given a spell named "Fireball" exists
       And a scenario named "Ambush at Dawn" exists
-      And I am on the "/create" page with the spell "Fireball" and scenario "Ambush at Dawn" loaded
+      And I am on the "/create" page with the spell "Fireball" and scenario "Ambush at Dawn" loaded via entity_id
       When I click the "Items" tab
       Then the URL should contain "tab=Items"
-      And the URL should still contain "entity_id"
+      And the URL should still contain the entity ID parameter
       And the URL should still contain "scenario_id"
 
     Scenario: URL parameters are updated without adding browser history entries

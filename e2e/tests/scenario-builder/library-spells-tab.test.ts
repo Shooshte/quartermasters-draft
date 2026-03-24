@@ -178,11 +178,11 @@ test.describe("Spells Library Tab — Sorting", () => {
 
     const rows = gmPage.locator('tr[aria-selected]');
     const first = await rows.nth(0).getAttribute("aria-label");
-    // highest_damage sorts before highest_health alphabetically
-    // highest_damage: Chain Lightning, Frost Nova, Ignite
+    // PostgreSQL sorts enums by declaration order, not alphabetically
+    // Enum order: highest_health, lowest_health, highest_damage, random
     // highest_health: Dark Pact, Fireball
     // Secondary sort by name asc within same policy
-    expect(first).toBe("Chain Lightning");
+    expect(first).toBe("Dark Pact");
   });
 
   test("sort by target policy descending", async ({ gmPage }) => {
@@ -195,7 +195,7 @@ test.describe("Spells Library Tab — Sorting", () => {
 
     const rows = gmPage.locator('tr[aria-selected]');
     const first = await rows.nth(0).getAttribute("aria-label");
-    // random sorts last alphabetically, so first when descending
+    // random is last in enum declaration order, so first when descending
     // random: Battle Cry, Earthquake — secondary sort by name asc
     expect(first).toBe("Battle Cry");
   });

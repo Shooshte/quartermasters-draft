@@ -139,7 +139,7 @@ test.describe("Create Shell — URL Parameters", () => {
       "Fireball",
     );
     await expect(
-      gmPage.getByRole("option", { name: "Fireball" }),
+      gmPage.getByRole("row", { name: "Fireball" }),
     ).toHaveAttribute("aria-selected", "true");
   });
 
@@ -217,8 +217,22 @@ test.describe("Create Shell — Browsing by Tab", () => {
     ).toBeVisible();
   });
 
+  test("Spells tab shows records and New button", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    for (const name of ["Battle Cry", "Fireball"]) {
+      await expect(gmPage.getByRole("row", { name })).toBeVisible();
+    }
+    await expect(
+      gmPage.getByRole("button", { name: "New Spell" }),
+    ).toBeVisible();
+  });
+
   const entityTabTests = [
-    { tab: "Spells", records: ["Battle Cry", "Fireball"], singular: "Spell" },
     { tab: "Items", records: ["Iron Sword", "Oak Staff"], singular: "Item" },
     { tab: "Units", records: ["Barbarian", "Mage"], singular: "Unit" },
   ] as const;
@@ -266,7 +280,8 @@ test.describe("Create Shell — Tab Switching Memory", () => {
 
     // Select Fireball on Spells tab
     await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await gmPage.getByRole("option", { name: "Fireball" }).click();
+    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
+    await fireballRow.getByRole("button", { name: /Edit/ }).click();
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
       "Fireball",
     );
@@ -281,7 +296,7 @@ test.describe("Create Shell — Tab Switching Memory", () => {
     // Switch back to Spells
     await gmPage.getByRole("tab", { name: "Spells" }).click();
     await expect(
-      gmPage.getByRole("option", { name: "Fireball" }),
+      gmPage.getByRole("row", { name: "Fireball" }),
     ).toHaveAttribute("aria-selected", "true");
   });
 
@@ -338,8 +353,29 @@ test.describe("Create Shell — Record Selection", () => {
     );
   });
 
+  test("selecting Fireball on Spells tab loads entity workspace", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
+    await fireballRow.getByRole("button", { name: /Edit/ }).click();
+
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await expect(
+      gmPage.getByRole("row", { name: "Fireball" }),
+    ).toHaveAttribute("aria-selected", "true");
+    // Scenario workspace unchanged
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+  });
+
   const entityTests = [
-    { tab: "Spells", name: "Fireball" },
     { tab: "Items", name: "Iron Sword" },
     { tab: "Units", name: "Barbarian" },
   ] as const;
@@ -426,8 +462,40 @@ test.describe("Create Shell — Create Actions", () => {
     );
   });
 
+  test("New Spell clears selection and opens create mode", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
+    await fireballRow.getByRole("button", { name: /Edit/ }).click();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
+      "Fireball",
+    );
+
+    await gmPage.getByRole("button", { name: "New Spell" }).click();
+    // Selection cleared
+    const rows = gmPage.locator('tr[aria-selected]');
+    const count = await rows.count();
+    for (let i = 0; i < count; i++) {
+      await expect(rows.nth(i)).toHaveAttribute(
+        "aria-selected",
+        "false",
+      );
+    }
+    // Entity workspace in create mode with empty name
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("");
+    // Scenario workspace unchanged
+    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
+      "Ambush at Dawn",
+    );
+  });
+
   const entityTests = [
-    { tab: "Spells", singular: "Spell", record: "Fireball" },
     { tab: "Items", singular: "Item", record: "Iron Sword" },
     { tab: "Units", singular: "Unit", record: "Barbarian" },
   ] as const;
@@ -556,7 +624,8 @@ test.describe("Create Shell — Unsaved Changes", () => {
     );
 
     await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
-    await gmPage.getByRole("option", { name: "Battle Cry" }).click();
+    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
+    await battleCryRow.getByRole("button", { name: /Edit/ }).click();
 
     // Dialog appears
     await expect(
@@ -572,7 +641,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
       "Fireball Updated",
     );
     await expect(
-      gmPage.getByRole("option", { name: "Fireball" }),
+      gmPage.getByRole("row", { name: "Fireball" }),
     ).toHaveAttribute("aria-selected", "true");
   });
 
@@ -585,7 +654,8 @@ test.describe("Create Shell — Unsaved Changes", () => {
     );
 
     await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
-    await gmPage.getByRole("option", { name: "Battle Cry" }).click();
+    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
+    await battleCryRow.getByRole("button", { name: /Edit/ }).click();
 
     await expect(
       gmPage.getByTestId("unsaved-changes-dialog"),
@@ -596,7 +666,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
       "Battle Cry",
     );
     await expect(
-      gmPage.getByRole("option", { name: "Battle Cry" }),
+      gmPage.getByRole("row", { name: "Battle Cry" }),
     ).toHaveAttribute("aria-selected", "true");
   });
 

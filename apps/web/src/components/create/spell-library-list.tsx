@@ -102,25 +102,25 @@ export function SpellLibraryList({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("name")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("name")}>
                   Name
                   <SortIndicator active={sortBy === "name"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead>
                 Description
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("targetPolicy")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("targetPolicy")}>
                   Target Policy
                   <SortIndicator active={sortBy === "targetPolicy"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSort("updatedAt")}>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("updatedAt")}>
                   Updated At
                   <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
-                </Button>
+                </button>
               </TableHead>
               <TableHead className="w-20" />
             </TableRow>

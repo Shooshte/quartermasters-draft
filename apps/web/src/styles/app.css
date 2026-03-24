@@ -122,3 +122,9 @@
     @apply bg-background text-foreground;
     }
 }
+
+/* Horizontal scroll hint for library tables */
+[data-testid="library-panel"] [data-slot="table-container"] {
+  overflow-x: scroll;
+  scrollbar-width: thin;
+}

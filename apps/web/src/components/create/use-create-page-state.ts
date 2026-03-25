@@ -80,7 +80,7 @@ export interface CreatePageState {
   confirmDeleteEffect: () => void;
   cancelDeleteEffect: () => void;
   // Spell list specific
-  spellListItems: { id: string; name: string; targetPolicy: string }[];
+  spellListItems: { id: string; name: string; targetPolicy: string; updatedAt: Date }[];
   spellPage: number;
   spellTotalPages: number;
   spellSortBy: SpellSortBy;

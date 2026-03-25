@@ -210,8 +210,8 @@ describe("spellsEffectsSeedData", () => {
 });
 
 describe("itemSeedData", () => {
-  it("has 3 item records", () => {
-    expect(itemSeedData).toHaveLength(3);
+  it("has 11 item records", () => {
+    expect(itemSeedData).toHaveLength(11);
   });
 
   it("each record has required fields: name and all stat fields defined", () => {
@@ -289,8 +289,8 @@ describe("itemsSpellsSeedData", () => {
 });
 
 describe("unitSeedData", () => {
-  it("has 3 unit records", () => {
-    expect(unitSeedData).toHaveLength(3);
+  it("has 11 unit records", () => {
+    expect(unitSeedData).toHaveLength(11);
   });
 
   it("each record has required fields: name and all stat fields", () => {

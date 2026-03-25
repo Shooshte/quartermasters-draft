@@ -5,10 +5,12 @@ Feature: Scenario builder page shell
   So that I can manage reusable entities and scenarios from one place
 
   The "/create" route accepts the optional query parameters "scenario_id",
-  "entity_id", "effect_id", "spell_id", and "tab".
-  The "scenario_id", "entity_id", "effect_id", and "spell_id" parameters are UUIDs.
+  "entity_id", "effect_id", "spell_id", "item_id", "unit_id", and "tab".
+  The "scenario_id", "entity_id", "effect_id", "spell_id", "item_id", and "unit_id" parameters are UUIDs.
   The "effect_id" and "spell_id" parameters are type-specific alternatives to
   "entity_id" for effects and spells respectively.
+  The "item_id" and "unit_id" parameters are type-specific alternatives to
+  "entity_id" for items and units respectively.
   The "tab" parameter accepts the exact tab labels "Effects", "Spells",
   "Items", "Units", and "Scenarios".
 
@@ -406,8 +408,8 @@ Feature: Scenario builder page shell
         | tab_name | entity_type | record_name    | url_param |
         | Effects  | effect      | Barbarian Roar | effect_id |
         | Spells   | spell       | Fireball       | spell_id  |
-        | Items    | item        | Iron Sword     | entity_id |
-        | Units    | unit        | Barbarian      | entity_id |
+        | Items    | item        | Iron Sword     | item_id   |
+        | Units    | unit        | Barbarian      | unit_id   |
 
     Scenario: Selecting a scenario updates the scenario_id URL parameter
       Given a scenario named "Ambush at Dawn" exists

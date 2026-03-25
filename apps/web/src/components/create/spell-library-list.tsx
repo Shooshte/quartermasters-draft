@@ -12,7 +12,7 @@ import {
 import type { SpellSortBy, SpellSortDir } from "./types";
 
 interface SpellLibraryListProps {
-  items: { id: string; name: string; targetPolicy: string }[];
+  items: { id: string; name: string; targetPolicy: string; updatedAt: Date }[];
   isLoading: boolean;
   selectedId: string | null;
   page: number;
@@ -109,6 +109,12 @@ export function SpellLibraryList({
                   <SortIndicator active={sortBy === "targetPolicy"} dir={sortDir} />
                 </button>
               </TableHead>
+              <TableHead>
+                <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("updatedAt")}>
+                  Updated At
+                  <SortIndicator active={sortBy === "updatedAt"} dir={sortDir} />
+                </button>
+              </TableHead>
               <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
@@ -125,6 +131,9 @@ export function SpellLibraryList({
                 <TableCell>{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {item.targetPolicy}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {item.updatedAt.toLocaleDateString()}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">

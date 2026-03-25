@@ -30,9 +30,13 @@ test.describe("Scenarios Library Tab — Display", () => {
 
     const ambush = gmPage.getByRole("row", { name: /Ambush at Dawn/ });
     await expect(ambush).toBeVisible();
+    // Verify last update date is displayed (e.g. "Apr 1, 2025")
+    await expect(ambush.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
 
     const castle = gmPage.getByRole("row", { name: /Castle Siege/ });
     await expect(castle).toBeVisible();
+    // Verify last update date is displayed (e.g. "May 1, 2025")
+    await expect(castle.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
   test("empty state is shown when no scenarios exist", async ({

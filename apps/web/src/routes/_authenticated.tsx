@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
     const result = await getAuthSession();
     if (!result.authenticated) {
-      const excludedPaths = ["/", "/login", "/403"];
+      const excludedPaths = ["/login", "/403"];
       const search: Record<string, string> = {};
       if (!excludedPaths.includes(location.pathname)) {
         search.next = location.href;
@@ -73,7 +73,7 @@ function AuthenticatedLayout() {
     const currentHref = router.state.location.href;
     try {
       await authClient.signOut();
-      const excludedPaths = ["/", "/login", "/403"];
+      const excludedPaths = ["/login", "/403"];
       const url = new URL("/login", window.location.origin);
       if (!excludedPaths.includes(currentPath)) {
         const nextUrl = new URL(currentHref, window.location.origin);

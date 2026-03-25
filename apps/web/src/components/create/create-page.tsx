@@ -13,6 +13,8 @@ interface CreatePageProps {
     effect_id?: string;
     spell_id?: string;
     scenario_id?: string;
+    item_id?: string;
+    unit_id?: string;
   };
 }
 
@@ -26,7 +28,6 @@ export function CreatePage({ search }: CreatePageProps) {
         <LibraryPanel
           activeTab={state.activeTab}
           perTabSelection={state.perTabSelection}
-          listData={state.listData}
           listLoading={state.listLoading}
           onTabChange={state.setActiveTab}
           onSelectRecord={state.selectRecord}
@@ -55,6 +56,22 @@ export function CreatePage({ search }: CreatePageProps) {
           onSpellPageChange={state.setSpellPage}
           onSpellSortChange={state.setSpellSort}
           onDeleteSpell={state.requestDeleteSpell}
+          itemListItems={state.itemListItems}
+          itemPage={state.itemPage}
+          itemTotalPages={state.itemTotalPages}
+          itemSortBy={state.itemSortBy}
+          itemSortDir={state.itemSortDir}
+          onItemPageChange={state.setItemPage}
+          onItemSortChange={state.setItemSort}
+          onDeleteItem={state.requestDeleteItem}
+          unitListItems={state.unitListItems}
+          unitPage={state.unitPage}
+          unitTotalPages={state.unitTotalPages}
+          unitSortBy={state.unitSortBy}
+          unitSortDir={state.unitSortDir}
+          onUnitPageChange={state.setUnitPage}
+          onUnitSortChange={state.setUnitSort}
+          onDeleteUnit={state.requestDeleteUnit}
         />
       </div>
       <div className="flex-1 flex flex-col gap-4 p-4 min-h-0">
@@ -95,6 +112,22 @@ export function CreatePage({ search }: CreatePageProps) {
         errorMessage={state.deleteSpellError}
         onCancel={state.cancelDeleteSpell}
         onConfirm={state.confirmDeleteSpell}
+      />
+      <DeleteConfirmDialog
+        open={state.isDeleteItemDialogOpen}
+        entityName={state.deleteItemTarget?.name ?? ""}
+        entityLabel="item"
+        errorMessage={state.deleteItemError}
+        onCancel={state.cancelDeleteItem}
+        onConfirm={state.confirmDeleteItem}
+      />
+      <DeleteConfirmDialog
+        open={state.isDeleteUnitDialogOpen}
+        entityName={state.deleteUnitTarget?.name ?? ""}
+        entityLabel="unit"
+        errorMessage={state.deleteUnitError}
+        onCancel={state.cancelDeleteUnit}
+        onConfirm={state.confirmDeleteUnit}
       />
     </main>
   );

@@ -116,7 +116,51 @@ describe("URL parameter sync", () => {
     expect(result2).toEqual({ tab: "Scenarios", scenario_id: "s1" });
   });
 
-  it("createNew for entity removes entity_id from URL", () => {
+  it("selectRecord for item calls navigate with item_id", async () => {
+    mockQuery.mockResolvedValueOnce({ id: "i1", name: "Test Item" });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, navigate),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Items", "i1");
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+
+    const searchFn = navigate.mock.calls[0][0].search;
+    const result2 = searchFn({ tab: "Items" });
+    expect(result2).toEqual({ tab: "Items", item_id: "i1" });
+  });
+
+  it("selectRecord for unit calls navigate with unit_id", async () => {
+    mockQuery.mockResolvedValueOnce({ id: "u1", name: "Test Unit" });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, navigate),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Units", "u1");
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+
+    const searchFn = navigate.mock.calls[0][0].search;
+    const result2 = searchFn({ tab: "Units" });
+    expect(result2).toEqual({ tab: "Units", unit_id: "u1" });
+  });
+
+  it("createNew for item removes item_id from URL", () => {
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Items" }, navigate),
       { wrapper: createWrapper() },
@@ -132,8 +176,8 @@ describe("URL parameter sync", () => {
     });
 
     const searchFn = navigate.mock.calls[0][0].search;
-    const result2 = searchFn({ tab: "Items", entity_id: "old-id", scenario_id: "s1" });
-    expect(result2).not.toHaveProperty("entity_id");
+    const result2 = searchFn({ tab: "Items", item_id: "old-id", scenario_id: "s1" });
+    expect(result2).not.toHaveProperty("item_id");
     expect(result2).toHaveProperty("scenario_id", "s1");
   });
 
@@ -155,6 +199,27 @@ describe("URL parameter sync", () => {
     const searchFn = navigate.mock.calls[0][0].search;
     const result2 = searchFn({ tab: "Spells", spell_id: "old-id", scenario_id: "s1" });
     expect(result2).not.toHaveProperty("spell_id");
+    expect(result2).toHaveProperty("scenario_id", "s1");
+  });
+
+  it("createNew for unit removes unit_id from URL", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, navigate),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Units");
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+      replace: true,
+    });
+
+    const searchFn = navigate.mock.calls[0][0].search;
+    const result2 = searchFn({ tab: "Units", unit_id: "old-id", scenario_id: "s1" });
+    expect(result2).not.toHaveProperty("unit_id");
     expect(result2).toHaveProperty("scenario_id", "s1");
   });
 

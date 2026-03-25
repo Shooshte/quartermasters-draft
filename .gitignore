@@ -2,6 +2,7 @@
 .idea/
 .claude/
 .superpowers/
+docs/
 
 # dependencies
 node_modules/

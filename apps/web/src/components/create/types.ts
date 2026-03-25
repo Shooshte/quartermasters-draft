@@ -49,6 +49,14 @@ export const SPELLS_PAGE_SIZE = 10;
 export type SpellSortBy = "name" | "targetPolicy";
 export type SpellSortDir = "asc" | "desc";
 
+export const ITEMS_PAGE_SIZE = 10;
+export type ItemSortBy = "name" | "updatedAt";
+export type ItemSortDir = "asc" | "desc";
+
+export const UNITS_PAGE_SIZE = 10;
+export type UnitSortBy = "name" | "updatedAt";
+export type UnitSortDir = "asc" | "desc";
+
 export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";
 
 export interface WorkspaceState {

@@ -1,16 +1,14 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { LibraryList } from "./library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
 import { EffectLibraryList } from "./effect-library-list";
 import { SpellLibraryList } from "./spell-library-list";
-import { TABS, ENTITY_TABS, TAB_TO_SINGULAR, type TabName, type EntityTab, type ScenarioSortBy, type ScenarioSortDir, type EffectSortBy, type EffectSortDir, type SpellSortBy, type SpellSortDir } from "./types";
-
-const GENERIC_ENTITY_TABS = ENTITY_TABS.filter((t) => t !== "Effects" && t !== "Spells") as readonly EntityTab[];
+import { ItemLibraryList } from "./item-library-list";
+import { UnitLibraryList } from "./unit-library-list";
+import { TABS, type TabName, type ScenarioSortBy, type ScenarioSortDir, type EffectSortBy, type EffectSortDir, type SpellSortBy, type SpellSortDir, type ItemSortBy, type ItemSortDir, type UnitSortBy, type UnitSortDir } from "./types";
 
 interface LibraryPanelProps {
   activeTab: TabName;
   perTabSelection: Record<TabName, string | null>;
-  listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined>;
   listLoading: Record<TabName, boolean>;
   onTabChange: (tab: TabName) => void;
   onSelectRecord: (tab: TabName, id: string) => void;
@@ -42,12 +40,29 @@ interface LibraryPanelProps {
   onSpellPageChange: (page: number) => void;
   onSpellSortChange: (sortBy: SpellSortBy, sortDir: SpellSortDir) => void;
   onDeleteSpell: (id: string, name: string) => void;
+  // Item-specific props
+  itemListItems: { id: string; name: string; updatedAt: Date }[];
+  itemPage: number;
+  itemTotalPages: number;
+  itemSortBy: ItemSortBy;
+  itemSortDir: ItemSortDir;
+  onItemPageChange: (page: number) => void;
+  onItemSortChange: (sortBy: ItemSortBy, sortDir: ItemSortDir) => void;
+  onDeleteItem: (id: string, name: string) => void;
+  // Unit-specific props
+  unitListItems: { id: string; name: string; updatedAt: Date }[];
+  unitPage: number;
+  unitTotalPages: number;
+  unitSortBy: UnitSortBy;
+  unitSortDir: UnitSortDir;
+  onUnitPageChange: (page: number) => void;
+  onUnitSortChange: (sortBy: UnitSortBy, sortDir: UnitSortDir) => void;
+  onDeleteUnit: (id: string, name: string) => void;
 }
 
 export function LibraryPanel({
   activeTab,
   perTabSelection,
-  listData,
   listLoading,
   onTabChange,
   onSelectRecord,
@@ -76,6 +91,22 @@ export function LibraryPanel({
   onSpellPageChange,
   onSpellSortChange,
   onDeleteSpell,
+  itemListItems,
+  itemPage,
+  itemTotalPages,
+  itemSortBy,
+  itemSortDir,
+  onItemPageChange,
+  onItemSortChange,
+  onDeleteItem,
+  unitListItems,
+  unitPage,
+  unitTotalPages,
+  unitSortBy,
+  unitSortDir,
+  onUnitPageChange,
+  onUnitSortChange,
+  onDeleteUnit,
 }: LibraryPanelProps) {
   return (
     <div data-testid="library-panel" className="flex flex-1 flex-col p-4 overflow-hidden">
@@ -129,18 +160,44 @@ export function LibraryPanel({
               onSortChange={onSpellSortChange}
             />
           </TabsContent>
-          {GENERIC_ENTITY_TABS.map((tab) => (
-            <TabsContent key={tab} value={tab} className="flex-1 min-h-0 overflow-auto">
-              <LibraryList
-                items={listData[tab]?.items ?? []}
-                isLoading={listLoading[tab]}
-                selectedId={perTabSelection[tab]}
-                singularLabel={TAB_TO_SINGULAR[tab]}
-                onSelect={(id) => onSelectRecord(tab, id)}
-                onCreateNew={() => onCreateNew(tab)}
-              />
-            </TabsContent>
-          ))}
+          <TabsContent value="Items" className="flex-1 min-h-0 overflow-auto">
+            <ItemLibraryList
+              items={itemListItems}
+              isLoading={listLoading.Items}
+              selectedId={perTabSelection.Items}
+              page={itemPage}
+              totalPages={itemTotalPages}
+              sortBy={itemSortBy}
+              sortDir={itemSortDir}
+              onSelect={(id) => onSelectRecord("Items", id)}
+              onCreateNew={() => onCreateNew("Items")}
+              onDelete={(id) => {
+                const item = itemListItems.find((i) => i.id === id);
+                onDeleteItem(id, item?.name ?? "");
+              }}
+              onPageChange={onItemPageChange}
+              onSortChange={onItemSortChange}
+            />
+          </TabsContent>
+          <TabsContent value="Units" className="flex-1 min-h-0 overflow-auto">
+            <UnitLibraryList
+              items={unitListItems}
+              isLoading={listLoading.Units}
+              selectedId={perTabSelection.Units}
+              page={unitPage}
+              totalPages={unitTotalPages}
+              sortBy={unitSortBy}
+              sortDir={unitSortDir}
+              onSelect={(id) => onSelectRecord("Units", id)}
+              onCreateNew={() => onCreateNew("Units")}
+              onDelete={(id) => {
+                const item = unitListItems.find((u) => u.id === id);
+                onDeleteUnit(id, item?.name ?? "");
+              }}
+              onPageChange={onUnitPageChange}
+              onSortChange={onUnitSortChange}
+            />
+          </TabsContent>
           <TabsContent value="Scenarios" className="flex-1 min-h-0 overflow-auto">
             <ScenarioLibraryList
               items={scenarioListItems}

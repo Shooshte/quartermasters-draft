@@ -1,20 +1,50 @@
 import { TRPCError } from "@trpc/server";
-import { asc, eq } from "drizzle-orm";
+import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, items, itemsSpells } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { listInput } from "./shared";
+import { listInputSchema } from "./shared";
+
+const itemListInput = listInputSchema.extend({
+  limit: z.number().int().min(1).max(500).default(10),
+  sortBy: z.enum(["name", "updatedAt"]).default("name"),
+  sortDir: z.enum(["asc", "desc"]).default("asc"),
+}).default({});
 
 export const itemsRouter = router({
-  list: gmProcedure.input(listInput).query(async ({ input }) => {
+  list: gmProcedure.input(itemListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
-    const rows = await db
-      .select({ id: items.id, name: items.name, updatedAt: items.updatedAt })
-      .from(items)
-      .orderBy(asc(items.name))
-      .limit(input.limit)
-      .offset(offset);
-    return { items: rows, page: input.page, limit: input.limit };
+    const sortColumnMap = {
+      name: items.name,
+      updatedAt: items.updatedAt,
+    } as const;
+    const sortColumn = sortColumnMap[input.sortBy];
+    const sortFn = input.sortDir === "desc" ? desc : asc;
+    const orderClauses =
+      input.sortBy === "name"
+        ? [sortFn(sortColumn)]
+        : [sortFn(sortColumn), asc(items.name)];
+
+    const [rows, countResult] = await Promise.all([
+      db
+        .select({
+          id: items.id,
+          name: items.name,
+          updatedAt: items.updatedAt,
+        })
+        .from(items)
+        .orderBy(...orderClauses)
+        .limit(input.limit)
+        .offset(offset),
+      db.select({ count: count() }).from(items),
+    ]);
+
+    return {
+      items: rows,
+      page: input.page,
+      limit: input.limit,
+      totalCount: countResult[0].count,
+    };
   }),
 
   get: gmProcedure
@@ -38,5 +68,18 @@ export const itemsRouter = router({
         ...item,
         spellIds: spellLinks.map((s) => s.spellId),
       };
+    }),
+
+  delete: gmProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input }) => {
+      const deleted = await db
+        .delete(items)
+        .where(eq(items.id, input.id))
+        .returning({ id: items.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+      }
+      return { success: true };
     }),
 });

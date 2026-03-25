@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   type TabName,
-  type EntityTab,
   type WorkspaceState,
   type ScenarioSortBy,
   type ScenarioSortDir,
@@ -9,6 +8,10 @@ import {
   type EffectSortDir,
   type SpellSortBy,
   type SpellSortDir,
+  type ItemSortBy,
+  type ItemSortDir,
+  type UnitSortBy,
+  type UnitSortDir,
   DEFAULT_TAB,
   isValidTab,
 } from "./types";
@@ -16,10 +19,13 @@ import { useDiscardDialog } from "./hooks/use-discard-dialog";
 import { useDeleteDialog } from "./hooks/use-delete-dialog";
 import { useDeleteEffectDialog } from "./hooks/use-delete-effect-dialog";
 import { useDeleteSpellDialog } from "./hooks/use-delete-spell-dialog";
+import { useDeleteItemDialog } from "./hooks/use-delete-item-dialog";
+import { useDeleteUnitDialog } from "./hooks/use-delete-unit-dialog";
 import { useScenarioList } from "./hooks/use-scenario-list";
 import { useEffectList } from "./hooks/use-effect-list";
 import { useSpellList } from "./hooks/use-spell-list";
-import { useEntityListQueries } from "./hooks/use-entity-list-queries";
+import { useItemList } from "./hooks/use-item-list";
+import { useUnitList } from "./hooks/use-unit-list";
 import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
 
 export interface PendingAction {
@@ -42,7 +48,6 @@ export interface CreatePageState {
   updateScenarioField: (field: string, value: unknown) => void;
   confirmDiscard: () => void;
   cancelDiscard: () => void;
-  listData: Record<EntityTab, { items: { id: string; name: string }[] } | undefined>;
   listLoading: Record<TabName, boolean>;
   // Scenario list specific
   scenarioListItems: { id: string; name: string; updatedAt: Date; createdAt: Date }[];
@@ -89,6 +94,36 @@ export interface CreatePageState {
   requestDeleteSpell: (id: string, name: string) => void;
   confirmDeleteSpell: () => void;
   cancelDeleteSpell: () => void;
+  // Item list specific
+  itemListItems: { id: string; name: string; updatedAt: Date }[];
+  itemPage: number;
+  itemTotalPages: number;
+  itemSortBy: ItemSortBy;
+  itemSortDir: ItemSortDir;
+  setItemSort: (sortBy: ItemSortBy, sortDir: ItemSortDir) => void;
+  setItemPage: (page: number) => void;
+  // Delete item
+  isDeleteItemDialogOpen: boolean;
+  deleteItemTarget: { id: string; name: string } | null;
+  deleteItemError: string | null;
+  requestDeleteItem: (id: string, name: string) => void;
+  confirmDeleteItem: () => void;
+  cancelDeleteItem: () => void;
+  // Unit list specific
+  unitListItems: { id: string; name: string; updatedAt: Date }[];
+  unitPage: number;
+  unitTotalPages: number;
+  unitSortBy: UnitSortBy;
+  unitSortDir: UnitSortDir;
+  setUnitSort: (sortBy: UnitSortBy, sortDir: UnitSortDir) => void;
+  setUnitPage: (page: number) => void;
+  // Delete unit
+  isDeleteUnitDialogOpen: boolean;
+  deleteUnitTarget: { id: string; name: string } | null;
+  deleteUnitError: string | null;
+  requestDeleteUnit: (id: string, name: string) => void;
+  confirmDeleteUnit: () => void;
+  cancelDeleteUnit: () => void;
 }
 
 export function useCreatePageState(
@@ -97,6 +132,8 @@ export function useCreatePageState(
     entity_id?: string;
     effect_id?: string;
     spell_id?: string;
+    item_id?: string;
+    unit_id?: string;
     scenario_id?: string;
   },
   navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void,
@@ -136,14 +173,18 @@ export function useCreatePageState(
   // Spell list (pagination, sorting, query)
   const spellList = useSpellList(activeTab === "Spells", backgroundEnabled);
 
-  // Entity list queries (lazy loading)
-  const { listData, entityListLoading } = useEntityListQueries(activeTab, backgroundEnabled);
+  // Item list (pagination, sorting, query)
+  const itemList = useItemList(activeTab === "Items", backgroundEnabled);
+
+  // Unit list (pagination, sorting, query)
+  const unitList = useUnitList(activeTab === "Units", backgroundEnabled);
 
   // Compute combined loading and enable background after active tab settles
   const allLoading: Record<TabName, boolean> = {
-    ...entityListLoading,
     Effects: effectList.effectsList.isLoading,
     Spells: spellList.spellsList.isLoading,
+    Items: itemList.itemsList.isLoading,
+    Units: unitList.unitsList.isLoading,
     Scenarios: scenarioList.scenariosList.isLoading,
   };
 
@@ -195,6 +236,30 @@ export function useCreatePageState(
     setSpellPage: spellList.setSpellPage,
   });
 
+  // Delete item dialog
+  const deleteItemDialog = useDeleteItemDialog({
+    entityWorkspace,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    navigate,
+    itemTotalCount: itemList.itemTotalCount,
+    itemPage: itemList.itemPage,
+    setItemPage: itemList.setItemPage,
+  });
+
+  // Delete unit dialog
+  const deleteUnitDialog = useDeleteUnitDialog({
+    entityWorkspace,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    navigate,
+    unitTotalCount: unitList.unitTotalCount,
+    unitPage: unitList.unitPage,
+    setUnitPage: unitList.setUnitPage,
+  });
+
   // Selection with dirty check
   const selectRecord = useCallback(
     (tab: TabName, id: string) => {
@@ -243,7 +308,6 @@ export function useCreatePageState(
     updateScenarioField,
     confirmDiscard,
     cancelDiscard: discard.cancelDiscard,
-    listData,
     listLoading: allLoading,
     // Scenario list specific
     scenarioListItems: scenarioList.scenarioListItems,
@@ -269,11 +333,31 @@ export function useCreatePageState(
     spellSortDir: spellList.spellSortDir,
     setSpellSort: spellList.setSpellSort,
     setSpellPage: spellList.setSpellPage,
+    // Item list specific
+    itemListItems: itemList.itemListItems,
+    itemPage: itemList.itemPage,
+    itemTotalPages: itemList.itemTotalPages,
+    itemSortBy: itemList.itemSortBy,
+    itemSortDir: itemList.itemSortDir,
+    setItemSort: itemList.setItemSort,
+    setItemPage: itemList.setItemPage,
+    // Unit list specific
+    unitListItems: unitList.unitListItems,
+    unitPage: unitList.unitPage,
+    unitTotalPages: unitList.unitTotalPages,
+    unitSortBy: unitList.unitSortBy,
+    unitSortDir: unitList.unitSortDir,
+    setUnitSort: unitList.setUnitSort,
+    setUnitPage: unitList.setUnitPage,
     // Delete scenario
     ...deleteDialog,
     // Delete effect
     ...deleteEffectDialog,
     // Delete spell
     ...deleteSpellDialog,
+    // Delete item
+    ...deleteItemDialog,
+    // Delete unit
+    ...deleteUnitDialog,
   };
 }

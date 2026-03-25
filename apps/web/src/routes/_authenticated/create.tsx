@@ -12,6 +12,10 @@ export const Route = createFileRoute("/_authenticated/create")({
       typeof search.effect_id === "string" ? search.effect_id : undefined,
     spell_id:
       typeof search.spell_id === "string" ? search.spell_id : undefined,
+    item_id:
+      typeof search.item_id === "string" ? search.item_id : undefined,
+    unit_id:
+      typeof search.unit_id === "string" ? search.unit_id : undefined,
     tab: typeof search.tab === "string" ? search.tab : undefined,
   }),
   beforeLoad: ({ context }) => {

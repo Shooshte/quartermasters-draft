@@ -19,6 +19,8 @@ interface UseWorkspaceLoaderOptions {
     entity_id?: string;
     effect_id?: string;
     spell_id?: string;
+    item_id?: string;
+    unit_id?: string;
     scenario_id?: string;
   };
   activeTab: TabName;
@@ -81,18 +83,6 @@ export function useWorkspaceLoader({
     enabled: !!search.entity_id && !entityInitRef.current,
     retry: false,
   });
-  const entityDetectItems = useQuery({
-    queryKey: ["scenarioBuilder", "items", "get", search.entity_id],
-    queryFn: () => trpc.scenarioBuilder.items.get.query({ id: search.entity_id! }),
-    enabled: !!search.entity_id && !entityInitRef.current,
-    retry: false,
-  });
-  const entityDetectUnits = useQuery({
-    queryKey: ["scenarioBuilder", "units", "get", search.entity_id],
-    queryFn: () => trpc.scenarioBuilder.units.get.query({ id: search.entity_id! }),
-    enabled: !!search.entity_id && !entityInitRef.current,
-    retry: false,
-  });
 
   useEffect(() => {
     if (!search.entity_id || entityInitRef.current) return;
@@ -100,8 +90,6 @@ export function useWorkspaceLoader({
     const detectors = [
       { type: "effect" as EntityType, query: entityDetectEffects },
       { type: "spell" as EntityType, query: entityDetectSpells },
-      { type: "item" as EntityType, query: entityDetectItems },
-      { type: "unit" as EntityType, query: entityDetectUnits },
     ];
 
     const allSettled = detectors.every((d) => d.query.isFetched);
@@ -146,10 +134,6 @@ export function useWorkspaceLoader({
     entityDetectEffects.data,
     entityDetectSpells.isFetched,
     entityDetectSpells.data,
-    entityDetectItems.isFetched,
-    entityDetectItems.data,
-    entityDetectUnits.isFetched,
-    entityDetectUnits.data,
   ]);
 
   // URL-driven initialization for effect_id
@@ -268,6 +252,122 @@ export function useWorkspaceLoader({
     }
   }, [search.spell_id, search.tab, setActiveTabState, spellQuery.isFetched, spellQuery.data]);
 
+  // URL-driven initialization for item_id
+  const itemInitRef = useRef(false);
+  const prevItemIdRef = useRef(search.item_id);
+
+  useEffect(() => {
+    if (search.item_id !== prevItemIdRef.current) {
+      prevItemIdRef.current = search.item_id;
+      if (skipEntityResetRef.current) {
+        skipEntityResetRef.current = false;
+        return;
+      }
+      itemInitRef.current = false;
+      setEntityWorkspace(createIdleWorkspace());
+    }
+  }, [search.item_id]);
+
+  const itemQuery = useQuery({
+    queryKey: ["scenarioBuilder", "items", "get", search.item_id],
+    queryFn: () => trpc.scenarioBuilder.items.get.query({ id: search.item_id! }),
+    enabled: !!search.item_id && !itemInitRef.current,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!search.item_id || itemInitRef.current) return;
+    if (!itemQuery.isFetched) return;
+
+    itemInitRef.current = true;
+
+    if (itemQuery.data) {
+      const entityData = itemQuery.data as { name: string; [key: string]: unknown };
+      if (!search.tab) {
+        setActiveTabState("Items");
+      }
+      setEntityWorkspace({
+        mode: "edit",
+        entityType: "item",
+        entityId: search.item_id,
+        data: entityData,
+        formValues: { name: entityData.name },
+        isDirty: false,
+      });
+      const tabToCheck = isValidTab(search.tab) ? search.tab : "Items";
+      if (tabToCheck === "Items") {
+        setPerTabSelection((prev) => ({ ...prev, Items: search.item_id! }));
+      }
+    } else {
+      setEntityWorkspace({
+        mode: "not-found",
+        entityType: "item",
+        entityId: search.item_id,
+        data: null,
+        formValues: {},
+        isDirty: false,
+      });
+    }
+  }, [search.item_id, search.tab, setActiveTabState, itemQuery.isFetched, itemQuery.data]);
+
+  // URL-driven initialization for unit_id
+  const unitInitRef = useRef(false);
+  const prevUnitIdRef = useRef(search.unit_id);
+
+  useEffect(() => {
+    if (search.unit_id !== prevUnitIdRef.current) {
+      prevUnitIdRef.current = search.unit_id;
+      if (skipEntityResetRef.current) {
+        skipEntityResetRef.current = false;
+        return;
+      }
+      unitInitRef.current = false;
+      setEntityWorkspace(createIdleWorkspace());
+    }
+  }, [search.unit_id]);
+
+  const unitQuery = useQuery({
+    queryKey: ["scenarioBuilder", "units", "get", search.unit_id],
+    queryFn: () => trpc.scenarioBuilder.units.get.query({ id: search.unit_id! }),
+    enabled: !!search.unit_id && !unitInitRef.current,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!search.unit_id || unitInitRef.current) return;
+    if (!unitQuery.isFetched) return;
+
+    unitInitRef.current = true;
+
+    if (unitQuery.data) {
+      const entityData = unitQuery.data as { name: string; [key: string]: unknown };
+      if (!search.tab) {
+        setActiveTabState("Units");
+      }
+      setEntityWorkspace({
+        mode: "edit",
+        entityType: "unit",
+        entityId: search.unit_id,
+        data: entityData,
+        formValues: { name: entityData.name },
+        isDirty: false,
+      });
+      const tabToCheck = isValidTab(search.tab) ? search.tab : "Units";
+      if (tabToCheck === "Units") {
+        setPerTabSelection((prev) => ({ ...prev, Units: search.unit_id! }));
+      }
+    } else {
+      setEntityWorkspace({
+        mode: "not-found",
+        entityType: "unit",
+        entityId: search.unit_id,
+        data: null,
+        formValues: {},
+        isDirty: false,
+      });
+    }
+  }, [search.unit_id, search.tab, setActiveTabState, unitQuery.isFetched, unitQuery.data]);
+
   // URL-driven scenario initialization
   const scenarioInitRef = useRef(false);
   const prevScenarioIdRef = useRef(search.scenario_id);
@@ -353,12 +453,14 @@ export function useWorkspaceLoader({
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
-        const urlParam = tab === "Effects" ? "effect_id" : tab === "Spells" ? "spell_id" : "entity_id";
+        const urlParam = tab === "Effects" ? "effect_id" : tab === "Spells" ? "spell_id" : tab === "Items" ? "item_id" : tab === "Units" ? "unit_id" : "entity_id";
 
         // Sync prev-refs and init-refs so URL-driven effects don't reset/refetch
         const paramRefs = {
           effect_id: { prev: prevEffectIdRef, init: effectInitRef },
           spell_id: { prev: prevSpellIdRef, init: spellInitRef },
+          item_id: { prev: prevItemIdRef, init: itemInitRef },
+          unit_id: { prev: prevUnitIdRef, init: unitInitRef },
           entity_id: { prev: prevEntityIdRef, init: entityInitRef },
         } as const;
         paramRefs[urlParam as keyof typeof paramRefs].prev.current = id;
@@ -372,6 +474,8 @@ export function useWorkspaceLoader({
             const next = { ...prev };
             delete next.effect_id;
             delete next.spell_id;
+            delete next.item_id;
+            delete next.unit_id;
             delete next.entity_id;
             next[urlParam] = id;
             return next;
@@ -470,7 +574,7 @@ export function useWorkspaceLoader({
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
           skipEntityResetRef.current = true;
-          const paramToRemove = action.tab === "Effects" ? "effect_id" : action.tab === "Spells" ? "spell_id" : "entity_id";
+          const paramToRemove = action.tab === "Effects" ? "effect_id" : action.tab === "Spells" ? "spell_id" : action.tab === "Items" ? "item_id" : action.tab === "Units" ? "unit_id" : "entity_id";
           navigate?.({
             search: (prev) => {
               const next = { ...prev };

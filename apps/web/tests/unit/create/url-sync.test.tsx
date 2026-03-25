@@ -116,7 +116,7 @@ describe("URL parameter sync", () => {
     expect(result2).toEqual({ tab: "Scenarios", scenario_id: "s1" });
   });
 
-  it("createNew for entity removes entity_id from URL", () => {
+  it("createNew for item removes item_id from URL", () => {
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Items" }, navigate),
       { wrapper: createWrapper() },
@@ -132,8 +132,8 @@ describe("URL parameter sync", () => {
     });
 
     const searchFn = navigate.mock.calls[0][0].search;
-    const result2 = searchFn({ tab: "Items", entity_id: "old-id", scenario_id: "s1" });
-    expect(result2).not.toHaveProperty("entity_id");
+    const result2 = searchFn({ tab: "Items", item_id: "old-id", scenario_id: "s1" });
+    expect(result2).not.toHaveProperty("item_id");
     expect(result2).toHaveProperty("scenario_id", "s1");
   });
 

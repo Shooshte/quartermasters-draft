@@ -30,10 +30,14 @@ test.describe("Items Library Tab — Display", () => {
     const ironSword = gmPage.getByRole("row", { name: /Iron Sword/ });
     await expect(ironSword).toBeVisible();
     await expect(ironSword.getByText("Iron Sword")).toBeVisible();
+    // Verify updated_at date is displayed (e.g. "Jan 1, 2025")
+    await expect(ironSword.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
 
     const oakStaff = gmPage.getByRole("row", { name: /Oak Staff/ });
     await expect(oakStaff).toBeVisible();
     await expect(oakStaff.getByText("Oak Staff")).toBeVisible();
+    // Verify updated_at date is displayed (e.g. "Feb 1, 2025")
+    await expect(oakStaff.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
   test("empty state is shown when no items exist", async ({

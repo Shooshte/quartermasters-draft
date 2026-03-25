@@ -1,6 +1,6 @@
 Feature: Login
   As a pre-seeded user
-  I want to log in with my username and password
+  I want to log in with my email and password
   So that I can access the application
 
   Background:
@@ -8,7 +8,7 @@ Feature: Login
 
   Scenario: Visitor sees the login form
     When I navigate to "/login"
-    Then I should see a username field
+    Then I should see an email field
     And I should see a password field
     And I should see a "Remember me" checkbox
     And I should see a submit button

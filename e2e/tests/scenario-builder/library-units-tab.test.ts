@@ -30,10 +30,14 @@ test.describe("Units Library Tab — Display", () => {
     const barbarian = gmPage.getByRole("row", { name: /Barbarian/ });
     await expect(barbarian).toBeVisible();
     await expect(barbarian.getByText("Barbarian")).toBeVisible();
+    // Verify updated_at date is displayed (e.g. "Jan 1, 2025")
+    await expect(barbarian.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
 
     const ranger = gmPage.getByRole("row", { name: /Ranger/ });
     await expect(ranger).toBeVisible();
     await expect(ranger.getByText("Ranger")).toBeVisible();
+    // Verify updated_at date is displayed (e.g. "Mar 1, 2025")
+    await expect(ranger.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
   test("empty state is shown when no units exist", async ({

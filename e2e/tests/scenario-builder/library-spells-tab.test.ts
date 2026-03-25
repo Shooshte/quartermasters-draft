@@ -31,10 +31,14 @@ test.describe("Spells Library Tab — Display", () => {
     const fireball = gmPage.getByRole("row", { name: /Fireball/ });
     await expect(fireball).toBeVisible();
     await expect(fireball.getByText("highest_health")).toBeVisible();
+    // Verify updated_at date is displayed (locale-dependent format)
+    await expect(fireball.locator("td").nth(2)).not.toBeEmpty();
 
     const healingTouch = gmPage.getByRole("row", { name: /Healing Touch/ });
     await expect(healingTouch).toBeVisible();
     await expect(healingTouch.getByText("lowest_health")).toBeVisible();
+    // Verify updated_at date is displayed (locale-dependent format)
+    await expect(healingTouch.locator("td").nth(2)).not.toBeEmpty();
   });
 
   test("empty state is shown when no spells exist", async ({

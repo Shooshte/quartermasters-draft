@@ -63,6 +63,11 @@ test.describe("Logout", () => {
     await logout(page);
     await expectPath(page, "/login");
     await expectQueryParams(page, { next: "/replay/abc445" });
+
+    // Verify session is cleared — navigating to a protected route redirects to login
+    await page.goto("/create");
+    await page.waitForURL("**/login**");
+    await expectPath(page, "/login");
     await context.close();
   });
 
@@ -76,6 +81,11 @@ test.describe("Logout", () => {
     await logout(page);
     await expectPath(page, "/login");
     await expectQueryParams(page, { next: "/replay/abc445" });
+
+    // Verify session is cleared — navigating to a protected route redirects to login
+    await page.goto("/play");
+    await page.waitForURL("**/login**");
+    await expectPath(page, "/login");
     await context.close();
   });
 
@@ -90,6 +100,11 @@ test.describe("Logout", () => {
     await expectPath(page, "/login");
     const url = new URL(page.url());
     expect(url.searchParams.get("next")).toBeNull();
+
+    // Verify session is cleared — navigating to a protected route redirects to login
+    await page.goto("/create");
+    await page.waitForURL("**/login**");
+    await expectPath(page, "/login");
     await context.close();
   });
 
@@ -104,6 +119,11 @@ test.describe("Logout", () => {
     await expectPath(page, "/login");
     const url = new URL(page.url());
     expect(url.searchParams.get("next")).toBeNull();
+
+    // Verify session is cleared — navigating to a protected route redirects to login
+    await page.goto("/play");
+    await page.waitForURL("**/login**");
+    await expectPath(page, "/login");
     await context.close();
   });
 });

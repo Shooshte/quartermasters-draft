@@ -4,7 +4,7 @@ import { expectPath, expectQueryParams } from "./auth.fixtures";
 test.describe("Route Protection", () => {
   const protectedRoutes: [string, string | null][] = [
     ["/", "/"],
-    ["/403", "/403"],
+    ["/403", null],
     ["/create", "/create"],
     ["/play", "/play"],
     ["/replay/abc123", "/replay/abc123"]

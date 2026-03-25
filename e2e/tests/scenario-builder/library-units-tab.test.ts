@@ -50,7 +50,8 @@ test.describe("Units Library Tab — Display", () => {
       (_, i) => `f0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of unitIds) {
-      await deleteUnitViaApi(gmPage.request, id);
+      const response = await deleteUnitViaApi(gmPage.request, id);
+      expect(response.ok()).toBeTruthy();
     }
 
     await gmPage.goto("/create");

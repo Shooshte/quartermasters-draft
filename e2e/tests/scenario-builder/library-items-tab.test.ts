@@ -50,7 +50,8 @@ test.describe("Items Library Tab — Display", () => {
       (_, i) => `d0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of itemIds) {
-      await deleteItemViaApi(gmPage.request, id);
+      const response = await deleteItemViaApi(gmPage.request, id);
+      expect(response.ok()).toBeTruthy();
     }
 
     await gmPage.goto("/create");

@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
     const result = await getAuthSession();
     if (!result.authenticated) {
-      const excludedPaths = ["/login"];
+      const excludedPaths = ["/login", "/403"];
       const search: Record<string, string> = {};
       if (!excludedPaths.includes(location.pathname)) {
         search.next = location.href;

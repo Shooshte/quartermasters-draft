@@ -349,7 +349,8 @@ dbTest.describe("Create Shell — Empty Tab State", () => {
       `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of effectIds) {
-      await deleteEffectViaApi(gmPage.request, id);
+      const response = await deleteEffectViaApi(gmPage.request, id);
+      expect(response.ok()).toBeTruthy();
     }
 
     try {
@@ -1079,7 +1080,7 @@ test.describe("Create Shell — URL Updates", () => {
     gmPage,
   }) => {
     await gmPage.goto(
-      `/create?tab=Spells&entity_id=${FIREBALL_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`,
+      `/create?tab=Spells&spell_id=${FIREBALL_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`,
     );
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
       "Fireball",
@@ -1093,8 +1094,8 @@ test.describe("Create Shell — URL Updates", () => {
 
     const url = new URL(gmPage.url());
     expect(url.searchParams.get("tab")).toBe("Items");
-    // Entity ID param should still be present
-    expect(url.searchParams.has("entity_id")).toBe(true);
+    // Spell ID param should still be present
+    expect(url.searchParams.has("spell_id")).toBe(true);
     // Scenario ID param should still be present
     expect(url.searchParams.has("scenario_id")).toBe(true);
     expect(url.searchParams.get("scenario_id")).toBe(AMBUSH_AT_DAWN_ID);

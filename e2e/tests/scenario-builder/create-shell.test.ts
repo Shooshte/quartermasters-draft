@@ -89,10 +89,10 @@ test.describe("Create Shell — URL Parameters", () => {
     );
   });
 
-  test("entity_id (item): auto-selects Items tab and loads entity", async ({
+  test("item_id: auto-selects Items tab and loads entity", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?entity_id=${IRON_SWORD_ID}`);
+    await gmPage.goto(`/create?item_id=${IRON_SWORD_ID}`);
     await expect(
       gmPage.getByRole("tab", { name: "Items" }),
     ).toHaveAttribute("data-state", "active");
@@ -101,10 +101,10 @@ test.describe("Create Shell — URL Parameters", () => {
     );
   });
 
-  test("entity_id (unit): auto-selects Units tab and loads entity", async ({
+  test("unit_id: auto-selects Units tab and loads entity", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?entity_id=${BARBARIAN_ID}`);
+    await gmPage.goto(`/create?unit_id=${BARBARIAN_ID}`);
     await expect(
       gmPage.getByRole("tab", { name: "Units" }),
     ).toHaveAttribute("data-state", "active");
@@ -143,11 +143,11 @@ test.describe("Create Shell — URL Parameters", () => {
     ).toHaveAttribute("aria-selected", "true");
   });
 
-  test("tab + entity_id + scenario_id: all three loaded", async ({
+  test("tab + item_id + scenario_id: all three loaded", async ({
     gmPage,
   }) => {
     await gmPage.goto(
-      `/create?tab=Items&entity_id=${IRON_SWORD_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`,
+      `/create?tab=Items&item_id=${IRON_SWORD_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`,
     );
     await expect(
       gmPage.getByRole("tab", { name: "Items" }),
@@ -171,10 +171,10 @@ test.describe("Create Shell — URL Parameters", () => {
       "Battle Cry",
     );
     // No item should be selected
-    const options = gmPage.getByRole("option");
-    const count = await options.count();
+    const rows = gmPage.locator('tr[aria-selected]');
+    const count = await rows.count();
     for (let i = 0; i < count; i++) {
-      await expect(options.nth(i)).toHaveAttribute("aria-selected", "false");
+      await expect(rows.nth(i)).toHaveAttribute("aria-selected", "false");
     }
   });
 
@@ -246,7 +246,7 @@ test.describe("Create Shell — Browsing by Tab", () => {
         "active",
       );
       for (const name of records) {
-        await expect(gmPage.getByRole("option", { name })).toBeVisible();
+        await expect(gmPage.getByRole("row", { name })).toBeVisible();
       }
       await expect(
         gmPage.getByRole("button", { name: `New ${singular}` }),
@@ -288,7 +288,7 @@ test.describe("Create Shell — Tab Switching Memory", () => {
 
     // Select Iron Sword on Items tab
     await gmPage.getByRole("tab", { name: "Items" }).click();
-    await gmPage.getByRole("option", { name: "Iron Sword" }).click();
+    await gmPage.getByRole("row", { name: "Iron Sword" }).getByRole("button", { name: /Edit/ }).click();
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
       "Iron Sword",
     );
@@ -391,11 +391,11 @@ test.describe("Create Shell — Record Selection", () => {
       );
 
       await gmPage.getByRole("tab", { name: tab }).click();
-      await gmPage.getByRole("option", { name }).click();
+      await gmPage.getByRole("row", { name }).getByRole("button", { name: /Edit/ }).click();
 
       await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(name);
       await expect(
-        gmPage.getByRole("option", { name }),
+        gmPage.getByRole("row", { name }),
       ).toHaveAttribute("aria-selected", "true");
       // Scenario workspace unchanged
       await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
@@ -510,7 +510,7 @@ test.describe("Create Shell — Create Actions", () => {
       );
 
       await gmPage.getByRole("tab", { name: tab }).click();
-      await gmPage.getByRole("option", { name: record }).click();
+      await gmPage.getByRole("row", { name: record }).getByRole("button", { name: /Edit/ }).click();
       await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
         record,
       );
@@ -519,12 +519,10 @@ test.describe("Create Shell — Create Actions", () => {
         .getByRole("button", { name: `New ${singular}` })
         .click();
       // Selection cleared
-      const options = gmPage
-        .getByRole("tabpanel")
-        .getByRole("option");
-      const count = await options.count();
+      const rows = gmPage.locator('tr[aria-selected]');
+      const count = await rows.count();
       for (let i = 0; i < count; i++) {
-        await expect(options.nth(i)).toHaveAttribute(
+        await expect(rows.nth(i)).toHaveAttribute(
           "aria-selected",
           "false",
         );

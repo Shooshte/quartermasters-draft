@@ -32,7 +32,7 @@ interface LibraryPanelProps {
   onEffectSortChange: (sortBy: EffectSortBy, sortDir: EffectSortDir) => void;
   onDeleteEffect: (id: string, name: string) => void;
   // Spell-specific props
-  spellListItems: { id: string; name: string; targetPolicy: string }[];
+  spellListItems: { id: string; name: string; targetPolicy: string; updatedAt: Date }[];
   spellPage: number;
   spellTotalPages: number;
   spellSortBy: SpellSortBy;

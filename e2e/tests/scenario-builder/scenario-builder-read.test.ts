@@ -68,13 +68,13 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Items ────────────────────────────────────────────────────────
 
-  test("GM can list items (3 records, alphabetical)", async ({ gmPage }) => {
+  test("GM can list items (11 records, 10 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.items.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(3);
+    expect(data.items).toHaveLength(10);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(100);
+    expect(data.limit).toBe(10);
     const names = data.items.map((i: { name: string }) => i.name);
     expect(names).toEqual([...names].sort());
   });
@@ -90,13 +90,13 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Units ────────────────────────────────────────────────────────
 
-  test("GM can list units (3 records, alphabetical)", async ({ gmPage }) => {
+  test("GM can list units (11 records, 10 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.units.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(3);
+    expect(data.items).toHaveLength(10);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(100);
+    expect(data.limit).toBe(10);
     const names = data.items.map((u: { name: string }) => u.name);
     expect(names).toEqual([...names].sort());
   });

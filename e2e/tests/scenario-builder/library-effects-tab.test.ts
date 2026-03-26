@@ -149,11 +149,9 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Effects" }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Alphabetically: Arcane Damage, Bandage, ...
-    expect(first).toBe("Arcane Damage");
-    expect(second).toBe("Bandage");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Arcane Damage");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Bandage");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
@@ -164,11 +162,9 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Descending: Sizzling Flesh, Rejuvenation, ...
-    expect(first).toBe("Sizzling Flesh");
-    expect(second).toBe("Rejuvenation");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Sizzling Flesh");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Rejuvenation");
   });
 
   test("sort by timing type ascending", async ({ gmPage }) => {
@@ -179,9 +175,8 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Timing Type/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
     // instant sorts before interval alphabetically, first instant effect by name
-    expect(first).toBe("Arcane Damage");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Arcane Damage");
   });
 
   test("sort by timing type descending", async ({ gmPage }) => {
@@ -193,9 +188,8 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Timing Type/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
     // interval sorts after instant, so interval records appear first when descending
-    expect(first).toBe("Bandage");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Bandage");
   });
 
   test("sort by effect type ascending", async ({ gmPage }) => {
@@ -206,11 +200,9 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Effect Type/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // buff < damage < debuff < healing alphabetically
-    expect(first).toBe("Barbarian Roar");
-    expect(second).toBe("Guardian Shield");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Barbarian Roar");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Guardian Shield");
   });
 
   test("sort by effect type descending", async ({ gmPage }) => {
@@ -222,9 +214,8 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Effect Type/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
     // damage is last in enum declaration order, so first when descending
-    expect(first).toBe("Arcane Damage");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Arcane Damage");
   });
 
   test("clicking the active sort column toggles direction", async ({

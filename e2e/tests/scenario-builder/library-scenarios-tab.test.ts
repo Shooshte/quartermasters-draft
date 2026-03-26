@@ -149,10 +149,8 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
     const options = gmPage.locator('tr[aria-selected]');
-    const first = await options.nth(0).getAttribute("aria-label");
-    const second = await options.nth(1).getAttribute("aria-label");
-    expect(first).toBe("Ambush at Dawn");
-    expect(second).toBe("Bridge Defense");
+    await expect(options.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
+    await expect(options.nth(1)).toHaveAttribute("aria-label", "Bridge Defense");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
@@ -163,11 +161,9 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
     const options = gmPage.locator('tr[aria-selected]');
-    const first = await options.nth(0).getAttribute("aria-label");
-    const second = await options.nth(1).getAttribute("aria-label");
     // Descending: Zombie Horde, Jungle Trek, ...
-    expect(first).toBe("Zombie Horde");
-    expect(second).toBe("Jungle Trek");
+    await expect(options.nth(0)).toHaveAttribute("aria-label", "Zombie Horde");
+    await expect(options.nth(1)).toHaveAttribute("aria-label", "Jungle Trek");
   });
 
   test("sort by last update date ascending", async ({ gmPage }) => {
@@ -178,13 +174,10 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
     const options = gmPage.locator('tr[aria-selected]');
-    const first = await options.nth(0).getAttribute("aria-label");
-    const second = await options.nth(1).getAttribute("aria-label");
-    const third = await options.nth(2).getAttribute("aria-label");
     // Oldest first: Ambush at Dawn (2025-04), Castle Siege (2025-05), Zombie Horde (2025-06)
-    expect(first).toBe("Ambush at Dawn");
-    expect(second).toBe("Castle Siege");
-    expect(third).toBe("Zombie Horde");
+    await expect(options.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
+    await expect(options.nth(1)).toHaveAttribute("aria-label", "Castle Siege");
+    await expect(options.nth(2)).toHaveAttribute("aria-label", "Zombie Horde");
   });
 
   test("sort by last update date descending", async ({ gmPage }) => {
@@ -196,11 +189,9 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Last Update/ }).click();
 
     const options = gmPage.locator('tr[aria-selected]');
-    const first = await options.nth(0).getAttribute("aria-label");
-    const second = await options.nth(1).getAttribute("aria-label");
     // Newest first: Jungle Trek (2026-02), Ice Cavern (2026-01)
-    expect(first).toBe("Jungle Trek");
-    expect(second).toBe("Ice Cavern");
+    await expect(options.nth(0)).toHaveAttribute("aria-label", "Jungle Trek");
+    await expect(options.nth(1)).toHaveAttribute("aria-label", "Ice Cavern");
   });
 
   test("clicking the active sort column toggles direction", async ({

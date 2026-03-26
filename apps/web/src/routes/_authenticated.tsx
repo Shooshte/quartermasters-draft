@@ -93,7 +93,7 @@ function AuthenticatedLayout() {
           {notice}
         </p>
       )}
-      <header className="flex items-center justify-end p-4">
+      <header className="flex items-center justify-end p-4 border-b border-border/50">
         <Button
           variant="ghost"
           size="sm"

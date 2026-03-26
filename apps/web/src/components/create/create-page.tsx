@@ -79,6 +79,9 @@ export function CreatePage({ search }: CreatePageProps) {
         <EntityWorkspace
           workspace={state.entityWorkspace}
           onFieldChange={state.updateEntityField}
+          onSave={state.saveEntity}
+          isSaving={state.isEntitySaving}
+          saveError={state.entitySaveError}
         />
         <div className="border-t border-border" />
         <ScenarioWorkspace

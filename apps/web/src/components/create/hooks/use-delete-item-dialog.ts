@@ -9,7 +9,7 @@ interface UseDeleteItemDialogOptions {
   setEntityWorkspace: React.Dispatch<React.SetStateAction<WorkspaceState>>;
   setPerTabSelection: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
   skipEntityResetRef: React.MutableRefObject<boolean>;
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void;
+  navigate?: any;
   itemTotalCount: number;
   itemPage: number;
   setItemPage: (page: number) => void;
@@ -46,7 +46,7 @@ export function useDeleteItemDialog({
         setPerTabSelection((prev) => ({ ...prev, Items: null }));
         skipEntityResetRef.current = true;
         navigate?.({
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.item_id;
             return next;

@@ -9,7 +9,7 @@ interface UseDeleteSpellDialogOptions {
   setEntityWorkspace: React.Dispatch<React.SetStateAction<WorkspaceState>>;
   setPerTabSelection: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
   skipEntityResetRef: React.MutableRefObject<boolean>;
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void;
+  navigate?: any;
   spellTotalCount: number;
   spellPage: number;
   setSpellPage: (page: number) => void;
@@ -46,7 +46,7 @@ export function useDeleteSpellDialog({
         setPerTabSelection((prev) => ({ ...prev, Spells: null }));
         skipEntityResetRef.current = true;
         navigate?.({
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.spell_id;
             return next;

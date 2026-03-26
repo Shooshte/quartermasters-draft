@@ -19,4 +19,8 @@ echo "Starting Postgres..."
 docker compose -f "$E2E_DIR/docker-compose.yml" up -d --wait postgres
 
 echo "Running Playwright tests with $WORKERS workers..."
-E2E_WORKERS="$WORKERS" npx playwright test --config "$E2E_DIR/playwright.config.ts"
+if [ "$#" -gt 0 ]; then
+  E2E_WORKERS="$WORKERS" npx playwright test --config "$E2E_DIR/playwright.config.ts" "$@"
+else
+  E2E_WORKERS="$WORKERS" npx playwright test --config "$E2E_DIR/playwright.config.ts"
+fi

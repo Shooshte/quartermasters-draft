@@ -2,13 +2,18 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
 import type { WorkspaceState } from "./types";
+import { EffectWorkspaceForm } from "./effect-workspace-form";
+import { effectRecordToFormValues } from "./effect-form";
 
 interface EntityWorkspaceProps {
   workspace: WorkspaceState;
   onFieldChange: (field: string, value: unknown) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  saveError: string | null;
 }
 
-export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspaceProps) {
+export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, saveError }: EntityWorkspaceProps) {
   const { mode, entityType, formValues } = workspace;
   const isTransitioning = mode === "loading" && workspace.data !== null;
 
@@ -43,15 +48,26 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
 
         {(mode === "create" || mode === "edit" || isTransitioning) && (
           <div className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="entity-form">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="entity-name">Name</Label>
-              <Input
-                id="entity-name"
-                data-testid="entity-name-input"
-                value={formValues.name ?? ""}
-                onChange={(e) => onFieldChange("name", e.target.value)}
+            {entityType === "effect" ? (
+              <EffectWorkspaceForm
+                mode={mode}
+                formValues={effectRecordToFormValues(formValues)}
+                onFieldChange={onFieldChange}
+                onSave={onSave}
+                isSaving={isSaving}
+                saveError={saveError}
               />
-            </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="entity-name">Name</Label>
+                <Input
+                  id="entity-name"
+                  data-testid="entity-name-input"
+                  value={formValues.name ?? ""}
+                  onChange={(e) => onFieldChange("name", e.target.value)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

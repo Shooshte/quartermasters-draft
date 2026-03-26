@@ -12,6 +12,8 @@ export function chainable(data: unknown) {
   chain.limit = vi.fn().mockReturnValue(chain);
   chain.offset = vi.fn().mockResolvedValue(data);
   chain.where = vi.fn().mockReturnValue(chain);
+  chain.values = vi.fn().mockReturnValue(chain);
+  chain.set = vi.fn().mockReturnValue(chain);
   chain.innerJoin = vi.fn().mockReturnValue(chain);
   chain.returning = vi.fn().mockResolvedValue(data);
   chain.then = (resolve: (v: unknown) => void) => resolve(data);

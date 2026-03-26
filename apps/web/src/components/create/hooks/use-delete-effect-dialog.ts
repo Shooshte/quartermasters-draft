@@ -9,7 +9,7 @@ interface UseDeleteEffectDialogOptions {
   setEntityWorkspace: React.Dispatch<React.SetStateAction<WorkspaceState>>;
   setPerTabSelection: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
   skipEntityResetRef: React.MutableRefObject<boolean>;
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void;
+  navigate?: any;
   effectTotalCount: number;
   effectPage: number;
   setEffectPage: (page: number) => void;
@@ -46,7 +46,7 @@ export function useDeleteEffectDialog({
         setPerTabSelection((prev) => ({ ...prev, Effects: null }));
         skipEntityResetRef.current = true;
         navigate?.({
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.effect_id;
             return next;

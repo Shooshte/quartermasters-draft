@@ -13,7 +13,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Quartermasters Draft" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: appCss },
+    ],
   }),
   component: RootComponent,
 });
@@ -24,7 +28,7 @@ function RootComponent() {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="bg-grain">
         <Outlet />
         <Scripts />
       </body>

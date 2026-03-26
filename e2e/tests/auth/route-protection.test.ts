@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test } from "../worker-base.fixture";
 import { expectPath, expectQueryParams } from "./auth.fixtures";
 
 test.describe("Route Protection", () => {

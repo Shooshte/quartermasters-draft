@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" });
 const IRON_SWORD_ID = "d0000000-0000-0000-0000-000000000001";
 const LEATHER_SHIELD_ID = "d0000000-0000-0000-0000-000000000003";
 const WYRM_SCALE_ID = "d0000000-0000-0000-0000-000000000011";
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to delete an item via the tRPC mutation API */
 async function deleteItemViaApi(

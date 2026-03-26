@@ -1,7 +1,7 @@
 import { test, expect } from "../auth/auth.fixtures";
-import { test as base } from "@playwright/test";
+import { test as base } from "../worker-base.fixture";
 
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to parse superjson tRPC response */
 async function parseTrpcResponse(response: Awaited<ReturnType<import("@playwright/test").APIRequestContext["get"]>>) {

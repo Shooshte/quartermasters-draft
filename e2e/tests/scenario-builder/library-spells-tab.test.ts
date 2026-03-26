@@ -6,7 +6,7 @@ test.describe.configure({ mode: "serial" });
 
 const FIREBALL_ID = "b0000000-0000-0000-0000-000000000001";
 const BATTLE_CRY_ID = "b0000000-0000-0000-0000-000000000002";
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to delete a spell via the tRPC mutation API */
 async function deleteSpellViaApi(

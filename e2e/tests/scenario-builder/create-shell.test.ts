@@ -11,7 +11,7 @@ const AMBUSH_AT_DAWN_ID = "a2000000-0000-0000-0000-000000000001";
 const CASTLE_SIEGE_ID = "a2000000-0000-0000-0000-000000000002";
 const UNKNOWN_UUID = "00000000-0000-0000-0000-000000000099";
 
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to delete an effect via the tRPC mutation API */
 async function deleteEffectViaApi(

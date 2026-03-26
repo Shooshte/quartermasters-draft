@@ -7,7 +7,7 @@ test.describe.configure({ mode: "serial" });
 const BARBARIAN_ID = "f0000000-0000-0000-0000-000000000001";
 const RANGER_ID = "f0000000-0000-0000-0000-000000000003";
 const ZEPHYR_MONK_ID = "f0000000-0000-0000-0000-000000000011";
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to delete a unit via the tRPC mutation API */
 async function deleteUnitViaApi(

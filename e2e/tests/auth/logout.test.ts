@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../worker-base.fixture";
 import {
   loginAsGM,
   loginAsPlayer,

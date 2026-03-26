@@ -1,4 +1,5 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect } from "../worker-base.fixture";
+import type { Page } from "@playwright/test";
 
 /** Seed credentials */
 export const GM_EMAIL = "gm@example.com";

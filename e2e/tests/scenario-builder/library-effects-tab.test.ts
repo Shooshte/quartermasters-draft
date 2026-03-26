@@ -6,7 +6,7 @@ test.describe.configure({ mode: "serial" });
 
 const BARBARIAN_ROAR_ID = "a0000000-0000-0000-0000-000000000001";
 const EXHAUST_ID = "a0000000-0000-0000-0000-000000000003";
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to delete an effect via the tRPC mutation API */
 async function deleteEffectViaApi(

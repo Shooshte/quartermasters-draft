@@ -6,7 +6,7 @@ test.describe.configure({ mode: "serial" });
 
 const AMBUSH_AT_DAWN_ID = "a2000000-0000-0000-0000-000000000001";
 const CASTLE_SIEGE_ID = "a2000000-0000-0000-0000-000000000002";
-const BASE = "http://localhost:3000/api/trpc";
+const BASE = "/api/trpc";
 
 /** Helper to delete a scenario via the tRPC mutation API */
 async function deleteScenarioViaApi(

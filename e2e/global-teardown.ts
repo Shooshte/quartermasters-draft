@@ -11,4 +11,9 @@ export default async function globalTeardown(_config: FullConfig) {
   } catch {
     // Best effort; run-e2e.sh cleanup trap handles the rest
   }
+
+  // Worker databases (qd_worker_N) are intentionally NOT dropped here.
+  // When run via run-e2e.sh, `docker compose down -v` destroys the entire
+  // Postgres volume. When run standalone, globalSetup's DROP IF EXISTS
+  // handles stale databases on the next run.
 }

@@ -1,6 +1,5 @@
 import { test as base } from "@playwright/test";
-
-const BASE_PORT = 3100;
+import { BASE_PORT } from "../constants";
 
 /**
  * Base fixture that routes each Playwright worker to its dedicated app instance.

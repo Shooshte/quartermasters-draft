@@ -1,11 +1,11 @@
 import { execSync } from "node:child_process";
 import path from "node:path";
 import type { FullConfig } from "@playwright/test";
+import { BASE_PORT, DEFAULT_WORKERS } from "./constants";
 
 const E2E_DIR = path.resolve(import.meta.dirname);
 const COMPOSE_FILE = path.join(E2E_DIR, "docker-compose.yml");
-const WORKERS = parseInt(process.env.E2E_WORKERS ?? "4", 10);
-const BASE_PORT = 3100;
+const WORKERS = parseInt(process.env.E2E_WORKERS ?? String(DEFAULT_WORKERS), 10);
 const NETWORK = "qd-e2e-net";
 const IMAGE = "qd-e2e-app:latest";
 
@@ -41,7 +41,7 @@ export default async function globalSetup(_config: FullConfig) {
   execSync(
     `docker compose -f "${COMPOSE_FILE}" exec -T postgres ` +
       `pg_dump -U postgres -d ${db0} --data-only --no-owner --no-acl -f /tmp/qd-seed-dump.sql`,
-    { stdio: "pipe", timeout: 15_000 },
+    { stdio: "pipe", timeout: 30_000 },
   );
 
   // Phase 3: Clone schema + data to workers 1..N

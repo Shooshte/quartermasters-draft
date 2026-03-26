@@ -432,14 +432,13 @@ export function useWorkspaceLoader({
       const entityType = TAB_TO_ENTITY_TYPE[tab];
       const routerKey = TAB_TO_ROUTER_KEY[tab];
       pendingEntityIdRef.current = id;
-      setEntityWorkspace({
+      setEntityWorkspace(prev => ({
+        ...prev,
         mode: "loading",
         entityType,
         entityId: id,
-        data: null,
-        formValues: {},
         isDirty: false,
-      });
+      }));
       try {
         const data = await trpc.scenarioBuilder[routerKey].get.query({ id });
         if (pendingEntityIdRef.current !== id) return;
@@ -469,6 +468,7 @@ export function useWorkspaceLoader({
           if (param !== urlParam) refs.prev.current = undefined;
         }
 
+        skipEntityResetRef.current = true;
         navigate?.({
           search: (prev) => {
             const next = { ...prev };
@@ -499,14 +499,13 @@ export function useWorkspaceLoader({
 
   const loadScenario = useCallback(async (id: string) => {
     pendingScenarioIdRef.current = id;
-    setScenarioWorkspace({
+    setScenarioWorkspace(prev => ({
+      ...prev,
       mode: "loading",
       entityType: "scenario",
       entityId: id,
-      data: null,
-      formValues: {},
       isDirty: false,
-    });
+    }));
     try {
       const data = await trpc.scenarioBuilder.scenarios.get.query({ id });
       if (pendingScenarioIdRef.current !== id) return;
@@ -520,6 +519,9 @@ export function useWorkspaceLoader({
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Scenarios: id }));
+      prevScenarioIdRef.current = id;
+      scenarioInitRef.current = true;
+      skipScenarioResetRef.current = true;
       navigate?.({ search: (prev) => ({ ...prev, scenario_id: id }), replace: true });
     } catch {
       if (pendingScenarioIdRef.current !== id) return;

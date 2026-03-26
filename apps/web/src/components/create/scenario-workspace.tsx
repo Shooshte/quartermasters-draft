@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
@@ -13,31 +12,32 @@ interface ScenarioWorkspaceProps {
 
 export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspaceProps) {
   const { mode, formValues, data } = workspace;
+  const isTransitioning = mode === "loading" && workspace.data !== null;
 
   type ScenarioRow = { id: string; rowType: string; assignments: unknown[] };
   const rows =
-    mode === "edit" && data && Array.isArray(data.rows)
+    (mode === "edit" || isTransitioning) && data && Array.isArray(data.rows)
       ? (data.rows as ScenarioRow[])
       : null;
 
   return (
-    <Card data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto">
-      <CardHeader>
-        <CardTitle>
-          {(mode === "idle" || mode === "loading") && "Scenario"}
-          {mode === "not-found" && "Scenario"}
-          {mode === "create" && "New Scenario"}
-          {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1">
+    <div data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto min-h-0">
+      <div className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
+        {mode === "idle" && "Scenario"}
+        {mode === "loading" && !workspace.data && "Scenario"}
+        {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
+        {mode === "not-found" && "Scenario"}
+        {mode === "create" && "New Scenario"}
+        {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
+      </div>
+      <div className="flex-1 p-4 overflow-auto">
         {mode === "idle" && (
           <p className="text-sm text-muted-foreground" data-testid="scenario-idle">
             Select a scenario from the library
           </p>
         )}
 
-        {mode === "loading" && (
+        {mode === "loading" && !workspace.data && (
           <p className="text-sm text-muted-foreground" data-testid="scenario-loading">
             Loading…
           </p>
@@ -49,8 +49,8 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
           </p>
         )}
 
-        {(mode === "create" || mode === "edit") && (
-          <div className="flex flex-col gap-4" data-testid="scenario-form">
+        {(mode === "create" || mode === "edit" || isTransitioning) && (
+          <div className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="scenario-form">
             <div className="flex flex-col gap-2">
               <Label htmlFor="scenario-name">Name</Label>
               <Input
@@ -67,18 +67,18 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
                   <div
                     key={rowType}
                     data-testid={`scenario-row-${rowType.toLowerCase()}`}
-                    className="rounded border p-2 text-sm text-muted-foreground"
+                    className="rounded border border-border/50 p-2 text-sm text-muted-foreground"
                   >
                     {rowType}: Empty
                   </div>
                 ))}
-              {mode === "edit" &&
+              {(mode === "edit" || isTransitioning) &&
                 rows &&
                 rows.map((row) => (
                   <div
                     key={row.id}
                     data-testid={`scenario-row-${row.rowType}`}
-                    className="rounded border p-2 text-sm"
+                    className="rounded border border-border/50 p-2 text-sm"
                   >
                     {capitalize(row.rowType)}
                     {row.assignments.length === 0 && (
@@ -89,7 +89,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

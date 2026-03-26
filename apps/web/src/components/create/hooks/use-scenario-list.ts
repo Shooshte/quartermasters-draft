@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
 import { trpc } from "~/lib/trpc";
@@ -23,6 +23,7 @@ export function useScenarioList(isActiveTab: boolean, backgroundEnabled: boolean
       sortDir: scenarioSortDir,
     }),
     enabled: isActiveTab || backgroundEnabled,
+    placeholderData: keepPreviousData,
   });
 
   type ScenarioListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["scenarios"]["list"];
@@ -50,5 +51,6 @@ export function useScenarioList(isActiveTab: boolean, backgroundEnabled: boolean
     scenarioSortDir,
     setScenarioSort,
     setScenarioPage: setScenarioPageAction,
+    scenarioIsFetching: scenariosList.isFetching,
   };
 }

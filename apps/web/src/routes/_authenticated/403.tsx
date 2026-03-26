@@ -28,7 +28,7 @@ function ForbiddenPage() {
         : "Go to Dashboard";
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_center,oklch(0.22_0.015_60)_0%,oklch(0.17_0.01_60)_70%)]">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <CardTitle>

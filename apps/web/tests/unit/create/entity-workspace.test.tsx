@@ -78,6 +78,25 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("entity-name-input")).toHaveValue("Fireball");
   });
 
+  it("keeps previous content visible without opacity transition when loading with previous content", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "loading",
+          data: { name: "Fireball" },
+          formValues: { name: "Fireball" },
+        })}
+        onFieldChange={vi.fn()}
+      />,
+    );
+    const form = screen.getByTestId("entity-form");
+    expect(form).toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+    expect(form.className).toContain("opacity-60");
+    expect(form.className).not.toContain("transition-opacity");
+    expect(form.className).not.toContain("duration-200");
+  });
+
   it("calls onFieldChange when name is modified", async () => {
     const onFieldChange = vi.fn();
     render(

@@ -150,11 +150,9 @@ test.describe("Items Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Items" }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Alphabetically: Iron Sword, Leather Shield, ...
-    expect(first).toBe("Iron Sword");
-    expect(second).toBe("Leather Shield");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Leather Shield");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
@@ -165,11 +163,9 @@ test.describe("Items Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Descending: Wyrm Scale, Venom Blade, ...
-    expect(first).toBe("Wyrm Scale");
-    expect(second).toBe("Venom Blade");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Wyrm Scale");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Venom Blade");
   });
 
   test("sort by updated at ascending", async ({ gmPage }) => {
@@ -180,11 +176,9 @@ test.describe("Items Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Iron Sword was updated before Oak Staff (2025-01-01 vs 2025-02-01)
-    expect(first).toBe("Iron Sword");
-    expect(second).toBe("Oak Staff");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Oak Staff");
   });
 
   test("sort by updated at descending", async ({ gmPage }) => {
@@ -196,11 +190,9 @@ test.describe("Items Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Wyrm Scale was updated last (2025-11-01)
-    expect(first).toBe("Wyrm Scale");
-    expect(second).toBe("Venom Blade");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Wyrm Scale");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Venom Blade");
   });
 
   test("clicking the active sort column toggles direction", async ({

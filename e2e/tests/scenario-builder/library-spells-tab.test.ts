@@ -151,11 +151,9 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Spells" }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Alphabetically: Arcane Shield, Battle Cry, ...
-    expect(first).toBe("Arcane Shield");
-    expect(second).toBe("Battle Cry");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Arcane Shield");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Battle Cry");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
@@ -166,11 +164,9 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Descending: Ignite, Holy Light, ...
-    expect(first).toBe("Ignite");
-    expect(second).toBe("Holy Light");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Ignite");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Holy Light");
   });
 
   test("sort by target policy ascending", async ({ gmPage }) => {
@@ -181,12 +177,11 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Target Policy/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
     // PostgreSQL sorts enums by declaration order, not alphabetically
     // Enum order: highest_health, lowest_health, highest_damage, random
     // highest_health: Dark Pact, Fireball
     // Secondary sort by name asc within same policy
-    expect(first).toBe("Dark Pact");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Dark Pact");
   });
 
   test("sort by target policy descending", async ({ gmPage }) => {
@@ -198,10 +193,9 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Target Policy/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
     // random is last in enum declaration order, so first when descending
     // random: Battle Cry, Earthquake — secondary sort by name asc
-    expect(first).toBe("Battle Cry");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Battle Cry");
   });
 
   test("sort by updated at ascending", async ({ gmPage }) => {
@@ -212,11 +206,9 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Oldest first: Fireball (Jan), Battle Cry (Feb), ...
-    expect(first).toBe("Fireball");
-    expect(second).toBe("Battle Cry");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Fireball");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Battle Cry");
   });
 
   test("sort by updated at descending", async ({ gmPage }) => {
@@ -228,11 +220,9 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Newest first: Ignite (Nov), Holy Light (Oct), ...
-    expect(first).toBe("Ignite");
-    expect(second).toBe("Holy Light");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Ignite");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Holy Light");
   });
 
   test("clicking the active sort column toggles direction", async ({

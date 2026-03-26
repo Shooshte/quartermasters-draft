@@ -150,11 +150,9 @@ test.describe("Units Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Units" }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Alphabetically: Barbarian, Mage, ...
-    expect(first).toBe("Barbarian");
-    expect(second).toBe("Mage");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Barbarian");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Mage");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
@@ -165,11 +163,9 @@ test.describe("Units Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Descending: Zephyr Monk, Yeti Rider, ...
-    expect(first).toBe("Zephyr Monk");
-    expect(second).toBe("Yeti Rider");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zephyr Monk");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Yeti Rider");
   });
 
   test("sort by updated at ascending", async ({ gmPage }) => {
@@ -180,11 +176,9 @@ test.describe("Units Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Barbarian was updated before Mage (2025-01-01 vs 2025-02-01)
-    expect(first).toBe("Barbarian");
-    expect(second).toBe("Mage");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Barbarian");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Mage");
   });
 
   test("sort by updated at descending", async ({ gmPage }) => {
@@ -196,11 +190,9 @@ test.describe("Units Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    const first = await rows.nth(0).getAttribute("aria-label");
-    const second = await rows.nth(1).getAttribute("aria-label");
     // Zephyr Monk was updated last (2025-11-01)
-    expect(first).toBe("Zephyr Monk");
-    expect(second).toBe("Yeti Rider");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zephyr Monk");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Yeti Rider");
   });
 
   test("clicking the active sort column toggles direction", async ({

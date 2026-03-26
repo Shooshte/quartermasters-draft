@@ -24,11 +24,12 @@ export function CreatePage({ search }: CreatePageProps) {
 
   return (
     <main className="flex h-[calc(100vh-60px)]">
-      <div className="w-[42%] border-r flex flex-col">
+      <div className="w-[42%] border-r border-border/50 flex flex-col">
         <LibraryPanel
           activeTab={state.activeTab}
           perTabSelection={state.perTabSelection}
           listLoading={state.listLoading}
+          listFetching={state.listFetching}
           onTabChange={state.setActiveTab}
           onSelectRecord={state.selectRecord}
           onCreateNew={state.createNew}
@@ -74,11 +75,12 @@ export function CreatePage({ search }: CreatePageProps) {
           onDeleteUnit={state.requestDeleteUnit}
         />
       </div>
-      <div className="flex-1 flex flex-col gap-4 p-4 min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
         <EntityWorkspace
           workspace={state.entityWorkspace}
           onFieldChange={state.updateEntityField}
         />
+        <div className="border-t border-border" />
         <ScenarioWorkspace
           workspace={state.scenarioWorkspace}
           onFieldChange={state.updateScenarioField}

@@ -228,6 +228,27 @@ describe("useCreatePageState — lazy loading", () => {
   });
 });
 
+describe("useCreatePageState — listFetching field", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("exposes listFetching with boolean values for all 5 tabs", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    const { listFetching } = result.current;
+    expect(listFetching).toBeDefined();
+    const tabs = ["Effects", "Spells", "Items", "Units", "Scenarios"] as const;
+    for (const tab of tabs) {
+      expect(tab in listFetching).toBe(true);
+      expect(typeof listFetching[tab]).toBe("boolean");
+    }
+  });
+});
+
 describe("useCreatePageState — loading state", () => {
   beforeEach(() => {
     resetMocks();
@@ -374,6 +395,46 @@ describe("useCreatePageState — URL param change resets", () => {
     resetMocks();
   });
 
+  it("does not reset or refetch entity workspace when internal selection syncs the URL", async () => {
+    mockSpellsGet
+      .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })
+      .mockResolvedValueOnce({ id: "s2", name: "Ice Bolt", damage: 30 });
+
+    let currentSearch: { tab?: string; spell_id?: string } = { tab: "Spells", spell_id: "s1" };
+    let rerenderHook!: (props: { search: { tab?: string; spell_id?: string } }) => void;
+    const navigate = vi.fn(({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
+      currentSearch = search(currentSearch) as typeof currentSearch;
+      rerenderHook({ search: currentSearch });
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; spell_id?: string } }) =>
+        useCreatePageState(props.search, navigate),
+      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
+    );
+    rerenderHook = rerender;
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+      expect(result.current.entityWorkspace.entityId).toBe("s1");
+    });
+
+    act(() => {
+      result.current.selectRecord("Spells", "s2");
+    });
+
+    expect(result.current.entityWorkspace.mode).toBe("loading");
+    expect(result.current.entityWorkspace.data).toEqual({ id: "s1", name: "Fireball", damage: 50 });
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+      expect(result.current.entityWorkspace.entityId).toBe("s2");
+      expect(result.current.entityWorkspace.data).toEqual({ id: "s2", name: "Ice Bolt", damage: 30 });
+    });
+
+    expect(mockSpellsGet).toHaveBeenCalledTimes(2);
+  });
+
   it("reloads entity when entity_id URL param changes", async () => {
     mockSpellsGet
       .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })
@@ -472,6 +533,46 @@ describe("useCreatePageState — URL param change resets", () => {
       expect(result.current.scenarioWorkspace.mode).toBe("idle");
       expect(result.current.scenarioWorkspace.entityId).toBeNull();
     });
+  });
+
+  it("does not reset or refetch scenario workspace when internal selection syncs the URL", async () => {
+    mockScenariosGet
+      .mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" })
+      .mockResolvedValueOnce({ id: "sc2", name: "Siege", difficulty: "easy" });
+
+    let currentSearch: { tab?: string; scenario_id?: string } = { tab: "Scenarios", scenario_id: "sc1" };
+    let rerenderHook!: (props: { search: { tab?: string; scenario_id?: string } }) => void;
+    const navigate = vi.fn(({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
+      currentSearch = search(currentSearch) as typeof currentSearch;
+      rerenderHook({ search: currentSearch });
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, navigate),
+      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
+    );
+    rerenderHook = rerender;
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+      expect(result.current.scenarioWorkspace.entityId).toBe("sc1");
+    });
+
+    act(() => {
+      result.current.selectRecord("Scenarios", "sc2");
+    });
+
+    expect(result.current.scenarioWorkspace.mode).toBe("loading");
+    expect(result.current.scenarioWorkspace.data).toEqual({ id: "sc1", name: "Ambush", difficulty: "hard" });
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+      expect(result.current.scenarioWorkspace.entityId).toBe("sc2");
+      expect(result.current.scenarioWorkspace.data).toEqual({ id: "sc2", name: "Siege", difficulty: "easy" });
+    });
+
+    expect(mockScenariosGet).toHaveBeenCalledTimes(2);
   });
 });
 

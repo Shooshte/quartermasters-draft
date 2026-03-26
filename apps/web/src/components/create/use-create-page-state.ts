@@ -49,6 +49,7 @@ export interface CreatePageState {
   confirmDiscard: () => void;
   cancelDiscard: () => void;
   listLoading: Record<TabName, boolean>;
+  listFetching: Record<TabName, boolean>;
   // Scenario list specific
   scenarioListItems: { id: string; name: string; updatedAt: Date; createdAt: Date }[];
   scenarioPage: number;
@@ -188,6 +189,14 @@ export function useCreatePageState(
     Scenarios: scenarioList.scenariosList.isLoading,
   };
 
+  const allFetching: Record<TabName, boolean> = {
+    Effects: effectList.effectIsFetching,
+    Spells: spellList.spellIsFetching,
+    Items: itemList.itemIsFetching,
+    Units: unitList.unitIsFetching,
+    Scenarios: scenarioList.scenarioIsFetching,
+  };
+
   const activeTabIsLoading = allLoading[activeTab];
 
   useEffect(() => {
@@ -309,6 +318,7 @@ export function useCreatePageState(
     confirmDiscard,
     cancelDiscard: discard.cancelDiscard,
     listLoading: allLoading,
+    listFetching: allFetching,
     // Scenario list specific
     scenarioListItems: scenarioList.scenarioListItems,
     scenarioPage: scenarioList.scenarioPage,

@@ -75,11 +75,12 @@ export function CreatePage({ search }: CreatePageProps) {
           onDeleteUnit={state.requestDeleteUnit}
         />
       </div>
-      <div className="flex-1 flex flex-col gap-4 p-4 min-h-0 animate-fade-in">
+      <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
         <EntityWorkspace
           workspace={state.entityWorkspace}
           onFieldChange={state.updateEntityField}
         />
+        <div className="border-t border-border" />
         <ScenarioWorkspace
           workspace={state.scenarioWorkspace}
           onFieldChange={state.updateScenarioField}

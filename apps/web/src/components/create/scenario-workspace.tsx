@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
@@ -22,18 +21,16 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
       : null;
 
   return (
-    <Card data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto">
-      <CardHeader>
-        <CardTitle className="font-display">
-          {mode === "idle" && "Scenario"}
-          {mode === "loading" && !workspace.data && "Scenario"}
-          {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
-          {mode === "not-found" && "Scenario"}
-          {mode === "create" && "New Scenario"}
-          {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1">
+    <div data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto min-h-0">
+      <div className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
+        {mode === "idle" && "Scenario"}
+        {mode === "loading" && !workspace.data && "Scenario"}
+        {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
+        {mode === "not-found" && "Scenario"}
+        {mode === "create" && "New Scenario"}
+        {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
+      </div>
+      <div className="flex-1 p-4 overflow-auto">
         {mode === "idle" && (
           <p className="text-sm text-muted-foreground" data-testid="scenario-idle">
             Select a scenario from the library
@@ -92,7 +89,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

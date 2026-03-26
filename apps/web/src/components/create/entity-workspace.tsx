@@ -42,7 +42,7 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
         )}
 
         {(mode === "create" || mode === "edit" || isTransitioning) && (
-          <div className={`flex flex-col gap-4 transition-opacity duration-200 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="entity-form">
+          <div className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="entity-form">
             <div className="flex flex-col gap-2">
               <Label htmlFor="entity-name">Name</Label>
               <Input

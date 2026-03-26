@@ -31,7 +31,7 @@ function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   return (
     <tbody
       data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
+      className={cn(className)}
       {...props}
     />
   )
@@ -50,12 +50,17 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   )
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+interface TableRowProps extends React.ComponentProps<"tr"> {
+  disableHover?: boolean
+}
+
+function TableRow({ className, disableHover = false, ...props }: TableRowProps) {
   return (
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        "border-b transition-colors data-[state=selected]:bg-muted",
+        !disableHover && "hover:bg-muted/50",
         className
       )}
       {...props}

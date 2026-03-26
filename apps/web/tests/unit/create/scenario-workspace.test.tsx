@@ -93,7 +93,7 @@ describe("ScenarioWorkspace", () => {
     expect(screen.getByTestId("scenario-row-support")).toBeInTheDocument();
   });
 
-  it("shows form at opacity-60 when loading with previous content (isTransitioning)", () => {
+  it("keeps previous content visible without opacity transition when loading with previous content", () => {
     render(
       <ScenarioWorkspace
         workspace={makeWorkspace({
@@ -108,6 +108,8 @@ describe("ScenarioWorkspace", () => {
     expect(form).toBeInTheDocument();
     expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
     expect(form.className).toContain("opacity-60");
+    expect(form.className).not.toContain("transition-opacity");
+    expect(form.className).not.toContain("duration-200");
   });
 
   it("calls onFieldChange when name is modified", async () => {

@@ -87,10 +87,10 @@ export function ItemLibraryList({
           New Item
         </Button>
       </div>
-      <div className={`overflow-y-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}>
+      <div className={`overflow-y-auto pb-2 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}>
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent">
+            <TableRow disableHover>
               <TableHead>
                 <button className="inline-flex items-center cursor-pointer bg-transparent border-none p-0 font-medium text-foreground" onClick={() => handleSort("name")}>
                   Name
@@ -109,12 +109,11 @@ export function ItemLibraryList({
           <TableBody>
             {items.map((item) => (
               <TableRow
+                disableHover
                 key={item.id}
                 aria-label={item.name}
                 aria-selected={item.id === selectedId}
-                className={`hover:bg-transparent ${
-                  item.id === selectedId ? "bg-accent border-l-3 border-primary font-medium" : ""
-                }`}
+                className={item.id === selectedId ? "bg-accent border-l-3 border-primary font-medium" : ""}
               >
                 <TableCell>{item.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">

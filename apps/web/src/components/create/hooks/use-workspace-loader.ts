@@ -468,6 +468,7 @@ export function useWorkspaceLoader({
           if (param !== urlParam) refs.prev.current = undefined;
         }
 
+        skipEntityResetRef.current = true;
         navigate?.({
           search: (prev) => {
             const next = { ...prev };
@@ -518,6 +519,9 @@ export function useWorkspaceLoader({
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Scenarios: id }));
+      prevScenarioIdRef.current = id;
+      scenarioInitRef.current = true;
+      skipScenarioResetRef.current = true;
       navigate?.({ search: (prev) => ({ ...prev, scenario_id: id }), replace: true });
     } catch {
       if (pendingScenarioIdRef.current !== id) return;

@@ -50,7 +50,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
         )}
 
         {(mode === "create" || mode === "edit" || isTransitioning) && (
-          <div className={`flex flex-col gap-4 transition-opacity duration-200 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="scenario-form">
+          <div className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="scenario-form">
             <div className="flex flex-col gap-2">
               <Label htmlFor="scenario-name">Name</Label>
               <Input

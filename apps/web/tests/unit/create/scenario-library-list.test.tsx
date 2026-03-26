@@ -55,6 +55,37 @@ describe("ScenarioLibraryList", () => {
     expect(screen.getByRole("row", { name: /Castle Siege/ })).toHaveAttribute("aria-selected", "false");
   });
 
+  it("keeps selected row styling and removes row hover styling", () => {
+    render(<ScenarioLibraryList {...defaultProps} selectedId="1" />);
+
+    const selectedRow = screen.getByRole("row", { name: /Ambush at Dawn/ });
+    const unselectedRow = screen.getByRole("row", { name: /Castle Siege/ });
+    const headerRow = screen.getAllByRole("row")[0];
+
+    expect(selectedRow.className).toContain("bg-accent");
+    expect(selectedRow.className).toContain("border-l-3");
+    expect(selectedRow.className).toContain("border-primary");
+    expect(selectedRow.className).toContain("font-medium");
+    expect(selectedRow.className).not.toContain("hover:bg-transparent");
+    expect(selectedRow.className).not.toContain("hover:bg-muted/50");
+    expect(unselectedRow.className).not.toContain("hover:bg-transparent");
+    expect(unselectedRow.className).not.toContain("hover:bg-muted/50");
+    expect(headerRow.className).not.toContain("hover:bg-transparent");
+    expect(headerRow.className).not.toContain("hover:bg-muted/50");
+  });
+
+  it("preserves selected border styling for the last row", () => {
+    render(<ScenarioLibraryList {...defaultProps} selectedId="2" />);
+
+    const selectedLastRow = screen.getByRole("row", { name: /Castle Siege/ });
+    const rowGroups = screen.getAllByRole("rowgroup");
+    const body = rowGroups[rowGroups.length - 1];
+
+    expect(selectedLastRow.className).toContain("border-l-3");
+    expect(selectedLastRow.className).toContain("border-primary");
+    expect(body.className).not.toContain("last-child]:border-0");
+  });
+
   it("calls onSelect when clicking the edit button", async () => {
     const onSelect = vi.fn();
     render(<ScenarioLibraryList {...defaultProps} onSelect={onSelect} />);

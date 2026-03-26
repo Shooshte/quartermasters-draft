@@ -432,14 +432,13 @@ export function useWorkspaceLoader({
       const entityType = TAB_TO_ENTITY_TYPE[tab];
       const routerKey = TAB_TO_ROUTER_KEY[tab];
       pendingEntityIdRef.current = id;
-      setEntityWorkspace({
+      setEntityWorkspace(prev => ({
+        ...prev,
         mode: "loading",
         entityType,
         entityId: id,
-        data: null,
-        formValues: {},
         isDirty: false,
-      });
+      }));
       try {
         const data = await trpc.scenarioBuilder[routerKey].get.query({ id });
         if (pendingEntityIdRef.current !== id) return;
@@ -499,14 +498,13 @@ export function useWorkspaceLoader({
 
   const loadScenario = useCallback(async (id: string) => {
     pendingScenarioIdRef.current = id;
-    setScenarioWorkspace({
+    setScenarioWorkspace(prev => ({
+      ...prev,
       mode: "loading",
       entityType: "scenario",
       entityId: id,
-      data: null,
-      formValues: {},
       isDirty: false,
-    });
+    }));
     try {
       const data = await trpc.scenarioBuilder.scenarios.get.query({ id });
       if (pendingScenarioIdRef.current !== id) return;

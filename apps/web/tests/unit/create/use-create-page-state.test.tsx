@@ -228,6 +228,27 @@ describe("useCreatePageState — lazy loading", () => {
   });
 });
 
+describe("useCreatePageState — listFetching field", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("exposes listFetching with boolean values for all 5 tabs", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    const { listFetching } = result.current;
+    expect(listFetching).toBeDefined();
+    const tabs = ["Effects", "Spells", "Items", "Units", "Scenarios"] as const;
+    for (const tab of tabs) {
+      expect(tab in listFetching).toBe(true);
+      expect(typeof listFetching[tab]).toBe("boolean");
+    }
+  });
+});
+
 describe("useCreatePageState — loading state", () => {
   beforeEach(() => {
     resetMocks();

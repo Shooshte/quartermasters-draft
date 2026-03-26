@@ -12,6 +12,7 @@ const items = [
 const defaultProps = {
   items,
   isLoading: false,
+  isFetching: false,
   selectedId: null as string | null,
   page: 1,
   totalPages: 1,
@@ -36,9 +37,10 @@ describe("ScenarioLibraryList", () => {
     expect(screen.getByText("No scenario records yet")).toBeInTheDocument();
   });
 
-  it("shows loading state when items is empty on page > 1", () => {
+  it("shows empty table with pagination when items is empty on page > 1", () => {
     render(<ScenarioLibraryList {...defaultProps} items={[]} page={2} />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeInTheDocument();
+    expect(screen.getByText("Page 2 of 1")).toBeInTheDocument();
   });
 
   it("renders items with name and formatted updatedAt date", () => {

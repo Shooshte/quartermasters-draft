@@ -10,6 +10,7 @@ interface LibraryPanelProps {
   activeTab: TabName;
   perTabSelection: Record<TabName, string | null>;
   listLoading: Record<TabName, boolean>;
+  listFetching: Record<TabName, boolean>;
   onTabChange: (tab: TabName) => void;
   onSelectRecord: (tab: TabName, id: string) => void;
   onCreateNew: (tab: TabName) => void;
@@ -64,6 +65,7 @@ export function LibraryPanel({
   activeTab,
   perTabSelection,
   listLoading,
+  listFetching,
   onTabChange,
   onSelectRecord,
   onCreateNew,
@@ -126,6 +128,7 @@ export function LibraryPanel({
             <EffectLibraryList
               items={effectListItems}
               isLoading={listLoading.Effects}
+              isFetching={listFetching.Effects}
               selectedId={perTabSelection.Effects}
               page={effectPage}
               totalPages={effectTotalPages}
@@ -145,6 +148,7 @@ export function LibraryPanel({
             <SpellLibraryList
               items={spellListItems}
               isLoading={listLoading.Spells}
+              isFetching={listFetching.Spells}
               selectedId={perTabSelection.Spells}
               page={spellPage}
               totalPages={spellTotalPages}
@@ -164,6 +168,7 @@ export function LibraryPanel({
             <ItemLibraryList
               items={itemListItems}
               isLoading={listLoading.Items}
+              isFetching={listFetching.Items}
               selectedId={perTabSelection.Items}
               page={itemPage}
               totalPages={itemTotalPages}
@@ -183,6 +188,7 @@ export function LibraryPanel({
             <UnitLibraryList
               items={unitListItems}
               isLoading={listLoading.Units}
+              isFetching={listFetching.Units}
               selectedId={perTabSelection.Units}
               page={unitPage}
               totalPages={unitTotalPages}
@@ -202,6 +208,7 @@ export function LibraryPanel({
             <ScenarioLibraryList
               items={scenarioListItems}
               isLoading={listLoading.Scenarios}
+              isFetching={listFetching.Scenarios}
               selectedId={perTabSelection.Scenarios}
               page={scenarioPage}
               totalPages={scenarioTotalPages}

@@ -13,10 +13,11 @@ interface ScenarioWorkspaceProps {
 
 export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspaceProps) {
   const { mode, formValues, data } = workspace;
+  const isTransitioning = mode === "loading" && workspace.data !== null;
 
   type ScenarioRow = { id: string; rowType: string; assignments: unknown[] };
   const rows =
-    mode === "edit" && data && Array.isArray(data.rows)
+    (mode === "edit" || isTransitioning) && data && Array.isArray(data.rows)
       ? (data.rows as ScenarioRow[])
       : null;
 
@@ -24,7 +25,9 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
     <Card data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto">
       <CardHeader>
         <CardTitle>
-          {(mode === "idle" || mode === "loading") && "Scenario"}
+          {mode === "idle" && "Scenario"}
+          {mode === "loading" && !workspace.data && "Scenario"}
+          {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
           {mode === "not-found" && "Scenario"}
           {mode === "create" && "New Scenario"}
           {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
@@ -37,7 +40,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
           </p>
         )}
 
-        {mode === "loading" && (
+        {mode === "loading" && !workspace.data && (
           <p className="text-sm text-muted-foreground" data-testid="scenario-loading">
             Loading…
           </p>
@@ -49,8 +52,8 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
           </p>
         )}
 
-        {(mode === "create" || mode === "edit") && (
-          <div className="flex flex-col gap-4" data-testid="scenario-form">
+        {(mode === "create" || mode === "edit" || isTransitioning) && (
+          <div className={`flex flex-col gap-4 transition-opacity duration-200 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="scenario-form">
             <div className="flex flex-col gap-2">
               <Label htmlFor="scenario-name">Name</Label>
               <Input
@@ -72,7 +75,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
                     {rowType}: Empty
                   </div>
                 ))}
-              {mode === "edit" &&
+              {(mode === "edit" || isTransitioning) &&
                 rows &&
                 rows.map((row) => (
                   <div

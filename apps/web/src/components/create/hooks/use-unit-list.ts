@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
 import { trpc } from "~/lib/trpc";
@@ -23,6 +23,7 @@ export function useUnitList(isActiveTab: boolean, backgroundEnabled: boolean) {
       sortDir: unitSortDir,
     }),
     enabled: isActiveTab || backgroundEnabled,
+    placeholderData: keepPreviousData,
   });
 
   type UnitListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["units"]["list"];
@@ -50,5 +51,6 @@ export function useUnitList(isActiveTab: boolean, backgroundEnabled: boolean) {
     unitSortDir,
     setUnitSort,
     setUnitPage: setUnitPageAction,
+    unitIsFetching: unitsList.isFetching,
   };
 }

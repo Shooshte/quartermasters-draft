@@ -29,6 +29,7 @@ export function CreatePage({ search }: CreatePageProps) {
           activeTab={state.activeTab}
           perTabSelection={state.perTabSelection}
           listLoading={state.listLoading}
+          listFetching={state.listFetching}
           onTabChange={state.setActiveTab}
           onSelectRecord={state.selectRecord}
           onCreateNew={state.createNew}

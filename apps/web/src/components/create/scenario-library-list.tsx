@@ -14,6 +14,7 @@ import type { ScenarioSortBy, ScenarioSortDir } from "./types";
 interface ScenarioLibraryListProps {
   items: { id: string; name: string; updatedAt: Date; createdAt: Date }[];
   isLoading: boolean;
+  isFetching: boolean;
   selectedId: string | null;
   page: number;
   totalPages: number;
@@ -46,6 +47,7 @@ function SortIndicator({ active, dir }: { active: boolean; dir: ScenarioSortDir 
 export function ScenarioLibraryList({
   items,
   isLoading,
+  isFetching,
   selectedId,
   page,
   totalPages,
@@ -78,14 +80,6 @@ export function ScenarioLibraryList({
     );
   }
 
-  if (items.length === 0) {
-    return (
-      <div className={`p-4 text-sm text-muted-foreground`}>
-        Loading...
-      </div>
-    );
-  }
-
   const handleSort = (column: ScenarioSortBy) => {
     if (column === sortBy) {
       onSortChange(sortBy, sortDir === "asc" ? "desc" : "asc");
@@ -101,7 +95,7 @@ export function ScenarioLibraryList({
           New Scenario
         </Button>
       </div>
-      <div className={`overflow-y-auto`}>
+      <div className={`overflow-y-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}>
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">

@@ -14,6 +14,7 @@ import type { UnitSortBy, UnitSortDir } from "./types";
 interface UnitLibraryListProps {
   items: { id: string; name: string; updatedAt: Date }[];
   isLoading: boolean;
+  isFetching: boolean;
   selectedId: string | null;
   page: number;
   totalPages: number;
@@ -38,6 +39,7 @@ function SortIndicator({ active, dir }: { active: boolean; dir: UnitSortDir }) {
 export function UnitLibraryList({
   items,
   isLoading,
+  isFetching,
   selectedId,
   page,
   totalPages,
@@ -70,14 +72,6 @@ export function UnitLibraryList({
     );
   }
 
-  if (items.length === 0) {
-    return (
-      <div className={`p-4 text-sm text-muted-foreground`}>
-        Loading...
-      </div>
-    );
-  }
-
   const handleSort = (column: UnitSortBy) => {
     if (column === sortBy) {
       onSortChange(sortBy, sortDir === "asc" ? "desc" : "asc");
@@ -93,7 +87,7 @@ export function UnitLibraryList({
           New Unit
         </Button>
       </div>
-      <div className={`overflow-y-auto`}>
+      <div className={`overflow-y-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}>
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">

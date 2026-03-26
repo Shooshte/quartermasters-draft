@@ -11,12 +11,15 @@ interface EntityWorkspaceProps {
 
 export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspaceProps) {
   const { mode, entityType, formValues } = workspace;
+  const isTransitioning = mode === "loading" && workspace.data !== null;
 
   return (
     <Card data-testid="entity-workspace" className="flex flex-1 flex-col overflow-auto">
       <CardHeader>
         <CardTitle>
-          {(mode === "idle" || mode === "loading") && "Entity"}
+          {mode === "idle" && "Entity"}
+          {mode === "loading" && !workspace.data && "Entity"}
+          {mode === "loading" && workspace.data && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
           {mode === "not-found" && "Entity"}
           {mode === "create" && `New ${capitalize(entityType ?? "")}`}
           {mode === "edit" && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
@@ -29,7 +32,7 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
           </p>
         )}
 
-        {mode === "loading" && (
+        {mode === "loading" && !workspace.data && (
           <p className="text-sm text-muted-foreground" data-testid="entity-loading">
             Loading…
           </p>
@@ -41,8 +44,8 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
           </p>
         )}
 
-        {(mode === "create" || mode === "edit") && (
-          <div className="flex flex-col gap-4" data-testid="entity-form">
+        {(mode === "create" || mode === "edit" || isTransitioning) && (
+          <div className={`flex flex-col gap-4 transition-opacity duration-200 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="entity-form">
             <div className="flex flex-col gap-2">
               <Label htmlFor="entity-name">Name</Label>
               <Input

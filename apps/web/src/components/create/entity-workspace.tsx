@@ -16,7 +16,7 @@ export function EntityWorkspace({ workspace, onFieldChange }: EntityWorkspacePro
   return (
     <Card data-testid="entity-workspace" className="flex flex-1 flex-col overflow-auto">
       <CardHeader>
-        <CardTitle>
+        <CardTitle className="font-display">
           {mode === "idle" && "Entity"}
           {mode === "loading" && !workspace.data && "Entity"}
           {mode === "loading" && workspace.data && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}

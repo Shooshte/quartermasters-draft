@@ -24,7 +24,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
   return (
     <Card data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto">
       <CardHeader>
-        <CardTitle>
+        <CardTitle className="font-display">
           {mode === "idle" && "Scenario"}
           {mode === "loading" && !workspace.data && "Scenario"}
           {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
@@ -70,7 +70,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
                   <div
                     key={rowType}
                     data-testid={`scenario-row-${rowType.toLowerCase()}`}
-                    className="rounded border p-2 text-sm text-muted-foreground"
+                    className="rounded border border-border/50 p-2 text-sm text-muted-foreground"
                   >
                     {rowType}: Empty
                   </div>
@@ -81,7 +81,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
                   <div
                     key={row.id}
                     data-testid={`scenario-row-${row.rowType}`}
-                    className="rounded border p-2 text-sm"
+                    className="rounded border border-border/50 p-2 text-sm"
                   >
                     {capitalize(row.rowType)}
                     {row.assignments.length === 0 && (

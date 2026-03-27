@@ -114,10 +114,7 @@ export function useWorkspaceLoader({
         formValues: found.type === "effect" ? effectRecordToFormValues(entityData) : { name: entityData.name },
         isDirty: false,
       });
-      const tabToCheck = isValidTab(search.tab) ? search.tab : entityTab;
-      if (tabToCheck === entityTab) {
-        setPerTabSelection((prev) => ({ ...prev, [entityTab]: search.entity_id! }));
-      }
+      setPerTabSelection((prev) => ({ ...prev, [entityTab]: search.entity_id! }));
     } else {
       setEntityWorkspace({
         mode: "not-found",
@@ -180,10 +177,7 @@ export function useWorkspaceLoader({
         formValues: effectRecordToFormValues(entityData),
         isDirty: false,
       });
-      const tabToCheck = isValidTab(search.tab) ? search.tab : "Effects";
-      if (tabToCheck === "Effects") {
-        setPerTabSelection((prev) => ({ ...prev, Effects: search.effect_id! }));
-      }
+      setPerTabSelection((prev) => ({ ...prev, Effects: search.effect_id! }));
     } else {
       setEntityWorkspace({
         mode: "not-found",
@@ -238,10 +232,7 @@ export function useWorkspaceLoader({
         formValues: { name: entityData.name },
         isDirty: false,
       });
-      const tabToCheck = isValidTab(search.tab) ? search.tab : "Spells";
-      if (tabToCheck === "Spells") {
-        setPerTabSelection((prev) => ({ ...prev, Spells: search.spell_id! }));
-      }
+      setPerTabSelection((prev) => ({ ...prev, Spells: search.spell_id! }));
     } else {
       setEntityWorkspace({
         mode: "not-found",
@@ -296,10 +287,7 @@ export function useWorkspaceLoader({
         formValues: { name: entityData.name },
         isDirty: false,
       });
-      const tabToCheck = isValidTab(search.tab) ? search.tab : "Items";
-      if (tabToCheck === "Items") {
-        setPerTabSelection((prev) => ({ ...prev, Items: search.item_id! }));
-      }
+      setPerTabSelection((prev) => ({ ...prev, Items: search.item_id! }));
     } else {
       setEntityWorkspace({
         mode: "not-found",
@@ -354,10 +342,7 @@ export function useWorkspaceLoader({
         formValues: { name: entityData.name },
         isDirty: false,
       });
-      const tabToCheck = isValidTab(search.tab) ? search.tab : "Units";
-      if (tabToCheck === "Units") {
-        setPerTabSelection((prev) => ({ ...prev, Units: search.unit_id! }));
-      }
+      setPerTabSelection((prev) => ({ ...prev, Units: search.unit_id! }));
     } else {
       setEntityWorkspace({
         mode: "not-found",
@@ -410,9 +395,7 @@ export function useWorkspaceLoader({
         formValues: { name: scenarioData.name },
         isDirty: false,
       });
-      if (activeTab === "Scenarios" || !search.tab) {
-        setPerTabSelection((prev) => ({ ...prev, Scenarios: search.scenario_id! }));
-      }
+      setPerTabSelection((prev) => ({ ...prev, Scenarios: search.scenario_id! }));
     } else {
       setScenarioWorkspace({
         mode: "not-found",
@@ -423,7 +406,7 @@ export function useWorkspaceLoader({
         isDirty: false,
       });
     }
-  }, [search.scenario_id, search.tab, activeTab, scenarioQuery.isFetched, scenarioQuery.data]);
+  }, [search.scenario_id, search.tab, scenarioQuery.isFetched, scenarioQuery.data]);
 
   const pendingEntityIdRef = useRef<string | null>(null);
   const pendingScenarioIdRef = useRef<string | null>(null);

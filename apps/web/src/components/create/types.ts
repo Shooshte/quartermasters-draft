@@ -37,23 +37,23 @@ export const TAB_TO_SINGULAR: Record<TabName, string> = {
   Scenarios: "Scenario",
 };
 
-export const SCENARIOS_PAGE_SIZE = 10;
+export const SCENARIOS_PAGE_SIZE = 20;
 export type ScenarioSortBy = "name" | "updatedAt";
 export type ScenarioSortDir = "asc" | "desc";
 
-export const EFFECTS_PAGE_SIZE = 10;
+export const EFFECTS_PAGE_SIZE = 20;
 export type EffectSortBy = "name" | "timingType" | "effectType";
 export type EffectSortDir = "asc" | "desc";
 
-export const SPELLS_PAGE_SIZE = 10;
+export const SPELLS_PAGE_SIZE = 20;
 export type SpellSortBy = "name" | "targetPolicy" | "updatedAt";
 export type SpellSortDir = "asc" | "desc";
 
-export const ITEMS_PAGE_SIZE = 10;
+export const ITEMS_PAGE_SIZE = 20;
 export type ItemSortBy = "name" | "updatedAt";
 export type ItemSortDir = "asc" | "desc";
 
-export const UNITS_PAGE_SIZE = 10;
+export const UNITS_PAGE_SIZE = 20;
 export type UnitSortBy = "name" | "updatedAt";
 export type UnitSortDir = "asc" | "desc";
 

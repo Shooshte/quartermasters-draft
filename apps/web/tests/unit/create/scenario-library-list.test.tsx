@@ -49,6 +49,22 @@ describe("ScenarioLibraryList", () => {
     expect(screen.getByRole("row", { name: /Castle Siege/ })).toBeInTheDocument();
   });
 
+  it("uses a full-height layout with a dedicated scroll region", () => {
+    const { container } = render(<ScenarioLibraryList {...defaultProps} />);
+
+    const root = container.firstElementChild;
+    const table = screen.getByRole("table");
+    const scrollRegion = table.parentElement?.parentElement;
+    const pagination = screen.getByText("Page 1 of 1").parentElement;
+
+    expect(root?.className).toContain("h-full");
+    expect(root?.className).toContain("min-h-0");
+    expect(scrollRegion?.className).toContain("flex-1");
+    expect(scrollRegion?.className).toContain("min-h-0");
+    expect(scrollRegion?.className).toContain("overflow-y-auto");
+    expect(pagination).not.toBe(scrollRegion);
+  });
+
   it("marks selected item with aria-selected", () => {
     render(<ScenarioLibraryList {...defaultProps} selectedId="1" />);
     expect(screen.getByRole("row", { name: /Ambush at Dawn/ })).toHaveAttribute("aria-selected", "true");

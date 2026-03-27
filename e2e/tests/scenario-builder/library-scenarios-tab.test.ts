@@ -43,8 +43,8 @@ test.describe("Scenarios Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 11 scenarios via API
-    const scenarioIds = Array.from({ length: 11 }, (_, i) =>
+    // Delete all 21 scenarios via API
+    const scenarioIds = Array.from({ length: 21 }, (_, i) =>
       `a2000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of scenarioIds) {
@@ -69,9 +69,9 @@ test.describe("Scenarios Library Tab — Pagination", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
-    // Page 1 should show 10 items
+    // Page 1 should show 20 items
     const options = gmPage.locator('tr[aria-selected]');
-    await expect(options).toHaveCount(10);
+    await expect(options).toHaveCount(20);
 
     // Pagination controls visible
     await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
@@ -87,8 +87,8 @@ test.describe("Scenarios Library Tab — Pagination", () => {
 
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Second page: only "Zombie Horde" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Zombie Horde/ })).toBeVisible();
+    // Second page: only "Zorath Keep" (alphabetically last)
+    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
     // Ambush at Dawn should no longer be shown
     await expect(gmPage.getByRole("row", { name: /Ambush at Dawn/ })).not.toBeVisible();
   });
@@ -99,7 +99,7 @@ test.describe("Scenarios Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zombie Horde/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
 
     // Go back to page 1
     await gmPage.getByRole("button", { name: "Previous page" }).click();
@@ -130,7 +130,7 @@ test.describe("Scenarios Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zombie Horde/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
 
     // Change sort to Last Update
     await gmPage.getByRole("button", { name: /Last Update/ }).click();
@@ -162,8 +162,8 @@ test.describe("Scenarios Library Tab — Sorting", () => {
 
     const options = gmPage.locator('tr[aria-selected]');
     // Descending: Zombie Horde, Jungle Trek, ...
-    await expect(options.nth(0)).toHaveAttribute("aria-label", "Zombie Horde");
-    await expect(options.nth(1)).toHaveAttribute("aria-label", "Jungle Trek");
+    await expect(options.nth(0)).toHaveAttribute("aria-label", "Zorath Keep");
+    await expect(options.nth(1)).toHaveAttribute("aria-label", "Zombie Horde");
   });
 
   test("sort by last update date ascending", async ({ gmPage }) => {
@@ -210,7 +210,7 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
     await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
-      "Zombie Horde",
+      "Zorath Keep",
     );
   });
 });
@@ -371,24 +371,24 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Only Zombie Horde on page 2
-    await expect(gmPage.getByRole("row", { name: /Zombie Horde/ })).toBeVisible();
+    // Only Zorath Keep on page 2
+    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
     await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
 
     // Delete it
-    const zombieRow = gmPage.getByRole("row", { name: /Zombie Horde/ });
-    await zombieRow.getByRole("button", { name: /Delete/ }).click();
+    const zorathRow = gmPage.getByRole("row", { name: /Zorath Keep/ });
+    await zorathRow.getByRole("button", { name: /Delete/ }).click();
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
     // Should be returned to page 1
     await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
     await expect(gmPage.getByRole("row", { name: /Ambush at Dawn/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Zombie Horde/ })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).not.toBeVisible();
 
     // Restore DB for subsequent test files
     await resetDb();

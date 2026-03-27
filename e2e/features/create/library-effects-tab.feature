@@ -32,8 +32,7 @@ Feature: Scenario builder effects library tab
 
   Rule: The effects list is paginated
 
-    # The seed provides 7 effects. Pagination scenarios require more than one
-    # page, so a factory generates additional records beyond the page size.
+    # The seeded dataset now exceeds one page at the default 20-row page size.
     Scenario: Effects are displayed one page at a time
       Given the seed effects exist
       And enough additional effects exist to exceed one page

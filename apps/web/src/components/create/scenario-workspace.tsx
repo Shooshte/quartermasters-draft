@@ -21,8 +21,8 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
       : null;
 
   return (
-    <div data-testid="scenario-workspace" className="flex flex-1 flex-col overflow-auto min-h-0">
-      <div className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
+    <div data-testid="scenario-workspace" className="flex flex-col">
+      <div data-testid="scenario-workspace-header" className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
         {mode === "idle" && "Scenario"}
         {mode === "loading" && !workspace.data && "Scenario"}
         {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
@@ -30,7 +30,7 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
         {mode === "create" && "New Scenario"}
         {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
       </div>
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="p-4">
         {mode === "idle" && (
           <p className="text-sm text-muted-foreground" data-testid="scenario-idle">
             Select a scenario from the library

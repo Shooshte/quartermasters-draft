@@ -12,13 +12,13 @@ async function parseTrpcResponse(response: Awaited<ReturnType<import("@playwrigh
 test.describe("Scenario Builder Read API — GM access", () => {
   // ── Effects ──────────────────────────────────────────────────────
 
-  test("GM can list effects (10 per page, alphabetical)", async ({ gmPage }) => {
+  test("GM can list effects (20 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(10);
+    expect(data.items).toHaveLength(20);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(10);
+    expect(data.limit).toBe(20);
     // Alphabetical order
     const names = data.items.map((e: { name: string }) => e.name);
     expect(names).toEqual([...names].sort());
@@ -42,13 +42,13 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Spells ───────────────────────────────────────────────────────
 
-  test("GM can list spells (10 per page, alphabetical)", async ({ gmPage }) => {
+  test("GM can list spells (20 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.spells.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(10);
+    expect(data.items).toHaveLength(20);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(10);
+    expect(data.limit).toBe(20);
     const names = data.items.map((s: { name: string }) => s.name);
     expect(names).toEqual([...names].sort());
   });
@@ -68,13 +68,13 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Items ────────────────────────────────────────────────────────
 
-  test("GM can list items (11 records, 10 per page, alphabetical)", async ({ gmPage }) => {
+  test("GM can list items (21 records, 20 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.items.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(10);
+    expect(data.items).toHaveLength(20);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(10);
+    expect(data.limit).toBe(20);
     const names = data.items.map((i: { name: string }) => i.name);
     expect(names).toEqual([...names].sort());
   });
@@ -90,13 +90,13 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Units ────────────────────────────────────────────────────────
 
-  test("GM can list units (11 records, 10 per page, alphabetical)", async ({ gmPage }) => {
+  test("GM can list units (21 records, 20 per page, alphabetical)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.units.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(10);
+    expect(data.items).toHaveLength(20);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(10);
+    expect(data.limit).toBe(20);
     const names = data.items.map((u: { name: string }) => u.name);
     expect(names).toEqual([...names].sort());
   });
@@ -112,14 +112,14 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   // ── Scenarios ────────────────────────────────────────────────────
 
-  test("GM can list scenarios (paginated, 10 per page)", async ({ gmPage }) => {
+  test("GM can list scenarios (paginated, 20 per page)", async ({ gmPage }) => {
     const res = await gmPage.request.get(`${BASE}/scenarioBuilder.scenarios.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(10);
+    expect(data.items).toHaveLength(20);
     expect(data.page).toBe(1);
-    expect(data.limit).toBe(10);
-    expect(data.totalCount).toBe(11);
+    expect(data.limit).toBe(20);
+    expect(data.totalCount).toBe(21);
     // Default sort: name ascending
     expect(data.items[0].name).toBe("Ambush at Dawn");
     expect(data.items[1].name).toBe("Bridge Defense");

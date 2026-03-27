@@ -162,16 +162,46 @@
   background-size: 256px 256px;
 }
 
+/* Custom scrollbars — thin, dark, with golden warmth on hover */
+
+/* Standard scrollbar properties for Firefox and Chrome 121+.
+   Blink prefers the ::-webkit-scrollbar rules below when both are present. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.35 0.03 68) transparent;
+}
+
+/* WebKit / Blink (Chrome, Safari, Edge) — full hover/active state support */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.33 0.03 68);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.10 74);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: oklch(0.65 0.13 75);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Golden glow on card hover */
 [data-slot="card"] {
   transition: box-shadow 0.25s ease;
 }
 [data-slot="card"]:hover {
   box-shadow: 0 0 12px 0 oklch(0.78 0.15 75 / 15%);
-}
-
-/* Horizontal scroll hint for library tables */
-[data-testid="library-panel"] [data-slot="table-container"] {
-  overflow-x: scroll;
-  scrollbar-width: thin;
 }

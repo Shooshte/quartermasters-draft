@@ -39,7 +39,7 @@ describe("scenariosRouter", () => {
       });
     });
 
-    it("returns scenarios with totalCount and default limit=10", async () => {
+    it("returns scenarios with totalCount and default limit=20", async () => {
       const mockScenarios = [
         { id: "1", name: "Ambush at Dawn", updatedAt: new Date(), createdAt: new Date() },
       ];
@@ -54,7 +54,7 @@ describe("scenariosRouter", () => {
       const result = await caller.scenarios.list();
       expect(result.items).toEqual(mockScenarios);
       expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(20);
       expect(result.totalCount).toBe(5);
     });
 
@@ -68,7 +68,7 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.scenarios.list();
-      expect(result).toEqual({ items: [], page: 1, limit: 10, totalCount: 0 });
+      expect(result).toEqual({ items: [], page: 1, limit: 20, totalCount: 0 });
     });
 
     it("respects custom page and limit", async () => {
@@ -104,7 +104,7 @@ describe("scenariosRouter", () => {
         sortDir: "desc",
       });
       expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(20);
     });
   });
 

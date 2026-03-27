@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/play")({
 
 function PlayPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center">
+    <main className="flex flex-1 flex-col items-center justify-center">
       <h1 className="text-4xl font-bold text-primary font-display">Play</h1>
     </main>
   );

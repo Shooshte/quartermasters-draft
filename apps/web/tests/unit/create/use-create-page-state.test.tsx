@@ -550,6 +550,66 @@ describe("useCreatePageState — URL param change resets", () => {
     });
   });
 
+  it("stores scenario selection when scenario_id loads while another tab is active", async () => {
+    mockScenariosGet.mockResolvedValueOnce({
+      id: "sc1",
+      name: "Ambush",
+      difficulty: "hard",
+    });
+
+    const search: { tab?: string; scenario_id?: string } = {
+      tab: "Effects",
+      scenario_id: "sc1",
+    };
+    const { result } = renderHook(
+      (props: { search: { tab?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search } },
+    );
+
+    expect(result.current.activeTab).toBe("Effects");
+
+    await waitFor(() => {
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+      expect(result.current.scenarioWorkspace.entityId).toBe("sc1");
+      expect(result.current.perTabSelection.Scenarios).toBe("sc1");
+      expect(result.current.perTabSelection.Effects).toBeNull();
+    });
+  });
+
+  it("stores per-tab selections for mixed entity and scenario URL params", async () => {
+    mockItemsGet.mockResolvedValueOnce({
+      id: "i1",
+      name: "Iron Sword",
+      power: 10,
+    });
+    mockScenariosGet.mockResolvedValueOnce({
+      id: "sc1",
+      name: "Ambush",
+      difficulty: "hard",
+    });
+
+    const search: { tab?: string; item_id?: string; scenario_id?: string } = {
+      tab: "Items",
+      item_id: "i1",
+      scenario_id: "sc1",
+    };
+    const { result } = renderHook(
+      (props: { search: { tab?: string; item_id?: string; scenario_id?: string } }) =>
+        useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+      expect(result.current.entityWorkspace.entityId).toBe("i1");
+      expect(result.current.scenarioWorkspace.mode).toBe("edit");
+      expect(result.current.scenarioWorkspace.entityId).toBe("sc1");
+      expect(result.current.perTabSelection.Items).toBe("i1");
+      expect(result.current.perTabSelection.Scenarios).toBe("sc1");
+    });
+  });
+
   it("resets scenario workspace to idle when scenario_id is removed", async () => {
     mockScenariosGet.mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" });
 
@@ -678,7 +738,7 @@ describe("useCreatePageState — scenario list features", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.scenarioTotalPages).toBe(3);
+      expect(result.current.scenarioTotalPages).toBe(2);
     });
   });
 });
@@ -1047,7 +1107,7 @@ describe("useCreatePageState — spell list features", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.spellTotalPages).toBe(3);
+      expect(result.current.spellTotalPages).toBe(2);
     });
   });
 });

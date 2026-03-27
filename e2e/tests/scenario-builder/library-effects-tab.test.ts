@@ -43,8 +43,8 @@ test.describe("Effects Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 11 effects via API
-    const effectIds = Array.from({ length: 11 }, (_, i) =>
+    // Delete all 21 effects via API
+    const effectIds = Array.from({ length: 21 }, (_, i) =>
       `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of effectIds) {
@@ -69,9 +69,9 @@ test.describe("Effects Library Tab — Pagination", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Effects" }).click();
 
-    // Page 1 should show 10 items
+    // Page 1 should show 20 items
     const rows = gmPage.locator('tr[aria-selected]');
-    await expect(rows).toHaveCount(10);
+    await expect(rows).toHaveCount(20);
 
     // Pagination controls visible
     await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
@@ -87,8 +87,8 @@ test.describe("Effects Library Tab — Pagination", () => {
 
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Second page: only "Sizzling Flesh" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Sizzling Flesh/ })).toBeVisible();
+    // Second page: only "Zodiac Burst" (alphabetically last)
+    await expect(gmPage.getByRole("row", { name: /Zodiac Burst/ })).toBeVisible();
     // Arcane Damage should no longer be shown
     await expect(gmPage.getByRole("row", { name: /Arcane Damage/ })).not.toBeVisible();
   });
@@ -99,7 +99,7 @@ test.describe("Effects Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Sizzling Flesh/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zodiac Burst/ })).toBeVisible();
 
     // Go back to page 1
     await gmPage.getByRole("button", { name: "Previous page" }).click();
@@ -130,7 +130,7 @@ test.describe("Effects Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Sizzling Flesh/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zodiac Burst/ })).toBeVisible();
 
     // Change sort to Timing Type
     await gmPage.getByRole("button", { name: /Timing Type/ }).click();
@@ -162,9 +162,9 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    // Descending: Sizzling Flesh, Rejuvenation, ...
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Sizzling Flesh");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Rejuvenation");
+    // Descending: Zodiac Burst, Zephyr Renewal, ...
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zodiac Burst");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Zephyr Renewal");
   });
 
   test("sort by timing type ascending", async ({ gmPage }) => {
@@ -234,7 +234,7 @@ test.describe("Effects Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
     await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
-      "Sizzling Flesh",
+      "Zodiac Burst",
     );
   });
 });
@@ -395,24 +395,24 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await gmPage.getByRole("tab", { name: "Effects" }).click();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Only Sizzling Flesh on page 2
-    await expect(gmPage.getByRole("row", { name: /Sizzling Flesh/ })).toBeVisible();
+    // Only Zodiac Burst on page 2
+    await expect(gmPage.getByRole("row", { name: /Zodiac Burst/ })).toBeVisible();
     await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
 
     // Delete it
-    const sizzlingRow = gmPage.getByRole("row", { name: /Sizzling Flesh/ });
-    await sizzlingRow.getByRole("button", { name: /Delete/ }).click();
+    const zodiacBurstRow = gmPage.getByRole("row", { name: /Zodiac Burst/ });
+    await zodiacBurstRow.getByRole("button", { name: /Delete/ }).click();
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
     // Should be returned to page 1
     await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
     await expect(gmPage.getByRole("row", { name: /Arcane Damage/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Sizzling Flesh/ })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zodiac Burst/ })).not.toBeVisible();
 
     // Restore DB for subsequent test files
     await resetDb();

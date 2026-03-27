@@ -111,20 +111,20 @@ export function LibraryPanel({
   onDeleteUnit,
 }: LibraryPanelProps) {
   return (
-    <div data-testid="library-panel" className="flex flex-1 flex-col p-4 overflow-hidden">
+    <div data-testid="library-panel" className="flex flex-1 flex-col overflow-hidden">
       <Tabs
         value={activeTab}
         onValueChange={(val) => onTabChange(val as TabName)}
         className="flex flex-1 flex-col min-h-0"
       >
-          <TabsList>
+          <TabsList variant="banner" data-testid="library-tabs-header">
             {TABS.map((tab) => (
               <TabsTrigger key={tab} value={tab}>
                 {tab}
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="Effects" className="flex-1 min-h-0 overflow-auto">
+          <TabsContent value="Effects" className="flex-1 min-h-0 overflow-auto p-4">
             <EffectLibraryList
               items={effectListItems}
               isLoading={listLoading.Effects}
@@ -144,7 +144,7 @@ export function LibraryPanel({
               onSortChange={onEffectSortChange}
             />
           </TabsContent>
-          <TabsContent value="Spells" className="flex-1 min-h-0 overflow-auto">
+          <TabsContent value="Spells" className="flex-1 min-h-0 overflow-auto p-4">
             <SpellLibraryList
               items={spellListItems}
               isLoading={listLoading.Spells}
@@ -164,7 +164,7 @@ export function LibraryPanel({
               onSortChange={onSpellSortChange}
             />
           </TabsContent>
-          <TabsContent value="Items" className="flex-1 min-h-0 overflow-auto">
+          <TabsContent value="Items" className="flex-1 min-h-0 overflow-auto p-4">
             <ItemLibraryList
               items={itemListItems}
               isLoading={listLoading.Items}
@@ -184,7 +184,7 @@ export function LibraryPanel({
               onSortChange={onItemSortChange}
             />
           </TabsContent>
-          <TabsContent value="Units" className="flex-1 min-h-0 overflow-auto">
+          <TabsContent value="Units" className="flex-1 min-h-0 overflow-auto p-4">
             <UnitLibraryList
               items={unitListItems}
               isLoading={listLoading.Units}
@@ -204,7 +204,7 @@ export function LibraryPanel({
               onSortChange={onUnitSortChange}
             />
           </TabsContent>
-          <TabsContent value="Scenarios" className="flex-1 min-h-0 overflow-auto">
+          <TabsContent value="Scenarios" className="flex-1 min-h-0 overflow-auto p-4">
             <ScenarioLibraryList
               items={scenarioListItems}
               isLoading={listLoading.Scenarios}

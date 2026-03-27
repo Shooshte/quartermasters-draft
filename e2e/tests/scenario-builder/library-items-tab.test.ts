@@ -44,9 +44,9 @@ test.describe("Items Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 11 items via API
+    // Delete all 21 items via API
     const itemIds = Array.from(
-      { length: 11 },
+      { length: 21 },
       (_, i) => `d0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of itemIds) {
@@ -72,9 +72,9 @@ test.describe("Items Library Tab — Pagination", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Items" }).click();
 
-    // Page 1 should show 10 items
+    // Page 1 should show 20 items
     const rows = gmPage.locator('tr[aria-selected]');
-    await expect(rows).toHaveCount(10);
+    await expect(rows).toHaveCount(20);
 
     // Pagination controls visible
     await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
@@ -90,8 +90,8 @@ test.describe("Items Library Tab — Pagination", () => {
 
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Second page: only "Wyrm Scale" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Wyrm Scale/ })).toBeVisible();
+    // Second page: only "Zircon Crown" (alphabetically last)
+    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
     // Iron Sword should no longer be shown
     await expect(gmPage.getByRole("row", { name: /Iron Sword/ })).not.toBeVisible();
   });
@@ -102,7 +102,7 @@ test.describe("Items Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Wyrm Scale/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
 
     // Go back to page 1
     await gmPage.getByRole("button", { name: "Previous page" }).click();
@@ -131,7 +131,7 @@ test.describe("Items Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Wyrm Scale/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
 
     // Change sort to Updated At
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
@@ -150,9 +150,9 @@ test.describe("Items Library Tab — Sorting", () => {
     await gmPage.getByRole("tab", { name: "Items" }).click();
 
     const rows = gmPage.locator('tr[aria-selected]');
-    // Alphabetically: Iron Sword, Leather Shield, ...
+    // Alphabetically: Iron Sword, Jade Lantern, ...
     await expect(rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Leather Shield");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Jade Lantern");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
@@ -164,8 +164,8 @@ test.describe("Items Library Tab — Sorting", () => {
 
     const rows = gmPage.locator('tr[aria-selected]');
     // Descending: Wyrm Scale, Venom Blade, ...
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Wyrm Scale");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Venom Blade");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zircon Crown");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Yew Longbow");
   });
 
   test("sort by updated at ascending", async ({ gmPage }) => {
@@ -211,7 +211,7 @@ test.describe("Items Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
     await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
-      "Wyrm Scale",
+      "Zircon Crown",
     );
   });
 });
@@ -372,24 +372,24 @@ test.describe.serial("Items Library Tab — Deletion", () => {
     await gmPage.getByRole("tab", { name: "Items" }).click();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Only Wyrm Scale on page 2
-    await expect(gmPage.getByRole("row", { name: /Wyrm Scale/ })).toBeVisible();
+    // Only Zircon Crown on page 2
+    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
     await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
 
     // Delete it
-    const wyrmScaleRow = gmPage.getByRole("row", { name: /Wyrm Scale/ });
-    await wyrmScaleRow.getByRole("button", { name: /Delete/ }).click();
+    const zirconCrownRow = gmPage.getByRole("row", { name: /Zircon Crown/ });
+    await zirconCrownRow.getByRole("button", { name: /Delete/ }).click();
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
     // Should be returned to page 1
     await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
     await expect(gmPage.getByRole("row", { name: /Iron Sword/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Wyrm Scale/ })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).not.toBeVisible();
 
     // Restore DB for subsequent test files
     await resetDb();

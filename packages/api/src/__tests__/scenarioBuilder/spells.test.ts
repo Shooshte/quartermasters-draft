@@ -37,7 +37,7 @@ describe("spellsRouter", () => {
       });
     });
 
-    it("returns spells with totalCount and default limit=10", async () => {
+    it("returns spells with totalCount and default limit=20", async () => {
       const mockSpells = [
         { id: "1", name: "Alpha", description: "Desc A", targetPolicy: "random", updatedAt: new Date() },
         { id: "2", name: "Beta", description: "Desc B", targetPolicy: "highest_health", updatedAt: new Date() },
@@ -53,7 +53,7 @@ describe("spellsRouter", () => {
       const result = await caller.spells.list();
       expect(result.items).toEqual(mockSpells);
       expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(20);
       expect(result.totalCount).toBe(5);
     });
 
@@ -67,7 +67,7 @@ describe("spellsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.list();
-      expect(result).toEqual({ items: [], page: 1, limit: 10, totalCount: 0 });
+      expect(result).toEqual({ items: [], page: 1, limit: 20, totalCount: 0 });
     });
 
     it("respects custom page and limit", async () => {
@@ -103,7 +103,7 @@ describe("spellsRouter", () => {
         sortDir: "desc",
       });
       expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(20);
     });
   });
 

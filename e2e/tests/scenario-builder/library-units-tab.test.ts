@@ -44,9 +44,9 @@ test.describe("Units Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 11 units via API
+    // Delete all 21 units via API
     const unitIds = Array.from(
-      { length: 11 },
+      { length: 21 },
       (_, i) => `f0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of unitIds) {
@@ -72,9 +72,9 @@ test.describe("Units Library Tab — Pagination", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Units" }).click();
 
-    // Page 1 should show 10 units
+    // Page 1 should show 20 units
     const rows = gmPage.locator('tr[aria-selected]');
-    await expect(rows).toHaveCount(10);
+    await expect(rows).toHaveCount(20);
 
     // Pagination controls visible
     await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
@@ -90,8 +90,8 @@ test.describe("Units Library Tab — Pagination", () => {
 
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Second page: only "Zephyr Monk" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Zephyr Monk/ })).toBeVisible();
+    // Second page: only "Zircon Juggernaut" (alphabetically last)
+    await expect(gmPage.getByRole("row", { name: /Zircon Juggernaut/ })).toBeVisible();
     // Barbarian should no longer be shown
     await expect(gmPage.getByRole("row", { name: /Barbarian/ })).not.toBeVisible();
   });
@@ -102,7 +102,7 @@ test.describe("Units Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zephyr Monk/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zircon Juggernaut/ })).toBeVisible();
 
     // Go back to page 1
     await gmPage.getByRole("button", { name: "Previous page" }).click();
@@ -131,7 +131,7 @@ test.describe("Units Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zephyr Monk/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zircon Juggernaut/ })).toBeVisible();
 
     // Change sort to Updated At
     await gmPage.getByRole("button", { name: /Updated At/ }).click();
@@ -164,8 +164,8 @@ test.describe("Units Library Tab — Sorting", () => {
 
     const rows = gmPage.locator('tr[aria-selected]');
     // Descending: Zephyr Monk, Yeti Rider, ...
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zephyr Monk");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Yeti Rider");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zircon Juggernaut");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Zephyr Monk");
   });
 
   test("sort by updated at ascending", async ({ gmPage }) => {
@@ -211,7 +211,7 @@ test.describe("Units Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
     await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
-      "Zephyr Monk",
+      "Zircon Juggernaut",
     );
   });
 });
@@ -372,24 +372,24 @@ test.describe.serial("Units Library Tab — Deletion", () => {
     await gmPage.getByRole("tab", { name: "Units" }).click();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Only Zephyr Monk on page 2
-    await expect(gmPage.getByRole("row", { name: /Zephyr Monk/ })).toBeVisible();
+    // Only Zircon Juggernaut on page 2
+    await expect(gmPage.getByRole("row", { name: /Zircon Juggernaut/ })).toBeVisible();
     await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
 
     // Delete it
-    const zephyrMonkRow = gmPage.getByRole("row", { name: /Zephyr Monk/ });
-    await zephyrMonkRow.getByRole("button", { name: /Delete/ }).click();
+    const zirconJuggernautRow = gmPage.getByRole("row", { name: /Zircon Juggernaut/ });
+    await zirconJuggernautRow.getByRole("button", { name: /Delete/ }).click();
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
     // Should be returned to page 1
     await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
     await expect(gmPage.getByRole("row", { name: /Barbarian/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Zephyr Monk/ })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zircon Juggernaut/ })).not.toBeVisible();
 
     // Restore DB for subsequent test files
     await resetDb();

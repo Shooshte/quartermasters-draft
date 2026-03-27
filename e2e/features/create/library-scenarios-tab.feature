@@ -32,8 +32,7 @@ Feature: Scenario builder scenarios library tab
 
   Rule: The scenarios list is paginated
 
-    # The seed provides 2 scenarios. Pagination scenarios require more than one
-    # page, so a factory generates additional records beyond the page size.
+    # The seeded dataset now exceeds one page at the default 20-row page size.
     Scenario: Scenarios are displayed one page at a time
       Given the seed scenarios exist
       And enough additional scenarios exist to exceed one page

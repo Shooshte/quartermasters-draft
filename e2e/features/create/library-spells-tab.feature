@@ -32,8 +32,7 @@ Feature: Scenario builder spells library tab
 
   Rule: The spells list is paginated
 
-    # The seed provides 3 spells. Pagination scenarios require more than one
-    # page, so a factory generates additional records beyond the page size.
+    # The seeded dataset now exceeds one page at the default 20-row page size.
     Scenario: Spells are displayed one page at a time
       Given the seed spells exist
       And enough additional spells exist to exceed one page

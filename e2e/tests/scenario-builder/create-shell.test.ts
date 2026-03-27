@@ -54,7 +54,7 @@ test.describe("Create Shell — Layout", () => {
     const layout = await activeTabPanel.evaluate((panel) => {
       const action = panel.querySelector('button[aria-label="New Scenario"], button');
       const pagerText = Array.from(panel.querySelectorAll("span")).find((node) =>
-        node.textContent?.includes("Page 1 of 1"),
+        node.textContent?.includes("Page 1 of "),
       );
       const paginationRow = pagerText?.parentElement;
       const tableContainer = panel.querySelector('[data-slot="table-container"]');
@@ -367,8 +367,8 @@ dbTest.describe("Create Shell — Empty Tab State", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 11 effects via API
-    const effectIds = Array.from({ length: 11 }, (_, i) =>
+    // Delete all 21 effects via API
+    const effectIds = Array.from({ length: 21 }, (_, i) =>
       `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of effectIds) {

@@ -678,7 +678,7 @@ describe("useCreatePageState — scenario list features", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.scenarioTotalPages).toBe(3);
+      expect(result.current.scenarioTotalPages).toBe(2);
     });
   });
 });
@@ -1047,7 +1047,7 @@ describe("useCreatePageState — spell list features", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.spellTotalPages).toBe(3);
+      expect(result.current.spellTotalPages).toBe(2);
     });
   });
 });

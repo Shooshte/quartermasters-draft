@@ -45,8 +45,8 @@ test.describe("Spells Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 11 spells via API
-    const spellIds = Array.from({ length: 11 }, (_, i) =>
+    // Delete all 21 spells via API
+    const spellIds = Array.from({ length: 21 }, (_, i) =>
       `b0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
     for (const id of spellIds) {
@@ -71,9 +71,9 @@ test.describe("Spells Library Tab — Pagination", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Spells" }).click();
 
-    // Page 1 should show 10 items
+    // Page 1 should show 20 items
     const rows = gmPage.locator('tr[aria-selected]');
-    await expect(rows).toHaveCount(10);
+    await expect(rows).toHaveCount(20);
 
     // Pagination controls visible
     await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
@@ -89,8 +89,8 @@ test.describe("Spells Library Tab — Pagination", () => {
 
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Second page: only "Ignite" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+    // Second page: only "Zenith Bloom" (alphabetically last)
+    await expect(gmPage.getByRole("row", { name: /Zenith Bloom/ })).toBeVisible();
     // Arcane Shield should no longer be shown
     await expect(gmPage.getByRole("row", { name: /Arcane Shield/ })).not.toBeVisible();
   });
@@ -101,7 +101,7 @@ test.describe("Spells Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zenith Bloom/ })).toBeVisible();
 
     // Go back to page 1
     await gmPage.getByRole("button", { name: "Previous page" }).click();
@@ -132,7 +132,7 @@ test.describe("Spells Library Tab — Pagination", () => {
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zenith Bloom/ })).toBeVisible();
 
     // Change sort to Target Policy
     await gmPage.getByRole("button", { name: /Target Policy/ }).click();
@@ -165,8 +165,8 @@ test.describe("Spells Library Tab — Sorting", () => {
 
     const rows = gmPage.locator('tr[aria-selected]');
     // Descending: Ignite, Holy Light, ...
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Ignite");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Holy Light");
+    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zenith Bloom");
+    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Rune Cascade");
   });
 
   test("sort by target policy ascending", async ({ gmPage }) => {
@@ -241,7 +241,7 @@ test.describe("Spells Library Tab — Sorting", () => {
     await gmPage.getByRole("button", { name: /Name/ }).click();
     await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
       "aria-label",
-      "Ignite",
+      "Zenith Bloom",
     );
   });
 });
@@ -402,24 +402,24 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await gmPage.getByRole("tab", { name: "Spells" }).click();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(10);
+    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
 
     // Go to page 2
     await gmPage.getByRole("button", { name: "Next page" }).click();
 
-    // Only Ignite on page 2
-    await expect(gmPage.getByRole("row", { name: /Ignite/ })).toBeVisible();
+    // Only Zenith Bloom on page 2
+    await expect(gmPage.getByRole("row", { name: /Zenith Bloom/ })).toBeVisible();
     await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
 
     // Delete it
-    const igniteRow = gmPage.getByRole("row", { name: /Ignite/ });
-    await igniteRow.getByRole("button", { name: /Delete/ }).click();
+    const zenithBloomRow = gmPage.getByRole("row", { name: /Zenith Bloom/ });
+    await zenithBloomRow.getByRole("button", { name: /Delete/ }).click();
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
     // Should be returned to page 1
     await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
     await expect(gmPage.getByRole("row", { name: /Arcane Shield/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Ignite/ })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: /Zenith Bloom/ })).not.toBeVisible();
 
     // Restore DB for subsequent test files
     await resetDb();

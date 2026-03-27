@@ -32,8 +32,7 @@ Feature: Scenario builder units library tab
 
   Rule: The units list is paginated
 
-    # The seed provides 3 units. Pagination scenarios require more than one
-    # page, so a factory generates additional records beyond the page size.
+    # The seeded dataset now exceeds one page at the default 20-row page size.
     Scenario: Units are displayed one page at a time
       Given the seed units exist
       And enough additional units exist to exceed one page

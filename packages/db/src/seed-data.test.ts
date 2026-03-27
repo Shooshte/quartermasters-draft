@@ -52,8 +52,8 @@ describe("seed data", () => {
 });
 
 describe("effectSeedData", () => {
-  it("has 11 effect records", () => {
-    expect(effectSeedData).toHaveLength(11);
+  it("has 21 effect records", () => {
+    expect(effectSeedData).toHaveLength(21);
   });
 
   it("each record has required fields: name, timingType, effectType", () => {
@@ -121,8 +121,8 @@ describe("effectSeedData", () => {
 });
 
 describe("spellSeedData", () => {
-  it("has 11 spell records", () => {
-    expect(spellSeedData).toHaveLength(11);
+  it("has 21 spell records", () => {
+    expect(spellSeedData).toHaveLength(21);
   });
 
   it("each record has required fields: name, targetPolicy", () => {
@@ -210,8 +210,8 @@ describe("spellsEffectsSeedData", () => {
 });
 
 describe("itemSeedData", () => {
-  it("has 11 item records", () => {
-    expect(itemSeedData).toHaveLength(11);
+  it("has 21 item records", () => {
+    expect(itemSeedData).toHaveLength(21);
   });
 
   it("each record has required fields: name and all stat fields defined", () => {
@@ -289,8 +289,8 @@ describe("itemsSpellsSeedData", () => {
 });
 
 describe("unitSeedData", () => {
-  it("has 11 unit records", () => {
-    expect(unitSeedData).toHaveLength(11);
+  it("has 21 unit records", () => {
+    expect(unitSeedData).toHaveLength(21);
   });
 
   it("each record has required fields: name and all stat fields", () => {
@@ -384,8 +384,8 @@ describe("unitsItemsSeedData", () => {
 });
 
 describe("scenarioSeedData", () => {
-  it("has 11 scenario records", () => {
-    expect(scenarioSeedData).toHaveLength(11);
+  it("has 21 scenario records", () => {
+    expect(scenarioSeedData).toHaveLength(21);
   });
 
   it("each record has required fields: name", () => {

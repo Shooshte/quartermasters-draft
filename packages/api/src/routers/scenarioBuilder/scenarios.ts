@@ -6,7 +6,7 @@ import { gmProcedure, router } from "../../trpc";
 import { listInputSchema } from "./shared";
 
 const scenarioListInput = listInputSchema.extend({
-  limit: z.number().int().min(1).max(500).default(10),
+  limit: z.number().int().min(1).max(500).default(20),
   sortBy: z.enum(["name", "updatedAt"]).default("name"),
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});

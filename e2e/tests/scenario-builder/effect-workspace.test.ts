@@ -62,7 +62,14 @@ test.describe("Effect Workspace CRUD", () => {
 
     await gmPage.getByTestId("entity-name-input").fill("Barbarian Roar Updated");
     await gmPage.getByTestId("effect-effect-type-select").selectOption("debuff");
-    await gmPage.getByTestId("entity-save-button").click();
+    await Promise.all([
+      gmPage.waitForResponse((response) =>
+        response.url().includes("/api/trpc/scenarioBuilder.effects.update") &&
+        response.request().method() === "POST" &&
+        response.ok(),
+      ),
+      gmPage.getByTestId("entity-save-button").click(),
+    ]);
 
     await gmPage.reload();
 

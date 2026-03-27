@@ -39,7 +39,7 @@ describe("effectsRouter", () => {
       });
     });
 
-    it("returns effects with totalCount and default limit=10", async () => {
+    it("returns effects with totalCount and default limit=20", async () => {
       const mockEffects = [
         { id: "1", name: "Alpha", timingType: "instant", effectType: "buff", updatedAt: new Date() },
         { id: "2", name: "Beta", timingType: "interval", effectType: "damage", updatedAt: new Date() },
@@ -55,7 +55,7 @@ describe("effectsRouter", () => {
       const result = await caller.effects.list();
       expect(result.items).toEqual(mockEffects);
       expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(20);
       expect(result.totalCount).toBe(5);
     });
 
@@ -69,7 +69,7 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.list();
-      expect(result).toEqual({ items: [], page: 1, limit: 10, totalCount: 0 });
+      expect(result).toEqual({ items: [], page: 1, limit: 20, totalCount: 0 });
     });
 
     it("respects custom page and limit", async () => {
@@ -105,7 +105,7 @@ describe("effectsRouter", () => {
         sortDir: "desc",
       });
       expect(result.page).toBe(1);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(20);
     });
   });
 

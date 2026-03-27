@@ -4,6 +4,8 @@ import { trpc } from "~/lib/trpc";
 import {
   type TabName,
   type WorkspaceState,
+  type CreatePageNavigate,
+  type CreatePageSearch,
   type ScenarioSortBy,
   type ScenarioSortDir,
   type EffectSortBy,
@@ -134,16 +136,8 @@ export interface CreatePageState {
 }
 
 export function useCreatePageState(
-  search: {
-    tab?: string;
-    entity_id?: string;
-    effect_id?: string;
-    spell_id?: string;
-    item_id?: string;
-    unit_id?: string;
-    scenario_id?: string;
-  },
-  navigate?: any,
+  search: CreatePageSearch,
+  navigate?: CreatePageNavigate,
 ): CreatePageState {
   const queryClient = useQueryClient();
   const initialTab = isValidTab(search.tab) ? search.tab : DEFAULT_TAB;

@@ -130,8 +130,14 @@ export const effectsRouter = router({
           .insert(effects)
           .values(normalizeEffectInput(input))
           .returning();
+        if (!created) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Effect was not created." });
+        }
         return created;
       } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
         maybeThrowConflict(error);
       }
     }),

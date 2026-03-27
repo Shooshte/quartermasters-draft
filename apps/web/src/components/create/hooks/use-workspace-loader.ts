@@ -5,6 +5,7 @@ import {
   type TabName,
   type WorkspaceState,
   type EntityType,
+  type CreatePageNavigate,
   ENTITY_TYPE_TO_TAB,
   TAB_TO_ENTITY_TYPE,
   TAB_TO_ROUTER_KEY,
@@ -26,7 +27,7 @@ interface UseWorkspaceLoaderOptions {
   };
   activeTab: TabName;
   setActiveTabState: (tab: TabName) => void;
-  navigate?: any;
+  navigate?: CreatePageNavigate;
 }
 
 function computeIsDirty(

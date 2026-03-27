@@ -2,14 +2,14 @@ import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import { SPELLS_PAGE_SIZE, createIdleWorkspace } from "../types";
-import type { WorkspaceState } from "../types";
+import type { CreatePageNavigate, WorkspaceState } from "../types";
 
 interface UseDeleteSpellDialogOptions {
   entityWorkspace: WorkspaceState;
   setEntityWorkspace: React.Dispatch<React.SetStateAction<WorkspaceState>>;
   setPerTabSelection: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
   skipEntityResetRef: React.MutableRefObject<boolean>;
-  navigate?: any;
+  navigate?: CreatePageNavigate;
   spellTotalCount: number;
   spellPage: number;
   setSpellPage: (page: number) => void;

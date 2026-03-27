@@ -5,6 +5,7 @@ import { ScenarioWorkspace } from "./scenario-workspace";
 import { LibraryPanel } from "./library-panel";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
+import type { CreatePageNavigate } from "./types";
 
 interface CreatePageProps {
   search: {
@@ -20,7 +21,8 @@ interface CreatePageProps {
 
 export function CreatePage({ search }: CreatePageProps) {
   const navigate = useNavigate();
-  const state = useCreatePageState(search, navigate);
+  const navigateWithSearchUpdate: CreatePageNavigate = (opts) => navigate(opts as Parameters<typeof navigate>[0]);
+  const state = useCreatePageState(search, navigateWithSearchUpdate);
 
   return (
     <main className="flex h-[calc(100vh-60px)]">

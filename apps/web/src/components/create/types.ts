@@ -68,6 +68,21 @@ export interface WorkspaceState {
   isDirty: boolean;
 }
 
+export type CreatePageSearch = {
+  tab?: string;
+  entity_id?: string;
+  effect_id?: string;
+  spell_id?: string;
+  item_id?: string;
+  unit_id?: string;
+  scenario_id?: string;
+};
+
+export type CreatePageNavigate = (opts: {
+  search: (prev: Record<string, unknown>) => Record<string, unknown>;
+  replace: boolean;
+}) => void;
+
 export function createIdleWorkspace(): WorkspaceState {
   return {
     mode: "idle",

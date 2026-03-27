@@ -1,9 +1,9 @@
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
+import type { EffectFormValues } from "./effect-form";
 import type { WorkspaceState } from "./types";
 import { EffectWorkspaceForm } from "./effect-workspace-form";
-import { effectRecordToFormValues } from "./effect-form";
 
 interface EntityWorkspaceProps {
   workspace: WorkspaceState;
@@ -51,7 +51,7 @@ export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, sa
             {entityType === "effect" ? (
               <EffectWorkspaceForm
                 mode={mode}
-                formValues={effectRecordToFormValues(formValues)}
+                formValues={formValues as EffectFormValues}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
                 isSaving={isSaving}

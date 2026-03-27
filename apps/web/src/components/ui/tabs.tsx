@@ -31,7 +31,7 @@ const tabsListVariants = cva(
         default: "bg-muted",
         line: "gap-1 bg-transparent",
         banner:
-          "h-auto w-full rounded-none border-b border-border bg-accent p-0 px-4",
+          "h-auto w-full justify-start rounded-none border-b border-border bg-accent p-0 px-4 group-data-[orientation=horizontal]/tabs:h-auto",
       },
     },
     defaultVariants: {

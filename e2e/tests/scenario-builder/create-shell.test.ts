@@ -75,6 +75,32 @@ test.describe("Create Shell — Layout", () => {
     expect(layout?.scenarioHeight ?? 0).toBeLessThan(layout?.entityHeight ?? 0);
   });
 
+  test("library tabs header matches scenario and entity header heights", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+
+    const headerHeights = await gmPage.evaluate(() => {
+      const libraryHeader = document.querySelector('[data-testid="library-tabs-header"]');
+      const scenarioHeader = document.querySelector('[data-testid="scenario-workspace-header"]');
+      const entityHeader = document.querySelector('[data-testid="entity-workspace-header"]');
+
+      if (!(libraryHeader instanceof HTMLElement) || !(scenarioHeader instanceof HTMLElement) || !(entityHeader instanceof HTMLElement)) {
+        return null;
+      }
+
+      return {
+        library: libraryHeader.getBoundingClientRect().height,
+        scenario: scenarioHeader.getBoundingClientRect().height,
+        entity: entityHeader.getBoundingClientRect().height,
+      };
+    });
+
+    expect(headerHeights).not.toBeNull();
+    expect(headerHeights?.library).toBe(headerHeights?.scenario);
+    expect(headerHeights?.library).toBe(headerHeights?.entity);
+  });
+
   test("scenario workspace sizes to content instead of scrolling its body", async ({
     gmPage,
   }) => {

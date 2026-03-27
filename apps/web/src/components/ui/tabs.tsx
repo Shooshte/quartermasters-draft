@@ -31,7 +31,7 @@ const tabsListVariants = cva(
         default: "bg-muted",
         line: "gap-1 bg-transparent",
         banner:
-          "h-auto w-full justify-start rounded-none border-b border-border bg-accent p-0 px-4 group-data-[orientation=horizontal]/tabs:h-auto",
+          "h-[41px] w-full justify-start rounded-none border-b border-border bg-accent px-4 py-0 group-data-[orientation=horizontal]/tabs:h-[41px]",
       },
     },
     defaultVariants: {
@@ -69,7 +69,7 @@ function TabsTrigger({
         "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground",
         "after:absolute after:bg-primary after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100",
         // Banner variant: Cinzel font, golden text/underline, no bg/shadow
-        "group-data-[variant=banner]/tabs-list:h-auto group-data-[variant=banner]/tabs-list:flex-none group-data-[variant=banner]/tabs-list:rounded-none group-data-[variant=banner]/tabs-list:border-0 group-data-[variant=banner]/tabs-list:px-3 group-data-[variant=banner]/tabs-list:py-2 group-data-[variant=banner]/tabs-list:font-display group-data-[variant=banner]/tabs-list:tracking-wide group-data-[variant=banner]/tabs-list:text-foreground/50 group-data-[variant=banner]/tabs-list:hover:text-foreground/80 group-data-[variant=banner]/tabs-list:data-[state=active]:bg-transparent group-data-[variant=banner]/tabs-list:data-[state=active]:text-primary group-data-[variant=banner]/tabs-list:data-[state=active]:shadow-none group-data-[variant=banner]/tabs-list:data-[state=active]:after:opacity-100 group-data-[variant=banner]/tabs-list:after:bottom-[-1px]",
+        "group-data-[variant=banner]/tabs-list:h-full group-data-[variant=banner]/tabs-list:flex-none group-data-[variant=banner]/tabs-list:rounded-none group-data-[variant=banner]/tabs-list:border-0 group-data-[variant=banner]/tabs-list:px-3 group-data-[variant=banner]/tabs-list:py-0 group-data-[variant=banner]/tabs-list:text-base group-data-[variant=banner]/tabs-list:font-normal group-data-[variant=banner]/tabs-list:font-display group-data-[variant=banner]/tabs-list:tracking-wide group-data-[variant=banner]/tabs-list:text-foreground/50 group-data-[variant=banner]/tabs-list:hover:text-foreground/80 group-data-[variant=banner]/tabs-list:data-[state=active]:bg-transparent group-data-[variant=banner]/tabs-list:data-[state=active]:text-primary group-data-[variant=banner]/tabs-list:data-[state=active]:shadow-none group-data-[variant=banner]/tabs-list:data-[state=active]:after:opacity-100 group-data-[variant=banner]/tabs-list:after:bottom-[-1px]",
         className
       )}
       {...props}

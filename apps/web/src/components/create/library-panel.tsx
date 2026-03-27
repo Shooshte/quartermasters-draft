@@ -117,7 +117,7 @@ export function LibraryPanel({
         onValueChange={(val) => onTabChange(val as TabName)}
         className="flex flex-1 flex-col min-h-0"
       >
-          <TabsList variant="banner">
+          <TabsList variant="banner" data-testid="library-tabs-header">
             {TABS.map((tab) => (
               <TabsTrigger key={tab} value={tab}>
                 {tab}

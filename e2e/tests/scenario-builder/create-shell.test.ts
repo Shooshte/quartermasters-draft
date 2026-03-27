@@ -281,6 +281,11 @@ test.describe("Create Shell — URL Parameters", () => {
     // No record should be selected in the Spells library
     const selectedRows = gmPage.locator('tr[aria-selected="true"]');
     await expect(selectedRows).toHaveCount(0);
+
+    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    await expect(
+      gmPage.getByRole("row", { name: "Ambush at Dawn" }),
+    ).toHaveAttribute("aria-selected", "true");
   });
 
   test("tab + matching entity_id: correct tab and entity loaded", async ({
@@ -313,6 +318,14 @@ test.describe("Create Shell — URL Parameters", () => {
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
       "Ambush at Dawn",
     );
+    await expect(
+      gmPage.getByRole("row", { name: "Iron Sword" }),
+    ).toHaveAttribute("aria-selected", "true");
+
+    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    await expect(
+      gmPage.getByRole("row", { name: "Ambush at Dawn" }),
+    ).toHaveAttribute("aria-selected", "true");
   });
 
   test("tab mismatch: entity loaded but not selected in library", async ({

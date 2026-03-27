@@ -25,8 +25,8 @@ export function CreatePage({ search }: CreatePageProps) {
   const state = useCreatePageState(search, navigateWithSearchUpdate);
 
   return (
-    <main className="flex h-[calc(100vh-60px)]">
-      <div className="w-[42%] border-r border-border/50 flex flex-col">
+    <main className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex w-[42%] min-w-0 flex-col border-r border-border/50">
         <LibraryPanel
           activeTab={state.activeTab}
           perTabSelection={state.perTabSelection}
@@ -77,7 +77,7 @@ export function CreatePage({ search }: CreatePageProps) {
           onDeleteUnit={state.requestDeleteUnit}
         />
       </div>
-      <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
+      <div className="flex min-w-0 flex-1 flex-col min-h-0 animate-fade-in">
         <ScenarioWorkspace
           workspace={state.scenarioWorkspace}
           onFieldChange={state.updateScenarioField}

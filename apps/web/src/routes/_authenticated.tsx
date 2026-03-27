@@ -87,7 +87,7 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div>
+    <div className="flex min-h-screen flex-col">
       {notice && (
         <p role="status" className="bg-muted text-muted-foreground p-2 text-center text-sm">
           {notice}
@@ -99,11 +99,13 @@ function AuthenticatedLayout() {
           size="sm"
           onClick={handleLogout}
           disabled={loggingOut}
-        >
+      >
           {loggingOut ? "Logging out…" : "Log out"}
         </Button>
       </header>
-      <Outlet />
+      <div className="flex flex-1 flex-col min-h-0">
+        <Outlet />
+      </div>
     </div>
   );
 }

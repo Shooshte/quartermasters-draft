@@ -78,17 +78,20 @@ export function CreatePage({ search }: CreatePageProps) {
         />
       </div>
       <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
+        <ScenarioWorkspace
+          workspace={state.scenarioWorkspace}
+          onFieldChange={state.updateScenarioField}
+        />
+        <div
+          data-testid="workspace-divider"
+          className="border-t border-border"
+        />
         <EntityWorkspace
           workspace={state.entityWorkspace}
           onFieldChange={state.updateEntityField}
           onSave={state.saveEntity}
           isSaving={state.isEntitySaving}
           saveError={state.entitySaveError}
-        />
-        <div className="border-t border-border" />
-        <ScenarioWorkspace
-          workspace={state.scenarioWorkspace}
-          onFieldChange={state.updateScenarioField}
         />
       </div>
       <UnsavedChangesDialog

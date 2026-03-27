@@ -1,6 +1,6 @@
 Feature: Scenario builder page shell
   As a game master
-  I want a scenario builder page with an entity workspace, a scenario workspace,
+  I want a scenario builder page with a scenario workspace, an entity workspace,
   and a tabbed library
   So that I can manage reusable entities and scenarios from one place
 
@@ -23,8 +23,10 @@ Feature: Scenario builder page shell
 
     Scenario: Open the create page shell
       When I navigate to "/create" without selection parameters
-      Then I should see an entity workspace
-      And I should see a scenario workspace
+      Then I should see a scenario workspace
+      And I should see an entity workspace
+      And the scenario workspace should be above the entity workspace
+      And the scenario workspace should size to its content
       And I should see a tabbed library
       And the library should contain tabs for "Effects", "Spells", "Items", "Units", and "Scenarios"
 

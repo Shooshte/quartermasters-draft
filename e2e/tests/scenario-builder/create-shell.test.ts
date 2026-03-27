@@ -27,16 +27,81 @@ async function deleteEffectViaApi(
 // ─── Core Shell Layout ───────────────────────────────────────────────────────
 
 test.describe("Create Shell — Layout", () => {
-  test("shows entity workspace, scenario workspace, and tabbed library", async ({
+  test("shows scenario workspace above entity workspace and tabbed library", async ({
     gmPage,
   }) => {
     await gmPage.goto("/create");
-    await expect(gmPage.getByTestId("entity-workspace")).toBeVisible();
-    await expect(gmPage.getByTestId("scenario-workspace")).toBeVisible();
+    const scenarioWorkspace = gmPage.getByTestId("scenario-workspace");
+    const entityWorkspace = gmPage.getByTestId("entity-workspace");
+    const divider = gmPage.getByTestId("workspace-divider");
+
+    await expect(scenarioWorkspace).toBeVisible();
+    await expect(entityWorkspace).toBeVisible();
+    await expect(divider).toBeVisible();
     await expect(gmPage.getByTestId("library-panel")).toBeVisible();
     for (const tab of ["Effects", "Spells", "Items", "Units", "Scenarios"]) {
       await expect(gmPage.getByRole("tab", { name: tab })).toBeVisible();
     }
+
+    const layout = await gmPage.evaluate(() => {
+      const scenario = document.querySelector('[data-testid="scenario-workspace"]');
+      const entity = document.querySelector('[data-testid="entity-workspace"]');
+      const divider = document.querySelector('[data-testid="workspace-divider"]');
+
+      if (!(scenario instanceof HTMLElement) || !(entity instanceof HTMLElement) || !(divider instanceof HTMLElement)) {
+        return null;
+      }
+
+      const scenarioRect = scenario.getBoundingClientRect();
+      const entityRect = entity.getBoundingClientRect();
+      const dividerRect = divider.getBoundingClientRect();
+
+      return {
+        scenarioTop: scenarioRect.top,
+        scenarioBottom: scenarioRect.bottom,
+        scenarioHeight: scenarioRect.height,
+        entityTop: entityRect.top,
+        entityHeight: entityRect.height,
+        dividerTop: dividerRect.top,
+        dividerBottom: dividerRect.bottom,
+      };
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout?.scenarioTop ?? 0).toBeLessThan(layout?.entityTop ?? 0);
+    expect(layout?.scenarioBottom ?? 0).toBeLessThanOrEqual(layout?.entityTop ?? 0);
+    expect(layout?.dividerTop ?? 0).toBeGreaterThanOrEqual(layout?.scenarioBottom ?? 0);
+    expect(layout?.dividerBottom ?? 0).toBeLessThanOrEqual(layout?.entityTop ?? 0);
+    expect(layout?.scenarioHeight ?? 0).toBeLessThan(layout?.entityHeight ?? 0);
+  });
+
+  test("scenario workspace sizes to content instead of scrolling its body", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
+
+    const scenarioContent = await gmPage.getByTestId("scenario-workspace").evaluate((workspace) => {
+      const body = workspace.lastElementChild;
+
+      if (!(workspace instanceof HTMLElement) || !(body instanceof HTMLElement)) {
+        return null;
+      }
+
+      const bodyStyles = window.getComputedStyle(body);
+
+      return {
+        workspaceHeight: workspace.getBoundingClientRect().height,
+        bodyClientHeight: body.clientHeight,
+        bodyScrollHeight: body.scrollHeight,
+        bodyOverflowY: bodyStyles.overflowY,
+      };
+    });
+
+    expect(scenarioContent).not.toBeNull();
+    expect(scenarioContent?.bodyOverflowY).not.toBe("auto");
+    expect(scenarioContent?.bodyOverflowY).not.toBe("scroll");
+    expect(Math.abs((scenarioContent?.bodyClientHeight ?? 0) - (scenarioContent?.bodyScrollHeight ?? 0))).toBeLessThanOrEqual(1);
+    expect(scenarioContent?.workspaceHeight ?? 0).toBeGreaterThan(0);
   });
 
   test("library list fills available height and scrolls on overflow", async ({

@@ -162,6 +162,45 @@
   background-size: 256px 256px;
 }
 
+/* Custom scrollbars — thin, dark, with golden warmth on hover */
+
+/* Firefox only — standard properties (no hover state support).
+   Scoped via @-moz-document so Chrome/Safari use ::-webkit-scrollbar instead,
+   which supports :hover and :active pseudo-classes. */
+@-moz-document url-prefix() {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.35 0.03 68) transparent;
+  }
+}
+
+/* WebKit / Blink (Chrome, Safari, Edge) — full hover/active state support */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.33 0.03 68);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.10 74);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: oklch(0.65 0.13 75);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Golden glow on card hover */
 [data-slot="card"] {
   transition: box-shadow 0.25s ease;

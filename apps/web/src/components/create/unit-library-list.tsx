@@ -81,13 +81,15 @@ export function UnitLibraryList({
   };
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex h-full min-h-0 flex-col gap-1">
       <div className="px-2 pt-2">
         <Button variant="outline" size="sm" onClick={onCreateNew}>
           New Unit
         </Button>
       </div>
-      <div className={`overflow-y-auto pb-2 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}>
+      <div
+        className={`flex-1 min-h-0 overflow-y-auto px-2 pb-2 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+      >
         <Table>
           <TableHeader>
             <TableRow disableHover>

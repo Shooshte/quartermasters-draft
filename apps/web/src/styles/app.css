@@ -169,9 +169,3 @@
 [data-slot="card"]:hover {
   box-shadow: 0 0 12px 0 oklch(0.78 0.15 75 / 15%);
 }
-
-/* Horizontal scroll hint for library tables */
-[data-testid="library-panel"] [data-slot="table-container"] {
-  overflow-x: scroll;
-  scrollbar-width: thin;
-}

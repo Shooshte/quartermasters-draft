@@ -44,31 +44,54 @@ test.describe("Create Shell — Layout", () => {
   }) => {
     await gmPage.goto("/create");
     const libraryPanel = gmPage.getByTestId("library-panel");
-    await expect(libraryPanel).toBeVisible();
+    const activeTabPanel = gmPage.locator('[data-slot="tabs-content"][data-state="active"]');
+    const tableContainer = activeTabPanel.locator('[data-slot="table-container"]');
 
-    // The list area within the library panel should have scrollable overflow
-    const overflowY = await libraryPanel.evaluate((el) => {
-      // Check the panel itself, or the first scrollable child
-      const styles = window.getComputedStyle(el);
-      if (
-        styles.overflowY === "auto" ||
-        styles.overflowY === "scroll"
-      ) {
-        return styles.overflowY;
+    await expect(libraryPanel).toBeVisible();
+    await expect(activeTabPanel).toBeVisible();
+    await expect(tableContainer).toBeVisible();
+
+    const layout = await activeTabPanel.evaluate((panel) => {
+      const action = panel.querySelector('button[aria-label="New Scenario"], button');
+      const pagerText = Array.from(panel.querySelectorAll("span")).find((node) =>
+        node.textContent?.includes("Page 1 of 1"),
+      );
+      const paginationRow = pagerText?.parentElement;
+      const tableContainer = panel.querySelector('[data-slot="table-container"]');
+      const scrollRegion = tableContainer?.parentElement;
+
+      if (!action || !paginationRow || !tableContainer || !scrollRegion) {
+        return null;
       }
-      // Check children for scrollable overflow
-      for (const child of el.querySelectorAll("*")) {
-        const childStyles = window.getComputedStyle(child);
-        if (
-          childStyles.overflowY === "auto" ||
-          childStyles.overflowY === "scroll"
-        ) {
-          return childStyles.overflowY;
-        }
-      }
-      return styles.overflowY;
+
+      const panelRect = panel.getBoundingClientRect();
+      const actionRect = action.getBoundingClientRect();
+      const paginationRect = paginationRow.getBoundingClientRect();
+      const scrollRect = scrollRegion.getBoundingClientRect();
+      const tableStyles = window.getComputedStyle(tableContainer);
+      const scrollStyles = window.getComputedStyle(scrollRegion);
+
+      return {
+        panelHeight: panelRect.height,
+        actionBottom: actionRect.bottom,
+        paginationTop: paginationRect.top,
+        scrollTop: scrollRect.top,
+        scrollBottom: scrollRect.bottom,
+        scrollHeight: scrollRect.height,
+        tableOverflowX: tableStyles.overflowX,
+        scrollOverflowY: scrollStyles.overflowY,
+        hasHorizontalOverflow: tableContainer.scrollWidth > tableContainer.clientWidth,
+      };
     });
-    expect(overflowY === "auto" || overflowY === "scroll").toBe(true);
+
+    expect(layout).not.toBeNull();
+    expect(layout?.scrollOverflowY).toBe("auto");
+    expect(layout?.tableOverflowX).toBe("auto");
+    expect(layout?.hasHorizontalOverflow).toBe(false);
+    expect(layout?.scrollHeight ?? 0).toBeGreaterThan(0);
+    expect(Math.abs((layout?.scrollTop ?? 0) - (layout?.actionBottom ?? 0))).toBeLessThanOrEqual(24);
+    expect(Math.abs((layout?.scrollBottom ?? 0) - (layout?.paginationTop ?? 0))).toBeLessThanOrEqual(24);
+    expect((layout?.panelHeight ?? 0) > (layout?.scrollHeight ?? 0)).toBe(true);
   });
 });
 

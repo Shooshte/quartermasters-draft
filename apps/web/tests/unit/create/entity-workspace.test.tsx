@@ -16,9 +16,16 @@ function makeWorkspace(overrides: Partial<WorkspaceState> = {}): WorkspaceState 
   };
 }
 
+const defaultProps = {
+  onFieldChange: vi.fn(),
+  onSave: vi.fn(),
+  isSaving: false,
+  saveError: null,
+};
+
 describe("EntityWorkspace", () => {
   it("shows idle placeholder", () => {
-    render(<EntityWorkspace workspace={makeWorkspace()} onFieldChange={vi.fn()} />);
+    render(<EntityWorkspace workspace={makeWorkspace()} {...defaultProps} />);
     expect(screen.getByTestId("entity-idle")).toBeInTheDocument();
     expect(screen.getByText("Select an entity from the library")).toBeInTheDocument();
   });
@@ -27,7 +34,7 @@ describe("EntityWorkspace", () => {
     render(
       <EntityWorkspace
         workspace={makeWorkspace({ mode: "loading" })}
-        onFieldChange={vi.fn()}
+        {...defaultProps}
       />,
     );
     expect(screen.getByTestId("entity-loading")).toBeInTheDocument();
@@ -38,7 +45,7 @@ describe("EntityWorkspace", () => {
     render(
       <EntityWorkspace
         workspace={makeWorkspace({ mode: "not-found" })}
-        onFieldChange={vi.fn()}
+        {...defaultProps}
       />,
     );
     expect(screen.getByTestId("entity-not-found")).toBeInTheDocument();
@@ -53,7 +60,7 @@ describe("EntityWorkspace", () => {
           entityType: "spell",
           formValues: { name: "" },
         })}
-        onFieldChange={vi.fn()}
+        {...defaultProps}
       />,
     );
     expect(screen.getByTestId("entity-form")).toBeInTheDocument();
@@ -71,7 +78,7 @@ describe("EntityWorkspace", () => {
           data: { name: "Fireball" },
           formValues: { name: "Fireball" },
         })}
-        onFieldChange={vi.fn()}
+        {...defaultProps}
       />,
     );
     expect(screen.getByText("Effect: Fireball")).toBeInTheDocument();
@@ -86,7 +93,7 @@ describe("EntityWorkspace", () => {
           data: { name: "Fireball" },
           formValues: { name: "Fireball" },
         })}
-        onFieldChange={vi.fn()}
+        {...defaultProps}
       />,
     );
     const form = screen.getByTestId("entity-form");
@@ -109,11 +116,90 @@ describe("EntityWorkspace", () => {
           formValues: { name: "Test" },
         })}
         onFieldChange={onFieldChange}
+        onSave={vi.fn()}
+        isSaving={false}
+        saveError={null}
       />,
     );
     const input = screen.getByTestId("entity-name-input");
     await userEvent.type(input, "X");
     // The controlled input appends to existing value since parent doesn't re-render
     expect(onFieldChange).toHaveBeenCalledWith("name", "TestX");
+  });
+
+  it("renders effect editor with dropdowns and disabled interval fields for instant timing", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "effect",
+          formValues: {
+            name: "",
+            timingType: "instant",
+            effectType: "buff",
+            intervalMs: null,
+            triggerCount: null,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByTestId("effect-timing-type-select")).toBeInTheDocument();
+    expect(screen.getByTestId("effect-effect-type-select")).toBeInTheDocument();
+    expect(screen.getByTestId("effect-intervalMs-input")).toBeDisabled();
+    expect(screen.getByTestId("effect-triggerCount-input")).toBeDisabled();
+    expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
+  });
+
+  it("enables interval fields when timing type is interval", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "effect",
+          entityId: "e1",
+          data: { name: "Rage" },
+          formValues: {
+            name: "Rage",
+            timingType: "interval",
+            effectType: "buff",
+            intervalMs: 1000,
+            triggerCount: 3,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByTestId("effect-intervalMs-input")).toBeEnabled();
+    expect(screen.getByTestId("effect-triggerCount-input")).toBeEnabled();
+    expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Save Changes");
+  });
+
+  it("shows mutation error for effect saves", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "effect",
+          entityId: "e1",
+          data: { name: "Rage" },
+          formValues: {
+            name: "Rage",
+            timingType: "interval",
+            effectType: "buff",
+            intervalMs: 1000,
+            triggerCount: 3,
+          },
+        })}
+        onFieldChange={vi.fn()}
+        onSave={vi.fn()}
+        isSaving={false}
+        saveError="An effect with this name already exists."
+      />,
+    );
+
+    expect(screen.getByTestId("entity-save-error")).toHaveTextContent("already exists");
   });
 });

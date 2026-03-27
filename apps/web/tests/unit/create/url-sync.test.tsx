@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
+import type { CreatePageNavigate } from "~/components/create/types";
 
 const { mockQuery, mockListQuery } = vi.hoisted(() => ({
   mockQuery: vi.fn(),
@@ -42,11 +43,11 @@ function createWrapper() {
 }
 
 describe("URL parameter sync", () => {
-  let navigate: ReturnType<typeof vi.fn>;
+  let navigate: CreatePageNavigate & ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    navigate = vi.fn();
+    navigate = vi.fn() as unknown as CreatePageNavigate & ReturnType<typeof vi.fn>;
     mockQuery.mockRejectedValue(new Error("not found"));
     mockListQuery.mockResolvedValue({ items: [] });
   });

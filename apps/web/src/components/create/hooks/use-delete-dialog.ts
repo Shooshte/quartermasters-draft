@@ -2,14 +2,14 @@ import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import { SCENARIOS_PAGE_SIZE, createIdleWorkspace } from "../types";
-import type { WorkspaceState } from "../types";
+import type { CreatePageNavigate, WorkspaceState } from "../types";
 
 interface UseDeleteDialogOptions {
   scenarioWorkspace: WorkspaceState;
   setScenarioWorkspace: React.Dispatch<React.SetStateAction<WorkspaceState>>;
   setPerTabSelection: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
   skipScenarioResetRef: React.MutableRefObject<boolean>;
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void;
+  navigate?: CreatePageNavigate;
   scenarioTotalCount: number;
   scenarioPage: number;
   setScenarioPage: (page: number) => void;
@@ -46,7 +46,7 @@ export function useDeleteDialog({
         setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
         skipScenarioResetRef.current = true;
         navigate?.({
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.scenario_id;
             return next;

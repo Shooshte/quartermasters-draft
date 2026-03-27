@@ -2,14 +2,14 @@ import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import { UNITS_PAGE_SIZE, createIdleWorkspace } from "../types";
-import type { WorkspaceState } from "../types";
+import type { CreatePageNavigate, WorkspaceState } from "../types";
 
 interface UseDeleteUnitDialogOptions {
   entityWorkspace: WorkspaceState;
   setEntityWorkspace: React.Dispatch<React.SetStateAction<WorkspaceState>>;
   setPerTabSelection: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
   skipEntityResetRef: React.MutableRefObject<boolean>;
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void;
+  navigate?: CreatePageNavigate;
   unitTotalCount: number;
   unitPage: number;
   setUnitPage: (page: number) => void;
@@ -46,7 +46,7 @@ export function useDeleteUnitDialog({
         setPerTabSelection((prev) => ({ ...prev, Units: null }));
         skipEntityResetRef.current = true;
         navigate?.({
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.unit_id;
             return next;

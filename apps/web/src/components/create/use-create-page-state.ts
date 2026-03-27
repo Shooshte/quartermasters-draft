@@ -1,7 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { trpc } from "~/lib/trpc";
 import {
   type TabName,
   type WorkspaceState,
+  type CreatePageNavigate,
+  type CreatePageSearch,
   type ScenarioSortBy,
   type ScenarioSortDir,
   type EffectSortBy,
@@ -27,6 +31,7 @@ import { useSpellList } from "./hooks/use-spell-list";
 import { useItemList } from "./hooks/use-item-list";
 import { useUnitList } from "./hooks/use-unit-list";
 import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
+import { effectRecordToFormValues, normalizeEffectFormValues, validateEffectForm } from "./effect-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -125,27 +130,25 @@ export interface CreatePageState {
   requestDeleteUnit: (id: string, name: string) => void;
   confirmDeleteUnit: () => void;
   cancelDeleteUnit: () => void;
+  saveEntity: () => Promise<void>;
+  isEntitySaving: boolean;
+  entitySaveError: string | null;
 }
 
 export function useCreatePageState(
-  search: {
-    tab?: string;
-    entity_id?: string;
-    effect_id?: string;
-    spell_id?: string;
-    item_id?: string;
-    unit_id?: string;
-    scenario_id?: string;
-  },
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void,
+  search: CreatePageSearch,
+  navigate?: CreatePageNavigate,
 ): CreatePageState {
+  const queryClient = useQueryClient();
   const initialTab = isValidTab(search.tab) ? search.tab : DEFAULT_TAB;
   const [activeTab, setActiveTabState] = useState<TabName>(initialTab);
   const [backgroundEnabled, setBackgroundEnabled] = useState(false);
+  const [isEntitySaving, setIsEntitySaving] = useState(false);
+  const [entitySaveError, setEntitySaveError] = useState<string | null>(null);
 
   const setActiveTab = useCallback((tab: TabName) => {
     setActiveTabState(tab);
-    navigate?.({ search: (prev) => ({ ...prev, tab }), replace: true });
+    navigate?.({ search: (prev: Record<string, unknown>) => ({ ...prev, tab }), replace: true });
   }, [navigate]);
 
   // Workspace loading (entity + scenario + perTabSelection)
@@ -303,6 +306,65 @@ export function useCreatePageState(
     discard.confirmDiscard(executePendingAction);
   }, [discard, executePendingAction]);
 
+  const saveEntity = useCallback(async () => {
+    if (entityWorkspace.entityType !== "effect") return;
+
+    const formValues = effectRecordToFormValues(entityWorkspace.formValues);
+    const normalized = normalizeEffectFormValues(formValues);
+    if (Object.keys(validateEffectForm(normalized)).length > 0) return;
+
+    try {
+      setIsEntitySaving(true);
+      setEntitySaveError(null);
+
+      if (entityWorkspace.mode === "create") {
+        const created = await trpc.scenarioBuilder.effects.create.mutate(normalized);
+        setEntityWorkspace({
+          mode: "edit",
+          entityType: "effect",
+          entityId: created.id,
+          data: created,
+          formValues: effectRecordToFormValues(created),
+          isDirty: false,
+        });
+        setPerTabSelection((prev) => ({ ...prev, Effects: created.id }));
+        skipEntityResetRef.current = true;
+        navigate?.({
+          search: (prev: Record<string, unknown>) => {
+            const next = { ...prev };
+            delete next.entity_id;
+            delete next.effect_id;
+            next.effect_id = created.id;
+            return next;
+          },
+          replace: true,
+        });
+      } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+        const updated = await trpc.scenarioBuilder.effects.update.mutate({
+          id: entityWorkspace.entityId,
+          ...normalized,
+        });
+        setEntityWorkspace({
+          mode: "edit",
+          entityType: "effect",
+          entityId: updated.id,
+          data: updated,
+          formValues: effectRecordToFormValues(updated),
+          isDirty: false,
+        });
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "list"] }),
+        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "get"] }),
+      ]);
+    } catch (error) {
+      setEntitySaveError(error instanceof Error ? error.message : "Failed to save effect. Please try again.");
+    } finally {
+      setIsEntitySaving(false);
+    }
+  }, [entityWorkspace, navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
+
   return {
     activeTab,
     perTabSelection,
@@ -317,6 +379,9 @@ export function useCreatePageState(
     updateScenarioField,
     confirmDiscard,
     cancelDiscard: discard.cancelDiscard,
+    saveEntity,
+    isEntitySaving,
+    entitySaveError,
     listLoading: allLoading,
     listFetching: allFetching,
     // Scenario list specific

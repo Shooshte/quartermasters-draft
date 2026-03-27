@@ -5,6 +5,7 @@ import {
   type TabName,
   type WorkspaceState,
   type EntityType,
+  type CreatePageNavigate,
   ENTITY_TYPE_TO_TAB,
   TAB_TO_ENTITY_TYPE,
   TAB_TO_ROUTER_KEY,
@@ -12,6 +13,7 @@ import {
   isEntityTab,
   createIdleWorkspace,
 } from "../types";
+import { createDefaultEffectFormValues, effectRecordToFormValues } from "../effect-form";
 
 interface UseWorkspaceLoaderOptions {
   search: {
@@ -25,7 +27,7 @@ interface UseWorkspaceLoaderOptions {
   };
   activeTab: TabName;
   setActiveTabState: (tab: TabName) => void;
-  navigate?: (opts: { search: (prev: Record<string, unknown>) => Record<string, unknown>; replace: boolean }) => void;
+  navigate?: CreatePageNavigate;
 }
 
 function computeIsDirty(
@@ -109,7 +111,7 @@ export function useWorkspaceLoader({
         entityType: found.type,
         entityId: search.entity_id,
         data: entityData,
-        formValues: { name: entityData.name },
+        formValues: found.type === "effect" ? effectRecordToFormValues(entityData) : { name: entityData.name },
         isDirty: false,
       });
       const tabToCheck = isValidTab(search.tab) ? search.tab : entityTab;
@@ -175,7 +177,7 @@ export function useWorkspaceLoader({
         entityType: "effect",
         entityId: search.effect_id,
         data: entityData,
-        formValues: { name: entityData.name },
+        formValues: effectRecordToFormValues(entityData),
         isDirty: false,
       });
       const tabToCheck = isValidTab(search.tab) ? search.tab : "Effects";
@@ -448,7 +450,7 @@ export function useWorkspaceLoader({
           entityType,
           entityId: id,
           data: entityData,
-          formValues: { name: entityData.name },
+          formValues: entityType === "effect" ? effectRecordToFormValues(entityData) : { name: entityData.name },
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
@@ -470,7 +472,7 @@ export function useWorkspaceLoader({
 
         skipEntityResetRef.current = true;
         navigate?.({
-          search: (prev) => {
+          search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.effect_id;
             delete next.spell_id;
@@ -522,7 +524,7 @@ export function useWorkspaceLoader({
       prevScenarioIdRef.current = id;
       scenarioInitRef.current = true;
       skipScenarioResetRef.current = true;
-      navigate?.({ search: (prev) => ({ ...prev, scenario_id: id }), replace: true });
+      navigate?.({ search: (prev: Record<string, unknown>) => ({ ...prev, scenario_id: id }), replace: true });
     } catch {
       if (pendingScenarioIdRef.current !== id) return;
       setScenarioWorkspace({
@@ -557,7 +559,7 @@ export function useWorkspaceLoader({
           setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
           skipScenarioResetRef.current = true;
           navigate?.({
-            search: (prev) => {
+            search: (prev: Record<string, unknown>) => {
               const next = { ...prev };
               delete next.scenario_id;
               return next;
@@ -571,14 +573,14 @@ export function useWorkspaceLoader({
             entityType,
             entityId: null,
             data: null,
-            formValues: { name: "" },
+            formValues: entityType === "effect" ? createDefaultEffectFormValues() : { name: "" },
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
           skipEntityResetRef.current = true;
           const paramToRemove = action.tab === "Effects" ? "effect_id" : action.tab === "Spells" ? "spell_id" : action.tab === "Items" ? "item_id" : action.tab === "Units" ? "unit_id" : "entity_id";
           navigate?.({
-            search: (prev) => {
+            search: (prev: Record<string, unknown>) => {
               const next = { ...prev };
               delete next[paramToRemove];
               return next;

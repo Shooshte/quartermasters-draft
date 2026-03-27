@@ -4,7 +4,9 @@ import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
-const mockDb = { select: mockSelect, delete: mockDeleteFn };
+const mockInsertFn = vi.fn();
+const mockUpdateFn = vi.fn();
+const mockDb = { select: mockSelect, delete: mockDeleteFn, insert: mockInsertFn, update: mockUpdateFn };
 
 vi.mock("@qd/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@qd/db")>();
@@ -182,6 +184,132 @@ describe("effectsRouter", () => {
       await expect(
         caller.effects.delete({ id: "00000000-0000-0000-0000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
+
+  describe("create", () => {
+    it("throws UNAUTHORIZED for unauthenticated user", async () => {
+      const caller = createCaller(anonCtx);
+      await expect(
+        caller.effects.create({ name: "New Effect", timingType: "instant", effectType: "buff" }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    });
+
+    it("throws FORBIDDEN for player role", async () => {
+      const caller = createCaller(playerCtx);
+      await expect(
+        caller.effects.create({ name: "New Effect", timingType: "instant", effectType: "buff" }),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("creates a valid instant effect", async () => {
+      mockInsertFn.mockReturnValue(chainable([{ id: "e1", name: "New Effect", timingType: "instant", effectType: "buff", intervalMs: null, triggerCount: null }]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.effects.create({
+        name: "New Effect",
+        timingType: "instant",
+        effectType: "buff",
+      });
+
+      expect(result).toMatchObject({ id: "e1", name: "New Effect" });
+    });
+
+    it("creates a valid interval effect", async () => {
+      mockInsertFn.mockReturnValue(chainable([{ id: "e2", name: "Rage", timingType: "interval", effectType: "buff", intervalMs: 1000, triggerCount: 3 }]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.effects.create({
+        name: "Rage",
+        timingType: "interval",
+        effectType: "buff",
+        intervalMs: 1000,
+        triggerCount: 3,
+      });
+
+      expect(result).toMatchObject({ id: "e2", timingType: "interval", intervalMs: 1000, triggerCount: 3 });
+    });
+
+    it("rejects missing interval fields for interval timing", async () => {
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.effects.create({ name: "Rage", timingType: "interval", effectType: "buff" }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("maps duplicate names to CONFLICT", async () => {
+      mockInsertFn.mockReturnValue(chainable([]));
+      mockInsertFn.mockImplementationOnce(() => ({
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockRejectedValue({ code: "23505" }),
+      }));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.effects.create({ name: "Duplicate", timingType: "instant", effectType: "buff" }),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+  });
+
+  describe("update", () => {
+    it("throws UNAUTHORIZED for unauthenticated user", async () => {
+      const caller = createCaller(anonCtx);
+      await expect(
+        caller.effects.update({ id: "a0000000-0000-0000-0000-000000000001", name: "New Effect", timingType: "instant", effectType: "buff" }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    });
+
+    it("throws FORBIDDEN for player role", async () => {
+      const caller = createCaller(playerCtx);
+      await expect(
+        caller.effects.update({ id: "a0000000-0000-0000-0000-000000000001", name: "New Effect", timingType: "instant", effectType: "buff" }),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("updates an existing effect", async () => {
+      mockUpdateFn.mockReturnValue(chainable([{ id: "a0000000-0000-0000-0000-000000000001", name: "Updated", timingType: "instant", effectType: "buff" }]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.effects.update({
+        id: "a0000000-0000-0000-0000-000000000001",
+        name: "Updated",
+        timingType: "instant",
+        effectType: "buff",
+      });
+
+      expect(result).toMatchObject({ name: "Updated" });
+    });
+
+    it("returns NOT_FOUND for missing id", async () => {
+      mockUpdateFn.mockReturnValue(chainable([]));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.effects.update({
+          id: "00000000-0000-0000-0000-000000000099",
+          name: "Updated",
+          timingType: "instant",
+          effectType: "buff",
+        }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("maps duplicate names to CONFLICT", async () => {
+      mockUpdateFn.mockImplementationOnce(() => ({
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockRejectedValue({ code: "23505" }),
+      }));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.effects.update({
+          id: "a0000000-0000-0000-0000-000000000001",
+          name: "Duplicate",
+          timingType: "instant",
+          effectType: "buff",
+        }),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
     });
   });
 });

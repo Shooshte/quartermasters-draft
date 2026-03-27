@@ -8,13 +8,16 @@ const mockGetQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 
 const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
         mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
-        mockScenariosDelete, mockSpellsDelete } = vi.hoisted(() => {
+        mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
   const mockUnitsList = vi.fn().mockResolvedValue({ items: [] });
   const mockScenariosList = vi.fn().mockResolvedValue({ items: [] });
   const mockEffectsGet = vi.fn().mockRejectedValue(new Error("not found"));
+  const mockEffectsCreate = vi.fn().mockResolvedValue({ id: "e-new", name: "New Effect", timingType: "instant", effectType: "buff" });
+  const mockEffectsUpdate = vi.fn().mockResolvedValue({ id: "e1", name: "Updated Effect", timingType: "instant", effectType: "buff" });
+  const mockEffectsDelete = vi.fn().mockResolvedValue({ success: true });
   const mockSpellsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockItemsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
@@ -24,14 +27,20 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
   return {
     mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
-    mockScenariosDelete, mockSpellsDelete,
+    mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
   };
 });
 
 vi.mock("~/lib/trpc", () => ({
   trpc: {
     scenarioBuilder: {
-      effects: { list: { query: mockEffectsList }, get: { query: mockEffectsGet } },
+      effects: {
+        list: { query: mockEffectsList },
+        get: { query: mockEffectsGet },
+        create: { mutate: mockEffectsCreate },
+        update: { mutate: mockEffectsUpdate },
+        delete: { mutate: mockEffectsDelete },
+      },
       spells: { list: { query: mockSpellsList }, get: { query: mockSpellsGet }, delete: { mutate: mockSpellsDelete } },
       items: { list: { query: mockItemsList }, get: { query: mockItemsGet } },
       units: { list: { query: mockUnitsList }, get: { query: mockUnitsGet } },
@@ -63,6 +72,9 @@ function resetMocks() {
   mockUnitsList.mockResolvedValue({ items: [] });
   mockScenariosList.mockResolvedValue({ items: [], totalCount: 0 });
   mockEffectsGet.mockRejectedValue(new Error("not found"));
+  mockEffectsCreate.mockResolvedValue({ id: "e-new", name: "New Effect", timingType: "instant", effectType: "buff" });
+  mockEffectsUpdate.mockResolvedValue({ id: "e1", name: "Updated Effect", timingType: "instant", effectType: "buff" });
+  mockEffectsDelete.mockResolvedValue({ success: true });
   mockSpellsGet.mockRejectedValue(new Error("not found"));
   mockItemsGet.mockRejectedValue(new Error("not found"));
   mockUnitsGet.mockRejectedValue(new Error("not found"));
@@ -151,6 +163,32 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
     });
 
     expect(result.current.scenarioWorkspace.isDirty).toBe(true);
+  });
+
+  it("effect isDirty is true when a non-name field differs from original", async () => {
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Rage",
+      timingType: "interval",
+      effectType: "buff",
+      intervalMs: 1000,
+      triggerCount: 2,
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Effects", "e1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("triggerCount", 3);
+    });
+
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
   });
 });
 
@@ -440,7 +478,7 @@ describe("useCreatePageState — URL param change resets", () => {
       .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })
       .mockResolvedValueOnce({ id: "s2", name: "Ice Bolt", damage: 30 });
 
-    const search = { tab: "Spells" as const, entity_id: "s1" };
+    const search: { tab?: string; entity_id?: string; scenario_id?: string } = { tab: "Spells", entity_id: "s1" };
     const { result, rerender } = renderHook(
       (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
         useCreatePageState(props.search, vi.fn()),
@@ -478,7 +516,7 @@ describe("useCreatePageState — URL param change resets", () => {
     });
 
     // Remove entity_id from URL
-    rerender({ search: { tab: "Spells" } });
+    rerender({ search: { tab: "Spells" } as typeof search });
 
     await waitFor(() => {
       expect(result.current.entityWorkspace.mode).toBe("idle");
@@ -491,7 +529,7 @@ describe("useCreatePageState — URL param change resets", () => {
       .mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" })
       .mockResolvedValueOnce({ id: "sc2", name: "Siege", difficulty: "easy" });
 
-    const search = { tab: "Scenarios" as const, scenario_id: "sc1" };
+    const search: { tab?: string; entity_id?: string; scenario_id?: string } = { tab: "Scenarios", scenario_id: "sc1" };
     const { result, rerender } = renderHook(
       (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
         useCreatePageState(props.search, vi.fn()),
@@ -515,7 +553,7 @@ describe("useCreatePageState — URL param change resets", () => {
   it("resets scenario workspace to idle when scenario_id is removed", async () => {
     mockScenariosGet.mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" });
 
-    const search = { tab: "Scenarios" as const, scenario_id: "sc1" };
+    const search: { tab?: string; entity_id?: string; scenario_id?: string } = { tab: "Scenarios", scenario_id: "sc1" };
     const { result, rerender } = renderHook(
       (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
         useCreatePageState(props.search, vi.fn()),
@@ -527,7 +565,7 @@ describe("useCreatePageState — URL param change resets", () => {
     });
 
     // Remove scenario_id from URL
-    rerender({ search: { tab: "Scenarios" } });
+    rerender({ search: { tab: "Scenarios" } as typeof search });
 
     await waitFor(() => {
       expect(result.current.scenarioWorkspace.mode).toBe("idle");
@@ -642,6 +680,172 @@ describe("useCreatePageState — scenario list features", () => {
     await waitFor(() => {
       expect(result.current.scenarioTotalPages).toBe(3);
     });
+  });
+});
+
+describe("useCreatePageState — effect save flows", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("create new effect initializes the full default form state", () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Effects");
+    });
+
+    expect(result.current.entityWorkspace.mode).toBe("create");
+    expect(result.current.entityWorkspace.formValues).toMatchObject({
+      name: "",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+  });
+
+  it("effect load hydrates the full form state", async () => {
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Rage",
+      timingType: "interval",
+      effectType: "buff",
+      intervalMs: 1000,
+      triggerCount: 2,
+      meleeDmg: 1.5,
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Effects", "e1");
+    });
+
+    expect(result.current.entityWorkspace.formValues).toMatchObject({
+      name: "Rage",
+      timingType: "interval",
+      effectType: "buff",
+      intervalMs: 1000,
+      triggerCount: 2,
+      meleeDmg: 1.5,
+    });
+  });
+
+  it("successful create switches to edit mode and syncs effect_id", async () => {
+    let currentSearch: { tab?: string; effect_id?: string } = { tab: "Effects" };
+    let rerenderHook!: (props: { search: { tab?: string; effect_id?: string } }) => void;
+    const navigate = vi.fn(({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
+      currentSearch = search(currentSearch) as typeof currentSearch;
+      rerenderHook({ search: currentSearch });
+    });
+
+    mockEffectsCreate.mockResolvedValueOnce({
+      id: "e-created",
+      name: "Arc Spark",
+      timingType: "instant",
+      effectType: "damage",
+      intervalMs: null,
+      triggerCount: null,
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; effect_id?: string } }) => useCreatePageState(props.search, navigate),
+      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
+    );
+    rerenderHook = rerender;
+
+    act(() => {
+      result.current.createNew("Effects");
+      result.current.updateEntityField("name", "Arc Spark");
+      result.current.updateEntityField("effectType", "damage");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockEffectsCreate).toHaveBeenCalled();
+    expect(result.current.entityWorkspace.mode).toBe("edit");
+    expect(result.current.entityWorkspace.entityId).toBe("e-created");
+    expect(currentSearch.effect_id).toBe("e-created");
+  });
+
+  it("successful update clears dirty state", async () => {
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Rage",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+    mockEffectsUpdate.mockResolvedValueOnce({
+      id: "e1",
+      name: "Rage Updated",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Effects", "e1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("name", "Rage Updated");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockEffectsUpdate).toHaveBeenCalled();
+    expect(result.current.entityWorkspace.isDirty).toBe(false);
+  });
+
+  it("save failure keeps form dirty and surfaces error", async () => {
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Rage",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+    mockEffectsUpdate.mockRejectedValueOnce(new Error("An effect with this name already exists."));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Effects", "e1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("name", "Duplicate");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+    expect(result.current.entitySaveError).toContain("already exists");
   });
 });
 

@@ -164,14 +164,11 @@
 
 /* Custom scrollbars — thin, dark, with golden warmth on hover */
 
-/* Firefox only — standard properties (no hover state support).
-   Scoped via @-moz-document so Chrome/Safari use ::-webkit-scrollbar instead,
-   which supports :hover and :active pseudo-classes. */
-@-moz-document url-prefix() {
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: oklch(0.35 0.03 68) transparent;
-  }
+/* Standard scrollbar properties for Firefox and Chrome 121+.
+   Blink prefers the ::-webkit-scrollbar rules below when both are present. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.35 0.03 68) transparent;
 }
 
 /* WebKit / Blink (Chrome, Safari, Edge) — full hover/active state support */

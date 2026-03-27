@@ -99,7 +99,7 @@ function AuthenticatedLayout() {
           size="sm"
           onClick={handleLogout}
           disabled={loggingOut}
-      >
+        >
           {loggingOut ? "Logging out…" : "Log out"}
         </Button>
       </header>

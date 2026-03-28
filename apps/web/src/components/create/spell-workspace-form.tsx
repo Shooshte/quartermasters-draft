@@ -1,6 +1,16 @@
-import { useRef, type MouseEvent, type RefObject } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type RefObject,
+} from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import {
   hasSpellFormErrors,
   validateSpellForm,
@@ -43,9 +53,13 @@ export function SpellWorkspaceForm({
   saveError,
 }: SpellWorkspaceFormProps) {
   const targetPolicySelectRef = useRef<HTMLSelectElement>(null);
-  const effectPickerRef = useRef<HTMLSelectElement>(null);
+  const effectSearchInputRef = useRef<HTMLInputElement>(null);
   const errors = validateSpellForm(formValues);
   const saveLabel = mode === "create" ? "Create Spell" : "Save Changes";
+  const [isEffectPickerOpen, setIsEffectPickerOpen] = useState(false);
+  const [effectSearch, setEffectSearch] = useState("");
+  const [selectedEffectId, setSelectedEffectId] = useState("");
+  const effectPickerListboxId = useId();
 
   const handleChipMouseDown =
     (selectRef: RefObject<HTMLSelectElement | null>) =>
@@ -70,13 +84,34 @@ export function SpellWorkspaceForm({
       }
     };
 
-  const handleAddEffect = () => {
-    const select = effectPickerRef.current;
-    if (!select || !select.value) return;
+  useEffect(() => {
+    if (!isEffectPickerOpen) {
+      setEffectSearch("");
+      return;
+    }
 
-    const newEffectIds = [...formValues.effectIds, select.value];
+    effectSearchInputRef.current?.focus();
+  }, [isEffectPickerOpen]);
+
+  const filteredEffectOptions = useMemo(() => {
+    const searchTerm = effectSearch.trim().toLowerCase();
+    const matchingOptions = searchTerm
+      ? effectOptions.filter((effect) => effect.name.toLowerCase().includes(searchTerm))
+      : effectOptions;
+
+    return matchingOptions.slice(0, 5);
+  }, [effectOptions, effectSearch]);
+
+  const selectedEffect = effectOptions.find((effect) => effect.id === selectedEffectId);
+
+  const handleAddEffect = () => {
+    if (!selectedEffectId) return;
+
+    const newEffectIds = [...formValues.effectIds, selectedEffectId];
     onFieldChange("effectIds", newEffectIds);
-    select.value = "";
+    setSelectedEffectId("");
+    setEffectSearch("");
+    setIsEffectPickerOpen(false);
   };
 
   const handleRemoveEffect = (index: number) => {
@@ -179,29 +214,104 @@ export function SpellWorkspaceForm({
 
         {/* Effect picker */}
         <div className="flex gap-2 items-center mb-2.5">
-          <select
-            ref={effectPickerRef}
-            data-testid="spell-effect-picker"
-            className="ws-cell-input"
-            style={{
-              flex: 1,
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid oklch(0.91 0.03 70 / 12%)",
-              borderRadius: 6,
-              padding: "7px 10px",
-              cursor: "pointer",
-            }}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Search effects…
-            </option>
-            {effectOptions.map((effect) => (
-              <option key={effect.id} value={effect.id}>
-                {effect.name}
-              </option>
-            ))}
-          </select>
+          <Popover open={isEffectPickerOpen} onOpenChange={setIsEffectPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                data-testid="spell-effect-picker"
+                role="combobox"
+                aria-expanded={isEffectPickerOpen}
+                aria-controls={effectPickerListboxId}
+                className="ws-cell-input"
+                style={{
+                  flex: 1,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid oklch(0.91 0.03 70 / 12%)",
+                  borderRadius: 6,
+                  padding: "7px 10px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
+                <span
+                  style={{
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textAlign: "left",
+                  }}
+                >
+                  {selectedEffect?.name ?? "Select effect"}
+                </span>
+                <ChevronsUpDown className="size-4 opacity-60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="p-2"
+              style={{
+                width: "var(--radix-popover-trigger-width)",
+                background: "oklch(0.21 0.012 55)",
+                borderColor: "oklch(0.91 0.03 70 / 12%)",
+              }}
+            >
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={effectSearchInputRef}
+                  data-testid="spell-effect-picker-search"
+                  value={effectSearch}
+                  placeholder="Search effects..."
+                  className="ws-cell-input"
+                  onChange={(e) => setEffectSearch(e.target.value)}
+                />
+                <div
+                  id={effectPickerListboxId}
+                  role="listbox"
+                  className="flex flex-col gap-1"
+                  aria-label="Spell effect options"
+                >
+                  {filteredEffectOptions.length === 0 ? (
+                    <div
+                      data-testid="spell-effect-picker-empty"
+                      className="rounded-md px-3 py-2 text-sm text-muted-foreground"
+                    >
+                      No effects found.
+                    </div>
+                  ) : (
+                    filteredEffectOptions.map((effect) => {
+                      const isSelected = effect.id === selectedEffectId;
+
+                      return (
+                        <button
+                          key={effect.id}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          data-testid={`spell-effect-picker-option-${effect.id}`}
+                          className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                          style={{
+                            background: isSelected ? "oklch(0.78 0.15 75 / 12%)" : undefined,
+                            color: isSelected ? "oklch(0.78 0.15 75)" : undefined,
+                          }}
+                          onClick={() => {
+                            setSelectedEffectId(effect.id);
+                            setIsEffectPickerOpen(false);
+                          }}
+                        >
+                          <span>{effect.name}</span>
+                          <Check className={`size-4 ${isSelected ? "opacity-100" : "opacity-0"}`} />
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             variant="outline"
             size="sm"

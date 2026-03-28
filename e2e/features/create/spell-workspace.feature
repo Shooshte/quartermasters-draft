@@ -50,6 +50,18 @@ Feature: Spell workspace create and edit
     And I save the spell
     Then reloading the spell by URL should show effects "Barbarian Roar" and "Exhaust" in order
 
+  Scenario: Search for a specific effect before linking it
+    When I start creating a new spell
+    Then the link-effect picker should allow searching for "Tectonic Pulse"
+
+  Scenario: Link-effect picker shows at most five options
+    When I start creating a new spell
+    Then opening the link-effect picker should show no more than 5 effects
+
+  Scenario: Link-effect picker does not include the search prompt as an option
+    When I start creating a new spell
+    Then the link-effect picker should use "Search effects..." as input placeholder only
+
   Scenario: Reorder linked effects
     Given I have loaded the spell "Fireball" in the spell workspace
     When I reorder the linked effects so that position 1 becomes position 2 and position 2 becomes position 1

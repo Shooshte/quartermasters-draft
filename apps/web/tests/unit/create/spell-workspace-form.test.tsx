@@ -13,6 +13,10 @@ const defaultFormValues: SpellFormValues = {
 
 const sampleEffectOptions = [
   { id: "eff-1", name: "Arcane Damage", effectType: "damage" },
+  { id: "eff-7", name: "Astral Ward", effectType: "buff" },
+  { id: "eff-4", name: "Exhaust", effectType: "debuff" },
+  { id: "eff-5", name: "Frostbite", effectType: "damage" },
+  { id: "eff-6", name: "Guardian Shield", effectType: "buff" },
   { id: "eff-2", name: "Heal Light", effectType: "healing" },
   { id: "eff-3", name: "Shield Wall", effectType: "buff" },
 ];
@@ -22,8 +26,8 @@ function renderForm(
     formValues?: Partial<SpellFormValues>;
     mode?: "create" | "edit";
     effectOptions?: typeof sampleEffectOptions;
-    onFieldChange?: ReturnType<typeof vi.fn>;
-    onSave?: ReturnType<typeof vi.fn>;
+    onFieldChange?: (field: string, value: unknown) => void;
+    onSave?: () => void;
     isSaving?: boolean;
     saveError?: string | null;
   } = {},
@@ -76,9 +80,8 @@ describe("SpellWorkspaceForm", () => {
     it("renders effect picker with all effect options", () => {
       renderForm();
 
-      expect(screen.getByRole("option", { name: "Arcane Damage" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "Heal Light" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "Shield Wall" })).toBeInTheDocument();
+      expect(screen.getByTestId("spell-effect-picker")).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "Arcane Damage" })).not.toBeInTheDocument();
     });
   });
 
@@ -248,12 +251,68 @@ describe("SpellWorkspaceForm", () => {
   });
 
   describe("Add effect button", () => {
+    it("opening the picker with empty search shows only the first five effects", async () => {
+      renderForm();
+
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+
+      const options = screen.getByRole("listbox").querySelectorAll('[role="option"]');
+      expect(options).toHaveLength(5);
+      expect(Array.from(options).map((option) => option.textContent)).toEqual([
+        "Arcane Damage",
+        "Astral Ward",
+        "Exhaust",
+        "Frostbite",
+        "Guardian Shield",
+      ]);
+      expect(screen.queryByRole("option", { name: "Heal Light" })).not.toBeInTheDocument();
+    });
+
+    it("shows the search prompt only in the input and not as an option", async () => {
+      renderForm();
+
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+
+      expect(screen.getByPlaceholderText("Search effects...")).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "Search effects..." })).not.toBeInTheDocument();
+    });
+
+    it("filters effects by a case-insensitive text search", async () => {
+      renderForm();
+
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+      await userEvent.type(screen.getByTestId("spell-effect-picker-search"), "heal");
+
+      expect(screen.getByRole("option", { name: "Heal Light" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "Arcane Damage" })).not.toBeInTheDocument();
+    });
+
+    it("caps filtered results at five options", async () => {
+      renderForm();
+
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+      await userEvent.type(screen.getByTestId("spell-effect-picker-search"), "a");
+
+      expect(screen.getByRole("listbox").querySelectorAll('[role="option"]')).toHaveLength(5);
+      expect(screen.queryByRole("option", { name: "Shield Wall" })).not.toBeInTheDocument();
+    });
+
+    it("shows an empty state when no effects match the search", async () => {
+      renderForm();
+
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+      await userEvent.type(screen.getByTestId("spell-effect-picker-search"), "zzzzz");
+
+      expect(screen.getByTestId("spell-effect-picker-empty")).toHaveTextContent("No effects found.");
+      expect(screen.getByRole("listbox").querySelectorAll('[role="option"]')).toHaveLength(0);
+    });
+
     it("calls onFieldChange with new effectId when Add is clicked with a selected effect", async () => {
       const onFieldChange = vi.fn();
       renderForm({ onFieldChange, formValues: { effectIds: [] } });
 
-      const picker = screen.getByTestId("spell-effect-picker") as HTMLSelectElement;
-      await userEvent.selectOptions(picker, "eff-1");
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+      await userEvent.click(screen.getByTestId("spell-effect-picker-option-eff-1"));
       await userEvent.click(screen.getByTestId("spell-add-effect-button"));
 
       expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-1"]);
@@ -263,11 +322,20 @@ describe("SpellWorkspaceForm", () => {
       const onFieldChange = vi.fn();
       renderForm({ onFieldChange, formValues: { effectIds: ["eff-2"] } });
 
-      const picker = screen.getByTestId("spell-effect-picker") as HTMLSelectElement;
-      await userEvent.selectOptions(picker, "eff-1");
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+      await userEvent.click(screen.getByTestId("spell-effect-picker-option-eff-1"));
       await userEvent.click(screen.getByTestId("spell-add-effect-button"));
 
       expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-2", "eff-1"]);
+    });
+
+    it("shows the selected effect name in the picker trigger", async () => {
+      renderForm();
+
+      await userEvent.click(screen.getByTestId("spell-effect-picker"));
+      await userEvent.click(screen.getByTestId("spell-effect-picker-option-eff-4"));
+
+      expect(screen.getByTestId("spell-effect-picker")).toHaveTextContent("Exhaust");
     });
 
     it("does not call onFieldChange when no effect is selected in picker", async () => {

@@ -182,6 +182,35 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
     expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
 
+  it("spell isDirty returns to false after reverting a name change when original description is null", async () => {
+    mockSpellsGet.mockResolvedValueOnce({
+      id: "s1",
+      name: "Fireball",
+      description: null,
+      targetPolicy: "random",
+      effectIds: ["eff-1"],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Spells", "s1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("name", "Fireball Updated");
+    });
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+
+    act(() => {
+      result.current.updateEntityField("name", "Fireball");
+    });
+    expect(result.current.entityWorkspace.isDirty).toBe(false);
+  });
+
   it("scenario isDirty is true when any form field differs from original", async () => {
     mockScenariosGet.mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" });
 

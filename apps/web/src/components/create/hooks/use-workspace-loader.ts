@@ -14,7 +14,7 @@ import {
   createIdleWorkspace,
 } from "../types";
 import { createDefaultEffectFormValues, effectRecordToFormValues } from "../effect-form";
-import { createDefaultSpellFormValues } from "../spell-form";
+import { createDefaultSpellFormValues, spellRecordToFormValues } from "../spell-form";
 
 interface UseWorkspaceLoaderOptions {
   search: {
@@ -35,13 +35,15 @@ function computeIsDirty(
   formValues: WorkspaceState["formValues"],
   originalData: WorkspaceState["data"],
 ): boolean {
+  const normalise = (value: unknown) => (value === null || value === undefined ? "" : value);
+
   return Object.keys(formValues).some((key) => {
     const current = formValues[key];
     const original = originalData ? originalData[key] : "";
     if (Array.isArray(current) && Array.isArray(original)) {
       return current.length !== original.length || current.some((v, i) => v !== original[i]);
     }
-    return current !== original;
+    return normalise(current) !== normalise(original);
   });
 }
 
@@ -119,13 +121,7 @@ export function useWorkspaceLoader({
         formValues: found.type === "effect"
           ? effectRecordToFormValues(entityData)
           : found.type === "spell"
-            ? {
-                ...createDefaultSpellFormValues(),
-                name: entityData.name,
-                description: (entityData.description as string) ?? "",
-                targetPolicy: (entityData.targetPolicy as string) ?? "",
-                effectIds: (entityData.effectIds as string[]) ?? [],
-              }
+            ? spellRecordToFormValues(entityData)
             : { name: entityData.name },
         isDirty: false,
       });
@@ -244,13 +240,7 @@ export function useWorkspaceLoader({
         entityType: "spell",
         entityId: search.spell_id,
         data: entityData,
-        formValues: {
-          ...createDefaultSpellFormValues(),
-          name: entityData.name,
-          description: (entityData.description as string) ?? "",
-          targetPolicy: (entityData.targetPolicy as string) ?? "",
-          effectIds: (entityData.effectIds as string[]) ?? [],
-        },
+        formValues: spellRecordToFormValues(entityData),
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Spells: search.spell_id! }));
@@ -453,20 +443,14 @@ export function useWorkspaceLoader({
           mode: "edit",
           entityType,
           entityId: id,
-          data: entityData,
-          formValues: entityType === "effect"
-            ? effectRecordToFormValues(entityData)
-            : entityType === "spell"
-              ? {
-                  ...createDefaultSpellFormValues(),
-                  name: entityData.name,
-                  description: (entityData.description as string) ?? "",
-                  targetPolicy: (entityData.targetPolicy as string) ?? "",
-                  effectIds: (entityData.effectIds as string[]) ?? [],
-                }
+        data: entityData,
+        formValues: entityType === "effect"
+          ? effectRecordToFormValues(entityData)
+          : entityType === "spell"
+            ? spellRecordToFormValues(entityData)
               : { name: entityData.name },
-          isDirty: false,
-        });
+        isDirty: false,
+      });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
         const urlParam = tab === "Effects" ? "effect_id" : tab === "Spells" ? "spell_id" : tab === "Items" ? "item_id" : tab === "Units" ? "unit_id" : "entity_id";
 

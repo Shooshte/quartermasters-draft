@@ -21,6 +21,13 @@ export interface SpellFormValues {
   effectIds: string[];
 }
 
+interface SpellRecord {
+  name: string;
+  description?: string | null;
+  targetPolicy?: string | null;
+  effectIds?: string[] | null;
+}
+
 export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds", string>>;
 
 export function createDefaultSpellFormValues(): SpellFormValues {
@@ -52,6 +59,16 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
 
 export function hasSpellFormErrors(values: SpellFormValues): boolean {
   return Object.keys(validateSpellForm(values)).length > 0;
+}
+
+export function spellRecordToFormValues(record: Partial<SpellRecord>): SpellFormValues {
+  return {
+    ...createDefaultSpellFormValues(),
+    name: record.name ?? "",
+    description: record.description ?? "",
+    targetPolicy: (record.targetPolicy as TargetPolicy | "") ?? "",
+    effectIds: record.effectIds ?? [],
+  };
 }
 
 export interface NormalizedSpellInput {

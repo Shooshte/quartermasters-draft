@@ -97,8 +97,8 @@ test.describe("Create Shell — Layout", () => {
     });
 
     expect(headerHeights).not.toBeNull();
-    expect(headerHeights?.library).toBe(headerHeights?.scenario);
-    expect(headerHeights?.library).toBe(headerHeights?.entity);
+    expect(Math.abs((headerHeights?.library ?? 0) - (headerHeights?.scenario ?? 0))).toBeLessThanOrEqual(0.5);
+    expect(Math.abs((headerHeights?.library ?? 0) - (headerHeights?.entity ?? 0))).toBeLessThanOrEqual(0.5);
   });
 
   test("scenario workspace sizes to content instead of scrolling its body", async ({

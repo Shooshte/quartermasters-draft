@@ -4,6 +4,7 @@ import {
   validateSpellForm,
   hasSpellFormErrors,
   normalizeSpellFormValues,
+  spellRecordToFormValues,
 } from "~/components/create/spell-form";
 
 describe("spell-form", () => {
@@ -121,5 +122,16 @@ describe("spell-form", () => {
     });
     expect(result.targetPolicy).toBe("highest_health");
     expect(result.effectIds).toEqual(["id-1", "id-2"]);
+  });
+
+  it("maps null description from a saved spell to an empty string form value", () => {
+    const result = spellRecordToFormValues({
+      name: "Fireball",
+      description: null,
+      targetPolicy: "random",
+      effectIds: ["id-1"],
+    });
+
+    expect(result.description).toBe("");
   });
 });

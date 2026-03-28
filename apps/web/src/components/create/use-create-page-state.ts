@@ -32,7 +32,13 @@ import { useItemList } from "./hooks/use-item-list";
 import { useUnitList } from "./hooks/use-unit-list";
 import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
 import { effectRecordToFormValues, normalizeEffectFormValues, validateEffectForm } from "./effect-form";
-import { normalizeSpellFormValues, validateSpellForm, type SpellFormValues } from "./spell-form";
+import {
+  normalizeSpellFormValues,
+  spellRecordToFormValues,
+  validateSpellForm,
+  type SpellFormValues,
+  type EffectOption,
+} from "./spell-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -134,7 +140,7 @@ export interface CreatePageState {
   saveEntity: () => Promise<void>;
   isEntitySaving: boolean;
   entitySaveError: string | null;
-  effectOptions: { id: string; name: string; effectType: string }[];
+  effectOptions: EffectOption[];
 }
 
 export function useCreatePageState(
@@ -388,12 +394,7 @@ export function useCreatePageState(
             entityType: "spell",
             entityId: createdData.id,
             data: createdData,
-            formValues: {
-              name: createdData.name,
-              description: (createdData.description as string) ?? "",
-              targetPolicy: (createdData.targetPolicy as string) ?? "",
-              effectIds: (createdData.effectIds as string[]) ?? [],
-            },
+            formValues: spellRecordToFormValues(createdData),
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, Spells: createdData.id }));
@@ -419,12 +420,7 @@ export function useCreatePageState(
             entityType: "spell",
             entityId: updatedData.id,
             data: updatedData,
-            formValues: {
-              name: updatedData.name,
-              description: (updatedData.description as string) ?? "",
-              targetPolicy: (updatedData.targetPolicy as string) ?? "",
-              effectIds: (updatedData.effectIds as string[]) ?? [],
-            },
+            formValues: spellRecordToFormValues(updatedData),
             isDirty: false,
           });
         }
@@ -463,7 +459,7 @@ export function useCreatePageState(
     saveEntity,
     isEntitySaving,
     entitySaveError,
-    effectOptions: (effectOptionsQuery.data?.items ?? []).map((e: { id: string; name: string; effectType: string }) => ({
+    effectOptions: (effectOptionsQuery.data?.items ?? []).map((e: EffectOption) => ({
       id: e.id,
       name: e.name,
       effectType: e.effectType,

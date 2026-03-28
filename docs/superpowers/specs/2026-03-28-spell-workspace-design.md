@@ -4,6 +4,11 @@
 
 Add a dedicated spell workspace form to the entity workspace on the `/create` page. The spell form allows game masters to create and edit spells — including name, description, target policy, and an ordered list of linked effects — without leaving the builder workflow.
 
+This feature has two parts:
+
+1. **CSS abstraction** — rename the existing `eff-*` CSS classes to a shared `ws-*` (workspace) namespace so that all entity workspaces (effects, spells, items, units) can use the same base styles. Update the effect workspace form to consume the new class names.
+2. **Spell workspace form** — build the spell-specific form using the shared `ws-*` classes, plus a small number of spell-only additions.
+
 **Acceptance criteria**: all scenarios in `e2e/features/create/spell-workspace.feature`.
 
 **Visual reference**: `.superpowers/brainstorm/56768-1774721585/content/spell-workspace-full-v3.html`
@@ -19,45 +24,92 @@ Add a dedicated spell workspace form to the entity workspace on the `/create` pa
 
 The `spells` and `spellsEffects` tables already exist. The tRPC router (`scenarioBuilder.spells`) already supports `list`, `get`, `create`, `update`, and `delete`. No backend changes are needed.
 
-## Form Layout
+## Part 1: Shared Workspace CSS Abstraction
+
+### Rename Map
+
+All existing `eff-*` classes in `app.css` are renamed to `ws-*`. The effect workspace form (`effect-workspace-form.tsx`) and its related files are updated to use the new names. No visual change — purely a rename.
+
+| Old class | New class | Purpose |
+|-----------|-----------|---------|
+| `eff-cell` | `ws-cell` | Colored cell (inherits `--ws-color` vars) |
+| `eff-cell-neutral` | `ws-cell-neutral` | Neutral gray cell (name, timing, text fields) |
+| `eff-cell-label` | `ws-cell-label` | Uppercase label inside cells |
+| `eff-cell-input` | `ws-cell-input` | Transparent input inside cells |
+| `eff-name-input` | `ws-name-input` | Larger font variant for name fields |
+| `eff-section-header` | `ws-section-header` | Section divider with trailing hairline |
+| `eff-chip` | `ws-chip` | Inline pill selector base |
+| `eff-chip-type` | `ws-chip-type` | Colored chip variant (inherits `--ws-color`) |
+| `eff-chip-timing` | `ws-chip-timing` | Neutral chip variant |
+| `eff-chip-select` | `ws-chip-select` | Hidden select inside chip |
+| `eff-chip-arrow` | `ws-chip-arrow` | Dropdown arrow inside chip |
+
+### CSS Custom Property Rename
+
+The scoped color variables also move to the `ws-` namespace:
+
+| Old variable | New variable |
+|-------------|-------------|
+| `--eff-color` | `--ws-color` |
+| `--eff-dim` | `--ws-dim` |
+| `--eff-subtle` | `--ws-subtle` |
+| `--eff-border` | `--ws-border` |
+
+The `.effect-damage`, `.effect-healing`, `.effect-buff`, `.effect-debuff` classes keep their names — they are effect-type-specific color providers that set the `--ws-*` variables. Their internal variable references change from `--eff-*` to `--ws-*`.
+
+### Files Changed by Rename
+
+| File | Change |
+|------|--------|
+| `apps/web/src/styles/app.css` | Rename all `eff-*` → `ws-*` classes and `--eff-*` → `--ws-*` variables |
+| `apps/web/src/components/create/effect-workspace-form.tsx` | Update all class name references |
+| `apps/web/src/components/create/effect-colors.ts` | Update any class name references if present |
+
+### Verification
+
+After the rename, all existing effect workspace unit tests and E2E tests must still pass — no visual or behavioral change.
+
+## Part 2: Spell Workspace Form
+
+### Form Layout
 
 Top-to-bottom order inside the entity workspace body (16px padding, 16px gap between sections):
 
-### 1. Name Cell
+#### 1. Name Cell
 
-- Reuses `eff-cell-neutral` pattern exactly.
-- Label: "NAME" (Cinzel, 11px, uppercase, muted).
-- Input: 16px Crimson Pro (`eff-name-input` class).
+- Uses shared `ws-cell-neutral`.
+- Label: "NAME" via `ws-cell-label`.
+- Input: 16px Crimson Pro via `ws-cell-input ws-name-input`.
 - Required — validation error shown below input if empty after trim.
 - `data-testid="entity-name-input"`.
 
-### 2. Description Cell
+#### 2. Description Cell
 
-- `eff-cell-neutral` with a `<textarea>` instead of `<input>`.
-- Label: "DESCRIPTION (optional)" — the "(optional)" portion in lowercase, reduced opacity (0.5), normal letter-spacing.
-- Textarea: 14px Crimson Pro, `min-height: 48px`, vertically resizable.
+- Uses shared `ws-cell-neutral` with a `<textarea>` instead of `<input>`.
+- Label: "DESCRIPTION (optional)" via `ws-cell-label` — the "(optional)" portion in lowercase, reduced opacity (0.5), normal letter-spacing.
+- Textarea: 14px Crimson Pro, `min-height: 48px`, vertically resizable. Uses `ws-cell-input` base styling adapted for textarea.
 - Empty/whitespace → stored as `null`.
 - `data-testid="spell-description-input"`.
 
-### 3. Target Selection Section
+#### 3. Target Selection Section
 
-- Section divider: `eff-section-header` — "TARGET SELECTION" with trailing hairline.
+- Section divider: `ws-section-header` — "TARGET SELECTION" with trailing hairline.
 - Below the divider: a single chip selector.
-- Chip styling: `eff-chip` base + golden tint (`oklch(0.78 0.15 75)` background at 12%, border at 18%, text at full).
-- Contains a hidden `<select>` with 4 options: `highest_health`, `lowest_health`, `highest_damage`, `random`.
-- Dropdown arrow: `▼` at 8px, 50% opacity.
-- Uses `showPicker()` on chip click (same pattern as `EffectWorkspaceForm` chip handler).
+- Chip styling: `ws-chip` base + golden tint (`oklch(0.78 0.15 75)` background at 12%, border at 18%, text at full). No `ws-chip-type` needed since spells don't have a type-based color system — the gold tint is applied directly.
+- Contains a hidden `<select>` via `ws-chip-select` with 4 options: `highest_health`, `lowest_health`, `highest_damage`, `random`.
+- Dropdown arrow: `ws-chip-arrow` (`▼` at 8px, 50% opacity).
+- Uses `showPicker()` on chip click (same handler pattern as `EffectWorkspaceForm`).
 - Required — save blocked if no value selected.
 - `data-testid="spell-target-policy-chip"` on the chip label, `data-testid="spell-target-policy-select"` on the select.
 
-### 4. Spell Effects Section
+#### 4. Spell Effects Section
 
-- Section divider: `eff-section-header` — "SPELL EFFECTS" with trailing hairline.
+- Section divider: `ws-section-header` — "SPELL EFFECTS" with trailing hairline.
 
 **Effect picker row** (flex, 8px gap, margin-bottom 10px):
 
-- Searchable dropdown (`<select>` initially; can upgrade to combobox later).
-  - Styled as a custom select: `cell-bg` background, `border` border, 6px radius, 7px 10px padding, Crimson Pro 14px.
+- Dropdown (`<select>` initially; can upgrade to combobox later).
+  - Styled with inline/local styles matching the workspace aesthetic: dark bg, subtle border, 6px radius, 7px 10px padding, Crimson Pro 14px.
   - Placeholder option: "Search effects…" (disabled).
   - Options populated from the full effects list (fetched via `trpc.scenarioBuilder.effects.list` with high limit).
   - `data-testid="spell-effect-picker"`.
@@ -65,7 +117,7 @@ Top-to-bottom order inside the entity workspace body (16px padding, 16px gap bet
   - Clicking adds the selected effect to the end of the list.
   - `data-testid="spell-add-effect-button"`.
 
-**Effect list** (flex column, 4px gap):
+**Spell effect list** (flex column, 4px gap):
 
 Each linked effect renders as a row:
 
@@ -73,7 +125,7 @@ Each linked effect renders as a row:
 |---------|------|
 | Sequence badge | 24×24px circle, Cinzel 12px, gold text on 10% gold bg. Auto-numbered from 1. |
 | Effect name | Flex-grow, 15px Crimson Pro, ellipsis overflow. |
-| Type badge | Colored pill using the effect-type color system: `badge-damage` (red), `badge-healing` (green), `badge-buff` (blue), `badge-debuff` (purple). Cinzel 10px uppercase. |
+| Type badge | Colored pill reusing the effect-type color system. Cinzel 10px uppercase, 2px 8px padding, 3px radius. |
 | ↑ button | Swaps with previous. Disabled (20% opacity) on first item. `data-testid="spell-effect-move-up-{index}"`. |
 | ↓ button | Swaps with next. Disabled on last item. `data-testid="spell-effect-move-down-{index}"`. |
 | ✕ button | Removes effect. Destructive hover color. `data-testid="spell-effect-remove-{index}"`. |
@@ -82,7 +134,7 @@ Each linked effect renders as a row:
 - Reordering and removal are local state changes — not persisted until save.
 - Empty list: no special empty state needed; the picker row is always visible.
 
-### 5. Save Area
+#### 5. Save Area
 
 - Flex, `justify-end`, 4px top padding.
 - Button text: "Create Spell" in create mode, "Save Changes" in edit mode.
@@ -90,7 +142,19 @@ Each linked effect renders as a row:
 - `data-testid="entity-save-button"`.
 - Error text below/beside button: 13px, destructive color. `data-testid="entity-save-error"`.
 
-## Form State
+### Spell-Specific CSS
+
+New classes to add in `app.css` under a `/* ── Spell workspace ── */` section:
+
+- `.spell-effect-badge` — base badge: Cinzel 10px uppercase, 2px 8px padding, 3px border-radius, flex-shrink 0.
+- `.spell-effect-badge-damage` — red tint (`oklch(0.65 0.2 25)` at 12% bg, 18% border, full text).
+- `.spell-effect-badge-healing` — green tint (`oklch(0.65 0.17 145)`).
+- `.spell-effect-badge-buff` — blue tint (`oklch(0.65 0.14 240)`).
+- `.spell-effect-badge-debuff` — purple tint (`oklch(0.60 0.18 310)`).
+
+These follow the same color pattern as the `.effect-{type}` classes but are applied as static badges (not scoped variable providers).
+
+### Form State
 
 New type `SpellFormValues`:
 
@@ -122,7 +186,7 @@ Before sending to tRPC:
 - `targetPolicy`: passed as-is.
 - `effectIds`: passed as-is (array of UUID strings).
 
-The existing tRPC router already does server-side normalization, but client-side normalization keeps the form consistent with the effects pattern.
+The existing tRPC router already does server-side normalization, but client-side normalization keeps the form consistent.
 
 ## Integration Points
 
@@ -178,29 +242,13 @@ No changes needed — the existing header logic already handles this via `capita
 
 | File | Change |
 |------|--------|
+| `apps/web/src/styles/app.css` | Rename `eff-*` → `ws-*`; add spell-specific badge classes |
+| `apps/web/src/components/create/effect-workspace-form.tsx` | Update class names from `eff-*` → `ws-*` |
+| `apps/web/src/components/create/effect-colors.ts` | Update class name references if present |
 | `apps/web/src/components/create/entity-workspace.tsx` | Add `entityType === "spell"` branch |
 | `apps/web/src/components/create/hooks/use-workspace-loader.ts` | Populate full spell form values on load |
 | `apps/web/src/components/create/use-create-page-state.ts` | Add spell save/update to `saveEntity()` |
 | `apps/web/src/components/create/types.ts` | Add `SpellFormValues` type (if not using spell-form.ts) |
-| `apps/web/src/styles/app.css` | Add effect-type badge classes for the spell effects list |
-
-## CSS
-
-The spell form reuses existing classes:
-- `eff-cell-neutral` for name and description cells
-- `eff-cell-label` / `eff-cell-input` for labels and inputs
-- `eff-name-input` for the larger name font
-- `eff-chip` for the target policy selector
-- `eff-section-header` for "Target Selection" and "Spell Effects" dividers
-
-New classes to add in `app.css` (after the existing effect editor section):
-
-- `.spell-effect-badge-damage` — red tint (`oklch(0.65 0.2 25)` at 12% bg, 18% border, full text)
-- `.spell-effect-badge-healing` — green tint (`oklch(0.65 0.17 145)`)
-- `.spell-effect-badge-buff` — blue tint (`oklch(0.65 0.14 240)`)
-- `.spell-effect-badge-debuff` — purple tint (`oklch(0.60 0.18 310)`)
-
-All four follow the same pattern as the existing `effect-{type}` color variables, applied as static classes with Cinzel 10px uppercase text, 2px 8px padding, 3px border-radius.
 
 ## Testing
 

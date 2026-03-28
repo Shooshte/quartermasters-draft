@@ -206,38 +206,38 @@
   box-shadow: 0 0 12px 0 oklch(0.78 0.15 75 / 15%);
 }
 
-/* ── Effect editor: adaptive effect-type color system ── */
+/* ── Workspace: shared entity editor styles ── */
 
 /* Each .effect-{type} class sets scoped custom properties consumed by
-   .eff-cell and .eff-chip-type.  Default (unset) falls back to gold. */
+   .ws-cell and .ws-chip-type.  Default (unset) falls back to gold. */
 
 .effect-damage {
-  --eff-color: oklch(0.65 0.2 25);
-  --eff-dim: oklch(0.65 0.2 25 / 12%);
-  --eff-subtle: oklch(0.65 0.2 25 / 6%);
-  --eff-border: oklch(0.65 0.2 25 / 18%);
+  --ws-color: oklch(0.65 0.2 25);
+  --ws-dim: oklch(0.65 0.2 25 / 12%);
+  --ws-subtle: oklch(0.65 0.2 25 / 6%);
+  --ws-border: oklch(0.65 0.2 25 / 18%);
 }
 .effect-healing {
-  --eff-color: oklch(0.65 0.17 145);
-  --eff-dim: oklch(0.65 0.17 145 / 12%);
-  --eff-subtle: oklch(0.65 0.17 145 / 6%);
-  --eff-border: oklch(0.65 0.17 145 / 18%);
+  --ws-color: oklch(0.65 0.17 145);
+  --ws-dim: oklch(0.65 0.17 145 / 12%);
+  --ws-subtle: oklch(0.65 0.17 145 / 6%);
+  --ws-border: oklch(0.65 0.17 145 / 18%);
 }
 .effect-buff {
-  --eff-color: oklch(0.65 0.14 240);
-  --eff-dim: oklch(0.65 0.14 240 / 12%);
-  --eff-subtle: oklch(0.65 0.14 240 / 6%);
-  --eff-border: oklch(0.65 0.14 240 / 18%);
+  --ws-color: oklch(0.65 0.14 240);
+  --ws-dim: oklch(0.65 0.14 240 / 12%);
+  --ws-subtle: oklch(0.65 0.14 240 / 6%);
+  --ws-border: oklch(0.65 0.14 240 / 18%);
 }
 .effect-debuff {
-  --eff-color: oklch(0.60 0.18 310);
-  --eff-dim: oklch(0.60 0.18 310 / 12%);
-  --eff-subtle: oklch(0.60 0.18 310 / 6%);
-  --eff-border: oklch(0.60 0.18 310 / 18%);
+  --ws-color: oklch(0.60 0.18 310);
+  --ws-dim: oklch(0.60 0.18 310 / 12%);
+  --ws-subtle: oklch(0.60 0.18 310 / 6%);
+  --ws-border: oklch(0.60 0.18 310 / 18%);
 }
 
 /* Section header with trailing hairline */
-.eff-section-header {
+.ws-section-header {
   font-family: 'Cinzel', 'Times New Roman', serif;
   font-size: 11px;
   letter-spacing: 2px;
@@ -248,7 +248,7 @@
   gap: 8px;
   margin-bottom: 8px;
 }
-.eff-section-header::after {
+.ws-section-header::after {
   content: '';
   flex: 1;
   height: 1px;
@@ -256,49 +256,49 @@
 }
 
 /* Compact cell (name, timing, modifier fields) */
-.eff-cell {
-  background: var(--eff-subtle, rgba(255,255,255,0.03));
-  border: 1px solid var(--eff-border, oklch(0.91 0.03 70 / 12%));
+.ws-cell {
+  background: var(--ws-subtle, rgba(255,255,255,0.03));
+  border: 1px solid var(--ws-border, oklch(0.91 0.03 70 / 12%));
   border-radius: 6px;
   padding: 6px 8px;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-.eff-cell:hover {
-  background: var(--eff-dim, rgba(255,255,255,0.06));
+.ws-cell:hover {
+  background: var(--ws-dim, rgba(255,255,255,0.06));
 }
-.eff-cell:focus-within {
-  border-color: var(--eff-color, oklch(0.78 0.15 75));
+.ws-cell:focus-within {
+  border-color: var(--ws-color, oklch(0.78 0.15 75));
   box-shadow: 0 0 0 2px oklch(0.78 0.15 75 / 15%);
 }
-.eff-cell.has-value {
-  border-color: var(--eff-color, oklch(0.78 0.15 75));
+.ws-cell.has-value {
+  border-color: var(--ws-color, oklch(0.78 0.15 75));
 }
-.eff-cell.has-value .eff-cell-input {
-  color: var(--eff-color, oklch(0.78 0.15 75));
+.ws-cell.has-value .ws-cell-input {
+  color: var(--ws-color, oklch(0.78 0.15 75));
 }
 
 /* Neutral cell (timing fields — no effect-type tint) */
-.eff-cell-neutral {
+.ws-cell-neutral {
   background: rgba(255,255,255,0.03);
   border: 1px solid oklch(0.91 0.03 70 / 12%);
   border-radius: 6px;
   padding: 6px 8px;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-.eff-cell-neutral:focus-within {
+.ws-cell-neutral:focus-within {
   border-color: oklch(0.78 0.15 75);
   box-shadow: 0 0 0 2px oklch(0.78 0.15 75 / 15%);
 }
-.eff-cell-neutral.has-value {
+.ws-cell-neutral.has-value {
   border-color: oklch(0.60 0.02 70);
 }
-.eff-cell-neutral.disabled {
+.ws-cell-neutral.disabled {
   opacity: 0.3;
   pointer-events: none;
 }
 
 /* Uppercase label inside cells */
-.eff-cell-label {
+.ws-cell-label {
   font-size: 11px;
   color: oklch(0.55 0.02 70);
   text-transform: uppercase;
@@ -308,7 +308,7 @@
 }
 
 /* Input inside cells — inherits color, left-aligned */
-.eff-cell-input {
+.ws-cell-input {
   width: 100%;
   background: transparent;
   border: none;
@@ -318,21 +318,21 @@
   text-align: left;
   outline: none;
 }
-.eff-cell-input::placeholder {
+.ws-cell-input::placeholder {
   color: oklch(0.40 0.01 70);
   opacity: 0.5;
 }
-.eff-cell-input:disabled {
+.ws-cell-input:disabled {
   color: oklch(0.40 0.01 70);
 }
 
 /* Name input — slightly larger text */
-.eff-name-input {
+.ws-name-input {
   font-size: 16px;
 }
 
 /* Chip selectors (effect type, timing type) */
-.eff-chip {
+.ws-chip {
   position: relative;
   font-size: 11px;
   padding: 4px 10px;
@@ -347,20 +347,20 @@
   transition: all 0.15s ease;
 }
 
-.eff-chip-type {
-  background: var(--eff-dim, rgba(255,255,255,0.08));
-  color: var(--eff-color, oklch(0.78 0.15 75));
-  border: 1px solid var(--eff-border, oklch(0.91 0.03 70 / 12%));
+.ws-chip-type {
+  background: var(--ws-dim, rgba(255,255,255,0.08));
+  color: var(--ws-color, oklch(0.78 0.15 75));
+  border: 1px solid var(--ws-border, oklch(0.91 0.03 70 / 12%));
 }
 
-.eff-chip-timing {
+.ws-chip-timing {
   background: rgba(255,255,255,0.05);
   color: oklch(0.60 0.02 70);
   border: 1px solid oklch(0.91 0.03 70 / 12%);
 }
 
 /* Native <select> styled as transparent inside chip */
-.eff-chip-select {
+.ws-chip-select {
   appearance: none;
   background: transparent;
   border: none;
@@ -373,7 +373,7 @@
   padding-right: 2px;
 }
 
-.eff-chip-arrow {
+.ws-chip-arrow {
   font-size: 8px;
   opacity: 0.5;
   pointer-events: none;

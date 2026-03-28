@@ -211,6 +211,10 @@ describe("spellsEffectsSeedData", () => {
   it("every spell has at least one linked effect", () => {
     const spellIdsWithEffects = new Set(spellsEffectsSeedData.map((record) => record.spellId));
     for (const spell of spellSeedData) {
+      expect(spell.id).toBeDefined();
+      if (!spell.id) {
+        throw new Error("Expected seeded spell to have an id");
+      }
       expect(spellIdsWithEffects.has(spell.id)).toBe(true);
     }
   });

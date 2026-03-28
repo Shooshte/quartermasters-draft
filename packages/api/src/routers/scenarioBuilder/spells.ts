@@ -40,8 +40,10 @@ function buildSpellEffectRows(spellId: string, effectIds: string[]) {
   }));
 }
 
+type SpellEffectsTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 async function insertSpellEffects(
-  tx: typeof db,
+  tx: SpellEffectsTransaction,
   spellId: string,
   effectIds: string[],
 ) {

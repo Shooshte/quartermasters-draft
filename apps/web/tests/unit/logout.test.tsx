@@ -36,7 +36,7 @@ vi.mock("@tanstack/react-start/server", () => ({
 
 async function renderAuthenticatedLayoutAt(path: string) {
   const { Route: AuthRoute } = await import(
-    "../../src/routes/_authenticated.tsx"
+    "../../src/routes/_authenticated"
   );
 
   const rootRoute = createRootRoute();

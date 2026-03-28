@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/create")({
   }),
   beforeLoad: ({ context }) => {
     if (!canAccessRoute(context.userRole, "/create")) {
-      throw redirect({ to: "/403" });
+      throw redirect({ to: "/403", search: { notice: undefined } });
     }
   },
   component: CreatePageRoute,

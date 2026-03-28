@@ -389,6 +389,7 @@ export function useCreatePageState(
         if (entityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.spells.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "spells", "get", createdData.id], createdData);
           setEntityWorkspace({
             mode: "edit",
             entityType: "spell",
@@ -415,6 +416,7 @@ export function useCreatePageState(
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "spells", "get", updatedData.id], updatedData);
           setEntityWorkspace({
             mode: "edit",
             entityType: "spell",

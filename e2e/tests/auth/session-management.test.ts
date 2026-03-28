@@ -1,3 +1,6 @@
+import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { test, expect } from "../worker-base.fixture";
 import {
   GM_EMAIL,
@@ -11,6 +14,21 @@ import {
   expectPath,
   expectQueryParams,
 } from "./auth.fixtures";
+
+const E2E_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const COMPOSE_FILE = path.join(E2E_DIR, "docker-compose.yml");
+const PLAYER_USER_ID = "seed-player-001";
+
+function expireUserSessions(userId: string, workerIndex: number, expiryExpression: string) {
+  const dbName = `qd_worker_${workerIndex}`;
+  const sql = `UPDATE session SET expires_at = ${expiryExpression} WHERE user_id = '${userId}';`;
+
+  execSync(
+    `docker compose -f "${COMPOSE_FILE}" exec -T postgres ` +
+      `psql -U postgres -d "${dbName}" -c "${sql}"`,
+    { stdio: "pipe", timeout: 15_000 },
+  );
+}
 
 test.describe("Session Management", () => {
   /**
@@ -91,22 +109,15 @@ test.describe("Session Management", () => {
 
   test("remember me session expires after 30 days of inactivity", async ({
     browser,
-  }) => {
+  }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
     await page.waitForURL("**/play");
 
-    // Corrupt session cookies to simulate 30-day expiration (cookie present but invalid)
-    const rmCookies = await context.cookies();
-    await context.clearCookies();
-    await context.addCookies(
-      rmCookies.map((c) =>
-        c.name.includes("better-auth")
-          ? { ...c, value: "invalid-" + c.value }
-          : c,
-      ),
-    );
+    // Persisted sessions survive browser restarts, so expire the backing session
+    // row directly instead of mutating cookies.
+    expireUserSessions(PLAYER_USER_ID, testInfo.parallelIndex, "NOW() - INTERVAL '31 days'");
 
     await page.goto("/play");
     await page.waitForURL("**/login**");

@@ -11,6 +11,63 @@ const spellListInput = listInputSchema.extend({
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});
 
+const spellInputBaseSchema = z.object({
+  name: z.string().trim().min(1),
+  description: z.string().nullable().optional().default(null),
+  targetPolicy: z.enum([
+    "highest_health",
+    "lowest_health",
+    "highest_damage",
+    "random",
+  ]),
+  effectIds: z.array(z.string().uuid()).default([]),
+});
+
+function normalizeSpellInput(input: z.infer<typeof spellInputBaseSchema>) {
+  return {
+    name: input.name.trim(),
+    description: input.description?.trim() ? input.description.trim() : null,
+    targetPolicy: input.targetPolicy,
+    effectIds: input.effectIds,
+  };
+}
+
+function buildSpellEffectRows(spellId: string, effectIds: string[]) {
+  return effectIds.map((effectTemplateId, index) => ({
+    spellId,
+    effectTemplateId,
+    sequenceOrder: index + 1,
+  }));
+}
+
+async function insertSpellEffects(
+  tx: typeof db,
+  spellId: string,
+  effectIds: string[],
+) {
+  if (effectIds.length === 0) {
+    return;
+  }
+
+  await tx.insert(spellsEffects).values(buildSpellEffectRows(spellId, effectIds));
+}
+
+function maybeThrowConflict(error: unknown): never {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  ) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "A spell with this name already exists.",
+    });
+  }
+
+  throw error;
+}
+
 export const spellsRouter = router({
   list: gmProcedure.input(spellListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
@@ -72,6 +129,84 @@ export const spellsRouter = router({
         ...spell,
         effectIds: effectLinks.map((e) => e.effectTemplateId),
       };
+    }),
+
+  create: gmProcedure
+    .input(spellInputBaseSchema)
+    .mutation(async ({ input }) => {
+      const normalized = normalizeSpellInput(input);
+
+      try {
+        return await db.transaction(async (tx) => {
+          const [created] = await tx
+            .insert(spells)
+            .values({
+              name: normalized.name,
+              description: normalized.description,
+              targetPolicy: normalized.targetPolicy,
+            })
+            .returning();
+
+          if (!created) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Spell was not created.",
+            });
+          }
+
+          await insertSpellEffects(tx, created.id, normalized.effectIds);
+
+          return {
+            ...created,
+            effectIds: normalized.effectIds,
+          };
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        maybeThrowConflict(error);
+      }
+    }),
+
+  update: gmProcedure
+    .input(z.object({ id: z.string().uuid() }).merge(spellInputBaseSchema))
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      const normalized = normalizeSpellInput(rest);
+
+      try {
+        return await db.transaction(async (tx) => {
+          const [updated] = await tx
+            .update(spells)
+            .set({
+              name: normalized.name,
+              description: normalized.description,
+              targetPolicy: normalized.targetPolicy,
+            })
+            .where(eq(spells.id, id))
+            .returning();
+
+          if (!updated) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Spell not found" });
+          }
+
+          await tx.delete(spellsEffects).where(eq(spellsEffects.spellId, id));
+          await insertSpellEffects(tx, id, normalized.effectIds);
+
+          return {
+            ...updated,
+            effectIds: normalized.effectIds,
+          };
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        maybeThrowConflict(error);
+      }
     }),
 
   delete: gmProcedure

@@ -1,4 +1,4 @@
-Feature: Spell workspace CRUD
+Feature: Spell workspace create and edit
   As a game master
   I want to create and edit spells inside the entity builder on the "/create" page
   So that spell records and their linked effects can be managed without leaving the builder workflow
@@ -8,7 +8,7 @@ Feature: Spell workspace CRUD
     And I am on the "/create" page
     And I have opened the "Spells" tab
 
-  Scenario: Create a new spell with dropdown enums
+  Scenario: Create a new spell with a dropdown enum
     When I create a new spell named "Arcane Volley" with target policy "highest_health"
     Then the spell workspace should save the spell in edit mode
     And the URL should contain the created "spell_id"
@@ -16,6 +16,10 @@ Feature: Spell workspace CRUD
   Scenario: Target policy offers all four options
     When I start creating a new spell
     Then the target policy dropdown should offer "highest_health", "lowest_health", "highest_damage", and "random"
+
+  Scenario: Target policy is required
+    When I start creating a new spell without selecting a target policy
+    Then saving should remain blocked
 
   Scenario: Description is optional
     When I create a new spell named "Silent Strike" without a description
@@ -48,7 +52,7 @@ Feature: Spell workspace CRUD
 
   Scenario: Reorder linked effects
     Given I have loaded the spell "Fireball" in the spell workspace
-    When I change the effect at position 1 to position 2 and vice versa
+    When I reorder the linked effects so that position 1 becomes position 2 and position 2 becomes position 1
     And I save the spell
     Then reloading the spell by URL should show the effects in the new order
 

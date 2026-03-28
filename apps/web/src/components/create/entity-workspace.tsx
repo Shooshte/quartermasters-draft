@@ -22,7 +22,10 @@ export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, sa
 
   return (
     <div data-testid="entity-workspace" className="flex flex-1 flex-col overflow-auto min-h-0">
-      <div data-testid="entity-workspace-header" className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
+      <div
+        data-testid="entity-workspace-header"
+        className="flex h-[41px] items-center border-b border-border bg-accent px-4 text-primary font-display tracking-wide"
+      >
         {mode === "idle" && "Entity"}
         {mode === "loading" && !workspace.data && "Entity"}
         {mode === "loading" && workspace.data && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}

@@ -21,7 +21,7 @@ export interface SpellFormValues {
   effectIds: string[];
 }
 
-export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy", string>>;
+export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds", string>>;
 
 export function createDefaultSpellFormValues(): SpellFormValues {
   return {
@@ -41,6 +41,10 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
 
   if (!VALID_TARGET_POLICIES.includes(values.targetPolicy)) {
     errors.targetPolicy = "Target policy is required";
+  }
+
+  if (values.effectIds.length === 0) {
+    errors.effectIds = "At least one linked effect is required";
   }
 
   return errors;

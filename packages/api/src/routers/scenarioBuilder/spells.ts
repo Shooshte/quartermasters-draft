@@ -20,7 +20,7 @@ const spellInputBaseSchema = z.object({
     "highest_damage",
     "random",
   ]),
-  effectIds: z.array(z.string().uuid()).default([]),
+  effectIds: z.array(z.string().uuid()).min(1, "At least one linked effect is required"),
 });
 
 function normalizeSpellInput(input: z.infer<typeof spellInputBaseSchema>) {
@@ -45,10 +45,6 @@ async function insertSpellEffects(
   spellId: string,
   effectIds: string[],
 ) {
-  if (effectIds.length === 0) {
-    return;
-  }
-
   await tx.insert(spellsEffects).values(buildSpellEffectRows(spellId, effectIds));
 }
 

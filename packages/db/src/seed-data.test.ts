@@ -161,7 +161,7 @@ describe("spellSeedData", () => {
 
 describe("spellsEffectsSeedData", () => {
   it("has expected number of records", () => {
-    expect(spellsEffectsSeedData.length).toBeGreaterThanOrEqual(2);
+    expect(spellsEffectsSeedData.length).toBeGreaterThanOrEqual(spellSeedData.length);
   });
 
   it("each record has required fields: spellId, effectTemplateId, sequenceOrder", () => {
@@ -205,6 +205,13 @@ describe("spellsEffectsSeedData", () => {
       const key = `${record.spellId}:${record.sequenceOrder}`;
       expect(seen.has(key)).toBe(false);
       seen.add(key);
+    }
+  });
+
+  it("every spell has at least one linked effect", () => {
+    const spellIdsWithEffects = new Set(spellsEffectsSeedData.map((record) => record.spellId));
+    for (const spell of spellSeedData) {
+      expect(spellIdsWithEffects.has(spell.id)).toBe(true);
     }
   });
 });

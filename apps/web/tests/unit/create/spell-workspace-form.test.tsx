@@ -71,6 +71,34 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByText("Target Selection")).toBeInTheDocument();
     });
 
+    it("renders only the real target policy options", () => {
+      renderForm();
+
+      const select = screen.getByTestId("spell-target-policy-select") as HTMLSelectElement;
+      const visibleOptionValues = Array.from(select.options)
+        .filter((option) => !option.hidden)
+        .map((option) => option.value);
+
+      expect(visibleOptionValues).toEqual([
+        "highest_health",
+        "lowest_health",
+        "highest_damage",
+        "random",
+      ]);
+    });
+
+    it("keeps the target policy select empty on a new spell", () => {
+      renderForm();
+
+      const select = screen.getByTestId("spell-target-policy-select") as HTMLSelectElement;
+      const emptyOption = select.options[0];
+
+      expect(select.value).toBe("");
+      expect(emptyOption.value).toBe("");
+      expect(emptyOption.hidden).toBe(true);
+      expect(emptyOption.disabled).toBe(true);
+    });
+
     it("renders Spell Effects section header", () => {
       renderForm();
 
@@ -131,7 +159,15 @@ describe("SpellWorkspaceForm", () => {
 
     it("is disabled when targetPolicy is not set", () => {
       renderForm({
-        formValues: { name: "Fireball", targetPolicy: "" },
+        formValues: { name: "Fireball", targetPolicy: "", effectIds: ["eff-1"] },
+      });
+
+      expect(screen.getByTestId("entity-save-button")).toBeDisabled();
+    });
+
+    it("is disabled when no linked effects are present", () => {
+      renderForm({
+        formValues: { name: "Fireball", targetPolicy: "random", effectIds: [] },
       });
 
       expect(screen.getByTestId("entity-save-button")).toBeDisabled();
@@ -139,7 +175,7 @@ describe("SpellWorkspaceForm", () => {
 
     it("is disabled when isSaving is true", () => {
       renderForm({
-        formValues: { name: "Fireball", targetPolicy: "random" },
+        formValues: { name: "Fireball", targetPolicy: "random", effectIds: ["eff-1"] },
         isSaving: true,
       });
 
@@ -148,7 +184,7 @@ describe("SpellWorkspaceForm", () => {
 
     it("is enabled when name and targetPolicy are both set", () => {
       renderForm({
-        formValues: { name: "Fireball", targetPolicy: "random" },
+        formValues: { name: "Fireball", targetPolicy: "random", effectIds: ["eff-1"] },
       });
 
       expect(screen.getByTestId("entity-save-button")).toBeEnabled();
@@ -201,6 +237,16 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByTestId("entity-save-error")).toHaveTextContent(
         "A spell with this name already exists.",
       );
+    });
+  });
+
+  describe("Validation messages", () => {
+    it("shows an inline error when no linked effects are present", () => {
+      renderForm({
+        formValues: { name: "Fireball", targetPolicy: "random", effectIds: [] },
+      });
+
+      expect(screen.getByText("At least one linked effect is required")).toBeInTheDocument();
     });
   });
 
@@ -424,6 +470,31 @@ describe("SpellWorkspaceForm", () => {
       await userEvent.click(screen.getByTestId("spell-effect-remove-0"));
 
       expect(onFieldChange).toHaveBeenCalledWith("effectIds", []);
+    });
+
+    it("removing the only effect leaves save disabled and shows the validation error", async () => {
+      const { rerender, props } = renderForm({
+        formValues: {
+          name: "Fireball",
+          targetPolicy: "random",
+          effectIds: ["eff-1"],
+        },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-effect-remove-0"));
+
+      rerender(
+        <SpellWorkspaceForm
+          {...props}
+          formValues={{
+            ...props.formValues,
+            effectIds: [],
+          }}
+        />,
+      );
+
+      expect(screen.getByTestId("entity-save-button")).toBeDisabled();
+      expect(screen.getByText("At least one linked effect is required")).toBeInTheDocument();
     });
   });
 

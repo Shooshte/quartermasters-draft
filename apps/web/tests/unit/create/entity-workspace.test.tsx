@@ -113,7 +113,7 @@ describe("EntityWorkspace", () => {
           entityType: "spell",
           entityId: "123",
           data: { name: "Test" },
-          formValues: { name: "Test", description: "", targetPolicy: "", effectIds: [] },
+          formValues: { name: "Test", description: "", targetPolicy: "", effectIds: ["eff-1"] },
         })}
         onFieldChange={onFieldChange}
         onSave={vi.fn()}

@@ -179,14 +179,22 @@ describe("spellsRouter", () => {
     it("throws UNAUTHORIZED for unauthenticated user", async () => {
       const caller = createCaller(anonCtx);
       await expect(
-        caller.spells.create({ name: "New Spell", targetPolicy: "random" }),
+        caller.spells.create({
+          name: "New Spell",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        }),
       ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     });
 
     it("throws FORBIDDEN for player role", async () => {
       const caller = createCaller(playerCtx);
       await expect(
-        caller.spells.create({ name: "New Spell", targetPolicy: "random" }),
+        caller.spells.create({
+          name: "New Spell",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        }),
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
@@ -199,19 +207,22 @@ describe("spellsRouter", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      mockInsertFn.mockReturnValueOnce(chainable([created]));
+      mockInsertFn
+        .mockReturnValueOnce(chainable([created]))
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.create({
         name: " Arcane Volley ",
         targetPolicy: "highest_damage",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
       });
 
       expect(result).toEqual({
         ...created,
-        effectIds: [],
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
       });
-      expect(mockInsertFn).toHaveBeenCalledTimes(1);
+      expect(mockInsertFn).toHaveBeenCalledTimes(2);
     });
 
     it("creates a spell with description normalized to null when blank", async () => {
@@ -224,13 +235,16 @@ describe("spellsRouter", () => {
         updatedAt: new Date(),
       };
       const values = vi.fn().mockReturnValue(chainable([created]));
-      mockInsertFn.mockReturnValueOnce({ values });
+      mockInsertFn
+        .mockReturnValueOnce({ values })
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.create({
         name: "Silent Strike",
         description: "   ",
         targetPolicy: "random",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
       });
 
       expect(result.description).toBeNull();
@@ -337,8 +351,26 @@ describe("spellsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.spells.create({ name: "Duplicate", targetPolicy: "random" }),
+        caller.spells.create({
+          name: "Duplicate",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("rejects create when effectIds is empty", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.spells.create({
+          name: "No Effect Spell",
+          targetPolicy: "random",
+          effectIds: [],
+        }),
+      ).rejects.toThrow("At least one linked effect is required");
+
+      expect(mockInsertFn).not.toHaveBeenCalled();
     });
   });
 
@@ -350,6 +382,7 @@ describe("spellsRouter", () => {
           id: "b0000000-0000-0000-0000-000000000001",
           name: "Updated",
           targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     });
@@ -361,6 +394,7 @@ describe("spellsRouter", () => {
           id: "b0000000-0000-0000-0000-000000000001",
           name: "Updated",
           targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
@@ -377,6 +411,7 @@ describe("spellsRouter", () => {
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
       mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockInsertFn.mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.update({
@@ -384,9 +419,13 @@ describe("spellsRouter", () => {
         name: " Fireball Updated ",
         description: " Updated desc ",
         targetPolicy: "highest_damage",
+        effectIds: ["a0000000-0000-0000-0000-000000000006"],
       });
 
-      expect(result).toEqual({ ...updated, effectIds: [] });
+      expect(result).toEqual({
+        ...updated,
+        effectIds: ["a0000000-0000-0000-0000-000000000006"],
+      });
       expect(updateSet).toHaveBeenCalledWith({
         name: "Fireball Updated",
         description: "Updated desc",
@@ -406,6 +445,7 @@ describe("spellsRouter", () => {
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
       mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockInsertFn.mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.update({
@@ -413,6 +453,7 @@ describe("spellsRouter", () => {
         name: "Silent Spell",
         description: "   ",
         targetPolicy: "random",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
       });
 
       expect(result.description).toBeNull();
@@ -552,6 +593,7 @@ describe("spellsRouter", () => {
           id: "00000000-0000-0000-0000-000000000099",
           name: "Updated",
           targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
@@ -569,8 +611,25 @@ describe("spellsRouter", () => {
           id: "b0000000-0000-0000-0000-000000000001",
           name: "Battle Cry",
           targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("rejects update when effectIds is empty", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.spells.update({
+          id: "b0000000-0000-0000-0000-000000000001",
+          name: "Fireball",
+          targetPolicy: "random",
+          effectIds: [],
+        }),
+      ).rejects.toThrow("At least one linked effect is required");
+
+      expect(mockUpdateFn).not.toHaveBeenCalled();
+      expect(mockDeleteFn).not.toHaveBeenCalled();
     });
   });
 

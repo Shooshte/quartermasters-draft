@@ -10,6 +10,7 @@ Feature: Spell workspace create and edit
 
   Scenario: Create a new spell with a dropdown enum
     When I create a new spell named "Arcane Volley" with target policy "highest_health"
+    And I add effect "Barbarian Roar" at sequence position 1
     Then the spell workspace should save the spell in edit mode
     And the URL should contain the created "spell_id"
 
@@ -23,6 +24,7 @@ Feature: Spell workspace create and edit
 
   Scenario: Description is optional
     When I create a new spell named "Silent Strike" without a description
+    And I add effect "Barbarian Roar" at sequence position 1
     Then the spell should save successfully
 
   Scenario: Description persists on edit
@@ -31,6 +33,10 @@ Feature: Spell workspace create and edit
 
   Scenario: Name is required
     When I start creating a new spell without filling in a name
+    Then saving should remain blocked
+
+  Scenario: At least one linked effect is required on create
+    When I start creating a new spell without linking any effects
     Then saving should remain blocked
 
   Scenario: Edit an existing spell
@@ -68,11 +74,16 @@ Feature: Spell workspace create and edit
     And I save the spell
     Then reloading the spell by URL should show the effects in the new order
 
-  Scenario: Remove a linked effect
+  Scenario: Remove a linked effect while at least one remains
     Given I have loaded the spell "Fireball" in the spell workspace
     When I remove the effect at position 2
     And I save the spell
     Then reloading the spell by URL should show only the remaining effect
+
+  Scenario: At least one linked effect is required on edit
+    Given I have loaded the spell "Battle Cry" in the spell workspace
+    When I remove the effect at position 1
+    Then saving should remain blocked
 
   Scenario: Duplicate effects are allowed
     When I create a new spell named "Echo Blast" with target policy "random"

@@ -38,12 +38,21 @@ describe("spell-form", () => {
     expect(errors.targetPolicy).toBe("Target policy is required");
   });
 
+  it("returns error when no linked effects are present", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+    });
+    expect(errors.effectIds).toBe("At least one linked effect is required");
+  });
+
   it("returns no errors for valid form", () => {
     const errors = validateSpellForm({
       name: "Fireball",
       description: "",
       targetPolicy: "highest_health",
-      effectIds: [],
+      effectIds: ["id-1"],
     });
     expect(errors).toEqual({});
   });
@@ -58,7 +67,7 @@ describe("spell-form", () => {
         name: "Fireball",
         description: "",
         targetPolicy: "highest_health",
-        effectIds: [],
+        effectIds: ["id-1"],
       }),
     ).toBe(false);
   });

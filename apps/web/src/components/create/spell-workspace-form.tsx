@@ -192,9 +192,7 @@ export function SpellWorkspaceForm({
               value={formValues.targetPolicy}
               onChange={(e) => onFieldChange("targetPolicy", e.target.value)}
             >
-              <option value="" disabled>
-                select…
-              </option>
+              <option value="" disabled hidden />
               <option value="highest_health">highest_health</option>
               <option value="lowest_health">lowest_health</option>
               <option value="highest_damage">highest_damage</option>
@@ -414,6 +412,9 @@ export function SpellWorkspaceForm({
             );
           })}
         </div>
+        {errors.effectIds && (
+          <p className="text-sm text-destructive mt-1">{errors.effectIds}</p>
+        )}
       </div>
 
       {/* Save error */}

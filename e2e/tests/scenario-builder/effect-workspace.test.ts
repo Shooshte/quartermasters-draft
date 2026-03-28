@@ -25,6 +25,17 @@ test.describe("Effect Workspace CRUD", () => {
     await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
   });
 
+  test("timing chip background click forwards focus to the native select", async ({ gmPage }) => {
+    await gmPage.goto("/create?tab=Effects");
+    await gmPage.getByRole("button", { name: "New Effect" }).click();
+
+    await gmPage.getByTestId("effect-timing-type-chip").click({
+      position: { x: 2, y: 2 },
+    });
+
+    await expect(gmPage.getByTestId("effect-timing-type-select")).toBeFocused();
+  });
+
   test("create a new effect from the workspace", async ({ gmPage, resetDb }) => {
     await resetDb();
     await gmPage.goto("/create?tab=Effects");

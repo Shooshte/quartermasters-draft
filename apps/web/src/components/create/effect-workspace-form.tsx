@@ -1,7 +1,6 @@
+import { useRef, type MouseEvent, type RefObject } from "react";
+
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Select } from "~/components/ui/select";
 import {
   EFFECT_NUMERIC_FIELDS,
   hasEffectFormErrors,
@@ -9,6 +8,12 @@ import {
   validateEffectForm,
   type EffectFormValues,
 } from "./effect-form";
+import {
+  getEffectColorClass,
+  COMPACT_LABELS,
+  MODIFIER_GROUPS,
+  TIMING_FIELDS,
+} from "./effect-colors";
 
 interface EffectWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
@@ -19,25 +24,7 @@ interface EffectWorkspaceFormProps {
   saveError: string | null;
 }
 
-const NUMERIC_LABELS: Record<(typeof EFFECT_NUMERIC_FIELDS)[number], string> = {
-  intervalMs: "Interval Ms",
-  triggerCount: "Trigger Count",
-  durationMs: "Duration Ms",
-  meleeDmg: "Melee Dmg",
-  health: "Health",
-  rangedDmg: "Ranged Dmg",
-  manaRegen: "Mana Regen",
-  spellDmg: "Spell Dmg",
-  speed: "Speed",
-  dodge: "Dodge",
-  criticalChance: "Critical Chance",
-  directHealing: "Direct Healing",
-  directMeleeDmg: "Direct Melee Dmg",
-  directRangedDmg: "Direct Ranged Dmg",
-  directSpellDmg: "Direct Spell Dmg",
-};
-
-function NumericField({
+function ModifierCell({
   field,
   value,
   error,
@@ -50,17 +37,66 @@ function NumericField({
   disabled?: boolean;
   onChange: (field: string, value: unknown) => void;
 }) {
+  const hasValue = value !== null && value !== undefined;
+  const label = COMPACT_LABELS[field] ?? field;
+
   return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={`effect-${field}`}>{NUMERIC_LABELS[field]}</Label>
-      <Input
+    <div className={`eff-cell ${hasValue ? "has-value" : ""}`}>
+      <label htmlFor={`effect-${field}`} className="eff-cell-label">
+        {label}
+      </label>
+      <input
         id={`effect-${field}`}
         data-testid={`effect-${field}-input`}
+        className="eff-cell-input"
         type="number"
         step={field === "intervalMs" || field === "triggerCount" || field === "durationMs" ? 1 : "any"}
         inputMode="decimal"
         value={value ?? ""}
         disabled={disabled}
+        placeholder="—"
+        aria-invalid={error ? true : undefined}
+        onChange={(e) => {
+          const nextValue = e.target.value;
+          onChange(field, nextValue === "" ? null : Number(nextValue));
+        }}
+      />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function TimingCell({
+  field,
+  value,
+  error,
+  disabled = false,
+  onChange,
+}: {
+  field: (typeof TIMING_FIELDS)[number];
+  value: number | null;
+  error?: string;
+  disabled?: boolean;
+  onChange: (field: string, value: unknown) => void;
+}) {
+  const hasValue = value !== null && value !== undefined;
+  const label = COMPACT_LABELS[field] ?? field;
+
+  return (
+    <div className={`eff-cell-neutral ${hasValue ? "has-value" : ""} ${disabled ? "disabled" : ""}`}>
+      <label htmlFor={`effect-${field}`} className="eff-cell-label">
+        {label}
+      </label>
+      <input
+        id={`effect-${field}`}
+        data-testid={`effect-${field}-input`}
+        className="eff-cell-input"
+        type="number"
+        step={1}
+        inputMode="decimal"
+        value={value ?? ""}
+        disabled={disabled}
+        placeholder="—"
         aria-invalid={error ? true : undefined}
         onChange={(e) => {
           const nextValue = e.target.value;
@@ -80,80 +116,113 @@ export function EffectWorkspaceForm({
   isSaving,
   saveError,
 }: EffectWorkspaceFormProps) {
+  const effectTypeSelectRef = useRef<HTMLSelectElement>(null);
+  const timingTypeSelectRef = useRef<HTMLSelectElement>(null);
   const errors = validateEffectForm(formValues);
   const intervalDisabled = isIntervalFieldDisabled(formValues);
   const saveLabel = mode === "create" ? "Create Effect" : "Save Changes";
+  const colorClass = getEffectColorClass(formValues.effectType);
+
+  const handleChipMouseDown =
+    (selectRef: RefObject<HTMLSelectElement | null>) =>
+    (event: MouseEvent<HTMLLabelElement>) => {
+      if (event.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const select = selectRef.current;
+
+      if (!select) {
+        return;
+      }
+
+      select.focus();
+      try {
+        select.showPicker?.();
+      } catch {
+        // Focus remains on the native select, so keyboard interaction still works.
+      }
+    };
 
   return (
-    <div className="flex flex-col gap-6" data-testid="effect-form-fields">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="entity-name">Name</Label>
-          <Input
-            id="entity-name"
-            data-testid="entity-name-input"
-            value={formValues.name}
-            aria-invalid={errors.name ? true : undefined}
-            onChange={(e) => onFieldChange("name", e.target.value)}
-          />
-          {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="effect-timing-type">Timing Type</Label>
-            <Select
-              id="effect-timing-type"
-              data-testid="effect-timing-type-select"
-              value={formValues.timingType}
-              onChange={(e) => onFieldChange("timingType", e.target.value)}
-            >
-              <option value="instant">instant</option>
-              <option value="interval">interval</option>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="effect-effect-type">Effect Type</Label>
-            <Select
-              id="effect-effect-type"
-              data-testid="effect-effect-type-select"
-              value={formValues.effectType}
-              onChange={(e) => onFieldChange("effectType", e.target.value)}
-            >
-              <option value="buff">buff</option>
-              <option value="debuff">debuff</option>
-              <option value="healing">healing</option>
-              <option value="damage">damage</option>
-            </Select>
-          </div>
-        </div>
-
-        <NumericField
-          field="durationMs"
-          value={formValues.durationMs}
-          error={errors.durationMs}
-          onChange={onFieldChange}
+    <div className={`flex flex-col gap-4 ${colorClass}`} data-testid="effect-form-fields">
+      {/* Name cell */}
+      <div className="eff-cell-neutral">
+        <label htmlFor="entity-name" className="eff-cell-label">
+          Name
+        </label>
+        <input
+          id="entity-name"
+          data-testid="entity-name-input"
+          className="eff-cell-input eff-name-input"
+          value={formValues.name}
+          placeholder="—"
+          aria-invalid={errors.name ? true : undefined}
+          onChange={(e) => onFieldChange("name", e.target.value)}
         />
+        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
       </div>
 
-      <div className="flex flex-col gap-4 rounded border border-border/50 p-4" data-testid="effect-timing-section">
-        <div>
-          <h3 className="text-sm font-medium">Timing</h3>
-          {intervalDisabled && (
-            <p className="text-sm text-muted-foreground" data-testid="effect-interval-helper">
-              Interval fields apply only to interval timing and are disabled for instant effects.
-            </p>
-          )}
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <NumericField
+      {/* Effect type & timing type chip selectors */}
+      <div className="flex gap-2 items-center flex-wrap">
+        <label
+          className="eff-chip eff-chip-type"
+          data-testid="effect-effect-type-chip"
+          onMouseDown={handleChipMouseDown(effectTypeSelectRef)}
+        >
+          <select
+            ref={effectTypeSelectRef}
+            data-testid="effect-effect-type-select"
+            className="eff-chip-select"
+            value={formValues.effectType}
+            onChange={(e) => onFieldChange("effectType", e.target.value)}
+          >
+            <option value="buff">buff</option>
+            <option value="debuff">debuff</option>
+            <option value="healing">healing</option>
+            <option value="damage">damage</option>
+          </select>
+          <span className="eff-chip-arrow">▼</span>
+        </label>
+        <label
+          className="eff-chip eff-chip-timing"
+          data-testid="effect-timing-type-chip"
+          onMouseDown={handleChipMouseDown(timingTypeSelectRef)}
+        >
+          <select
+            ref={timingTypeSelectRef}
+            data-testid="effect-timing-type-select"
+            className="eff-chip-select"
+            value={formValues.timingType}
+            onChange={(e) => onFieldChange("timingType", e.target.value)}
+          >
+            <option value="instant">instant</option>
+            <option value="interval">interval</option>
+          </select>
+          <span className="eff-chip-arrow">▼</span>
+        </label>
+      </div>
+
+      {/* Timing section */}
+      <div data-testid="effect-timing-section">
+        <div className="eff-section-header">Timing</div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <TimingCell
+            field="durationMs"
+            value={formValues.durationMs}
+            error={errors.durationMs}
+            onChange={onFieldChange}
+          />
+          <TimingCell
             field="intervalMs"
             value={formValues.intervalMs}
             error={errors.intervalMs}
             disabled={intervalDisabled}
             onChange={onFieldChange}
           />
-          <NumericField
+          <TimingCell
             field="triggerCount"
             value={formValues.triggerCount}
             error={errors.triggerCount}
@@ -163,20 +232,26 @@ export function EffectWorkspaceForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 rounded border border-border/50 p-4">
-        <h3 className="text-sm font-medium">Modifiers</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          {EFFECT_NUMERIC_FIELDS.filter((field) => !["intervalMs", "triggerCount", "durationMs"].includes(field)).map((field) => (
-            <NumericField
-              key={field}
-              field={field}
-              value={formValues[field]}
-              error={errors[field]}
-              onChange={onFieldChange}
-            />
-          ))}
+      {/* Modifier groups */}
+      {MODIFIER_GROUPS.map((group) => (
+        <div key={group.label}>
+          <div className="eff-section-header">{group.label}</div>
+          <div
+            className={`grid gap-1.5 ${group.cols === 2 ? "grid-cols-2" : group.cols === 4 ? "grid-cols-4" : "grid-cols-3"}`}
+            data-testid={`effect-group-${group.label.toLowerCase().replaceAll(" ", "-")}`}
+          >
+            {group.fields.map((field) => (
+              <ModifierCell
+                key={field}
+                field={field}
+                value={formValues[field]}
+                error={errors[field]}
+                onChange={onFieldChange}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
 
       {saveError && (
         <p className="text-sm text-destructive" data-testid="entity-save-error">

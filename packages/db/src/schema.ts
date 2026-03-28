@@ -146,6 +146,7 @@ export const spellsEffects = pgTable(
     unique("spells_effects_spell_id_sequence_order_unique").on(table.spellId, table.sequenceOrder),
   ],
 );
+// Migration 0005 adds deferred constraint triggers so every spell keeps at least one linked effect.
 
 export const items = pgTable("items", {
   id: uuid("id").primaryKey().defaultRandom(),

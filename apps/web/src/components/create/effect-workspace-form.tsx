@@ -41,14 +41,14 @@ function ModifierCell({
   const label = COMPACT_LABELS[field] ?? field;
 
   return (
-    <div className={`eff-cell ${hasValue ? "has-value" : ""}`}>
-      <label htmlFor={`effect-${field}`} className="eff-cell-label">
+    <div className={`ws-cell ${hasValue ? "has-value" : ""}`}>
+      <label htmlFor={`effect-${field}`} className="ws-cell-label">
         {label}
       </label>
       <input
         id={`effect-${field}`}
         data-testid={`effect-${field}-input`}
-        className="eff-cell-input"
+        className="ws-cell-input"
         type="number"
         step={field === "intervalMs" || field === "triggerCount" || field === "durationMs" ? 1 : "any"}
         inputMode="decimal"
@@ -83,14 +83,14 @@ function TimingCell({
   const label = COMPACT_LABELS[field] ?? field;
 
   return (
-    <div className={`eff-cell-neutral ${hasValue ? "has-value" : ""} ${disabled ? "disabled" : ""}`}>
-      <label htmlFor={`effect-${field}`} className="eff-cell-label">
+    <div className={`ws-cell-neutral ${hasValue ? "has-value" : ""} ${disabled ? "disabled" : ""}`}>
+      <label htmlFor={`effect-${field}`} className="ws-cell-label">
         {label}
       </label>
       <input
         id={`effect-${field}`}
         data-testid={`effect-${field}-input`}
-        className="eff-cell-input"
+        className="ws-cell-input"
         type="number"
         step={1}
         inputMode="decimal"
@@ -149,14 +149,14 @@ export function EffectWorkspaceForm({
   return (
     <div className={`flex flex-col gap-4 ${colorClass}`} data-testid="effect-form-fields">
       {/* Name cell */}
-      <div className="eff-cell-neutral">
-        <label htmlFor="entity-name" className="eff-cell-label">
+      <div className="ws-cell-neutral">
+        <label htmlFor="entity-name" className="ws-cell-label">
           Name
         </label>
         <input
           id="entity-name"
           data-testid="entity-name-input"
-          className="eff-cell-input eff-name-input"
+          className="ws-cell-input ws-name-input"
           value={formValues.name}
           placeholder="—"
           aria-invalid={errors.name ? true : undefined}
@@ -168,14 +168,14 @@ export function EffectWorkspaceForm({
       {/* Effect type & timing type chip selectors */}
       <div className="flex gap-2 items-center flex-wrap">
         <label
-          className="eff-chip eff-chip-type"
+          className="ws-chip ws-chip-type"
           data-testid="effect-effect-type-chip"
           onMouseDown={handleChipMouseDown(effectTypeSelectRef)}
         >
           <select
             ref={effectTypeSelectRef}
             data-testid="effect-effect-type-select"
-            className="eff-chip-select"
+            className="ws-chip-select"
             value={formValues.effectType}
             onChange={(e) => onFieldChange("effectType", e.target.value)}
           >
@@ -184,30 +184,30 @@ export function EffectWorkspaceForm({
             <option value="healing">healing</option>
             <option value="damage">damage</option>
           </select>
-          <span className="eff-chip-arrow">▼</span>
+          <span className="ws-chip-arrow">▼</span>
         </label>
         <label
-          className="eff-chip eff-chip-timing"
+          className="ws-chip ws-chip-timing"
           data-testid="effect-timing-type-chip"
           onMouseDown={handleChipMouseDown(timingTypeSelectRef)}
         >
           <select
             ref={timingTypeSelectRef}
             data-testid="effect-timing-type-select"
-            className="eff-chip-select"
+            className="ws-chip-select"
             value={formValues.timingType}
             onChange={(e) => onFieldChange("timingType", e.target.value)}
           >
             <option value="instant">instant</option>
             <option value="interval">interval</option>
           </select>
-          <span className="eff-chip-arrow">▼</span>
+          <span className="ws-chip-arrow">▼</span>
         </label>
       </div>
 
       {/* Timing section */}
       <div data-testid="effect-timing-section">
-        <div className="eff-section-header">Timing</div>
+        <div className="ws-section-header">Timing</div>
         <div className="grid grid-cols-3 gap-1.5">
           <TimingCell
             field="durationMs"
@@ -235,7 +235,7 @@ export function EffectWorkspaceForm({
       {/* Modifier groups */}
       {MODIFIER_GROUPS.map((group) => (
         <div key={group.label}>
-          <div className="eff-section-header">{group.label}</div>
+          <div className="ws-section-header">{group.label}</div>
           <div
             className={`grid gap-1.5 ${group.cols === 2 ? "grid-cols-2" : group.cols === 4 ? "grid-cols-4" : "grid-cols-3"}`}
             data-testid={`effect-group-${group.label.toLowerCase().replaceAll(" ", "-")}`}

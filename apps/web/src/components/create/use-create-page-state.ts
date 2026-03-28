@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import {
   type TabName,
@@ -32,6 +32,13 @@ import { useItemList } from "./hooks/use-item-list";
 import { useUnitList } from "./hooks/use-unit-list";
 import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
 import { effectRecordToFormValues, normalizeEffectFormValues, validateEffectForm } from "./effect-form";
+import {
+  normalizeSpellFormValues,
+  spellRecordToFormValues,
+  validateSpellForm,
+  type SpellFormValues,
+  type EffectOption,
+} from "./spell-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -133,6 +140,7 @@ export interface CreatePageState {
   saveEntity: () => Promise<void>;
   isEntitySaving: boolean;
   entitySaveError: string | null;
+  effectOptions: EffectOption[];
 }
 
 export function useCreatePageState(
@@ -182,6 +190,13 @@ export function useCreatePageState(
 
   // Unit list (pagination, sorting, query)
   const unitList = useUnitList(activeTab === "Units", backgroundEnabled);
+
+  // Effect options for spell effect picker
+  const effectOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "effects", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
+    queryFn: () => trpc.scenarioBuilder.effects.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
+    enabled: entityWorkspace.entityType === "spell",
+  });
 
   // Compute combined loading and enable background after active tab settles
   const allLoading: Record<TabName, boolean> = {
@@ -307,61 +322,123 @@ export function useCreatePageState(
   }, [discard, executePendingAction]);
 
   const saveEntity = useCallback(async () => {
-    if (entityWorkspace.entityType !== "effect") return;
+    if (entityWorkspace.entityType === "effect") {
+      const formValues = effectRecordToFormValues(entityWorkspace.formValues);
+      const normalized = normalizeEffectFormValues(formValues);
+      if (Object.keys(validateEffectForm(normalized)).length > 0) return;
 
-    const formValues = effectRecordToFormValues(entityWorkspace.formValues);
-    const normalized = normalizeEffectFormValues(formValues);
-    if (Object.keys(validateEffectForm(normalized)).length > 0) return;
+      try {
+        setIsEntitySaving(true);
+        setEntitySaveError(null);
 
-    try {
-      setIsEntitySaving(true);
-      setEntitySaveError(null);
+        if (entityWorkspace.mode === "create") {
+          const created = await trpc.scenarioBuilder.effects.create.mutate(normalized);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "effect",
+            entityId: created.id,
+            data: created,
+            formValues: effectRecordToFormValues(created),
+            isDirty: false,
+          });
+          setPerTabSelection((prev) => ({ ...prev, Effects: created.id }));
+          skipEntityResetRef.current = true;
+          navigate?.({
+            search: (prev: Record<string, unknown>) => {
+              const next = { ...prev };
+              delete next.entity_id;
+              delete next.effect_id;
+              next.effect_id = created.id;
+              return next;
+            },
+            replace: true,
+          });
+        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+          const updated = await trpc.scenarioBuilder.effects.update.mutate({
+            id: entityWorkspace.entityId,
+            ...normalized,
+          });
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "effect",
+            entityId: updated.id,
+            data: updated,
+            formValues: effectRecordToFormValues(updated),
+            isDirty: false,
+          });
+        }
 
-      if (entityWorkspace.mode === "create") {
-        const created = await trpc.scenarioBuilder.effects.create.mutate(normalized);
-        setEntityWorkspace({
-          mode: "edit",
-          entityType: "effect",
-          entityId: created.id,
-          data: created,
-          formValues: effectRecordToFormValues(created),
-          isDirty: false,
-        });
-        setPerTabSelection((prev) => ({ ...prev, Effects: created.id }));
-        skipEntityResetRef.current = true;
-        navigate?.({
-          search: (prev: Record<string, unknown>) => {
-            const next = { ...prev };
-            delete next.entity_id;
-            delete next.effect_id;
-            next.effect_id = created.id;
-            return next;
-          },
-          replace: true,
-        });
-      } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
-        const updated = await trpc.scenarioBuilder.effects.update.mutate({
-          id: entityWorkspace.entityId,
-          ...normalized,
-        });
-        setEntityWorkspace({
-          mode: "edit",
-          entityType: "effect",
-          entityId: updated.id,
-          data: updated,
-          formValues: effectRecordToFormValues(updated),
-          isDirty: false,
-        });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "list"] }),
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "get"] }),
+        ]);
+      } catch (error) {
+        setEntitySaveError(error instanceof Error ? error.message : "Failed to save effect. Please try again.");
+      } finally {
+        setIsEntitySaving(false);
       }
+    } else if (entityWorkspace.entityType === "spell") {
+      const spellValues = entityWorkspace.formValues as SpellFormValues;
+      if (Object.keys(validateSpellForm(spellValues)).length > 0) return;
+      const normalized = normalizeSpellFormValues(spellValues);
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "list"] }),
-        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "get"] }),
-      ]);
-    } catch (error) {
-      setEntitySaveError(error instanceof Error ? error.message : "Failed to save effect. Please try again.");
-    } finally {
-      setIsEntitySaving(false);
+      try {
+        setIsEntitySaving(true);
+        setEntitySaveError(null);
+
+        if (entityWorkspace.mode === "create") {
+          const created = await trpc.scenarioBuilder.spells.create.mutate(normalized);
+          const createdData = created as { id: string; name: string; [key: string]: unknown };
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "spell",
+            entityId: createdData.id,
+            data: createdData,
+            formValues: spellRecordToFormValues(createdData),
+            isDirty: false,
+          });
+          setPerTabSelection((prev) => ({ ...prev, Spells: createdData.id }));
+          skipEntityResetRef.current = true;
+          navigate?.({
+            search: (prev: Record<string, unknown>) => {
+              const next = { ...prev };
+              delete next.entity_id;
+              delete next.spell_id;
+              next.spell_id = createdData.id;
+              return next;
+            },
+            replace: true,
+          });
+        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+          const updated = await trpc.scenarioBuilder.spells.update.mutate({
+            id: entityWorkspace.entityId,
+            ...normalized,
+          });
+          const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "spell",
+            entityId: updatedData.id,
+            data: updatedData,
+            formValues: spellRecordToFormValues(updatedData),
+            isDirty: false,
+          });
+        }
+
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells", "list"] }),
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells", "get"] }),
+        ]);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to save spell. Please try again.";
+        if (message.includes("already exists")) {
+          setEntitySaveError("A spell with this name already exists");
+        } else {
+          setEntitySaveError(message);
+        }
+      } finally {
+        setIsEntitySaving(false);
+      }
     }
   }, [entityWorkspace, navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
 
@@ -382,6 +459,11 @@ export function useCreatePageState(
     saveEntity,
     isEntitySaving,
     entitySaveError,
+    effectOptions: (effectOptionsQuery.data?.items ?? []).map((e: EffectOption) => ({
+      id: e.id,
+      name: e.name,
+      effectType: e.effectType,
+    })),
     listLoading: allLoading,
     listFetching: allFetching,
     // Scenario list specific

@@ -2,8 +2,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
 import type { EffectFormValues } from "./effect-form";
+import type { SpellFormValues, EffectOption } from "./spell-form";
 import type { WorkspaceState } from "./types";
 import { EffectWorkspaceForm } from "./effect-workspace-form";
+import { SpellWorkspaceForm } from "./spell-workspace-form";
 
 interface EntityWorkspaceProps {
   workspace: WorkspaceState;
@@ -11,15 +13,19 @@ interface EntityWorkspaceProps {
   onSave: () => void;
   isSaving: boolean;
   saveError: string | null;
+  effectOptions?: EffectOption[];
 }
 
-export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, saveError }: EntityWorkspaceProps) {
+export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, saveError, effectOptions = [] }: EntityWorkspaceProps) {
   const { mode, entityType, formValues } = workspace;
   const isTransitioning = mode === "loading" && workspace.data !== null;
 
   return (
     <div data-testid="entity-workspace" className="flex flex-1 flex-col overflow-auto min-h-0">
-      <div data-testid="entity-workspace-header" className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
+      <div
+        data-testid="entity-workspace-header"
+        className="flex h-[41px] items-center border-b border-border bg-accent px-4 text-primary font-display tracking-wide"
+      >
         {mode === "idle" && "Entity"}
         {mode === "loading" && !workspace.data && "Entity"}
         {mode === "loading" && workspace.data && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
@@ -52,6 +58,16 @@ export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, sa
               <EffectWorkspaceForm
                 mode={mode}
                 formValues={formValues as EffectFormValues}
+                onFieldChange={onFieldChange}
+                onSave={onSave}
+                isSaving={isSaving}
+                saveError={saveError}
+              />
+            ) : entityType === "spell" ? (
+              <SpellWorkspaceForm
+                mode={mode}
+                formValues={formValues as SpellFormValues}
+                effectOptions={effectOptions}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
                 isSaving={isSaving}

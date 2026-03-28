@@ -22,7 +22,10 @@ export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspac
 
   return (
     <div data-testid="scenario-workspace" className="flex flex-col">
-      <div data-testid="scenario-workspace-header" className="bg-accent text-primary font-display tracking-wide py-2 px-4 border-b border-border">
+      <div
+        data-testid="scenario-workspace-header"
+        className="flex h-[41px] items-center border-b border-border bg-accent px-4 text-primary font-display tracking-wide"
+      >
         {mode === "idle" && "Scenario"}
         {mode === "loading" && !workspace.data && "Scenario"}
         {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}

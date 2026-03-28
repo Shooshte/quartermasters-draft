@@ -271,6 +271,92 @@ test.describe("Spells Library Tab — Selection", () => {
   });
 });
 
+// ─── Effect Picker ───────────────────────────────────────────────────────────
+
+test.describe("Spell Workspace — Effect Picker", () => {
+  test("save stays blocked until at least one effect is linked", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("button", { name: "New Spell" }).click();
+
+    await gmPage.getByTestId("entity-name-input").fill("No Effect Spell");
+    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
+
+    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(gmPage.getByText("At least one linked effect is required")).toBeVisible();
+  });
+
+  test("opening the effect picker shows at most five options and keeps the search prompt out of the list", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("button", { name: "New Spell" }).click();
+
+    await gmPage.getByTestId("spell-effect-picker").click();
+
+    await expect(gmPage.getByTestId("spell-effect-picker-search")).toHaveAttribute(
+      "placeholder",
+      "Search effects...",
+    );
+    const pickerOptions = gmPage.locator('[role="listbox"] [role="option"]');
+    await expect(pickerOptions).toHaveCount(5);
+    await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search effects..." })).toHaveCount(0);
+  });
+
+  test("search narrows the effect picker results", async ({ gmPage }) => {
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("button", { name: "New Spell" }).click();
+
+    await gmPage.getByTestId("spell-effect-picker").click();
+    await gmPage.getByTestId("spell-effect-picker-search").fill("tect");
+
+    const pickerOptions = gmPage.locator('[role="listbox"] [role="option"]');
+    await expect(pickerOptions).toHaveCount(1);
+    await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Tectonic Pulse" })).toBeVisible();
+  });
+
+  test("a searched effect can be added to a spell and persists after saving", async ({
+    gmPage,
+    resetDb,
+  }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("button", { name: "New Spell" }).click();
+
+    await gmPage.getByTestId("entity-name-input").fill("Searchable Link Spell");
+    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
+    await gmPage.getByTestId("spell-effect-picker").click();
+    await gmPage.getByTestId("spell-effect-picker-search").fill("tect");
+    await gmPage.getByRole("option", { name: "Tectonic Pulse" }).click();
+    await gmPage.getByTestId("spell-add-effect-button").click();
+
+    await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Tectonic Pulse");
+
+    await gmPage.getByTestId("entity-save-button").click();
+    await expect(gmPage).toHaveURL(/spell_id=/);
+
+    await gmPage.reload();
+
+    await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Tectonic Pulse");
+  });
+
+  test("removing the final linked effect blocks saving until another is added", async ({
+    gmPage,
+  }) => {
+    await gmPage.goto(`/create?tab=Spells&spell_id=${BATTLE_CRY_ID}`);
+
+    await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Barbarian Roar");
+
+    await gmPage.getByTestId("spell-effect-remove-0").click();
+
+    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(gmPage.getByText("At least one linked effect is required")).toBeVisible();
+  });
+});
+
 // ─── Unsaved Changes ────────────────────────────────────────────────────────
 
 test.describe("Spells Library Tab — Unsaved Changes", () => {

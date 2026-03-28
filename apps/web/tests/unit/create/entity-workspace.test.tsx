@@ -186,6 +186,60 @@ describe("EntityWorkspace", () => {
     expect(timingSelect).toHaveFocus();
   });
 
+  it("keeps the chip functional when showPicker throws", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "effect",
+          formValues: {
+            name: "",
+            timingType: "instant",
+            effectType: "buff",
+            intervalMs: null,
+            triggerCount: null,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    const timingChip = screen.getByTestId("effect-timing-type-chip");
+    const timingSelect = screen.getByTestId("effect-timing-type-select") as HTMLSelectElement & {
+      showPicker?: () => void;
+    };
+
+    timingSelect.showPicker = vi.fn(() => {
+      throw new DOMException("Blocked", "NotAllowedError");
+    });
+
+    await expect(user.click(timingChip)).resolves.toBeUndefined();
+    expect(timingSelect).toHaveFocus();
+  });
+
+  it("renders the one time effect group in four columns", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "effect",
+          formValues: {
+            name: "",
+            timingType: "instant",
+            effectType: "damage",
+            intervalMs: null,
+            triggerCount: null,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByTestId("effect-group-one-time-effect").className).toContain("grid-cols-4");
+  });
+
   it("enables interval fields when timing type is interval", () => {
     render(
       <EntityWorkspace

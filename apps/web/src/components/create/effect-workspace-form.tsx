@@ -139,7 +139,11 @@ export function EffectWorkspaceForm({
       }
 
       select.focus();
-      select.showPicker?.();
+      try {
+        select.showPicker?.();
+      } catch {
+        // Focus remains on the native select, so keyboard interaction still works.
+      }
     };
 
   return (
@@ -232,7 +236,10 @@ export function EffectWorkspaceForm({
       {MODIFIER_GROUPS.map((group) => (
         <div key={group.label}>
           <div className="eff-section-header">{group.label}</div>
-          <div className={`grid gap-1.5 ${group.cols === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div
+            className={`grid gap-1.5 ${group.cols === 2 ? "grid-cols-2" : group.cols === 4 ? "grid-cols-4" : "grid-cols-3"}`}
+            data-testid={`effect-group-${group.label.toLowerCase().replaceAll(" ", "-")}`}
+          >
             {group.fields.map((field) => (
               <ModifierCell
                 key={field}

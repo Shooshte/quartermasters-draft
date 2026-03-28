@@ -89,7 +89,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty is false when formValues match original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: [], damage: 50 });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -104,7 +104,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty is true when any form field differs from original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: [], damage: 50 });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -124,7 +124,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty returns to false when field is reverted to original", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: [], damage: 50 });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -502,7 +502,7 @@ describe("useCreatePageState — URL param change resets", () => {
   });
 
   it("resets entity workspace to idle when entity_id is removed", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: [], damage: 50 });
 
     const search = { tab: "Spells" as const, entity_id: "s1" };
     const { result, rerender } = renderHook(

@@ -58,7 +58,7 @@ describe("EntityWorkspace", () => {
         workspace={makeWorkspace({
           mode: "create",
           entityType: "spell",
-          formValues: { name: "" },
+          formValues: { name: "", description: "", targetPolicy: "", effectIds: [] },
         })}
         {...defaultProps}
       />,
@@ -113,7 +113,7 @@ describe("EntityWorkspace", () => {
           entityType: "spell",
           entityId: "123",
           data: { name: "Test" },
-          formValues: { name: "Test" },
+          formValues: { name: "Test", description: "", targetPolicy: "", effectIds: [] },
         })}
         onFieldChange={onFieldChange}
         onSave={vi.fn()}

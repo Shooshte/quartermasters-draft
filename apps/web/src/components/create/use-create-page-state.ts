@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import {
   type TabName,
@@ -134,6 +134,7 @@ export interface CreatePageState {
   saveEntity: () => Promise<void>;
   isEntitySaving: boolean;
   entitySaveError: string | null;
+  effectOptions: { id: string; name: string; effectType: string }[];
 }
 
 export function useCreatePageState(
@@ -183,6 +184,13 @@ export function useCreatePageState(
 
   // Unit list (pagination, sorting, query)
   const unitList = useUnitList(activeTab === "Units", backgroundEnabled);
+
+  // Effect options for spell effect picker
+  const effectOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "effects", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
+    queryFn: () => trpc.scenarioBuilder.effects.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
+    enabled: entityWorkspace.entityType === "spell",
+  });
 
   // Compute combined loading and enable background after active tab settles
   const allLoading: Record<TabName, boolean> = {
@@ -455,6 +463,11 @@ export function useCreatePageState(
     saveEntity,
     isEntitySaving,
     entitySaveError,
+    effectOptions: (effectOptionsQuery.data?.items ?? []).map((e: { id: string; name: string; effectType: string }) => ({
+      id: e.id,
+      name: e.name,
+      effectType: e.effectType,
+    })),
     listLoading: allLoading,
     listFetching: allFetching,
     // Scenario list specific

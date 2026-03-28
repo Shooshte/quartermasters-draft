@@ -92,6 +92,7 @@ export function CreatePage({ search }: CreatePageProps) {
           onSave={state.saveEntity}
           isSaving={state.isEntitySaving}
           saveError={state.entitySaveError}
+          effectOptions={state.effectOptions}
         />
       </div>
       <UnsavedChangesDialog

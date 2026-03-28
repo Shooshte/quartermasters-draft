@@ -14,6 +14,7 @@ import {
   createIdleWorkspace,
 } from "../types";
 import { createDefaultEffectFormValues, effectRecordToFormValues } from "../effect-form";
+import { createDefaultSpellFormValues } from "../spell-form";
 
 interface UseWorkspaceLoaderOptions {
   search: {
@@ -111,7 +112,17 @@ export function useWorkspaceLoader({
         entityType: found.type,
         entityId: search.entity_id,
         data: entityData,
-        formValues: found.type === "effect" ? effectRecordToFormValues(entityData) : { name: entityData.name },
+        formValues: found.type === "effect"
+          ? effectRecordToFormValues(entityData)
+          : found.type === "spell" || entityType === "spell"
+            ? {
+                ...createDefaultSpellFormValues(),
+                name: entityData.name,
+                description: (entityData.description as string) ?? "",
+                targetPolicy: (entityData.targetPolicy as string) ?? "",
+                effectIds: (entityData.effectIds as string[]) ?? [],
+              }
+            : { name: entityData.name },
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, [entityTab]: search.entity_id! }));
@@ -229,7 +240,13 @@ export function useWorkspaceLoader({
         entityType: "spell",
         entityId: search.spell_id,
         data: entityData,
-        formValues: { name: entityData.name },
+        formValues: {
+          ...createDefaultSpellFormValues(),
+          name: entityData.name,
+          description: (entityData.description as string) ?? "",
+          targetPolicy: (entityData.targetPolicy as string) ?? "",
+          effectIds: (entityData.effectIds as string[]) ?? [],
+        },
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Spells: search.spell_id! }));
@@ -433,7 +450,17 @@ export function useWorkspaceLoader({
           entityType,
           entityId: id,
           data: entityData,
-          formValues: entityType === "effect" ? effectRecordToFormValues(entityData) : { name: entityData.name },
+          formValues: entityType === "effect"
+            ? effectRecordToFormValues(entityData)
+            : entityType === "spell"
+              ? {
+                  ...createDefaultSpellFormValues(),
+                  name: entityData.name,
+                  description: (entityData.description as string) ?? "",
+                  targetPolicy: (entityData.targetPolicy as string) ?? "",
+                  effectIds: (entityData.effectIds as string[]) ?? [],
+                }
+              : { name: entityData.name },
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
@@ -556,7 +583,11 @@ export function useWorkspaceLoader({
             entityType,
             entityId: null,
             data: null,
-            formValues: entityType === "effect" ? createDefaultEffectFormValues() : { name: "" },
+            formValues: entityType === "effect"
+              ? createDefaultEffectFormValues()
+              : entityType === "spell"
+                ? createDefaultSpellFormValues()
+                : { name: "" },
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));

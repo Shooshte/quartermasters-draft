@@ -239,10 +239,10 @@
 /* Section header with trailing hairline */
 .eff-section-header {
   font-family: 'Cinzel', 'Times New Roman', serif;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: oklch(0.40 0.01 70);
+  color: oklch(0.55 0.02 70);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -297,10 +297,10 @@
   pointer-events: none;
 }
 
-/* Tiny uppercase label inside cells */
+/* Uppercase label inside cells */
 .eff-cell-label {
-  font-size: 9px;
-  color: oklch(0.40 0.01 70);
+  font-size: 11px;
+  color: oklch(0.55 0.02 70);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: block;

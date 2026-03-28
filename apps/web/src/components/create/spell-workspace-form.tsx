@@ -5,13 +5,8 @@ import {
   hasSpellFormErrors,
   validateSpellForm,
   type SpellFormValues,
+  type EffectOption,
 } from "./spell-form";
-
-interface EffectOption {
-  id: string;
-  name: string;
-  effectType: string;
-}
 
 interface SpellWorkspaceFormProps {
   mode: "create" | "edit" | "loading";

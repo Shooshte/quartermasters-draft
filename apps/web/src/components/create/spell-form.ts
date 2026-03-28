@@ -1,3 +1,9 @@
+export interface EffectOption {
+  id: string;
+  name: string;
+  effectType: string;
+}
+
 export type TargetPolicy = "highest_health" | "lowest_health" | "highest_damage" | "random";
 
 const VALID_TARGET_POLICIES: readonly string[] = [

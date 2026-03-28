@@ -36,8 +36,12 @@ function computeIsDirty(
   originalData: WorkspaceState["data"],
 ): boolean {
   return Object.keys(formValues).some((key) => {
+    const current = formValues[key];
     const original = originalData ? originalData[key] : "";
-    return formValues[key] !== original;
+    if (Array.isArray(current) && Array.isArray(original)) {
+      return current.length !== original.length || current.some((v, i) => v !== original[i]);
+    }
+    return current !== original;
   });
 }
 
@@ -114,7 +118,7 @@ export function useWorkspaceLoader({
         data: entityData,
         formValues: found.type === "effect"
           ? effectRecordToFormValues(entityData)
-          : found.type === "spell" || entityType === "spell"
+          : found.type === "spell"
             ? {
                 ...createDefaultSpellFormValues(),
                 name: entityData.name,

@@ -2,16 +2,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
 import type { EffectFormValues } from "./effect-form";
-import type { SpellFormValues } from "./spell-form";
+import type { SpellFormValues, EffectOption } from "./spell-form";
 import type { WorkspaceState } from "./types";
 import { EffectWorkspaceForm } from "./effect-workspace-form";
 import { SpellWorkspaceForm } from "./spell-workspace-form";
-
-interface EffectOption {
-  id: string;
-  name: string;
-  effectType: string;
-}
 
 interface EntityWorkspaceProps {
   workspace: WorkspaceState;

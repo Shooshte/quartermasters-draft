@@ -378,3 +378,35 @@
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* ── Spell workspace: effect-type badges ── */
+
+.spell-effect-badge {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.spell-effect-badge-damage {
+  background: oklch(0.65 0.2 25 / 12%);
+  color: oklch(0.65 0.2 25);
+  border: 1px solid oklch(0.65 0.2 25 / 18%);
+}
+.spell-effect-badge-healing {
+  background: oklch(0.65 0.17 145 / 12%);
+  color: oklch(0.65 0.17 145);
+  border: 1px solid oklch(0.65 0.17 145 / 18%);
+}
+.spell-effect-badge-buff {
+  background: oklch(0.65 0.14 240 / 12%);
+  color: oklch(0.65 0.14 240);
+  border: 1px solid oklch(0.65 0.14 240 / 18%);
+}
+.spell-effect-badge-debuff {
+  background: oklch(0.60 0.18 310 / 12%);
+  color: oklch(0.60 0.18 310);
+  border: 1px solid oklch(0.60 0.18 310 / 18%);
+}

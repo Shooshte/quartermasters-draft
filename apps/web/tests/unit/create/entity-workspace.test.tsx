@@ -152,6 +152,40 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
   });
 
+  it("forwards chip background clicks to the native select picker", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "effect",
+          formValues: {
+            name: "",
+            timingType: "instant",
+            effectType: "buff",
+            intervalMs: null,
+            triggerCount: null,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    const timingChip = screen.getByTestId("effect-timing-type-chip");
+    const timingSelect = screen.getByTestId("effect-timing-type-select") as HTMLSelectElement & {
+      showPicker?: () => void;
+    };
+    const showPicker = vi.fn();
+
+    timingSelect.showPicker = showPicker;
+
+    await user.click(timingChip);
+
+    expect(showPicker).toHaveBeenCalledOnce();
+    expect(timingSelect).toHaveFocus();
+  });
+
   it("enables interval fields when timing type is interval", () => {
     render(
       <EntityWorkspace

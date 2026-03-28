@@ -1,3 +1,5 @@
+import { useRef, type MouseEvent, type RefObject } from "react";
+
 import { Button } from "~/components/ui/button";
 import {
   EFFECT_NUMERIC_FIELDS,
@@ -114,10 +116,31 @@ export function EffectWorkspaceForm({
   isSaving,
   saveError,
 }: EffectWorkspaceFormProps) {
+  const effectTypeSelectRef = useRef<HTMLSelectElement>(null);
+  const timingTypeSelectRef = useRef<HTMLSelectElement>(null);
   const errors = validateEffectForm(formValues);
   const intervalDisabled = isIntervalFieldDisabled(formValues);
   const saveLabel = mode === "create" ? "Create Effect" : "Save Changes";
   const colorClass = getEffectColorClass(formValues.effectType);
+
+  const handleChipMouseDown =
+    (selectRef: RefObject<HTMLSelectElement | null>) =>
+    (event: MouseEvent<HTMLLabelElement>) => {
+      if (event.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const select = selectRef.current;
+
+      if (!select) {
+        return;
+      }
+
+      select.focus();
+      select.showPicker?.();
+    };
 
   return (
     <div className={`flex flex-col gap-4 ${colorClass}`} data-testid="effect-form-fields">
@@ -140,8 +163,13 @@ export function EffectWorkspaceForm({
 
       {/* Effect type & timing type chip selectors */}
       <div className="flex gap-2 items-center flex-wrap">
-        <label className="eff-chip eff-chip-type">
+        <label
+          className="eff-chip eff-chip-type"
+          data-testid="effect-effect-type-chip"
+          onMouseDown={handleChipMouseDown(effectTypeSelectRef)}
+        >
           <select
+            ref={effectTypeSelectRef}
             data-testid="effect-effect-type-select"
             className="eff-chip-select"
             value={formValues.effectType}
@@ -154,8 +182,13 @@ export function EffectWorkspaceForm({
           </select>
           <span className="eff-chip-arrow">▼</span>
         </label>
-        <label className="eff-chip eff-chip-timing">
+        <label
+          className="eff-chip eff-chip-timing"
+          data-testid="effect-timing-type-chip"
+          onMouseDown={handleChipMouseDown(timingTypeSelectRef)}
+        >
           <select
+            ref={timingTypeSelectRef}
             data-testid="effect-timing-type-select"
             className="eff-chip-select"
             value={formValues.timingType}

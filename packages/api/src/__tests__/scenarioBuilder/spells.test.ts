@@ -469,7 +469,7 @@ describe("spellsRouter", () => {
         id: "b0000000-0000-0000-0000-000000000001",
         name: "Fireball",
         description: null,
-        targetPolicy: "highest_health",
+        targetPolicy: "highest_health" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -512,7 +512,7 @@ describe("spellsRouter", () => {
         id: "b0000000-0000-0000-0000-000000000001",
         name: "Fireball",
         description: null,
-        targetPolicy: "highest_health",
+        targetPolicy: "highest_health" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -546,7 +546,7 @@ describe("spellsRouter", () => {
         id: "b0000000-0000-0000-0000-000000000001",
         name: "Echo Blast",
         description: null,
-        targetPolicy: "random",
+        targetPolicy: "random" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { test, expect } from "../worker-base.fixture";
 import {
@@ -14,9 +15,8 @@ import {
   expectQueryParams,
 } from "./auth.fixtures";
 
-const E2E_DIR = path.resolve(import.meta.dirname, "..", "..");
+const E2E_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const COMPOSE_FILE = path.join(E2E_DIR, "docker-compose.yml");
-const GM_USER_ID = "seed-gm-001";
 const PLAYER_USER_ID = "seed-player-001";
 
 function expireUserSessions(userId: string, workerIndex: number, expiryExpression: string) {

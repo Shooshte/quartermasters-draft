@@ -1,9 +1,10 @@
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import type { FullConfig } from "@playwright/test";
 import { BASE_PORT, DEFAULT_WORKERS } from "./constants";
 
-const E2E_DIR = path.resolve(import.meta.dirname);
+const E2E_DIR = path.dirname(fileURLToPath(import.meta.url));
 const COMPOSE_FILE = path.join(E2E_DIR, "docker-compose.yml");
 const WORKERS = parseInt(process.env.E2E_WORKERS ?? String(DEFAULT_WORKERS), 10);
 const NETWORK = "qd-e2e-net";

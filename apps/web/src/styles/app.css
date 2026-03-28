@@ -333,6 +333,7 @@
 
 /* Chip selectors (effect type, timing type) */
 .eff-chip {
+  position: relative;
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 4px;
@@ -375,4 +376,5 @@
 .eff-chip-arrow {
   font-size: 8px;
   opacity: 0.5;
+  pointer-events: none;
 }

@@ -140,7 +140,7 @@ export function EffectWorkspaceForm({
 
       {/* Effect type & timing type chip selectors */}
       <div className="flex gap-2 items-center flex-wrap">
-        <div className="eff-chip eff-chip-type">
+        <label className="eff-chip eff-chip-type">
           <select
             data-testid="effect-effect-type-select"
             className="eff-chip-select"
@@ -153,8 +153,8 @@ export function EffectWorkspaceForm({
             <option value="damage">damage</option>
           </select>
           <span className="eff-chip-arrow">▼</span>
-        </div>
-        <div className="eff-chip eff-chip-timing">
+        </label>
+        <label className="eff-chip eff-chip-timing">
           <select
             data-testid="effect-timing-type-select"
             className="eff-chip-select"
@@ -165,7 +165,7 @@ export function EffectWorkspaceForm({
             <option value="interval">interval</option>
           </select>
           <span className="eff-chip-arrow">▼</span>
-        </div>
+        </label>
       </div>
 
       {/* Timing section */}

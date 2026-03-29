@@ -3,6 +3,16 @@ Feature: Item workspace create and edit
   I want to create and edit items inside the entity builder on the "/create" page
   So that item records and their linked spells can be managed without leaving the builder workflow
 
+  # Source of truth:
+  # This feature file defines the required behavior for item workspace changes.
+  # Future database, API, UI, and test changes must follow this spec.
+  #
+  # Linked spells on items are treated as an unordered set.
+  # Scenarios that assert multiple linked spells verify membership only, not sequence.
+  #
+  # Item stat fields may be positive, zero, or negative decimal values.
+  # Activation cost fields must be zero or greater.
+
   Background:
     Given I am authenticated as a game master
     And I am on the "/create" page
@@ -32,6 +42,13 @@ Feature: Item workspace create and edit
     And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved stat values
 
+  Scenario: Create an item with utility stats
+    When I create a new item named "Shade Charm" with the following stats:
+      | manaRegen | 4.5 |
+      | dodge     | 6   |
+    And I link spell "Fireball" to the item
+    Then reloading the item by URL should show the saved stat values
+
   Scenario: Create an item with activation costs
     When I create a new item named "Mana Gauntlet" with the following stats:
       | activationManaCost   | 8 |
@@ -45,6 +62,13 @@ Feature: Item workspace create and edit
       | criticalChance | 7.25 |
     And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved decimal values
+
+  Scenario: Stat fields accept negative values
+    When I create a new item named "Cursed Sigil" with the following stats:
+      | spellDmg | -3.5 |
+      | dodge    | -1   |
+    And I link spell "Fireball" to the item
+    Then reloading the item by URL should show the saved negative stat values
 
   Scenario: Edit an existing item
     Given I have loaded the item "Oak Staff" in the item workspace
@@ -63,6 +87,13 @@ Feature: Item workspace create and edit
 
   Scenario: At least one linked spell is required on create
     When I start creating a new item without linking any spells
+    Then saving should remain blocked
+
+  Scenario: Activation costs cannot be negative
+    When I start creating a new item named "Broken Relay" with the following stats:
+      | activationManaCost   | -1 |
+      | activationHealthCost | -2 |
+    And I link spell "Fireball" to the item
     Then saving should remain blocked
 
   Scenario: Add a spell to an item

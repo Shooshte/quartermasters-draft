@@ -91,3 +91,13 @@ Feature: Spell workspace create and edit
     And I add effect "Barbarian Roar" at sequence position 2
     And I save the spell
     Then reloading the spell by URL should show "Barbarian Roar" at both positions
+
+  Scenario: Cannot delete a spell that is linked to an item
+    Given spell "Fireball" is linked to item "Oak Staff"
+    When I try to delete the spell "Fireball"
+    Then I should see a linked-item dependency delete error
+
+  Scenario: Deleting an unlinked spell still succeeds
+    Given spell "Zenith Bloom" is not linked to any items
+    When I delete the spell "Zenith Bloom"
+    Then the spell should be removed from the library

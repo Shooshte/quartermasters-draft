@@ -3,9 +3,11 @@ import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
 import type { EffectFormValues } from "./effect-form";
 import type { SpellFormValues, EffectOption } from "./spell-form";
+import type { ItemFormValues, SpellOption } from "./item-form";
 import type { WorkspaceState } from "./types";
 import { EffectWorkspaceForm } from "./effect-workspace-form";
 import { SpellWorkspaceForm } from "./spell-workspace-form";
+import { ItemWorkspaceForm } from "./item-workspace-form";
 
 interface EntityWorkspaceProps {
   workspace: WorkspaceState;
@@ -14,9 +16,18 @@ interface EntityWorkspaceProps {
   isSaving: boolean;
   saveError: string | null;
   effectOptions?: EffectOption[];
+  spellOptions?: SpellOption[];
 }
 
-export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, saveError, effectOptions = [] }: EntityWorkspaceProps) {
+export function EntityWorkspace({
+  workspace,
+  onFieldChange,
+  onSave,
+  isSaving,
+  saveError,
+  effectOptions = [],
+  spellOptions = [],
+}: EntityWorkspaceProps) {
   const { mode, entityType, formValues } = workspace;
   const isTransitioning = mode === "loading" && workspace.data !== null;
 
@@ -68,6 +79,16 @@ export function EntityWorkspace({ workspace, onFieldChange, onSave, isSaving, sa
                 mode={mode}
                 formValues={formValues as SpellFormValues}
                 effectOptions={effectOptions}
+                onFieldChange={onFieldChange}
+                onSave={onSave}
+                isSaving={isSaving}
+                saveError={saveError}
+              />
+            ) : entityType === "item" ? (
+              <ItemWorkspaceForm
+                mode={mode}
+                formValues={formValues as ItemFormValues}
+                spellOptions={spellOptions}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
                 isSaving={isSaving}

@@ -24,6 +24,26 @@ async function deleteEffectViaApi(
   });
 }
 
+async function deleteSpellViaApi(
+  request: import("@playwright/test").APIRequestContext,
+  id: string,
+) {
+  return request.post(`${BASE}/scenarioBuilder.spells.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function deleteItemViaApi(
+  request: import("@playwright/test").APIRequestContext,
+  id: string,
+) {
+  return request.post(`${BASE}/scenarioBuilder.items.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 // ─── Core Shell Layout ───────────────────────────────────────────────────────
 
 test.describe("Create Shell — Layout", () => {
@@ -471,32 +491,43 @@ dbTest.describe("Create Shell — Empty Tab State", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 21 effects via API
-    const effectIds = Array.from({ length: 21 }, (_, i) =>
-      `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-    );
-    for (const id of effectIds) {
-      const response = await deleteEffectViaApi(gmPage.request, id);
-      expect(response.ok()).toBeTruthy();
-    }
-
     try {
+      const itemIds = Array.from({ length: 21 }, (_, i) =>
+        `d0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+      );
+      for (const id of itemIds) {
+        const response = await deleteItemViaApi(gmPage.request, id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      const spellIds = Array.from({ length: 21 }, (_, i) =>
+        `b0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+      );
+      for (const id of spellIds) {
+        const response = await deleteSpellViaApi(gmPage.request, id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      const effectIds = Array.from({ length: 21 }, (_, i) =>
+        `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+      );
+      for (const id of effectIds) {
+        const response = await deleteEffectViaApi(gmPage.request, id);
+        expect(response.ok()).toBeTruthy();
+      }
+
       await gmPage.goto("/create");
       await gmPage.getByRole("tab", { name: "Effects" }).click();
 
-      // Empty state visible — the UI shows a paragraph and a create button
-      await expect(
-        gmPage.getByText("No effect records yet"),
-      ).toBeVisible();
-      // Create button visible
+      await expect(gmPage.getByTestId("empty-list")).toBeVisible();
+      await expect(gmPage.getByText("No effect records yet")).toBeVisible();
       await expect(
         gmPage.getByRole("button", { name: "Create the first effect" }),
       ).toBeVisible();
-      // No record selected
+
       const selectedRows = gmPage.locator('tr[aria-selected="true"]');
       await expect(selectedRows).toHaveCount(0);
     } finally {
-      // Always restore DB for subsequent tests, even if assertions fail
       await resetDb();
     }
   });

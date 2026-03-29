@@ -1,15 +1,91 @@
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, items, itemsSpells } from "@qd/db";
+import { db, items, itemsSpells, spells } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { listInputSchema } from "./shared";
+import { findDbError, listInputSchema } from "./shared";
 
 const itemListInput = listInputSchema.extend({
   limit: z.number().int().min(1).max(500).default(20),
   sortBy: z.enum(["name", "updatedAt"]).default("name"),
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});
+
+const itemInputBaseSchema = z.object({
+  name: z.string().trim().min(1),
+  meleeDmg: z.number(),
+  rangedDmg: z.number(),
+  manaRegen: z.number(),
+  spellDmg: z.number(),
+  dodge: z.number(),
+  criticalChance: z.number(),
+  activationManaCost: z.number().min(0),
+  activationHealthCost: z.number().min(0),
+  spellIds: z.array(z.string().uuid()).min(1, "At least one linked spell is required"),
+});
+
+type NormalizedItemInput = z.infer<typeof itemInputBaseSchema>;
+type ItemTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+function normalizeItemInput(input: z.infer<typeof itemInputBaseSchema>): NormalizedItemInput {
+  return {
+    ...input,
+    name: input.name.trim(),
+    spellIds: [...new Set(input.spellIds)],
+  };
+}
+
+function buildItemSpellRows(itemId: string, spellIds: string[]) {
+  return spellIds.map((spellId) => ({
+    itemId,
+    spellId,
+  }));
+}
+
+async function insertItemSpells(
+  tx: ItemTransaction,
+  itemId: string,
+  spellIds: string[],
+) {
+  await tx.insert(itemsSpells).values(buildItemSpellRows(itemId, spellIds));
+}
+
+async function getSortedSpellIdsForItem(
+  executor: Pick<ItemTransaction, "select">,
+  itemId: string,
+) {
+  const spellLinks = await executor
+    .select({ spellId: itemsSpells.spellId, spellName: spells.name })
+    .from(itemsSpells)
+    .innerJoin(spells, eq(itemsSpells.spellId, spells.id))
+    .where(eq(itemsSpells.itemId, itemId))
+    .orderBy(asc(spells.name));
+
+  return spellLinks.map((link) => link.spellId);
+}
+
+function maybeThrowConflict(error: unknown): never {
+  const dbError = findDbError(error);
+
+  if (dbError?.code === "23505") {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "An item with this name already exists.",
+    });
+  }
+
+  if (
+    dbError?.code === "23514" &&
+    dbError.constraint === "item_requires_linked_spell"
+  ) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "At least one linked spell is required.",
+    });
+  }
+
+  throw error;
+}
 
 export const itemsRouter = router({
   list: gmProcedure.input(itemListInput).query(async ({ input }) => {
@@ -59,15 +135,102 @@ export const itemsRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
       }
 
-      const spellLinks = await db
-        .select({ spellId: itemsSpells.spellId })
-        .from(itemsSpells)
-        .where(eq(itemsSpells.itemId, input.id));
+      const spellIds = await getSortedSpellIdsForItem(db, input.id);
 
       return {
         ...item,
-        spellIds: spellLinks.map((s) => s.spellId),
+        spellIds,
       };
+    }),
+
+  create: gmProcedure
+    .input(itemInputBaseSchema)
+    .mutation(async ({ input }) => {
+      const normalized = normalizeItemInput(input);
+
+      try {
+        return await db.transaction(async (tx) => {
+          const [created] = await tx
+            .insert(items)
+            .values({
+              name: normalized.name,
+              meleeDmg: normalized.meleeDmg,
+              rangedDmg: normalized.rangedDmg,
+              manaRegen: normalized.manaRegen,
+              spellDmg: normalized.spellDmg,
+              dodge: normalized.dodge,
+              criticalChance: normalized.criticalChance,
+              activationManaCost: normalized.activationManaCost,
+              activationHealthCost: normalized.activationHealthCost,
+            })
+            .returning();
+
+          if (!created) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Item was not created.",
+            });
+          }
+
+          await insertItemSpells(tx, created.id, normalized.spellIds);
+
+          return {
+            ...created,
+            spellIds: await getSortedSpellIdsForItem(tx, created.id),
+          };
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        maybeThrowConflict(error);
+      }
+    }),
+
+  update: gmProcedure
+    .input(z.object({ id: z.string().uuid() }).merge(itemInputBaseSchema))
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      const normalized = normalizeItemInput(rest);
+
+      try {
+        return await db.transaction(async (tx) => {
+          const [updated] = await tx
+            .update(items)
+            .set({
+              name: normalized.name,
+              meleeDmg: normalized.meleeDmg,
+              rangedDmg: normalized.rangedDmg,
+              manaRegen: normalized.manaRegen,
+              spellDmg: normalized.spellDmg,
+              dodge: normalized.dodge,
+              criticalChance: normalized.criticalChance,
+              activationManaCost: normalized.activationManaCost,
+              activationHealthCost: normalized.activationHealthCost,
+            })
+            .where(eq(items.id, id))
+            .returning();
+
+          if (!updated) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+          }
+
+          await tx.delete(itemsSpells).where(eq(itemsSpells.itemId, id));
+          await insertItemSpells(tx, id, normalized.spellIds);
+
+          return {
+            ...updated,
+            spellIds: await getSortedSpellIdsForItem(tx, id),
+          };
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        maybeThrowConflict(error);
+      }
     }),
 
   delete: gmProcedure

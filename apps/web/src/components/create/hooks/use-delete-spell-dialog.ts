@@ -35,6 +35,27 @@ export function useDeleteSpellDialog({
     setIsDeleteSpellDialogOpen(true);
   }, []);
 
+  const isLinkedItemConflict = (error: unknown) => {
+    if (error instanceof Error && error.message.includes("Cannot delete spell while it is linked")) {
+      return true;
+    }
+
+    if (typeof error !== "object" || error === null) {
+      return false;
+    }
+
+    const maybeTrpcError = error as {
+      data?: { code?: string };
+      shape?: { message?: string; data?: { code?: string } };
+    };
+
+    return (
+      maybeTrpcError.data?.code === "CONFLICT" ||
+      maybeTrpcError.shape?.data?.code === "CONFLICT" ||
+      maybeTrpcError.shape?.message?.includes("Cannot delete spell while it is linked") === true
+    );
+  };
+
   const confirmDeleteSpell = useCallback(async () => {
     if (!deleteSpellTarget) return;
     try {
@@ -67,8 +88,12 @@ export function useDeleteSpellDialog({
 
       setDeleteSpellTarget(null);
       setIsDeleteSpellDialogOpen(false);
-    } catch {
-      setDeleteSpellError("Failed to delete spell. Please try again.");
+    } catch (error) {
+      if (isLinkedItemConflict(error)) {
+        setDeleteSpellError("Cannot delete spell while it is linked to one or more items.");
+      } else {
+        setDeleteSpellError("Failed to delete spell. Please try again.");
+      }
     }
   }, [deleteSpellTarget, entityWorkspace.entityId, navigate, queryClient, spellTotalCount, spellPage, setEntityWorkspace, setPerTabSelection, skipEntityResetRef, setSpellPage]);
 

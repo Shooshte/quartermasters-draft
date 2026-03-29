@@ -39,6 +39,13 @@ import {
   type SpellFormValues,
   type EffectOption,
 } from "./spell-form";
+import {
+  itemRecordToFormValues,
+  normalizeItemFormValues,
+  validateItemForm,
+  type ItemFormValues,
+  type SpellOption,
+} from "./item-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -141,6 +148,7 @@ export interface CreatePageState {
   isEntitySaving: boolean;
   entitySaveError: string | null;
   effectOptions: EffectOption[];
+  spellOptions: SpellOption[];
 }
 
 export function useCreatePageState(
@@ -196,6 +204,12 @@ export function useCreatePageState(
     queryKey: ["scenarioBuilder", "effects", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
     queryFn: () => trpc.scenarioBuilder.effects.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
     enabled: entityWorkspace.entityType === "spell",
+  });
+
+  const spellOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "spells", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
+    queryFn: () => trpc.scenarioBuilder.spells.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
+    enabled: entityWorkspace.entityType === "item",
   });
 
   // Compute combined loading and enable background after active tab settles
@@ -441,6 +455,70 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
+    } else if (entityWorkspace.entityType === "item") {
+      const itemValues = entityWorkspace.formValues as ItemFormValues;
+      if (Object.keys(validateItemForm(itemValues)).length > 0) return;
+      const normalized = normalizeItemFormValues(itemValues);
+
+      try {
+        setIsEntitySaving(true);
+        setEntitySaveError(null);
+
+        if (entityWorkspace.mode === "create") {
+          const created = await trpc.scenarioBuilder.items.create.mutate(normalized);
+          const createdData = created as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "items", "get", createdData.id], createdData);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "item",
+            entityId: createdData.id,
+            data: createdData,
+            formValues: itemRecordToFormValues(createdData),
+            isDirty: false,
+          });
+          setPerTabSelection((prev) => ({ ...prev, Items: createdData.id }));
+          skipEntityResetRef.current = true;
+          navigate?.({
+            search: (prev: Record<string, unknown>) => {
+              const next = { ...prev };
+              delete next.entity_id;
+              delete next.item_id;
+              next.item_id = createdData.id;
+              return next;
+            },
+            replace: true,
+          });
+        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+          const updated = await trpc.scenarioBuilder.items.update.mutate({
+            id: entityWorkspace.entityId,
+            ...normalized,
+          });
+          const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "items", "get", updatedData.id], updatedData);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "item",
+            entityId: updatedData.id,
+            data: updatedData,
+            formValues: itemRecordToFormValues(updatedData),
+            isDirty: false,
+          });
+        }
+
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items", "list"] }),
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items", "get"] }),
+        ]);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to save item. Please try again.";
+        if (message.includes("already exists")) {
+          setEntitySaveError("An item with this name already exists");
+        } else {
+          setEntitySaveError(message);
+        }
+      } finally {
+        setIsEntitySaving(false);
+      }
     }
   }, [entityWorkspace, navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
 
@@ -465,6 +543,11 @@ export function useCreatePageState(
       id: e.id,
       name: e.name,
       effectType: e.effectType,
+    })),
+    spellOptions: (spellOptionsQuery.data?.items ?? []).map((spell: SpellOption) => ({
+      id: spell.id,
+      name: spell.name,
+      targetPolicy: spell.targetPolicy,
     })),
     listLoading: allLoading,
     listFetching: allFetching,

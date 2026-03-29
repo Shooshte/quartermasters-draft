@@ -6,7 +6,15 @@ test.describe.configure({ mode: "serial" });
 
 const FIREBALL_ID = "b0000000-0000-0000-0000-000000000001";
 const BATTLE_CRY_ID = "b0000000-0000-0000-0000-000000000002";
+const ZENITH_BLOOM_ID = "b0000000-0000-0000-0000-000000000021";
 const BASE = "/api/trpc";
+
+async function parseTrpcResponse(
+  response: Awaited<ReturnType<import("@playwright/test").APIRequestContext["get"]>>,
+) {
+  const body = await response.json();
+  return body.result.data.json;
+}
 
 /** Helper to delete a spell via the tRPC mutation API */
 async function deleteSpellViaApi(
@@ -14,6 +22,50 @@ async function deleteSpellViaApi(
   id: string,
 ) {
   return request.post(`${BASE}/scenarioBuilder.spells.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function listSpellIdsViaApi(
+  request: import("@playwright/test").APIRequestContext,
+) {
+  const input = encodeURIComponent(JSON.stringify({
+    json: {
+      page: 1,
+      limit: 500,
+      sortBy: "name",
+      sortDir: "asc",
+    },
+  }));
+  const response = await request.get(`${BASE}/scenarioBuilder.spells.list?input=${input}`);
+  expect(response.ok()).toBeTruthy();
+  const data = await parseTrpcResponse(response);
+  return data.items.map((item: { id: string }) => item.id);
+}
+
+async function listItemIdsViaApi(
+  request: import("@playwright/test").APIRequestContext,
+) {
+  const input = encodeURIComponent(JSON.stringify({
+    json: {
+      page: 1,
+      limit: 500,
+      sortBy: "name",
+      sortDir: "asc",
+    },
+  }));
+  const response = await request.get(`${BASE}/scenarioBuilder.items.list?input=${input}`);
+  expect(response.ok()).toBeTruthy();
+  const data = await parseTrpcResponse(response);
+  return data.items.map((item: { id: string }) => item.id);
+}
+
+async function deleteItemViaApi(
+  request: import("@playwright/test").APIRequestContext,
+  id: string,
+) {
+  return request.post(`${BASE}/scenarioBuilder.items.delete`, {
     data: { json: { id } },
     headers: { "Content-Type": "application/json" },
   });
@@ -45,20 +97,31 @@ test.describe("Spells Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 21 spells via API
-    const spellIds = Array.from({ length: 21 }, (_, i) =>
-      `b0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-    );
-    for (const id of spellIds) {
-      await deleteSpellViaApi(gmPage.request, id);
+    try {
+      await resetDb();
+
+      const itemIds = await listItemIdsViaApi(gmPage.request);
+      for (const id of itemIds) {
+        const response = await deleteItemViaApi(gmPage.request, id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      const spellIds = await listSpellIdsViaApi(gmPage.request);
+      for (const id of spellIds) {
+        const response = await deleteSpellViaApi(gmPage.request, id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      await gmPage.goto("/create");
+      await gmPage.getByRole("tab", { name: "Spells" }).click();
+      await expect(gmPage.getByTestId("empty-list")).toBeVisible();
+      await expect(gmPage.getByText("No spell records yet")).toBeVisible();
+      await expect(
+        gmPage.getByRole("button", { name: "Create the first spell" }),
+      ).toBeVisible();
+    } finally {
+      await resetDb();
     }
-
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await expect(gmPage.getByTestId("empty-list")).toBeVisible();
-
-    // Restore DB for subsequent tests
-    await resetDb();
   });
 });
 
@@ -423,11 +486,11 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await resetDb();
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).toBeVisible();
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await expect(gmPage.getByRole("row", { name: "Zenith Bloom" })).toBeVisible();
 
-    // Click delete on Battle Cry
-    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
-    await battleCryRow.getByRole("button", { name: /Delete/ }).click();
+    const zenithBloomRow = gmPage.getByRole("row", { name: "Zenith Bloom" });
+    await zenithBloomRow.getByRole("button", { name: /Delete/ }).click();
 
     // Confirmation dialog
     await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
@@ -435,10 +498,8 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     // Confirm
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
-    // Battle Cry gone
-    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: "Zenith Bloom" })).not.toBeVisible();
 
-    // Workspace should remain idle
     await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
   });
 
@@ -447,17 +508,18 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Spells" }).click();
 
-    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
-    await battleCryRow.getByRole("button", { name: /Delete/ }).click();
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+
+    const zenithBloomRow = gmPage.getByRole("row", { name: "Zenith Bloom" });
+    await zenithBloomRow.getByRole("button", { name: /Delete/ }).click();
 
     await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
     await gmPage.getByRole("button", { name: "Cancel" }).click();
 
-    // Battle Cry should still be visible
-    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: "Zenith Bloom" })).toBeVisible();
   });
 
-  test("delete the currently open spell", async ({ gmPage, resetDb }) => {
+  test("cannot delete a spell that is linked to an item", async ({ gmPage, resetDb }) => {
     await resetDb();
     await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
@@ -469,13 +531,32 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
 
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
-    // Should be gone from list
-    await expect(gmPage.getByRole("row", { name: "Fireball" })).not.toBeVisible();
+    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
+    await expect(gmPage.getByText("Cannot delete spell while it is linked to one or more items.")).toBeVisible();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    expect(gmPage.url()).toContain(`spell_id=${FIREBALL_ID}`);
 
-    // Workspace cleared
+    await gmPage.getByRole("button", { name: "Cancel" }).click();
+    await expect(gmPage.getByRole("row", { name: "Fireball" })).toBeVisible();
+  });
+
+  test("delete the currently open unlinked spell", async ({ gmPage, resetDb }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+
+    const zenithBloomRow = gmPage.getByRole("row", { name: "Zenith Bloom" });
+    await zenithBloomRow.getByRole("button", { name: /Edit/ }).click();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Zenith Bloom");
+    await expect(gmPage).toHaveURL(new RegExp(`spell_id=${ZENITH_BLOOM_ID}`));
+
+    await zenithBloomRow.getByRole("button", { name: /Delete/ }).click();
+
+    await gmPage.getByRole("button", { name: "Delete" }).click();
+
+    await expect(gmPage.getByRole("row", { name: "Zenith Bloom" })).not.toBeVisible();
     await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
-
-    // URL should not contain spell_id
     expect(gmPage.url()).not.toContain("spell_id");
   });
 

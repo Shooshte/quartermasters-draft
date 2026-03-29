@@ -43,6 +43,13 @@
       "when": 1774727459300,
       "tag": "0005_spell_effect_requirement",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774785600000,
+      "tag": "0006_item_spell_requirement",
+      "breakpoints": true
     }
   ]
 }

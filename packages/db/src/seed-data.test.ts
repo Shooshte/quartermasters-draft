@@ -218,6 +218,11 @@ describe("spellsEffectsSeedData", () => {
       expect(spellIdsWithEffects.has(spell.id)).toBe(true);
     }
   });
+
+  it("at least one seeded effect remains unlinked from spells", () => {
+    const linkedEffectIds = new Set(spellsEffectsSeedData.map((record) => record.effectTemplateId));
+    expect(effectSeedData.some((effect) => effect.id && !linkedEffectIds.has(effect.id))).toBe(true);
+  });
 });
 
 describe("itemSeedData", () => {
@@ -263,11 +268,18 @@ describe("itemSeedData", () => {
       expect(typeof item.activationHealthCost).toBe("number");
     }
   });
+
+  it("activation costs are nonnegative", () => {
+    for (const item of itemSeedData) {
+      expect(item.activationManaCost).toBeGreaterThanOrEqual(0);
+      expect(item.activationHealthCost).toBeGreaterThanOrEqual(0);
+    }
+  });
 });
 
 describe("itemsSpellsSeedData", () => {
-  it("has 2 records", () => {
-    expect(itemsSpellsSeedData).toHaveLength(2);
+  it("covers every seeded item", () => {
+    expect(itemsSpellsSeedData.length).toBeGreaterThanOrEqual(itemSeedData.length);
   });
 
   it("each record has required fields: itemId, spellId", () => {
@@ -296,6 +308,22 @@ describe("itemsSpellsSeedData", () => {
       expect(record.id).toBeDefined();
       expect(typeof record.id).toBe("string");
     }
+  });
+
+  it("every seeded item has at least one linked spell", () => {
+    const itemIdsWithSpells = new Set(itemsSpellsSeedData.map((record) => record.itemId));
+    for (const item of itemSeedData) {
+      expect(item.id).toBeDefined();
+      if (!item.id) {
+        throw new Error("Expected seeded item to have an id");
+      }
+      expect(itemIdsWithSpells.has(item.id)).toBe(true);
+    }
+  });
+
+  it("at least one seeded spell remains unlinked from items", () => {
+    const linkedSpellIds = new Set(itemsSpellsSeedData.map((record) => record.spellId));
+    expect(spellSeedData.some((spell) => spell.id && !linkedSpellIds.has(spell.id))).toBe(true);
   });
 });
 

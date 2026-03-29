@@ -1313,6 +1313,21 @@ describe("useCreatePageState — item save flows", () => {
     expect(mockItemsUpdate).not.toHaveBeenCalled();
   });
 
+  it("marks a new item workspace dirty after the user changes create-form values", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+      result.current.updateEntityField("name", "Bronze Buckler");
+      result.current.updateEntityField("spellIds", ["sp-1"]);
+    });
+
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+  });
+
   it("treats linked spell ids as an unordered set for dirty checks", async () => {
     mockItemsGet.mockResolvedValueOnce({
       id: "i1",
@@ -1342,6 +1357,52 @@ describe("useCreatePageState — item save flows", () => {
     });
 
     expect(result.current.entityWorkspace.isDirty).toBe(false);
+  });
+
+  it("loads spell options across multiple list pages for the item workspace", async () => {
+    mockSpellsList.mockImplementation(({ page, limit }: { page: number; limit: number }) => {
+      if (page === 1) {
+        return Promise.resolve({
+          items: Array.from({ length: limit }, (_, index) => ({
+            id: `sp-${index + 1}`,
+            name: `Spell ${index + 1}`,
+            targetPolicy: "random",
+          })),
+          totalCount: limit + 1,
+        });
+      }
+
+      return Promise.resolve({
+        items: [{ id: "sp-101", name: "Spell 101", targetPolicy: "random" }],
+        totalCount: limit + 1,
+      });
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+    });
+
+    await waitFor(() => {
+      expect(result.current.spellOptions).toHaveLength(101);
+    });
+
+    expect(mockSpellsList).toHaveBeenNthCalledWith(1, {
+      limit: 100,
+      page: 1,
+      sortBy: "name",
+      sortDir: "asc",
+    });
+    expect(mockSpellsList).toHaveBeenNthCalledWith(2, {
+      limit: 100,
+      page: 2,
+      sortBy: "name",
+      sortDir: "asc",
+    });
   });
 
   it("maps duplicate item names to a user-facing error", async () => {

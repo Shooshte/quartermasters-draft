@@ -151,6 +151,51 @@ export interface CreatePageState {
   spellOptions: SpellOption[];
 }
 
+const WORKSPACE_OPTION_PAGE_SIZE = 100;
+
+interface WorkspaceOptionListPage<TItem> {
+  items: TItem[];
+  totalCount: number;
+}
+
+async function loadAllWorkspaceOptions<TItem>(
+  queryPage: (input: {
+    limit: number;
+    page: number;
+    sortBy: "name";
+    sortDir: "asc";
+  }) => Promise<WorkspaceOptionListPage<TItem>>,
+): Promise<TItem[]> {
+  const firstPage = await queryPage({
+    limit: WORKSPACE_OPTION_PAGE_SIZE,
+    page: 1,
+    sortBy: "name",
+    sortDir: "asc",
+  });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(firstPage.totalCount / WORKSPACE_OPTION_PAGE_SIZE),
+  );
+
+  if (totalPages === 1) {
+    return firstPage.items;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      queryPage({
+        limit: WORKSPACE_OPTION_PAGE_SIZE,
+        page: index + 2,
+        sortBy: "name",
+        sortDir: "asc",
+      }),
+    ),
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+}
+
 export function useCreatePageState(
   search: CreatePageSearch,
   navigate?: CreatePageNavigate,
@@ -201,14 +246,14 @@ export function useCreatePageState(
 
   // Effect options for spell effect picker
   const effectOptionsQuery = useQuery({
-    queryKey: ["scenarioBuilder", "effects", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
-    queryFn: () => trpc.scenarioBuilder.effects.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
+    queryKey: ["scenarioBuilder", "effects", "all-options"],
+    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.effects.list.query(input)),
     enabled: entityWorkspace.entityType === "spell",
   });
 
   const spellOptionsQuery = useQuery({
-    queryKey: ["scenarioBuilder", "spells", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
-    queryFn: () => trpc.scenarioBuilder.spells.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
+    queryKey: ["scenarioBuilder", "spells", "all-options"],
+    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.spells.list.query(input)),
     enabled: entityWorkspace.entityType === "item",
   });
 
@@ -539,12 +584,12 @@ export function useCreatePageState(
     saveEntity,
     isEntitySaving,
     entitySaveError,
-    effectOptions: (effectOptionsQuery.data?.items ?? []).map((e: EffectOption) => ({
+    effectOptions: (effectOptionsQuery.data ?? []).map((e: EffectOption) => ({
       id: e.id,
       name: e.name,
       effectType: e.effectType,
     })),
-    spellOptions: (spellOptionsQuery.data?.items ?? []).map((spell: SpellOption) => ({
+    spellOptions: (spellOptionsQuery.data ?? []).map((spell: SpellOption) => ({
       id: spell.id,
       name: spell.name,
       targetPolicy: spell.targetPolicy,

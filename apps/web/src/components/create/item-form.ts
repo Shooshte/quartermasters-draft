@@ -193,12 +193,10 @@ export function isItemFormDirty(
   formValues: ItemFormValues,
   originalData: ItemRecord | null,
 ): boolean {
-  if (!originalData) {
-    return false;
-  }
-
   const current = normalizeItemFormValues(formValues);
-  const original = normalizeItemFormValues(itemRecordToFormValues(originalData));
+  const original = originalData
+    ? normalizeItemFormValues(itemRecordToFormValues(originalData))
+    : normalizeItemFormValues(createDefaultItemFormValues());
 
   if (current.name !== original.name) {
     return true;

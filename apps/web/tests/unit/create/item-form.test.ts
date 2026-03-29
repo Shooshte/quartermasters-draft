@@ -101,4 +101,17 @@ describe("item-form", () => {
       ),
     ).toBe(false);
   });
+
+  it("treats a modified create form as dirty against item defaults", () => {
+    expect(
+      isItemFormDirty(
+        {
+          ...createDefaultItemFormValues(),
+          name: "Bronze Buckler",
+          spellIds: ["sp-1"],
+        },
+        null,
+      ),
+    ).toBe(true);
+  });
 });

@@ -67,12 +67,12 @@ describe("ItemWorkspaceForm", () => {
     renderForm();
 
     expect(screen.getByTestId("entity-save-button")).toBeDisabled();
-    expect(screen.getByText("At least one linked spell is required")).toBeInTheDocument();
+    expect(screen.queryByText("At least one linked spell is required")).not.toBeInTheDocument();
   });
 
-  it("enables save when name and a linked spell are present", () => {
+  it("enables save when a name is present even without linked spells", () => {
     renderForm({
-      formValues: { name: "Bronze Buckler", spellIds: ["sp-1"] },
+      formValues: { name: "Bronze Buckler", spellIds: [] },
     });
 
     expect(screen.getByTestId("entity-save-button")).toBeEnabled();

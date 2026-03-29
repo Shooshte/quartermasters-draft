@@ -50,6 +50,13 @@
       "when": 1774785600000,
       "tag": "0006_item_spell_requirement",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774817700000,
+      "tag": "0007_item_spell_optional",
+      "breakpoints": true
     }
   ]
 }

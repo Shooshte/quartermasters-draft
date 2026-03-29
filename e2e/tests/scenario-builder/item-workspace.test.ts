@@ -46,24 +46,18 @@ test.describe("Item Workspace", () => {
     await openNewItem(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Bronze Buckler");
-    await addLinkedSpell(gmPage, "Fireball");
     await saveItemAndWait(gmPage, "create");
 
     await expect(gmPage).toHaveURL(/item_id=/);
     await expect(gmPage.getByTestId("entity-workspace-header")).toContainText("Item: Bronze Buckler");
   });
 
-  test("save stays blocked until name and at least one spell are present", async ({ gmPage }) => {
+  test("save stays blocked until a name is present", async ({ gmPage }) => {
     await openNewItem(gmPage);
 
     await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
     await gmPage.getByTestId("entity-name-input").fill("Nameless No More");
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
-    await expect(gmPage.getByText("At least one linked spell is required")).toBeVisible();
-
-    await gmPage.getByTestId("entity-name-input").fill("");
-    await addLinkedSpell(gmPage, "Fireball");
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(gmPage.getByTestId("entity-save-button")).toBeEnabled();
   });
 
   test("default zero stats persist after reload", async ({ gmPage, resetDb }) => {
@@ -71,7 +65,6 @@ test.describe("Item Workspace", () => {
     await openNewItem(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Empty Hilt");
-    await addLinkedSpell(gmPage, "Fireball");
     await saveItemAndWait(gmPage, "create");
     await expect(gmPage).toHaveURL(/item_id=/);
 
@@ -98,7 +91,6 @@ test.describe("Item Workspace", () => {
     await gmPage.getByTestId("item-spellDmg-input").fill("-3.5");
     await gmPage.getByTestId("item-dodge-input").fill("-1");
     await gmPage.getByTestId("item-criticalChance-input").fill("7.25");
-    await addLinkedSpell(gmPage, "Fireball");
     await saveItemAndWait(gmPage, "create");
     await expect(gmPage).toHaveURL(/item_id=/);
 
@@ -118,7 +110,6 @@ test.describe("Item Workspace", () => {
     await gmPage.getByTestId("entity-name-input").fill("Broken Relay");
     await gmPage.getByTestId("item-activationManaCost-input").fill("-1");
     await gmPage.getByTestId("item-activationHealthCost-input").fill("-2");
-    await addLinkedSpell(gmPage, "Fireball");
 
     await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
     await expect(gmPage.getByText("Must be zero or greater")).toHaveCount(2);
@@ -167,14 +158,21 @@ test.describe("Item Workspace", () => {
     await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(2);
   });
 
-  test("removing the final linked spell blocks saving", async ({ gmPage }) => {
+  test("removing the final linked spell persists after save", async ({ gmPage, resetDb }) => {
+    await resetDb();
     await gmPage.goto(`/create?tab=Items&item_id=${OAK_STAFF_ID}`);
 
     await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Fireball");
     await gmPage.getByTestId("item-spell-remove-0").click();
+    await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(0);
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
-    await expect(gmPage.getByText("At least one linked spell is required")).toBeVisible();
+    await saveItemAndWait(gmPage, "update");
+
+    await gmPage.reload();
+
+    await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(0);
+
+    await resetDb();
   });
 
   test("the spell picker supports search, shows at most five options, and hides already linked spells", async ({

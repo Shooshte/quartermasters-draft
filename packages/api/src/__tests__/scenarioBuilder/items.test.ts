@@ -236,23 +236,53 @@ describe("itemsRouter", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("rejects empty spellIds", async () => {
-      const caller = createCaller(gmCtx);
+    it("creates an item with no linked spells", async () => {
+      const created = {
+        id: "d-spell-less",
+        name: "Spell-less Item",
+        meleeDmg: 0,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        dodge: 0,
+        criticalChance: 0,
+        activationManaCost: 0,
+        activationHealthCost: 0,
+      };
+      const itemValues = vi.fn().mockReturnValue(chainable([created]));
+      mockInsertFn.mockReturnValueOnce({ values: itemValues });
+      mockSelect.mockReturnValueOnce(chainable([]));
 
-      await expect(
-        caller.items.create({
-          name: "Spell-less Item",
-          meleeDmg: 0,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          dodge: 0,
-          criticalChance: 0,
-          activationManaCost: 0,
-          activationHealthCost: 0,
-          spellIds: [],
-        }),
-      ).rejects.toThrow("At least one linked spell is required");
+      const caller = createCaller(gmCtx);
+      const result = await caller.items.create({
+        name: "Spell-less Item",
+        meleeDmg: 0,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        dodge: 0,
+        criticalChance: 0,
+        activationManaCost: 0,
+        activationHealthCost: 0,
+        spellIds: [],
+      });
+
+      expect(result).toEqual({
+        ...created,
+        spellIds: [],
+      });
+      expect(mockInsertFn).toHaveBeenCalledTimes(1);
+      expect(itemValues).toHaveBeenCalledWith({
+        name: "Spell-less Item",
+        meleeDmg: 0,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        dodge: 0,
+        criticalChance: 0,
+        activationManaCost: 0,
+        activationHealthCost: 0,
+      });
     });
   });
 
@@ -335,6 +365,46 @@ describe("itemsRouter", () => {
           spellIds: ["00000000-0000-0000-0000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("updates an item with no linked spells", async () => {
+      const updated = {
+        id: "d0000000-0000-0000-0000-000000000002",
+        name: "Oak Staff",
+        meleeDmg: 0,
+        rangedDmg: 0,
+        manaRegen: 3,
+        spellDmg: 12,
+        dodge: 0,
+        criticalChance: 0,
+        activationManaCost: 0,
+        activationHealthCost: 0,
+      };
+      const updateSet = vi.fn().mockReturnValue(chainable([updated]));
+      mockUpdateFn.mockReturnValueOnce({ set: updateSet });
+      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockSelect.mockReturnValueOnce(chainable([]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.items.update({
+        id: updated.id,
+        name: "Oak Staff",
+        meleeDmg: 0,
+        rangedDmg: 0,
+        manaRegen: 3,
+        spellDmg: 12,
+        dodge: 0,
+        criticalChance: 0,
+        activationManaCost: 0,
+        activationHealthCost: 0,
+        spellIds: [],
+      });
+
+      expect(result).toEqual({
+        ...updated,
+        spellIds: [],
+      });
+      expect(mockInsertFn).not.toHaveBeenCalled();
     });
 
     it("maps duplicate names to CONFLICT", async () => {

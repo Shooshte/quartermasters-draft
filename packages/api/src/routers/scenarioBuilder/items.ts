@@ -21,7 +21,7 @@ const itemInputBaseSchema = z.object({
   criticalChance: z.number(),
   activationManaCost: z.number().min(0),
   activationHealthCost: z.number().min(0),
-  spellIds: z.array(z.string().uuid()).min(1, "At least one linked spell is required"),
+  spellIds: z.array(z.string().uuid()),
 });
 
 type NormalizedItemInput = z.infer<typeof itemInputBaseSchema>;
@@ -47,6 +47,10 @@ async function insertItemSpells(
   itemId: string,
   spellIds: string[],
 ) {
+  if (spellIds.length === 0) {
+    return;
+  }
+
   await tx.insert(itemsSpells).values(buildItemSpellRows(itemId, spellIds));
 }
 
@@ -71,16 +75,6 @@ function maybeThrowConflict(error: unknown): never {
     throw new TRPCError({
       code: "CONFLICT",
       message: "An item with this name already exists.",
-    });
-  }
-
-  if (
-    dbError?.code === "23514" &&
-    dbError.constraint === "item_requires_linked_spell"
-  ) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "At least one linked spell is required.",
     });
   }
 

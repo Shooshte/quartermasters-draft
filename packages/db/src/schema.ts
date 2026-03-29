@@ -179,7 +179,7 @@ export const itemsSpells = pgTable(
     unique("items_spells_item_id_spell_id_unique").on(table.itemId, table.spellId),
   ],
 );
-// Migration 0006 adds deferred constraint triggers so every item keeps at least one linked spell.
+// Item-spell links are optional; items can exist without rows in items_spells.
 
 export const units = pgTable("units", {
   id: uuid("id").primaryKey().defaultRandom(),

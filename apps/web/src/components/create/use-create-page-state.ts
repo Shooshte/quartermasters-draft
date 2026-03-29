@@ -39,6 +39,13 @@ import {
   type SpellFormValues,
   type EffectOption,
 } from "./spell-form";
+import {
+  itemRecordToFormValues,
+  normalizeItemFormValues,
+  validateItemForm,
+  type ItemFormValues,
+  type SpellOption,
+} from "./item-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -141,6 +148,52 @@ export interface CreatePageState {
   isEntitySaving: boolean;
   entitySaveError: string | null;
   effectOptions: EffectOption[];
+  spellOptions: SpellOption[];
+}
+
+const WORKSPACE_OPTION_PAGE_SIZE = 100;
+
+interface WorkspaceOptionListPage<TItem> {
+  items: TItem[];
+  totalCount: number;
+}
+
+async function loadAllWorkspaceOptions<TItem>(
+  queryPage: (input: {
+    limit: number;
+    page: number;
+    sortBy: "name";
+    sortDir: "asc";
+  }) => Promise<WorkspaceOptionListPage<TItem>>,
+): Promise<TItem[]> {
+  const firstPage = await queryPage({
+    limit: WORKSPACE_OPTION_PAGE_SIZE,
+    page: 1,
+    sortBy: "name",
+    sortDir: "asc",
+  });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(firstPage.totalCount / WORKSPACE_OPTION_PAGE_SIZE),
+  );
+
+  if (totalPages === 1) {
+    return firstPage.items;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      queryPage({
+        limit: WORKSPACE_OPTION_PAGE_SIZE,
+        page: index + 2,
+        sortBy: "name",
+        sortDir: "asc",
+      }),
+    ),
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
 }
 
 export function useCreatePageState(
@@ -193,9 +246,15 @@ export function useCreatePageState(
 
   // Effect options for spell effect picker
   const effectOptionsQuery = useQuery({
-    queryKey: ["scenarioBuilder", "effects", "list", { limit: 500, page: 1, sortBy: "name", sortDir: "asc" }],
-    queryFn: () => trpc.scenarioBuilder.effects.list.query({ limit: 500, page: 1, sortBy: "name", sortDir: "asc" }),
+    queryKey: ["scenarioBuilder", "effects", "all-options"],
+    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.effects.list.query(input)),
     enabled: entityWorkspace.entityType === "spell",
+  });
+
+  const spellOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "spells", "all-options"],
+    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.spells.list.query(input)),
+    enabled: entityWorkspace.entityType === "item",
   });
 
   // Compute combined loading and enable background after active tab settles
@@ -441,6 +500,70 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
+    } else if (entityWorkspace.entityType === "item") {
+      const itemValues = entityWorkspace.formValues as ItemFormValues;
+      if (Object.keys(validateItemForm(itemValues)).length > 0) return;
+      const normalized = normalizeItemFormValues(itemValues);
+
+      try {
+        setIsEntitySaving(true);
+        setEntitySaveError(null);
+
+        if (entityWorkspace.mode === "create") {
+          const created = await trpc.scenarioBuilder.items.create.mutate(normalized);
+          const createdData = created as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "items", "get", createdData.id], createdData);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "item",
+            entityId: createdData.id,
+            data: createdData,
+            formValues: itemRecordToFormValues(createdData),
+            isDirty: false,
+          });
+          setPerTabSelection((prev) => ({ ...prev, Items: createdData.id }));
+          skipEntityResetRef.current = true;
+          navigate?.({
+            search: (prev: Record<string, unknown>) => {
+              const next = { ...prev };
+              delete next.entity_id;
+              delete next.item_id;
+              next.item_id = createdData.id;
+              return next;
+            },
+            replace: true,
+          });
+        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+          const updated = await trpc.scenarioBuilder.items.update.mutate({
+            id: entityWorkspace.entityId,
+            ...normalized,
+          });
+          const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "items", "get", updatedData.id], updatedData);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "item",
+            entityId: updatedData.id,
+            data: updatedData,
+            formValues: itemRecordToFormValues(updatedData),
+            isDirty: false,
+          });
+        }
+
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items", "list"] }),
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items", "get"] }),
+        ]);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to save item. Please try again.";
+        if (message.includes("already exists")) {
+          setEntitySaveError("An item with this name already exists");
+        } else {
+          setEntitySaveError(message);
+        }
+      } finally {
+        setIsEntitySaving(false);
+      }
     }
   }, [entityWorkspace, navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
 
@@ -461,10 +584,15 @@ export function useCreatePageState(
     saveEntity,
     isEntitySaving,
     entitySaveError,
-    effectOptions: (effectOptionsQuery.data?.items ?? []).map((e: EffectOption) => ({
+    effectOptions: (effectOptionsQuery.data ?? []).map((e: EffectOption) => ({
       id: e.id,
       name: e.name,
       effectType: e.effectType,
+    })),
+    spellOptions: (spellOptionsQuery.data ?? []).map((spell: SpellOption) => ({
+      id: spell.id,
+      name: spell.name,
+      targetPolicy: spell.targetPolicy,
     })),
     listLoading: allLoading,
     listFetching: allFetching,

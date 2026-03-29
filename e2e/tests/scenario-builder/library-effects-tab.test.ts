@@ -5,8 +5,14 @@ import { test, expect } from "../db-reset.fixture";
 test.describe.configure({ mode: "serial" });
 
 const BARBARIAN_ROAR_ID = "a0000000-0000-0000-0000-000000000001";
-const EXHAUST_ID = "a0000000-0000-0000-0000-000000000003";
+const ZODIAC_BURST_ID = "a0000000-0000-0000-0000-000000000021";
 const BASE = "/api/trpc";
+const ITEM_IDS = Array.from({ length: 21 }, (_, i) =>
+  `d0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+);
+const SPELL_IDS = Array.from({ length: 21 }, (_, i) =>
+  `b0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+);
 
 /** Helper to delete an effect via the tRPC mutation API */
 async function deleteEffectViaApi(
@@ -14,6 +20,26 @@ async function deleteEffectViaApi(
   id: string,
 ) {
   return request.post(`${BASE}/scenarioBuilder.effects.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function deleteSpellViaApi(
+  request: import("@playwright/test").APIRequestContext,
+  id: string,
+) {
+  return request.post(`${BASE}/scenarioBuilder.spells.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function deleteItemViaApi(
+  request: import("@playwright/test").APIRequestContext,
+  id: string,
+) {
+  return request.post(`${BASE}/scenarioBuilder.items.delete`, {
     data: { json: { id } },
     headers: { "Content-Type": "application/json" },
   });
@@ -43,7 +69,13 @@ test.describe("Effects Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 21 effects via API
+    for (const id of ITEM_IDS) {
+      await deleteItemViaApi(gmPage.request, id);
+    }
+    for (const id of SPELL_IDS) {
+      await deleteSpellViaApi(gmPage.request, id);
+    }
+
     const effectIds = Array.from({ length: 21 }, (_, i) =>
       `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
     );
@@ -330,11 +362,11 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await resetDb();
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Effects" }).click();
-    await expect(gmPage.getByRole("row", { name: "Exhaust" })).toBeVisible();
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await expect(gmPage.getByRole("row", { name: "Zodiac Burst" })).toBeVisible();
 
-    // Click delete on Exhaust
-    const exhaustRow = gmPage.getByRole("row", { name: "Exhaust" });
-    await exhaustRow.getByRole("button", { name: /Delete/ }).click();
+    const zodiacBurstRow = gmPage.getByRole("row", { name: "Zodiac Burst" });
+    await zodiacBurstRow.getByRole("button", { name: /Delete/ }).click();
 
     // Confirmation dialog
     await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
@@ -342,10 +374,8 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     // Confirm
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
-    // Exhaust gone
-    await expect(gmPage.getByRole("row", { name: "Exhaust" })).not.toBeVisible();
+    await expect(gmPage.getByRole("row", { name: "Zodiac Burst" })).not.toBeVisible();
 
-    // Workspace should remain idle
     await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
   });
 
@@ -354,17 +384,18 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await gmPage.goto("/create");
     await gmPage.getByRole("tab", { name: "Effects" }).click();
 
-    const exhaustRow = gmPage.getByRole("row", { name: "Exhaust" });
-    await exhaustRow.getByRole("button", { name: /Delete/ }).click();
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+
+    const zodiacBurstRow = gmPage.getByRole("row", { name: "Zodiac Burst" });
+    await zodiacBurstRow.getByRole("button", { name: /Delete/ }).click();
 
     await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
     await gmPage.getByRole("button", { name: "Cancel" }).click();
 
-    // Exhaust should still be visible
-    await expect(gmPage.getByRole("row", { name: "Exhaust" })).toBeVisible();
+    await expect(gmPage.getByRole("row", { name: "Zodiac Burst" })).toBeVisible();
   });
 
-  test("delete the currently open effect", async ({ gmPage, resetDb }) => {
+  test("cannot delete an effect that is linked to a spell", async ({ gmPage, resetDb }) => {
     await resetDb();
     await gmPage.goto(`/create?tab=Effects&effect_id=${BARBARIAN_ROAR_ID}`);
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
@@ -376,13 +407,32 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
 
     await gmPage.getByRole("button", { name: "Delete" }).click();
 
-    // Should be gone from list
-    await expect(gmPage.getByRole("row", { name: "Barbarian Roar" })).not.toBeVisible();
+    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
+    await expect(gmPage.getByText("Cannot delete effect while it is linked to one or more spells.")).toBeVisible();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Roar");
+    expect(gmPage.url()).toContain(`effect_id=${BARBARIAN_ROAR_ID}`);
 
-    // Workspace cleared
+    await gmPage.getByRole("button", { name: "Cancel" }).click();
+    await expect(gmPage.getByRole("row", { name: "Barbarian Roar" })).toBeVisible();
+  });
+
+  test("delete the currently open unlinked effect", async ({ gmPage, resetDb }) => {
+    await resetDb();
+    await gmPage.goto("/create");
+    await gmPage.getByRole("tab", { name: "Effects" }).click();
+    await gmPage.getByRole("button", { name: "Next page" }).click();
+
+    const zodiacBurstRow = gmPage.getByRole("row", { name: "Zodiac Burst" });
+    await zodiacBurstRow.getByRole("button", { name: /Edit/ }).click();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Zodiac Burst");
+    await expect(gmPage).toHaveURL(new RegExp(`effect_id=${ZODIAC_BURST_ID}`));
+
+    await zodiacBurstRow.getByRole("button", { name: /Delete/ }).click();
+
+    await gmPage.getByRole("button", { name: "Delete" }).click();
+
+    await expect(gmPage.getByRole("row", { name: "Zodiac Burst" })).not.toBeVisible();
     await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
-
-    // URL should not contain effect_id
     expect(gmPage.url()).not.toContain("effect_id");
   });
 

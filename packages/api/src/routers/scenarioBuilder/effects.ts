@@ -3,7 +3,7 @@ import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, effects } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { listInputSchema } from "./shared";
+import { findDbError, listInputSchema } from "./shared";
 
 const effectListInput = listInputSchema.extend({
   limit: z.number().int().min(1).max(500).default(20),
@@ -62,9 +62,24 @@ function normalizeEffectInput<T extends z.infer<typeof effectInputSchema>>(input
 }
 
 function maybeThrowConflict(error: unknown): never {
-  if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") {
+  const dbError = findDbError(error);
+
+  if (dbError?.code === "23505") {
     throw new TRPCError({ code: "CONFLICT", message: "An effect with this name already exists." });
   }
+  throw error;
+}
+
+function maybeThrowDeleteConflict(error: unknown): never {
+  const dbError = findDbError(error);
+
+  if (dbError?.code === "23503") {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "Cannot delete effect while it is linked to one or more spells.",
+    });
+  }
+
   throw error;
 }
 
@@ -182,13 +197,21 @@ export const effectsRouter = router({
   delete: gmProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ input }) => {
-      const deleted = await db
-        .delete(effects)
-        .where(eq(effects.id, input.id))
-        .returning({ id: effects.id });
-      if (deleted.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
+      try {
+        const deleted = await db
+          .delete(effects)
+          .where(eq(effects.id, input.id))
+          .returning({ id: effects.id });
+        if (deleted.length === 0) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
+        }
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        maybeThrowDeleteConflict(error);
       }
-      return { success: true };
     }),
 });

@@ -346,7 +346,7 @@ describe("spellsRouter", () => {
     it("maps duplicate spell names to CONFLICT", async () => {
       mockInsertFn.mockImplementationOnce(() => ({
         values: vi.fn().mockReturnThis(),
-        returning: vi.fn().mockRejectedValue({ code: "23505" }),
+        returning: vi.fn().mockRejectedValue({ cause: { code: "23505" } }),
       }));
 
       const caller = createCaller(gmCtx);
@@ -602,7 +602,7 @@ describe("spellsRouter", () => {
       mockUpdateFn.mockImplementationOnce(() => ({
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        returning: vi.fn().mockRejectedValue({ code: "23505" }),
+        returning: vi.fn().mockRejectedValue({ cause: { code: "23505" } }),
       }));
 
       const caller = createCaller(gmCtx);
@@ -658,6 +658,21 @@ describe("spellsRouter", () => {
         id: "b0000000-0000-0000-0000-000000000001",
       });
       expect(result).toEqual({ success: true });
+    });
+
+    it("maps linked-item dependency failures to CONFLICT", async () => {
+      mockDeleteFn.mockImplementationOnce(() => ({
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockRejectedValue({ cause: { code: "23514" } }),
+      }));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.spells.delete({ id: "b0000000-0000-0000-0000-000000000001" }),
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "Cannot delete spell while it is linked to one or more items.",
+      });
     });
 
     it("throws NOT_FOUND when spell does not exist", async () => {

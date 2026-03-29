@@ -9,7 +9,7 @@ const mockGetQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
         mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
         mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
-        mockSpellsCreate, mockSpellsUpdate } = vi.hoisted(() => {
+        mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
@@ -34,6 +34,33 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     effectIds: ["eff-1"],
   });
   const mockSpellsGet = vi.fn().mockRejectedValue(new Error("not found"));
+  const mockItemsCreate = vi.fn().mockResolvedValue({
+    id: "i-new",
+    name: "New Item",
+    meleeDmg: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    dodge: 0,
+    criticalChance: 0,
+    activationManaCost: 0,
+    activationHealthCost: 0,
+    spellIds: ["sp-1"],
+  });
+  const mockItemsUpdate = vi.fn().mockResolvedValue({
+    id: "i1",
+    name: "Updated Item",
+    meleeDmg: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    dodge: 0,
+    criticalChance: 0,
+    activationManaCost: 0,
+    activationHealthCost: 0,
+    spellIds: ["sp-1"],
+  });
+  const mockItemsDelete = vi.fn().mockResolvedValue({ success: true });
   const mockItemsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosGet = vi.fn().mockRejectedValue(new Error("not found"));
@@ -43,7 +70,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
     mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
-    mockSpellsCreate, mockSpellsUpdate,
+    mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
   };
 });
 
@@ -64,7 +91,13 @@ vi.mock("~/lib/trpc", () => ({
         update: { mutate: mockSpellsUpdate },
         delete: { mutate: mockSpellsDelete },
       },
-      items: { list: { query: mockItemsList }, get: { query: mockItemsGet } },
+      items: {
+        list: { query: mockItemsList },
+        get: { query: mockItemsGet },
+        create: { mutate: mockItemsCreate },
+        update: { mutate: mockItemsUpdate },
+        delete: { mutate: mockItemsDelete },
+      },
       units: { list: { query: mockUnitsList }, get: { query: mockUnitsGet } },
       scenarios: { list: { query: mockScenariosList }, get: { query: mockScenariosGet }, delete: { mutate: mockScenariosDelete } },
     },
@@ -90,7 +123,7 @@ function resetMocks() {
   vi.clearAllMocks();
   mockEffectsList.mockResolvedValue({ items: [], totalCount: 0 });
   mockSpellsList.mockResolvedValue({ items: [], totalCount: 0 });
-  mockItemsList.mockResolvedValue({ items: [] });
+  mockItemsList.mockResolvedValue({ items: [], totalCount: 0 });
   mockUnitsList.mockResolvedValue({ items: [] });
   mockScenariosList.mockResolvedValue({ items: [], totalCount: 0 });
   mockEffectsGet.mockRejectedValue(new Error("not found"));
@@ -112,6 +145,33 @@ function resetMocks() {
     effectIds: ["eff-1"],
   });
   mockSpellsGet.mockRejectedValue(new Error("not found"));
+  mockItemsCreate.mockResolvedValue({
+    id: "i-new",
+    name: "New Item",
+    meleeDmg: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    dodge: 0,
+    criticalChance: 0,
+    activationManaCost: 0,
+    activationHealthCost: 0,
+    spellIds: ["sp-1"],
+  });
+  mockItemsUpdate.mockResolvedValue({
+    id: "i1",
+    name: "Updated Item",
+    meleeDmg: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    dodge: 0,
+    criticalChance: 0,
+    activationManaCost: 0,
+    activationHealthCost: 0,
+    spellIds: ["sp-1"],
+  });
+  mockItemsDelete.mockResolvedValue({ success: true });
   mockItemsGet.mockRejectedValue(new Error("not found"));
   mockUnitsGet.mockRejectedValue(new Error("not found"));
   mockScenariosGet.mockRejectedValue(new Error("not found"));
@@ -411,6 +471,72 @@ describe("useCreatePageState — loading state", () => {
 describe("useCreatePageState — race condition protection", () => {
   beforeEach(() => {
     resetMocks();
+  });
+
+  it("keeps the previous entity type and form while a cross-type record load is in flight", async () => {
+    let resolveSpell!: (value: Record<string, unknown>) => void;
+
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Barbarian Roar",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+    mockSpellsGet.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolveSpell = resolve;
+      }),
+    );
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Effects", "e1");
+    });
+
+    act(() => {
+      result.current.selectRecord("Spells", "s1");
+    });
+
+    expect(result.current.entityWorkspace.mode).toBe("loading");
+    expect(result.current.entityWorkspace.entityType).toBe("effect");
+    expect(result.current.entityWorkspace.entityId).toBe("s1");
+    expect(result.current.entityWorkspace.data).toEqual({
+      id: "e1",
+      name: "Barbarian Roar",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+    expect(result.current.entityWorkspace.formValues).toMatchObject({
+      name: "Barbarian Roar",
+      timingType: "instant",
+      effectType: "buff",
+    });
+
+    await act(async () => {
+      resolveSpell({
+        id: "s1",
+        name: "Fireball",
+        description: null,
+        targetPolicy: "random",
+        effectIds: ["eff-1"],
+      });
+    });
+
+    expect(result.current.entityWorkspace.mode).toBe("edit");
+    expect(result.current.entityWorkspace.entityType).toBe("spell");
+    expect(result.current.entityWorkspace.formValues).toMatchObject({
+      name: "Fireball",
+      targetPolicy: "random",
+      effectIds: ["eff-1"],
+    });
   });
 
   it("discards stale entity response when a newer selection is made", async () => {
@@ -1045,6 +1171,278 @@ describe("useCreatePageState — spell save flows", () => {
   });
 });
 
+describe("useCreatePageState — item save flows", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("successful create switches to edit mode and syncs item_id", async () => {
+    let currentSearch: { tab?: string; item_id?: string } = { tab: "Items" };
+    let rerenderHook!: (props: { search: { tab?: string; item_id?: string } }) => void;
+    const navigate = vi.fn(({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
+      currentSearch = search(currentSearch) as typeof currentSearch;
+      rerenderHook({ search: currentSearch });
+    });
+
+    mockItemsCreate.mockResolvedValueOnce({
+      id: "i-created",
+      name: "Bronze Buckler",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; item_id?: string } }) => useCreatePageState(props.search, navigate),
+      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
+    );
+    rerenderHook = rerender;
+
+    act(() => {
+      result.current.createNew("Items");
+      result.current.updateEntityField("name", "Bronze Buckler");
+      result.current.updateEntityField("meleeDmg", "12.5");
+      result.current.updateEntityField("spellIds", ["sp-1"]);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockItemsCreate).toHaveBeenCalledWith({
+      name: "Bronze Buckler",
+      meleeDmg: 12.5,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+    expect(result.current.entityWorkspace.mode).toBe("edit");
+    expect(result.current.entityWorkspace.entityId).toBe("i-created");
+    expect(currentSearch.item_id).toBe("i-created");
+  });
+
+  it("successful update clears dirty state", async () => {
+    mockItemsGet.mockResolvedValueOnce({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 12,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+    mockItemsUpdate.mockResolvedValueOnce({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 20,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Items", "i1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("spellDmg", "20");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockItemsUpdate).toHaveBeenCalledWith({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 20,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+    expect(result.current.entityWorkspace.isDirty).toBe(false);
+  });
+
+  it("does not attempt to save an item without linked spells", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+      result.current.updateEntityField("name", "Spell-less Relic");
+      result.current.updateEntityField("spellIds", []);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockItemsCreate).not.toHaveBeenCalled();
+    expect(mockItemsUpdate).not.toHaveBeenCalled();
+  });
+
+  it("marks a new item workspace dirty after the user changes create-form values", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+      result.current.updateEntityField("name", "Bronze Buckler");
+      result.current.updateEntityField("spellIds", ["sp-1"]);
+    });
+
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+  });
+
+  it("treats linked spell ids as an unordered set for dirty checks", async () => {
+    mockItemsGet.mockResolvedValueOnce({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 12,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1", "sp-2"],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Items", "i1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("spellIds", ["sp-2", "sp-1"]);
+    });
+
+    expect(result.current.entityWorkspace.isDirty).toBe(false);
+  });
+
+  it("loads spell options across multiple list pages for the item workspace", async () => {
+    mockSpellsList.mockImplementation(({ page, limit }: { page: number; limit: number }) => {
+      if (page === 1) {
+        return Promise.resolve({
+          items: Array.from({ length: limit }, (_, index) => ({
+            id: `sp-${index + 1}`,
+            name: `Spell ${index + 1}`,
+            targetPolicy: "random",
+          })),
+          totalCount: limit + 1,
+        });
+      }
+
+      return Promise.resolve({
+        items: [{ id: "sp-101", name: "Spell 101", targetPolicy: "random" }],
+        totalCount: limit + 1,
+      });
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+    });
+
+    await waitFor(() => {
+      expect(result.current.spellOptions).toHaveLength(101);
+    });
+
+    expect(mockSpellsList).toHaveBeenNthCalledWith(1, {
+      limit: 100,
+      page: 1,
+      sortBy: "name",
+      sortDir: "asc",
+    });
+    expect(mockSpellsList).toHaveBeenNthCalledWith(2, {
+      limit: 100,
+      page: 2,
+      sortBy: "name",
+      sortDir: "asc",
+    });
+  });
+
+  it("maps duplicate item names to a user-facing error", async () => {
+    mockItemsGet.mockResolvedValueOnce({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 12,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+    mockItemsUpdate.mockRejectedValueOnce(new Error("An item with this name already exists."));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Items", "i1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("name", "Iron Sword");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(result.current.entitySaveError).toBe("An item with this name already exists");
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+  });
+});
+
 describe("useCreatePageState — delete scenario", () => {
   beforeEach(() => {
     resetMocks();
@@ -1325,6 +1723,31 @@ describe("useCreatePageState — delete spell", () => {
     expect(result.current.deleteSpellTarget).toEqual({ id: "sp1", name: "Fireball" });
   });
 
+  it("surfaces linked-item dependency errors without closing the dialog", async () => {
+    mockSpellsDelete.mockRejectedValueOnce({
+      data: { code: "CONFLICT" },
+      shape: { data: { code: "CONFLICT" } },
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteSpell();
+    });
+
+    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
+    expect(result.current.deleteSpellError).toBe(
+      "Cannot delete spell while it is linked to one or more items.",
+    );
+  });
+
   it("deleteError is cleared when cancel is called", async () => {
     mockSpellsDelete.mockRejectedValueOnce(new Error("Network error"));
 
@@ -1378,5 +1801,36 @@ describe("useCreatePageState — delete spell", () => {
 
     expect(result.current.entityWorkspace.mode).toBe("idle");
     expect(result.current.entityWorkspace.entityId).toBeNull();
+  });
+});
+
+describe("useCreatePageState — delete effect", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("surfaces linked-spell dependency errors without closing the dialog", async () => {
+    mockEffectsDelete.mockRejectedValueOnce({
+      data: { code: "CONFLICT" },
+      shape: { data: { code: "CONFLICT" } },
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.requestDeleteEffect("eff1", "Barbarian Roar");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteEffect();
+    });
+
+    expect(result.current.isDeleteEffectDialogOpen).toBe(true);
+    expect(result.current.deleteEffectError).toBe(
+      "Cannot delete effect while it is linked to one or more spells.",
+    );
   });
 });

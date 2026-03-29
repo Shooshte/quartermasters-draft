@@ -35,6 +35,27 @@ export function useDeleteEffectDialog({
     setIsDeleteEffectDialogOpen(true);
   }, []);
 
+  const isLinkedSpellConflict = (error: unknown) => {
+    if (error instanceof Error && error.message.includes("Cannot delete effect while it is linked")) {
+      return true;
+    }
+
+    if (typeof error !== "object" || error === null) {
+      return false;
+    }
+
+    const maybeTrpcError = error as {
+      data?: { code?: string };
+      shape?: { message?: string; data?: { code?: string } };
+    };
+
+    return (
+      maybeTrpcError.data?.code === "CONFLICT" ||
+      maybeTrpcError.shape?.data?.code === "CONFLICT" ||
+      maybeTrpcError.shape?.message?.includes("Cannot delete effect while it is linked") === true
+    );
+  };
+
   const confirmDeleteEffect = useCallback(async () => {
     if (!deleteEffectTarget) return;
     try {
@@ -67,8 +88,12 @@ export function useDeleteEffectDialog({
 
       setDeleteEffectTarget(null);
       setIsDeleteEffectDialogOpen(false);
-    } catch {
-      setDeleteEffectError("Failed to delete effect. Please try again.");
+    } catch (error) {
+      if (isLinkedSpellConflict(error)) {
+        setDeleteEffectError("Cannot delete effect while it is linked to one or more spells.");
+      } else {
+        setDeleteEffectError("Failed to delete effect. Please try again.");
+      }
     }
   }, [deleteEffectTarget, entityWorkspace.entityId, navigate, queryClient, effectTotalCount, effectPage, setEntityWorkspace, setPerTabSelection, skipEntityResetRef, setEffectPage]);
 

@@ -15,6 +15,12 @@ import {
 } from "../types";
 import { createDefaultEffectFormValues, effectRecordToFormValues } from "../effect-form";
 import { createDefaultSpellFormValues, spellRecordToFormValues } from "../spell-form";
+import {
+  createDefaultItemFormValues,
+  isItemFormDirty,
+  itemRecordToFormValues,
+  type ItemFormValues,
+} from "../item-form";
 
 interface UseWorkspaceLoaderOptions {
   search: {
@@ -34,7 +40,12 @@ interface UseWorkspaceLoaderOptions {
 function computeIsDirty(
   formValues: WorkspaceState["formValues"],
   originalData: WorkspaceState["data"],
+  entityType: WorkspaceState["entityType"],
 ): boolean {
+  if (entityType === "item") {
+    return isItemFormDirty(formValues as ItemFormValues, originalData as Record<string, unknown> | null);
+  }
+
   const normalise = (value: unknown) => (value === null || value === undefined ? "" : value);
 
   return Object.keys(formValues).some((key) => {
@@ -122,6 +133,8 @@ export function useWorkspaceLoader({
           ? effectRecordToFormValues(entityData)
           : found.type === "spell"
             ? spellRecordToFormValues(entityData)
+            : found.type === "item"
+              ? itemRecordToFormValues(entityData)
             : { name: entityData.name },
         isDirty: false,
       });
@@ -295,7 +308,7 @@ export function useWorkspaceLoader({
         entityType: "item",
         entityId: search.item_id,
         data: entityData,
-        formValues: { name: entityData.name },
+        formValues: itemRecordToFormValues(entityData),
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Items: search.item_id! }));
@@ -425,32 +438,38 @@ export function useWorkspaceLoader({
   const loadEntity = useCallback(
     async (tab: TabName, id: string) => {
       if (!isEntityTab(tab)) return;
-      const entityType = TAB_TO_ENTITY_TYPE[tab];
+      const requestedEntityType = TAB_TO_ENTITY_TYPE[tab];
       const routerKey = TAB_TO_ROUTER_KEY[tab];
       pendingEntityIdRef.current = id;
-      setEntityWorkspace(prev => ({
-        ...prev,
-        mode: "loading",
-        entityType,
-        entityId: id,
-        isDirty: false,
-      }));
+      setEntityWorkspace(prev => {
+        const keepPreviousRenderedShape = prev.data !== null && prev.entityType !== null;
+
+        return {
+          ...prev,
+          mode: "loading",
+          entityType: keepPreviousRenderedShape ? prev.entityType : requestedEntityType,
+          entityId: id,
+          isDirty: false,
+        };
+      });
       try {
         const data = await trpc.scenarioBuilder[routerKey].get.query({ id });
         if (pendingEntityIdRef.current !== id) return;
         const entityData = data as { name: string; [key: string]: unknown };
         setEntityWorkspace({
           mode: "edit",
-          entityType,
+          entityType: requestedEntityType,
           entityId: id,
-        data: entityData,
-        formValues: entityType === "effect"
-          ? effectRecordToFormValues(entityData)
-          : entityType === "spell"
-            ? spellRecordToFormValues(entityData)
-              : { name: entityData.name },
-        isDirty: false,
-      });
+          data: entityData,
+          formValues: requestedEntityType === "effect"
+            ? effectRecordToFormValues(entityData)
+            : requestedEntityType === "spell"
+              ? spellRecordToFormValues(entityData)
+              : requestedEntityType === "item"
+                ? itemRecordToFormValues(entityData)
+                : { name: entityData.name },
+          isDirty: false,
+        });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
         const urlParam = tab === "Effects" ? "effect_id" : tab === "Spells" ? "spell_id" : tab === "Items" ? "item_id" : tab === "Units" ? "unit_id" : "entity_id";
 
@@ -486,7 +505,7 @@ export function useWorkspaceLoader({
         if (pendingEntityIdRef.current !== id) return;
         setEntityWorkspace({
           mode: "not-found",
-          entityType: entityType,
+          entityType: requestedEntityType,
           entityId: id,
           data: null,
           formValues: {},
@@ -575,6 +594,8 @@ export function useWorkspaceLoader({
               ? createDefaultEffectFormValues()
               : entityType === "spell"
                 ? createDefaultSpellFormValues()
+                : entityType === "item"
+                  ? createDefaultItemFormValues()
                 : { name: "" },
             isDirty: false,
           });
@@ -598,7 +619,7 @@ export function useWorkspaceLoader({
   const updateEntityField = useCallback((field: string, value: unknown) => {
     setEntityWorkspace((prev) => {
       const newFormValues = { ...prev.formValues, [field]: value };
-      const isDirty = computeIsDirty(newFormValues, prev.data);
+      const isDirty = computeIsDirty(newFormValues, prev.data, prev.entityType);
       return { ...prev, formValues: newFormValues, isDirty };
     });
   }, []);
@@ -606,7 +627,7 @@ export function useWorkspaceLoader({
   const updateScenarioField = useCallback((field: string, value: unknown) => {
     setScenarioWorkspace((prev) => {
       const newFormValues = { ...prev.formValues, [field]: value };
-      const isDirty = computeIsDirty(newFormValues, prev.data);
+      const isDirty = computeIsDirty(newFormValues, prev.data, prev.entityType);
       return { ...prev, formValues: newFormValues, isDirty };
     });
   }, []);

@@ -191,27 +191,36 @@ Feature: Scenario builder effects library tab
 
   Rule: An individual effect can be deleted from the list
 
-    Scenario: Delete an effect that is not currently open
-      Given the seed effect "Exhaust" exists with id "a0000000-0000-0000-0000-000000000003"
+    Scenario: Delete an unlinked effect that is not currently open
+      Given the seed effect "Zodiac Burst" exists with id "a0000000-0000-0000-0000-000000000021"
       And no effect is loaded in the effect workspace
-      When I delete the effect "Exhaust"
+      When I delete the effect "Zodiac Burst"
       Then I should be asked to confirm the deletion
       When I confirm the deletion
-      Then the effect "Exhaust" should no longer appear in the list
+      Then the effect "Zodiac Burst" should no longer appear in the list
       And the effect workspace should remain empty
 
     Scenario: Cancel deletion of an effect
-      Given the seed effect "Exhaust" exists with id "a0000000-0000-0000-0000-000000000003"
-      When I delete the effect "Exhaust"
+      Given the seed effect "Zodiac Burst" exists with id "a0000000-0000-0000-0000-000000000021"
+      When I delete the effect "Zodiac Burst"
       And I cancel the deletion
-      Then the effect "Exhaust" should still appear in the list
+      Then the effect "Zodiac Burst" should still appear in the list
 
-    Scenario: Delete the currently open effect
+    Scenario: Cannot delete an effect that is linked to a spell
       Given the seed effect "Barbarian Roar" exists with id "a0000000-0000-0000-0000-000000000001"
       And I have loaded the effect "Barbarian Roar" in the effect workspace
       When I delete the effect "Barbarian Roar"
       And I confirm the deletion
-      Then the effect "Barbarian Roar" should no longer appear in the list
+      Then I should see an effect dependency delete error
+      And the effect "Barbarian Roar" should still appear in the list
+      And the effect workspace should remain loaded
+
+    Scenario: Delete the currently open unlinked effect
+      Given the seed effect "Zodiac Burst" exists with id "a0000000-0000-0000-0000-000000000021"
+      And I have loaded the effect "Zodiac Burst" in the effect workspace
+      When I delete the effect "Zodiac Burst"
+      And I confirm the deletion
+      Then the effect "Zodiac Burst" should no longer appear in the list
       And the effect workspace should be cleared
       And the URL should not contain "effect_id"
 

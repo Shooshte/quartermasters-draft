@@ -136,7 +136,7 @@ export const spellsEffects = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
-    effectTemplateId: uuid("effect_template_id").notNull().references(() => effects.id, { onDelete: "cascade" }),
+    effectTemplateId: uuid("effect_template_id").notNull().references(() => effects.id),
     sequenceOrder: integer("sequence_order").notNull(),
   },
   (table) => [
@@ -161,14 +161,17 @@ export const items = pgTable("items", {
   activationHealthCost: real("activation_health_cost").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => [
+  check("items_activation_mana_cost_nonnegative", sql`${table.activationManaCost} >= 0`),
+  check("items_activation_health_cost_nonnegative", sql`${table.activationHealthCost} >= 0`),
+]);
 
 export const itemsSpells = pgTable(
   "items_spells",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     itemId: uuid("item_id").notNull().references(() => items.id, { onDelete: "cascade" }),
-    spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
+    spellId: uuid("spell_id").notNull().references(() => spells.id),
   },
   (table) => [
     index("items_spells_item_id_idx").on(table.itemId),
@@ -176,6 +179,7 @@ export const itemsSpells = pgTable(
     unique("items_spells_item_id_spell_id_unique").on(table.itemId, table.spellId),
   ],
 );
+// Migration 0006 adds deferred constraint triggers so every item keeps at least one linked spell.
 
 export const units = pgTable("units", {
   id: uuid("id").primaryKey().defaultRandom(),

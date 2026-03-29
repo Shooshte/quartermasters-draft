@@ -189,27 +189,36 @@ Feature: Scenario builder spells library tab
 
   Rule: An individual spell can be deleted from the list
 
-    Scenario: Delete a spell that is not currently open
-      Given the seed spell "Battle Cry" exists with id "b0000000-0000-0000-0000-000000000002"
+    Scenario: Delete an unlinked spell that is not currently open
+      Given the seed spell "Zenith Bloom" exists with id "b0000000-0000-0000-0000-000000000021"
       And no spell is loaded in the spell workspace
-      When I delete the spell "Battle Cry"
+      When I delete the spell "Zenith Bloom"
       Then I should be asked to confirm the deletion
       When I confirm the deletion
-      Then the spell "Battle Cry" should no longer appear in the list
+      Then the spell "Zenith Bloom" should no longer appear in the list
       And the spell workspace should remain empty
 
     Scenario: Cancel deletion of a spell
-      Given the seed spell "Battle Cry" exists with id "b0000000-0000-0000-0000-000000000002"
-      When I delete the spell "Battle Cry"
+      Given the seed spell "Zenith Bloom" exists with id "b0000000-0000-0000-0000-000000000021"
+      When I delete the spell "Zenith Bloom"
       And I cancel the deletion
-      Then the spell "Battle Cry" should still appear in the list
+      Then the spell "Zenith Bloom" should still appear in the list
 
-    Scenario: Delete the currently open spell
+    Scenario: Cannot delete a spell that is linked to an item
       Given the seed spell "Fireball" exists with id "b0000000-0000-0000-0000-000000000001"
       And I have loaded the spell "Fireball" in the spell workspace
       When I delete the spell "Fireball"
       And I confirm the deletion
-      Then the spell "Fireball" should no longer appear in the list
+      Then I should see a spell dependency delete error
+      And the spell "Fireball" should still appear in the list
+      And the spell workspace should remain loaded
+
+    Scenario: Delete the currently open unlinked spell
+      Given the seed spell "Zenith Bloom" exists with id "b0000000-0000-0000-0000-000000000021"
+      And I have loaded the spell "Zenith Bloom" in the spell workspace
+      When I delete the spell "Zenith Bloom"
+      And I confirm the deletion
+      Then the spell "Zenith Bloom" should no longer appear in the list
       And the spell workspace should be cleared
       And the URL should not contain "spell_id"
 

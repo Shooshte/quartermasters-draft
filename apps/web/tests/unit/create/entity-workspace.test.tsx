@@ -104,6 +104,31 @@ describe("EntityWorkspace", () => {
     expect(form.className).not.toContain("duration-200");
   });
 
+  it("does not crash if a loading transition briefly carries a mismatched spell form shape", () => {
+    expect(() =>
+      render(
+        <EntityWorkspace
+          workspace={makeWorkspace({
+            mode: "loading",
+            entityType: "spell",
+            data: { name: "Barbarian Roar" },
+            formValues: {
+              name: "Barbarian Roar",
+              timingType: "instant",
+              effectType: "buff",
+              intervalMs: null,
+              triggerCount: null,
+            },
+          })}
+          {...defaultProps}
+        />,
+      ),
+    ).not.toThrow();
+
+    expect(screen.getByTestId("entity-form")).toBeInTheDocument();
+    expect(screen.getByTestId("entity-name-input")).toHaveValue("Barbarian Roar");
+  });
+
   it("calls onFieldChange when name is modified", async () => {
     const onFieldChange = vi.fn();
     render(
@@ -150,6 +175,36 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("effect-intervalMs-input")).toBeDisabled();
     expect(screen.getByTestId("effect-triggerCount-input")).toBeDisabled();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
+  });
+
+  it("renders the item editor with spell picker and stat inputs", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "item",
+          formValues: {
+            name: "",
+            meleeDmg: "0",
+            rangedDmg: "0",
+            manaRegen: "0",
+            spellDmg: "0",
+            dodge: "0",
+            criticalChance: "0",
+            activationManaCost: "0",
+            activationHealthCost: "0",
+            spellIds: [],
+          },
+        })}
+        spellOptions={[{ id: "sp-1", name: "Fireball" }]}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByText("New Item")).toBeInTheDocument();
+    expect(screen.getByTestId("item-spell-picker")).toBeInTheDocument();
+    expect(screen.getByTestId("item-meleeDmg-input")).toBeInTheDocument();
+    expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Item");
   });
 
   it("forwards chip background clicks to the native select picker", async () => {

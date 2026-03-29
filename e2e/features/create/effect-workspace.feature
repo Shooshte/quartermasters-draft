@@ -35,3 +35,13 @@ Feature: Effect workspace CRUD
     Given I have loaded the effect "Barbarian Roar" in the effect workspace
     When I rename the effect to "Exhaust"
     Then I should see a duplicate-name save error
+
+  Scenario: Cannot delete an effect that is linked to a spell
+    Given effect "Barbarian Roar" is linked to at least one spell
+    When I try to delete the effect "Barbarian Roar"
+    Then I should see a linked-spell dependency delete error
+
+  Scenario: Deleting an unlinked effect still succeeds
+    Given effect "Zodiac Burst" is not linked to any spells
+    When I delete the effect "Zodiac Burst"
+    Then the effect should be removed from the library

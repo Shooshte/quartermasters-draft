@@ -50,7 +50,7 @@ describe("item-form", () => {
     });
   });
 
-  it("validates activation costs and linked spell requirements", () => {
+  it("validates activation costs without requiring linked spells", () => {
     expect(
       validateItemForm({
         name: "Broken Relay",
@@ -67,8 +67,24 @@ describe("item-form", () => {
     ).toMatchObject({
       activationManaCost: "Must be zero or greater",
       activationHealthCost: "Must be zero or greater",
-      spellIds: "At least one linked spell is required",
     });
+  });
+
+  it("allows empty linked spell ids when the rest of the form is valid", () => {
+    expect(
+      validateItemForm({
+        name: "Spell-less Relic",
+        meleeDmg: "0",
+        rangedDmg: "0",
+        manaRegen: "0",
+        spellDmg: "0",
+        dodge: "0",
+        criticalChance: "0",
+        activationManaCost: "0",
+        activationHealthCost: "0",
+        spellIds: [],
+      }),
+    ).toEqual({});
   });
 
   it("treats linked spells as an unordered set and numeric strings by parsed value for dirty checks", () => {

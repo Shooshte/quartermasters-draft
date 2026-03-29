@@ -1293,7 +1293,21 @@ describe("useCreatePageState — item save flows", () => {
     expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
 
-  it("does not attempt to save an item without linked spells", async () => {
+  it("saves a new item without linked spells", async () => {
+    mockItemsCreate.mockResolvedValueOnce({
+      id: "i-spell-less",
+      name: "Spell-less Relic",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: [],
+    });
+
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Items" }, vi.fn()),
       { wrapper: createWrapper() },
@@ -1309,8 +1323,79 @@ describe("useCreatePageState — item save flows", () => {
       await result.current.saveEntity();
     });
 
-    expect(mockItemsCreate).not.toHaveBeenCalled();
+    expect(mockItemsCreate).toHaveBeenCalledWith({
+      name: "Spell-less Relic",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: [],
+    });
     expect(mockItemsUpdate).not.toHaveBeenCalled();
+  });
+
+  it("updates an existing item to remove its final linked spell", async () => {
+    mockItemsGet.mockResolvedValueOnce({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 12,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1"],
+    });
+    mockItemsUpdate.mockResolvedValueOnce({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 12,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: [],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Items", "i1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("spellIds", []);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockItemsUpdate).toHaveBeenCalledWith({
+      id: "i1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 3,
+      spellDmg: 12,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: [],
+    });
   });
 
   it("marks a new item workspace dirty after the user changes create-form values", async () => {

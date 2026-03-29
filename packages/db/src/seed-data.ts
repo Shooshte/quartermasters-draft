@@ -885,11 +885,6 @@ export const itemsSpellsSeedData: (typeof itemsSpells.$inferInsert)[] = [
     itemId: "d0000000-0000-0000-0000-000000000020", // Yew Longbow
     spellId: "b0000000-0000-0000-0000-000000000020", // Rune Cascade
   },
-  {
-    id: "e0000000-0000-0000-0000-000000000021",
-    itemId: "d0000000-0000-0000-0000-000000000021", // Zircon Crown
-    spellId: "b0000000-0000-0000-0000-000000000002", // Battle Cry
-  },
 ];
 
 export const unitSeedData: (typeof units.$inferInsert)[] = [

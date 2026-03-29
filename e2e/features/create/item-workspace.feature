@@ -13,7 +13,6 @@ Feature: Item workspace create and edit
 
   Scenario: Create a new item with default stats
     When I create a new item named "Bronze Buckler"
-    And I link spell "Fireball" to the item
     Then the item workspace should save the item in edit mode
     And the URL should contain the created "item_id"
 
@@ -23,7 +22,6 @@ Feature: Item workspace create and edit
 
   Scenario: Stat fields default to zero
     When I create a new item named "Empty Hilt"
-    And I link spell "Fireball" to the item
     Then reloading the item by URL should show all stat fields as 0
 
   Scenario: Create an item with combat stats
@@ -32,35 +30,30 @@ Feature: Item workspace create and edit
       | rangedDmg      | 0  |
       | spellDmg       | 5  |
       | criticalChance | 12 |
-    And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved stat values
 
   Scenario: Create an item with utility stats
     When I create a new item named "Shade Charm" with the following stats:
       | manaRegen | 4.5 |
       | dodge     | 6   |
-    And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved stat values
 
   Scenario: Create an item with activation costs
     When I create a new item named "Mana Gauntlet" with the following stats:
       | activationManaCost   | 8 |
       | activationHealthCost | 3 |
-    And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved stat values
 
   Scenario: Stat fields accept decimal values
     When I create a new item named "Precise Blade" with the following stats:
       | meleeDmg       | 12.5 |
       | criticalChance | 7.25 |
-    And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved decimal values
 
   Scenario: Stat fields accept negative values
     When I create a new item named "Cursed Sigil" with the following stats:
       | spellDmg | -3.5 |
       | dodge    | -1   |
-    And I link spell "Fireball" to the item
     Then reloading the item by URL should show the saved negative stat values
 
   Scenario: Edit an existing item
@@ -78,15 +71,15 @@ Feature: Item workspace create and edit
     When I rename the item to "Iron Sword"
     Then I should see a duplicate-name save error
 
-  Scenario: At least one linked spell is required on create
-    When I start creating a new item without linking any spells
-    Then saving should remain blocked
+  Scenario: Linked spells are optional on create
+    When I create a new item named "Spell-less Relic" without linking any spells
+    Then the item workspace should save the item in edit mode
+    And reloading the item by URL should show no linked spells
 
   Scenario: Activation costs cannot be negative
     When I start creating a new item named "Broken Relay" with the following stats:
       | activationManaCost   | -1 |
       | activationHealthCost | -2 |
-    And I link spell "Fireball" to the item
     Then saving should remain blocked
 
   Scenario: Add a spell to an item
@@ -110,10 +103,11 @@ Feature: Item workspace create and edit
     And I save the item
     Then reloading the item by URL should show only spell "Healing Touch" linked
 
-  Scenario: At least one linked spell is required on edit
+  Scenario: Removing the final linked spell is allowed on edit
     Given I have loaded the item "Oak Staff" in the item workspace
     When I remove the linked spell "Fireball"
-    Then saving should remain blocked
+    And I save the item
+    Then reloading the item by URL should show no linked spells
 
   Scenario: Edit linked spells on an existing item
     Given I have loaded the item "Oak Staff" in the item workspace

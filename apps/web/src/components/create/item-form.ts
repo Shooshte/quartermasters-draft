@@ -174,10 +174,6 @@ export function validateItemForm(values: ItemFormValues): ItemFieldErrors {
     errors.activationHealthCost = "Must be zero or greater";
   }
 
-  if (normalized.spellIds.length === 0) {
-    errors.spellIds = "At least one linked spell is required";
-  }
-
   return errors;
 }
 

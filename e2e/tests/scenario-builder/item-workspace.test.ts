@@ -158,7 +158,8 @@ test.describe("Item Workspace", () => {
     await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(2);
   });
 
-  test("removing the final linked spell persists after save", async ({ gmPage }) => {
+  test("removing the final linked spell persists after save", async ({ gmPage, resetDb }) => {
+    await resetDb();
     await gmPage.goto(`/create?tab=Items&item_id=${OAK_STAFF_ID}`);
 
     await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Fireball");
@@ -170,6 +171,8 @@ test.describe("Item Workspace", () => {
     await gmPage.reload();
 
     await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(0);
+
+    await resetDb();
   });
 
   test("the spell picker supports search, shows at most five options, and hides already linked spells", async ({

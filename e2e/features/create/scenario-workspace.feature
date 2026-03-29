@@ -50,6 +50,7 @@ Feature: Scenario workspace create and edit
     Scenario: Edit an existing scenario name
       Given I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I update the scenario name to "Ambush at Dusk"
+      And I save the scenario
       Then reloading the scenario by URL should show "Ambush at Dusk"
 
     Scenario: Edit row assignments on an existing scenario
@@ -91,6 +92,7 @@ Feature: Scenario workspace create and edit
       When I remove the unit at slot 1 from the "support" row
       And I save the scenario
       Then reloading the scenario by URL should show the "support" row empty
+      And reloading the scenario by URL should show the "tank" row empty
       And reloading the scenario by URL should show unit "Barbarian" in the "melee" row at slot 1
       And reloading the scenario by URL should show unit "Mage" in the "ranged" row at slot 1
 

@@ -21,6 +21,12 @@ import {
   itemRecordToFormValues,
   type ItemFormValues,
 } from "../item-form";
+import {
+  createDefaultUnitFormValues,
+  isUnitFormDirty,
+  unitRecordToFormValues,
+  type UnitFormValues,
+} from "../unit-form";
 
 interface UseWorkspaceLoaderOptions {
   search: {
@@ -44,6 +50,9 @@ function computeIsDirty(
 ): boolean {
   if (entityType === "item") {
     return isItemFormDirty(formValues as ItemFormValues, originalData as Record<string, unknown> | null);
+  }
+  if (entityType === "unit") {
+    return isUnitFormDirty(formValues as UnitFormValues, originalData as Record<string, unknown> | null);
   }
 
   const normalise = (value: unknown) => (value === null || value === undefined ? "" : value);
@@ -135,6 +144,8 @@ export function useWorkspaceLoader({
             ? spellRecordToFormValues(entityData)
             : found.type === "item"
               ? itemRecordToFormValues(entityData)
+            : found.type === "unit"
+              ? unitRecordToFormValues(entityData)
             : { name: entityData.name },
         isDirty: false,
       });
@@ -363,7 +374,7 @@ export function useWorkspaceLoader({
         entityType: "unit",
         entityId: search.unit_id,
         data: entityData,
-        formValues: { name: entityData.name },
+        formValues: unitRecordToFormValues(entityData),
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Units: search.unit_id! }));
@@ -461,12 +472,14 @@ export function useWorkspaceLoader({
           entityType: requestedEntityType,
           entityId: id,
           data: entityData,
-          formValues: requestedEntityType === "effect"
-            ? effectRecordToFormValues(entityData)
-            : requestedEntityType === "spell"
-              ? spellRecordToFormValues(entityData)
-              : requestedEntityType === "item"
-                ? itemRecordToFormValues(entityData)
+        formValues: requestedEntityType === "effect"
+          ? effectRecordToFormValues(entityData)
+          : requestedEntityType === "spell"
+            ? spellRecordToFormValues(entityData)
+            : requestedEntityType === "item"
+              ? itemRecordToFormValues(entityData)
+              : requestedEntityType === "unit"
+                ? unitRecordToFormValues(entityData)
                 : { name: entityData.name },
           isDirty: false,
         });
@@ -591,11 +604,13 @@ export function useWorkspaceLoader({
             entityId: null,
             data: null,
             formValues: entityType === "effect"
-              ? createDefaultEffectFormValues()
-              : entityType === "spell"
-                ? createDefaultSpellFormValues()
-                : entityType === "item"
-                  ? createDefaultItemFormValues()
+            ? createDefaultEffectFormValues()
+            : entityType === "spell"
+              ? createDefaultSpellFormValues()
+              : entityType === "item"
+                ? createDefaultItemFormValues()
+                : entityType === "unit"
+                  ? createDefaultUnitFormValues()
                 : { name: "" },
             isDirty: false,
           });

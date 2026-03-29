@@ -46,6 +46,13 @@ import {
   type ItemFormValues,
   type SpellOption,
 } from "./item-form";
+import {
+  normalizeUnitFormValues,
+  unitRecordToFormValues,
+  validateUnitForm,
+  type ItemOption,
+  type UnitFormValues,
+} from "./unit-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -149,6 +156,7 @@ export interface CreatePageState {
   entitySaveError: string | null;
   effectOptions: EffectOption[];
   spellOptions: SpellOption[];
+  itemOptions: ItemOption[];
 }
 
 const WORKSPACE_OPTION_PAGE_SIZE = 100;
@@ -255,6 +263,12 @@ export function useCreatePageState(
     queryKey: ["scenarioBuilder", "spells", "all-options"],
     queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.spells.list.query(input)),
     enabled: entityWorkspace.entityType === "item",
+  });
+
+  const itemOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "items", "all-options"],
+    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.items.list.query(input)),
+    enabled: entityWorkspace.entityType === "unit",
   });
 
   // Compute combined loading and enable background after active tab settles
@@ -564,6 +578,70 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
+    } else if (entityWorkspace.entityType === "unit") {
+      const unitValues = entityWorkspace.formValues as UnitFormValues;
+      if (Object.keys(validateUnitForm(unitValues)).length > 0) return;
+      const normalized = normalizeUnitFormValues(unitValues);
+
+      try {
+        setIsEntitySaving(true);
+        setEntitySaveError(null);
+
+        if (entityWorkspace.mode === "create") {
+          const created = await trpc.scenarioBuilder.units.create.mutate(normalized);
+          const createdData = created as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "units", "get", createdData.id], createdData);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "unit",
+            entityId: createdData.id,
+            data: createdData,
+            formValues: unitRecordToFormValues(createdData),
+            isDirty: false,
+          });
+          setPerTabSelection((prev) => ({ ...prev, Units: createdData.id }));
+          skipEntityResetRef.current = true;
+          navigate?.({
+            search: (prev: Record<string, unknown>) => {
+              const next = { ...prev };
+              delete next.entity_id;
+              delete next.unit_id;
+              next.unit_id = createdData.id;
+              return next;
+            },
+            replace: true,
+          });
+        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+          const updated = await trpc.scenarioBuilder.units.update.mutate({
+            id: entityWorkspace.entityId,
+            ...normalized,
+          });
+          const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+          queryClient.setQueryData(["scenarioBuilder", "units", "get", updatedData.id], updatedData);
+          setEntityWorkspace({
+            mode: "edit",
+            entityType: "unit",
+            entityId: updatedData.id,
+            data: updatedData,
+            formValues: unitRecordToFormValues(updatedData),
+            isDirty: false,
+          });
+        }
+
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units", "list"] }),
+          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units", "get"] }),
+        ]);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to save unit. Please try again.";
+        if (message.includes("already exists")) {
+          setEntitySaveError("A unit with this name already exists");
+        } else {
+          setEntitySaveError(message);
+        }
+      } finally {
+        setIsEntitySaving(false);
+      }
     }
   }, [entityWorkspace, navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
 
@@ -593,6 +671,10 @@ export function useCreatePageState(
       id: spell.id,
       name: spell.name,
       targetPolicy: spell.targetPolicy,
+    })),
+    itemOptions: (itemOptionsQuery.data ?? []).map((item: ItemOption) => ({
+      id: item.id,
+      name: item.name,
     })),
     listLoading: allLoading,
     listFetching: allFetching,

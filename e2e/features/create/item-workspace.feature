@@ -2,17 +2,7 @@ Feature: Item workspace create and edit
   As a game master
   I want to create and edit items inside the entity builder on the "/create" page
   So that item records and their linked spells can be managed without leaving the builder workflow
-
-  # Source of truth:
-  # This feature file defines the required behavior for item workspace changes.
-  # Future database, API, UI, and test changes must follow this spec.
-  #
-  # Linked spells on items are treated as an unordered set.
-  # Scenarios that assert multiple linked spells verify membership only, not sequence.
-  #
-  # Item stat fields may be positive, zero, or negative decimal values.
-  # Activation cost fields must be zero or greater.
-
+  
   Background:
     Given I am authenticated as a game master
     And I am on the "/create" page

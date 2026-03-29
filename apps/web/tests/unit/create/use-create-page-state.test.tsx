@@ -9,7 +9,8 @@ const mockGetQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScenariosList,
         mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
         mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
-        mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete } = vi.hoisted(() => {
+        mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
+        mockUnitsCreate, mockUnitsUpdate } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
@@ -62,6 +63,32 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
   });
   const mockItemsDelete = vi.fn().mockResolvedValue({ success: true });
   const mockItemsGet = vi.fn().mockRejectedValue(new Error("not found"));
+  const mockUnitsCreate = vi.fn().mockResolvedValue({
+    id: "u-new",
+    name: "New Unit",
+    meleeDmg: 0,
+    health: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    speed: 0,
+    dodge: 0,
+    criticalChance: 0,
+    itemIds: ["it-1"],
+  });
+  const mockUnitsUpdate = vi.fn().mockResolvedValue({
+    id: "u1",
+    name: "Updated Unit",
+    meleeDmg: 0,
+    health: 120,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    speed: 0,
+    dodge: 0,
+    criticalChance: 0,
+    itemIds: ["it-1"],
+  });
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosDelete = vi.fn().mockResolvedValue({ success: true });
@@ -71,6 +98,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
     mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
     mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
+    mockUnitsCreate, mockUnitsUpdate,
   };
 });
 
@@ -98,7 +126,12 @@ vi.mock("~/lib/trpc", () => ({
         update: { mutate: mockItemsUpdate },
         delete: { mutate: mockItemsDelete },
       },
-      units: { list: { query: mockUnitsList }, get: { query: mockUnitsGet } },
+      units: {
+        list: { query: mockUnitsList },
+        get: { query: mockUnitsGet },
+        create: { mutate: mockUnitsCreate },
+        update: { mutate: mockUnitsUpdate },
+      },
       scenarios: { list: { query: mockScenariosList }, get: { query: mockScenariosGet }, delete: { mutate: mockScenariosDelete } },
     },
   },
@@ -173,6 +206,32 @@ function resetMocks() {
   });
   mockItemsDelete.mockResolvedValue({ success: true });
   mockItemsGet.mockRejectedValue(new Error("not found"));
+  mockUnitsCreate.mockResolvedValue({
+    id: "u-new",
+    name: "New Unit",
+    meleeDmg: 0,
+    health: 0,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    speed: 0,
+    dodge: 0,
+    criticalChance: 0,
+    itemIds: ["it-1"],
+  });
+  mockUnitsUpdate.mockResolvedValue({
+    id: "u1",
+    name: "Updated Unit",
+    meleeDmg: 0,
+    health: 120,
+    rangedDmg: 0,
+    manaRegen: 0,
+    spellDmg: 0,
+    speed: 0,
+    dodge: 0,
+    criticalChance: 0,
+    itemIds: ["it-1"],
+  });
   mockUnitsGet.mockRejectedValue(new Error("not found"));
   mockScenariosGet.mockRejectedValue(new Error("not found"));
   mockScenariosDelete.mockResolvedValue({ success: true });
@@ -1524,6 +1583,286 @@ describe("useCreatePageState — item save flows", () => {
     });
 
     expect(result.current.entitySaveError).toBe("An item with this name already exists");
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+  });
+});
+
+describe("useCreatePageState — unit save flows", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("successful create switches to edit mode and syncs unit_id", async () => {
+    let currentSearch: { tab?: string; unit_id?: string } = { tab: "Units" };
+    let rerenderHook!: (props: { search: { tab?: string; unit_id?: string } }) => void;
+    const navigate = vi.fn(({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
+      currentSearch = search(currentSearch) as typeof currentSearch;
+      rerenderHook({ search: currentSearch });
+    });
+
+    mockUnitsCreate.mockResolvedValueOnce({
+      id: "u-created",
+      name: "Bronze Sentinel",
+      meleeDmg: 0,
+      health: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+      itemIds: ["it-1"],
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { search: { tab?: string; unit_id?: string } }) => useCreatePageState(props.search, navigate),
+      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
+    );
+    rerenderHook = rerender;
+
+    act(() => {
+      result.current.createNew("Units");
+      result.current.updateEntityField("name", "Bronze Sentinel");
+      result.current.updateEntityField("itemIds", ["it-1"]);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockUnitsCreate).toHaveBeenCalledWith({
+      name: "Bronze Sentinel",
+      meleeDmg: 0,
+      health: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+      itemIds: ["it-1"],
+    });
+    expect(result.current.entityWorkspace.mode).toBe("edit");
+    expect(result.current.entityWorkspace.entityId).toBe("u-created");
+    expect(currentSearch.unit_id).toBe("u-created");
+  });
+
+  it("successful update clears dirty state and preserves item order", async () => {
+    mockUnitsGet.mockResolvedValueOnce({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 15,
+      health: 100,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 1,
+      dodge: 5,
+      criticalChance: 10,
+      itemIds: ["it-1", "it-3"],
+    });
+    mockUnitsUpdate.mockResolvedValueOnce({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 15,
+      health: 120,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 1,
+      dodge: 5,
+      criticalChance: 10,
+      itemIds: ["it-3", "it-1"],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Units", "u1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("health", "120");
+      result.current.updateEntityField("itemIds", ["it-3", "it-1"]);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockUnitsUpdate).toHaveBeenCalledWith({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 15,
+      health: 120,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 1,
+      dodge: 5,
+      criticalChance: 10,
+      itemIds: ["it-3", "it-1"],
+    });
+    expect(result.current.entityWorkspace.isDirty).toBe(false);
+  });
+
+  it("saves a new unit without linked items", async () => {
+    mockUnitsCreate.mockResolvedValueOnce({
+      id: "u-barehand",
+      name: "Barehand Adept",
+      meleeDmg: 0,
+      health: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+      itemIds: [],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Units");
+      result.current.updateEntityField("name", "Barehand Adept");
+      result.current.updateEntityField("itemIds", []);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockUnitsCreate).toHaveBeenCalledWith({
+      name: "Barehand Adept",
+      meleeDmg: 0,
+      health: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+      itemIds: [],
+    });
+  });
+
+  it("treats linked item ids as ordered and duplicate-aware for dirty checks", async () => {
+    mockUnitsGet.mockResolvedValueOnce({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 15,
+      health: 100,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 1,
+      dodge: 5,
+      criticalChance: 10,
+      itemIds: ["it-1", "it-3"],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Units", "u1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("itemIds", ["it-3", "it-1"]);
+    });
+
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
+  });
+
+  it("loads item options across multiple list pages for the unit workspace", async () => {
+    mockItemsList.mockImplementation(({ page, limit }: { page: number; limit: number }) => {
+      if (page === 1) {
+        return Promise.resolve({
+          items: Array.from({ length: limit }, (_, index) => ({
+            id: `it-${index + 1}`,
+            name: `Item ${index + 1}`,
+          })),
+          totalCount: limit + 1,
+        });
+      }
+
+      return Promise.resolve({
+        items: [{ id: "it-101", name: "Item 101" }],
+        totalCount: limit + 1,
+      });
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Units");
+    });
+
+    await waitFor(() => {
+      expect(result.current.itemOptions).toHaveLength(101);
+    });
+
+    expect(mockItemsList).toHaveBeenNthCalledWith(1, {
+      limit: 100,
+      page: 1,
+      sortBy: "name",
+      sortDir: "asc",
+    });
+    expect(mockItemsList).toHaveBeenNthCalledWith(2, {
+      limit: 100,
+      page: 2,
+      sortBy: "name",
+      sortDir: "asc",
+    });
+  });
+
+  it("maps duplicate unit names to a user-facing error", async () => {
+    mockUnitsGet.mockResolvedValueOnce({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 15,
+      health: 100,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 1,
+      dodge: 5,
+      criticalChance: 10,
+      itemIds: ["it-1"],
+    });
+    mockUnitsUpdate.mockRejectedValueOnce(new Error("A unit with this name already exists."));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Units", "u1");
+    });
+
+    act(() => {
+      result.current.updateEntityField("name", "Mage");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(result.current.entitySaveError).toBe("A unit with this name already exists");
     expect(result.current.entityWorkspace.isDirty).toBe(true);
   });
 });

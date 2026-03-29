@@ -4,7 +4,16 @@ import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
-const mockDb = { select: mockSelect, delete: mockDeleteFn };
+const mockInsertFn = vi.fn();
+const mockUpdateFn = vi.fn();
+const mockTransaction = vi.fn();
+const mockDb = {
+  select: mockSelect,
+  delete: mockDeleteFn,
+  insert: mockInsertFn,
+  update: mockUpdateFn,
+  transaction: mockTransaction,
+};
 
 vi.mock("@qd/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@qd/db")>();
@@ -19,8 +28,16 @@ const createCaller = createCallerFactory(router({ units: unitsRouter }));
 
 describe("unitsRouter", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockSelect.mockReset();
+    mockDeleteFn.mockReset();
+    mockInsertFn.mockReset();
+    mockUpdateFn.mockReset();
+    mockTransaction.mockReset();
+    mockTransaction.mockImplementation(async (callback) => callback(mockDb));
   });
+
+  const ITEM_ID_1 = "d0000000-0000-0000-0000-000000000001";
+  const ITEM_ID_2 = "d0000000-0000-0000-0000-000000000002";
 
   describe("list", () => {
     it("throws UNAUTHORIZED for unauthenticated user", async () => {
@@ -193,6 +210,263 @@ describe("unitsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.units.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
+
+  describe("create", () => {
+    it("throws UNAUTHORIZED for unauthenticated user", async () => {
+      const caller = createCaller(anonCtx);
+      await expect(
+        caller.units.create({
+          name: "Bronze Sentinel",
+          meleeDmg: 0,
+          health: 0,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 0,
+          dodge: 0,
+          criticalChance: 0,
+          itemIds: [],
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    });
+
+    it("throws FORBIDDEN for player role", async () => {
+      const caller = createCaller(playerCtx);
+      await expect(
+        caller.units.create({
+          name: "Bronze Sentinel",
+          meleeDmg: 0,
+          health: 0,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 0,
+          dodge: 0,
+          criticalChance: 0,
+          itemIds: [],
+        }),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("creates a unit with no linked items", async () => {
+      const created = {
+        id: "u-created",
+        name: "Bronze Sentinel",
+        meleeDmg: 0,
+        health: 0,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 0,
+        dodge: 0,
+        criticalChance: 0,
+      };
+      const unitValues = vi.fn().mockReturnValue(chainable([created]));
+      mockInsertFn.mockReturnValueOnce({ values: unitValues });
+      mockSelect.mockReturnValueOnce(chainable([]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.units.create({
+        name: "Bronze Sentinel",
+        meleeDmg: 0,
+        health: 0,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 0,
+        dodge: 0,
+        criticalChance: 0,
+        itemIds: [],
+      });
+
+      expect(result).toEqual({
+        ...created,
+        itemIds: [],
+      });
+      expect(mockInsertFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("creates a unit and preserves ordered duplicate linked item ids", async () => {
+      const created = {
+        id: "u-dual",
+        name: "Twinblade Adept",
+        meleeDmg: 12.5,
+        health: 82.25,
+        rangedDmg: 0,
+        manaRegen: -1.25,
+        spellDmg: 4,
+        speed: 1.35,
+        dodge: 6.5,
+        criticalChance: 7.25,
+      };
+      const unitValues = vi.fn().mockReturnValue(chainable([created]));
+      const insertLinks = vi.fn().mockReturnValue(chainable([]));
+      mockInsertFn
+        .mockReturnValueOnce({ values: unitValues })
+        .mockReturnValueOnce({ values: insertLinks });
+      mockSelect.mockReturnValueOnce(chainable([
+        { itemId: ITEM_ID_1 },
+        { itemId: ITEM_ID_1 },
+        { itemId: ITEM_ID_2 },
+      ]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.units.create({
+        name: " Twinblade Adept ",
+        meleeDmg: 12.5,
+        health: 82.25,
+        rangedDmg: 0,
+        manaRegen: -1.25,
+        spellDmg: 4,
+        speed: 1.35,
+        dodge: 6.5,
+        criticalChance: 7.25,
+        itemIds: [ITEM_ID_1, ITEM_ID_1, ITEM_ID_2],
+      });
+
+      expect(result).toEqual({
+        ...created,
+        itemIds: [ITEM_ID_1, ITEM_ID_1, ITEM_ID_2],
+      });
+      expect(unitValues).toHaveBeenCalledWith({
+        name: "Twinblade Adept",
+        meleeDmg: 12.5,
+        health: 82.25,
+        rangedDmg: 0,
+        manaRegen: -1.25,
+        spellDmg: 4,
+        speed: 1.35,
+        dodge: 6.5,
+        criticalChance: 7.25,
+      });
+      expect(insertLinks).toHaveBeenCalledWith([
+        { unitId: "u-dual", itemId: ITEM_ID_1, priority: 1 },
+        { unitId: "u-dual", itemId: ITEM_ID_1, priority: 2 },
+        { unitId: "u-dual", itemId: ITEM_ID_2, priority: 3 },
+      ]);
+    });
+  });
+
+  describe("update", () => {
+    it("throws UNAUTHORIZED for unauthenticated user", async () => {
+      const caller = createCaller(anonCtx);
+      await expect(
+        caller.units.update({
+          id: "f0000000-0000-0000-0000-000000000001",
+          name: "Barbarian Updated",
+          meleeDmg: 20,
+          health: 120,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 1,
+          dodge: 5,
+          criticalChance: 10,
+          itemIds: [ITEM_ID_2, ITEM_ID_1],
+        }),
+      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    });
+
+    it("throws FORBIDDEN for player role", async () => {
+      const caller = createCaller(playerCtx);
+      await expect(
+        caller.units.update({
+          id: "f0000000-0000-0000-0000-000000000001",
+          name: "Barbarian Updated",
+          meleeDmg: 20,
+          health: 120,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 1,
+          dodge: 5,
+          criticalChance: 10,
+          itemIds: [ITEM_ID_2, ITEM_ID_1],
+        }),
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("updates unit fields and replaces linked item order", async () => {
+      const updated = {
+        id: "f0000000-0000-0000-0000-000000000001",
+        name: "Barbarian Updated",
+        meleeDmg: 20,
+        health: 120,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 1,
+        dodge: 5,
+        criticalChance: 10,
+      };
+      const updateSet = vi.fn().mockReturnValue(chainable([updated]));
+      mockUpdateFn.mockReturnValueOnce({ set: updateSet });
+      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      const insertLinks = vi.fn().mockReturnValue(chainable([]));
+      mockInsertFn.mockReturnValueOnce({ values: insertLinks });
+      mockSelect.mockReturnValueOnce(chainable([
+        { itemId: ITEM_ID_2 },
+        { itemId: ITEM_ID_1 },
+      ]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.units.update({
+        id: updated.id,
+        name: " Barbarian Updated ",
+        meleeDmg: 20,
+        health: 120,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 1,
+        dodge: 5,
+        criticalChance: 10,
+        itemIds: [ITEM_ID_2, ITEM_ID_1],
+      });
+
+      expect(result).toEqual({
+        ...updated,
+        itemIds: [ITEM_ID_2, ITEM_ID_1],
+      });
+      expect(updateSet).toHaveBeenCalledWith({
+        name: "Barbarian Updated",
+        meleeDmg: 20,
+        health: 120,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 1,
+        dodge: 5,
+        criticalChance: 10,
+      });
+      expect(insertLinks).toHaveBeenCalledWith([
+        { unitId: updated.id, itemId: ITEM_ID_2, priority: 1 },
+        { unitId: updated.id, itemId: ITEM_ID_1, priority: 2 },
+      ]);
+    });
+
+    it("throws NOT_FOUND when the unit does not exist", async () => {
+      const updateSet = vi.fn().mockReturnValue(chainable([]));
+      mockUpdateFn.mockReturnValueOnce({ set: updateSet });
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.units.update({
+          id: "00000000-0000-0000-0000-000000000099",
+          name: "Missing Unit",
+          meleeDmg: 0,
+          health: 0,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 0,
+          dodge: 0,
+          criticalChance: 0,
+          itemIds: [],
+        }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });

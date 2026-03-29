@@ -207,6 +207,36 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Item");
   });
 
+  it("renders the unit editor with item picker and stat inputs", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "unit",
+          formValues: {
+            name: "",
+            meleeDmg: "0",
+            health: "0",
+            rangedDmg: "0",
+            manaRegen: "0",
+            spellDmg: "0",
+            speed: "0",
+            dodge: "0",
+            criticalChance: "0",
+            itemIds: [],
+          },
+        })}
+        itemOptions={[{ id: "it-1", name: "Iron Sword" }]}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByText("New Unit")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-item-picker")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-health-input")).toBeInTheDocument();
+    expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Unit");
+  });
+
   it("forwards chip background clicks to the native select picker", async () => {
     const user = userEvent.setup();
 

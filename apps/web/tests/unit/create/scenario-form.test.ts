@@ -91,7 +91,7 @@ describe("scenario-form", () => {
         ],
       }),
     ).toEqual({
-      rows: "Rows must include tank, melee, ranged, and support exactly once",
+      rows: "Rows must include ranged, support, melee, and tank exactly once",
     });
   });
 

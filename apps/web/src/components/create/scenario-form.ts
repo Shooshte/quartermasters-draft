@@ -99,7 +99,7 @@ export function validateScenarioForm(values: ScenarioFormValues): ScenarioFieldE
     SCENARIO_ROW_TYPES.every((rowType) => rowTypes.filter((candidate) => candidate === rowType).length === 1);
 
   if (!isExactlyFixedRows) {
-    errors.rows = "Rows must include tank, melee, ranged, and support exactly once";
+    errors.rows = "Rows must include ranged, support, melee, and tank exactly once";
   }
 
   return errors;

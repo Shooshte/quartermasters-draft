@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
@@ -54,7 +54,7 @@ function ensureFixedRows(
     throw new TRPCError({
       code: options?.code ?? "BAD_REQUEST",
       message:
-        options?.message ?? "Rows must include tank, melee, ranged, and support exactly once.",
+        options?.message ?? "Rows must include ranged, support, melee, and tank exactly once.",
     });
   }
 }
@@ -75,8 +75,7 @@ async function getScenarioById(
   const rows = await executor
     .select({ id: scenariosRows.id, rowType: scenariosRows.rowType })
     .from(scenariosRows)
-    .where(eq(scenariosRows.scenarioId, id))
-    .orderBy(asc(sql`${scenariosRows.rowType}::text`));
+    .where(eq(scenariosRows.scenarioId, id));
 
   const rowIds = rows.map((row) => row.id);
   let assignmentsWithUnits: {

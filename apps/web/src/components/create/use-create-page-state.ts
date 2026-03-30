@@ -470,10 +470,7 @@ export function useCreatePageState(
         });
       }
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios", "list"] }),
-        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios", "get"] }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios"] });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to save scenario. Please try again.";
       if (message.includes("already exists")) {
@@ -542,10 +539,7 @@ export function useCreatePageState(
           });
         }
 
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "list"] }),
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects", "get"] }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects"] });
       } catch (error) {
         setEntitySaveError(error instanceof Error ? error.message : "Failed to save effect. Please try again.");
       } finally {
@@ -601,10 +595,7 @@ export function useCreatePageState(
           });
         }
 
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells", "list"] }),
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells", "get"] }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells"] });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to save spell. Please try again.";
         if (message.includes("already exists")) {
@@ -665,10 +656,7 @@ export function useCreatePageState(
           });
         }
 
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items", "list"] }),
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items", "get"] }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to save item. Please try again.";
         if (message.includes("already exists")) {
@@ -729,10 +717,7 @@ export function useCreatePageState(
           });
         }
 
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units", "list"] }),
-          queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units", "get"] }),
-        ]);
+        await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units"] });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to save unit. Please try again.";
         if (message.includes("already exists")) {

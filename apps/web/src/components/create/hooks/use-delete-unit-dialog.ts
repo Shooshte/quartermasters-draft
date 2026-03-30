@@ -56,7 +56,7 @@ export function useDeleteUnitDialog({
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "units", "list"],
+        queryKey: ["scenarioBuilder", "units"],
       });
 
       const newTotalCount = unitTotalCount - 1;

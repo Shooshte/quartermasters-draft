@@ -2353,10 +2353,10 @@ describe("useCreatePageState — scenario save flow", () => {
     expect(mockScenariosCreate).toHaveBeenCalledWith({
       name: "Frontier Watch",
       rows: [
-        { rowType: "tank", unitIds: [] },
-        { rowType: "melee", unitIds: ["u-1"] },
         { rowType: "ranged", unitIds: [] },
         { rowType: "support", unitIds: [] },
+        { rowType: "melee", unitIds: ["u-1"] },
+        { rowType: "tank", unitIds: [] },
       ],
     });
     expect(result.current.scenarioWorkspace.mode).toBe("edit");
@@ -2415,10 +2415,10 @@ describe("useCreatePageState — scenario save flow", () => {
       id: "sc1",
       name: "Ambush at Dusk",
       rows: [
-        { rowType: "tank", unitIds: [] },
-        { rowType: "melee", unitIds: [] },
         { rowType: "ranged", unitIds: [] },
         { rowType: "support", unitIds: [] },
+        { rowType: "melee", unitIds: [] },
+        { rowType: "tank", unitIds: [] },
       ],
     });
     expect(setQueryDataSpy).toHaveBeenCalledWith(

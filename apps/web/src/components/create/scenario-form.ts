@@ -1,4 +1,4 @@
-export const SCENARIO_ROW_TYPES = ["tank", "melee", "ranged", "support"] as const;
+export const SCENARIO_ROW_TYPES = ["ranged", "support", "melee", "tank"] as const;
 
 export type ScenarioRowType = (typeof SCENARIO_ROW_TYPES)[number];
 

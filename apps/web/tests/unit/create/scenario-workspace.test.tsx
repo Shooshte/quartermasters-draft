@@ -80,10 +80,10 @@ describe("ScenarioWorkspace", () => {
           formValues: {
             name: "",
             rows: [
-              { rowType: "tank", unitIds: [] },
-              { rowType: "melee", unitIds: [] },
               { rowType: "ranged", unitIds: [] },
               { rowType: "support", unitIds: [] },
+              { rowType: "melee", unitIds: [] },
+              { rowType: "tank", unitIds: [] },
             ],
           },
         })}
@@ -135,10 +135,10 @@ describe("ScenarioWorkspace", () => {
           formValues: {
             name: "Ambush at Dawn",
             rows: [
-              { rowType: "tank", unitIds: [] },
-              { rowType: "melee", unitIds: ["u-1"] },
               { rowType: "ranged", unitIds: ["u-2"] },
               { rowType: "support", unitIds: ["u-3"] },
+              { rowType: "melee", unitIds: ["u-1"] },
+              { rowType: "tank", unitIds: [] },
             ],
           },
         })}
@@ -170,10 +170,10 @@ describe("ScenarioWorkspace", () => {
           formValues: {
             name: "Fireball",
             rows: [
-              { rowType: "tank", unitIds: [] },
-              { rowType: "melee", unitIds: [] },
               { rowType: "ranged", unitIds: [] },
               { rowType: "support", unitIds: [] },
+              { rowType: "melee", unitIds: [] },
+              { rowType: "tank", unitIds: [] },
             ],
           },
         })}
@@ -204,10 +204,10 @@ describe("ScenarioWorkspace", () => {
           formValues: {
             name: "Test",
             rows: [
-              { rowType: "tank", unitIds: [] },
-              { rowType: "melee", unitIds: [] },
               { rowType: "ranged", unitIds: [] },
               { rowType: "support", unitIds: [] },
+              { rowType: "melee", unitIds: [] },
+              { rowType: "tank", unitIds: [] },
             ],
           },
         })}
@@ -252,10 +252,10 @@ describe("ScenarioWorkspace", () => {
           formValues: {
             name: "Castle Siege",
             rows: [
-              { rowType: "tank", unitIds: [] },
-              { rowType: "melee", unitIds: ["u-1", "u-4"] },
               { rowType: "ranged", unitIds: [] },
               { rowType: "support", unitIds: [] },
+              { rowType: "melee", unitIds: ["u-1", "u-4"] },
+              { rowType: "tank", unitIds: [] },
             ],
           },
         })}
@@ -269,18 +269,18 @@ describe("ScenarioWorkspace", () => {
 
     await user.click(screen.getByTestId("scenario-row-melee-move-up-2"));
     expect(onFieldChange).toHaveBeenCalledWith("rows", [
-      { rowType: "tank", unitIds: [] },
-      { rowType: "melee", unitIds: ["u-4", "u-1"] },
       { rowType: "ranged", unitIds: [] },
       { rowType: "support", unitIds: [] },
+      { rowType: "melee", unitIds: ["u-4", "u-1"] },
+      { rowType: "tank", unitIds: [] },
     ]);
 
     await user.click(screen.getByTestId("scenario-row-melee-remove-2"));
     expect(onFieldChange).toHaveBeenCalledWith("rows", [
-      { rowType: "tank", unitIds: [] },
-      { rowType: "melee", unitIds: ["u-1"] },
       { rowType: "ranged", unitIds: [] },
       { rowType: "support", unitIds: [] },
+      { rowType: "melee", unitIds: ["u-1"] },
+      { rowType: "tank", unitIds: [] },
     ]);
   });
 
@@ -293,10 +293,10 @@ describe("ScenarioWorkspace", () => {
           formValues: {
             name: "Ambush at Dawn",
             rows: [
-              { rowType: "tank", unitIds: [] },
-              { rowType: "melee", unitIds: [] },
               { rowType: "ranged", unitIds: [] },
               { rowType: "support", unitIds: [] },
+              { rowType: "melee", unitIds: [] },
+              { rowType: "tank", unitIds: [] },
             ],
           },
         })}

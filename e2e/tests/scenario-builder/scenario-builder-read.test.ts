@@ -133,9 +133,9 @@ test.describe("Scenario Builder Read API — GM access", () => {
     expect(data.name).toBe("Ambush at Dawn");
     expect(data.rows).toHaveLength(4);
 
-    // Rows sorted alphabetically by rowType: melee, ranged, support, tank
+    // Rows in canonical order: ranged, support, melee, tank
     const rowTypes = data.rows.map((r: { rowType: string }) => r.rowType);
-    expect(rowTypes).toEqual(["melee", "ranged", "support", "tank"]);
+    expect(rowTypes).toEqual(["ranged", "support", "melee", "tank"]);
 
     // melee row has Barbarian at position 1
     const meleeRow = data.rows.find((r: { rowType: string }) => r.rowType === "melee");

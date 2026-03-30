@@ -11,7 +11,7 @@ const scenarioListInput = listInputSchema.extend({
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});
 
-const SCENARIO_ROW_TYPES = ["tank", "melee", "ranged", "support"] as const;
+const SCENARIO_ROW_TYPES = ["ranged", "support", "melee", "tank"] as const;
 const scenarioRowSchema = z.object({
   rowType: z.enum(SCENARIO_ROW_TYPES),
   unitIds: z.array(z.string().uuid()),
@@ -106,23 +106,30 @@ async function getScenarioById(
       .orderBy(asc(scenariosRowsUnits.slot));
   }
 
+  const rowsByType = new Map(rows.map((row) => [row.rowType, row]));
+
   return {
     id: scenario.id,
     name: scenario.name,
     createdAt: scenario.createdAt,
     updatedAt: scenario.updatedAt,
-    rows: rows.map((row) => ({
-      id: row.id,
-      rowType: row.rowType,
-      assignments: assignmentsWithUnits
-        .filter((assignment) => assignment.scenarios_rows_units.rowId === row.id)
-        .map((assignment) => ({
-          assignmentId: assignment.scenarios_rows_units.id,
-          unitId: assignment.scenarios_rows_units.unitId,
-          unitName: assignment.units.name,
-          position: assignment.scenarios_rows_units.slot,
-        })),
-    })),
+    rows: SCENARIO_ROW_TYPES
+      .filter((rowType) => rowsByType.has(rowType))
+      .map((rowType) => {
+        const row = rowsByType.get(rowType)!;
+        return {
+          id: row.id,
+          rowType: row.rowType,
+          assignments: assignmentsWithUnits
+            .filter((a) => a.scenarios_rows_units.rowId === row.id)
+            .map((a) => ({
+              assignmentId: a.scenarios_rows_units.id,
+              unitId: a.scenarios_rows_units.unitId,
+              unitName: a.units.name,
+              position: a.scenarios_rows_units.slot,
+            })),
+        };
+      }),
   };
 }
 

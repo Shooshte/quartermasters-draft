@@ -301,7 +301,7 @@ describe("scenariosRouter", () => {
       });
 
       expect(result.name).toBe("Frontier Watch");
-      expect(result.rows.map((row) => row.rowType)).toEqual(["melee", "ranged", "support", "tank"]);
+      expect(result.rows.map((row) => row.rowType)).toEqual(["ranged", "support", "melee", "tank"]);
       expect(result.rows.every((row) => Array.isArray(row.assignments))).toBe(true);
     });
 

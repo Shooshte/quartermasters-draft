@@ -4,7 +4,16 @@ import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
-const mockDb = { select: mockSelect, delete: mockDeleteFn };
+const mockInsert = vi.fn();
+const mockUpdate = vi.fn();
+const mockTransaction = vi.fn();
+const mockDb = {
+  select: mockSelect,
+  delete: mockDeleteFn,
+  insert: mockInsert,
+  update: mockUpdate,
+  transaction: mockTransaction,
+};
 
 vi.mock("@qd/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@qd/db")>();
@@ -231,6 +240,380 @@ describe("scenariosRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.scenarios.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
+
+  describe("create", () => {
+    it("creates a scenario with four empty rows", async () => {
+      const createdScenario = {
+        id: "a2000000-0000-0000-0000-000000000099",
+        name: "Frontier Watch",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn(),
+      };
+
+      tx.insert
+        .mockReturnValueOnce(chainable([createdScenario]))
+        .mockReturnValueOnce(chainable([
+          { id: "r1", scenarioId: createdScenario.id, rowType: "tank" },
+          { id: "r2", scenarioId: createdScenario.id, rowType: "melee" },
+          { id: "r3", scenarioId: createdScenario.id, rowType: "ranged" },
+          { id: "r4", scenarioId: createdScenario.id, rowType: "support" },
+        ]))
+        .mockReturnValueOnce(chainable([]));
+
+      let selectCallCount = 0;
+      tx.select.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return chainable([createdScenario]);
+        }
+        if (selectCallCount === 2) {
+          return chainable([
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+            { id: "r1", rowType: "tank" },
+          ]);
+        }
+        return chainable([]);
+      });
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.scenarios.create({
+        name: "Frontier Watch",
+        rows: [
+          { rowType: "tank", unitIds: [] },
+          { rowType: "melee", unitIds: [] },
+          { rowType: "ranged", unitIds: [] },
+          { rowType: "support", unitIds: [] },
+        ],
+      });
+
+      expect(result.name).toBe("Frontier Watch");
+      expect(result.rows.map((row) => row.rowType)).toEqual(["melee", "ranged", "support", "tank"]);
+      expect(result.rows.every((row) => Array.isArray(row.assignments))).toBe(true);
+    });
+
+    it("creates a scenario with assignments across rows", async () => {
+      const createdScenario = {
+        id: "a2000000-0000-0000-0000-000000000100",
+        name: "Siege Breakers",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn(),
+      };
+
+      tx.insert
+        .mockReturnValueOnce(chainable([createdScenario]))
+        .mockReturnValueOnce(chainable([
+          { id: "r1", scenarioId: createdScenario.id, rowType: "tank" },
+          { id: "r2", scenarioId: createdScenario.id, rowType: "melee" },
+          { id: "r3", scenarioId: createdScenario.id, rowType: "ranged" },
+          { id: "r4", scenarioId: createdScenario.id, rowType: "support" },
+        ]))
+        .mockReturnValueOnce(chainable([]));
+
+      let selectCallCount = 0;
+      tx.select.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return chainable([createdScenario]);
+        }
+        if (selectCallCount === 2) {
+          return chainable([
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+            { id: "r1", rowType: "tank" },
+          ]);
+        }
+        return chainable([
+          {
+            scenarios_rows_units: {
+              id: "a1",
+              rowId: "r2",
+              unitId: "u1",
+              slot: 1,
+            },
+            units: { name: "Barbarian" },
+          },
+          {
+            scenarios_rows_units: {
+              id: "a2",
+              rowId: "r3",
+              unitId: "u2",
+              slot: 1,
+            },
+            units: { name: "Mage" },
+          },
+          {
+            scenarios_rows_units: {
+              id: "a3",
+              rowId: "r4",
+              unitId: "u3",
+              slot: 1,
+            },
+            units: { name: "Ranger" },
+          },
+        ]);
+      });
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.scenarios.create({
+        name: "Siege Breakers",
+        rows: [
+          { rowType: "tank", unitIds: [] },
+          { rowType: "melee", unitIds: ["f0000000-0000-0000-0000-000000000001"] },
+          { rowType: "ranged", unitIds: ["f0000000-0000-0000-0000-000000000002"] },
+          { rowType: "support", unitIds: ["f0000000-0000-0000-0000-000000000003"] },
+        ],
+      });
+
+      expect(result.rows.find((row) => row.rowType === "melee")?.assignments[0]?.unitName).toBe("Barbarian");
+      expect(result.rows.find((row) => row.rowType === "ranged")?.assignments[0]?.unitName).toBe("Mage");
+      expect(result.rows.find((row) => row.rowType === "support")?.assignments[0]?.unitName).toBe("Ranger");
+    });
+
+    it("throws CONFLICT for duplicate scenario names", async () => {
+      const duplicateError = { code: "23505" };
+      mockTransaction.mockRejectedValueOnce(duplicateError);
+
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.scenarios.create({
+          name: "Ambush at Dawn",
+          rows: [
+            { rowType: "tank", unitIds: [] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "A scenario with this name already exists.",
+      });
+    });
+  });
+
+  describe("update", () => {
+    it("updates only the scenario name", async () => {
+      const updatedScenario = {
+        id: "a2000000-0000-0000-0000-000000000001",
+        name: "Ambush at Dusk",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const tx = {
+        insert: vi.fn().mockReturnValue(chainable([])),
+        select: vi.fn(),
+        delete: vi.fn().mockReturnValue(chainable([])),
+        update: vi.fn().mockReturnValue(chainable([updatedScenario])),
+      };
+
+      let selectCallCount = 0;
+      tx.select.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return chainable([
+            { id: "r1", rowType: "tank" },
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+          ]);
+        }
+        if (selectCallCount === 2) {
+          return chainable([updatedScenario]);
+        }
+        if (selectCallCount === 3) {
+          return chainable([
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+            { id: "r1", rowType: "tank" },
+          ]);
+        }
+        return chainable([]);
+      });
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.scenarios.update({
+        id: "a2000000-0000-0000-0000-000000000001",
+        name: "Ambush at Dusk",
+        rows: [
+          { rowType: "tank", unitIds: [] },
+          { rowType: "melee", unitIds: ["f0000000-0000-0000-0000-000000000001"] },
+          { rowType: "ranged", unitIds: ["f0000000-0000-0000-0000-000000000002"] },
+          { rowType: "support", unitIds: ["f0000000-0000-0000-0000-000000000003"] },
+        ],
+      });
+
+      expect(result.name).toBe("Ambush at Dusk");
+    });
+
+    it("updates assignments and preserves slot order", async () => {
+      const updatedScenario = {
+        id: "a2000000-0000-0000-0000-000000000002",
+        name: "Castle Siege",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const tx = {
+        insert: vi.fn().mockReturnValue(chainable([])),
+        select: vi.fn(),
+        delete: vi.fn().mockReturnValue(chainable([])),
+        update: vi.fn().mockReturnValue(chainable([updatedScenario])),
+      };
+
+      let selectCallCount = 0;
+      tx.select.mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return chainable([
+            { id: "r1", rowType: "tank" },
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+          ]);
+        }
+        if (selectCallCount === 2) {
+          return chainable([updatedScenario]);
+        }
+        if (selectCallCount === 3) {
+          return chainable([
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+            { id: "r1", rowType: "tank" },
+          ]);
+        }
+        return chainable([
+          {
+            scenarios_rows_units: { id: "a1", rowId: "r2", unitId: "u2", slot: 1 },
+            units: { name: "Samurai" },
+          },
+          {
+            scenarios_rows_units: { id: "a2", rowId: "r2", unitId: "u1", slot: 2 },
+            units: { name: "Barbarian" },
+          },
+        ]);
+      });
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.scenarios.update({
+        id: "a2000000-0000-0000-0000-000000000002",
+        name: "Castle Siege",
+        rows: [
+          { rowType: "tank", unitIds: [] },
+          {
+            rowType: "melee",
+            unitIds: [
+              "f0000000-0000-0000-0000-000000000002",
+              "f0000000-0000-0000-0000-000000000001",
+            ],
+          },
+          { rowType: "ranged", unitIds: [] },
+          { rowType: "support", unitIds: [] },
+        ],
+      });
+
+      expect(result.rows.find((row) => row.rowType === "melee")?.assignments).toEqual([
+        { assignmentId: "a1", unitId: "u2", unitName: "Samurai", position: 1 },
+        { assignmentId: "a2", unitId: "u1", unitName: "Barbarian", position: 2 },
+      ]);
+    });
+
+    it("throws INTERNAL_SERVER_ERROR when persisted scenario rows are invalid", async () => {
+      const updatedScenario = {
+        id: "a2000000-0000-0000-0000-000000000003",
+        name: "Broken Scenario",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn().mockReturnValue(chainable([updatedScenario])),
+      };
+
+      tx.select.mockReturnValue(
+        chainable([
+          { id: "r1", rowType: "tank" },
+          { id: "r2", rowType: "melee" },
+          { id: "r3", rowType: "ranged" },
+        ]),
+      );
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.scenarios.update({
+          id: updatedScenario.id,
+          name: updatedScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: [] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Scenario data is in an unexpected state. Please contact support.",
+      });
+    });
+
+    it("throws NOT_FOUND when updating a missing scenario", async () => {
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn().mockReturnValue(chainable([])),
+      };
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.scenarios.update({
+          id: "00000000-0000-0000-0000-000000000099",
+          name: "Missing",
+          rows: [
+            { rowType: "tank", unitIds: [] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });

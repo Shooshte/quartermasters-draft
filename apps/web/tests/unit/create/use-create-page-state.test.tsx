@@ -10,7 +10,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
         mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
         mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
         mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
-        mockUnitsCreate, mockUnitsUpdate } = vi.hoisted(() => {
+        mockUnitsCreate, mockUnitsUpdate, mockScenariosCreate, mockScenariosUpdate } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
@@ -90,6 +90,26 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     itemIds: ["it-1"],
   });
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
+  const mockScenariosCreate = vi.fn().mockResolvedValue({
+    id: "sc-new",
+    name: "New Scenario",
+    rows: [
+      { id: "r1", rowType: "melee", assignments: [] },
+      { id: "r2", rowType: "ranged", assignments: [] },
+      { id: "r3", rowType: "support", assignments: [] },
+      { id: "r4", rowType: "tank", assignments: [] },
+    ],
+  });
+  const mockScenariosUpdate = vi.fn().mockResolvedValue({
+    id: "sc1",
+    name: "Updated Scenario",
+    rows: [
+      { id: "r1", rowType: "melee", assignments: [] },
+      { id: "r2", rowType: "ranged", assignments: [] },
+      { id: "r3", rowType: "support", assignments: [] },
+      { id: "r4", rowType: "tank", assignments: [] },
+    ],
+  });
   const mockScenariosGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosDelete = vi.fn().mockResolvedValue({ success: true });
   const mockSpellsDelete = vi.fn().mockResolvedValue({ success: true });
@@ -98,7 +118,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
     mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
     mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
-    mockUnitsCreate, mockUnitsUpdate,
+    mockUnitsCreate, mockUnitsUpdate, mockScenariosCreate, mockScenariosUpdate,
   };
 });
 
@@ -132,7 +152,13 @@ vi.mock("~/lib/trpc", () => ({
         create: { mutate: mockUnitsCreate },
         update: { mutate: mockUnitsUpdate },
       },
-      scenarios: { list: { query: mockScenariosList }, get: { query: mockScenariosGet }, delete: { mutate: mockScenariosDelete } },
+      scenarios: {
+        list: { query: mockScenariosList },
+        get: { query: mockScenariosGet },
+        create: { mutate: mockScenariosCreate },
+        update: { mutate: mockScenariosUpdate },
+        delete: { mutate: mockScenariosDelete },
+      },
     },
   },
 }));
@@ -140,15 +166,22 @@ vi.mock("~/lib/trpc", () => ({
 import { useCreatePageState } from "~/components/create/use-create-page-state";
 
 function createWrapper() {
+  return createWrapperWithClient().wrapper;
+}
+
+function createWrapperWithClient() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },
     },
   });
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+  return {
+    queryClient,
+    wrapper({ children }: { children: React.ReactNode }) {
+      return (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+    },
   };
 }
 
@@ -233,6 +266,26 @@ function resetMocks() {
     itemIds: ["it-1"],
   });
   mockUnitsGet.mockRejectedValue(new Error("not found"));
+  mockScenariosCreate.mockResolvedValue({
+    id: "sc-new",
+    name: "New Scenario",
+    rows: [
+      { id: "r1", rowType: "melee", assignments: [] },
+      { id: "r2", rowType: "ranged", assignments: [] },
+      { id: "r3", rowType: "support", assignments: [] },
+      { id: "r4", rowType: "tank", assignments: [] },
+    ],
+  });
+  mockScenariosUpdate.mockResolvedValue({
+    id: "sc1",
+    name: "Updated Scenario",
+    rows: [
+      { id: "r1", rowType: "melee", assignments: [] },
+      { id: "r2", rowType: "ranged", assignments: [] },
+      { id: "r3", rowType: "support", assignments: [] },
+      { id: "r4", rowType: "tank", assignments: [] },
+    ],
+  });
   mockScenariosGet.mockRejectedValue(new Error("not found"));
   mockScenariosDelete.mockResolvedValue({ success: true });
   mockSpellsDelete.mockResolvedValue({ success: true });
@@ -331,7 +384,16 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("scenario isDirty is true when any form field differs from original", async () => {
-    mockScenariosGet.mockResolvedValueOnce({ id: "sc1", name: "Ambush", difficulty: "hard" });
+    mockScenariosGet.mockResolvedValueOnce({
+      id: "sc1",
+      name: "Ambush",
+      rows: [
+        { id: "r1", rowType: "melee", assignments: [] },
+        { id: "r2", rowType: "ranged", assignments: [] },
+        { id: "r3", rowType: "support", assignments: [] },
+        { id: "r4", rowType: "tank", assignments: [] },
+      ],
+    });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
@@ -343,7 +405,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
     });
 
     act(() => {
-      result.current.updateScenarioField("difficulty", "easy");
+      result.current.updateScenarioField("name", "Ambush Updated");
     });
 
     expect(result.current.scenarioWorkspace.isDirty).toBe(true);
@@ -2256,5 +2318,152 @@ describe("useCreatePageState — delete effect", () => {
     expect(result.current.deleteEffectError).toBe(
       "Cannot delete effect while it is linked to one or more spells.",
     );
+  });
+});
+
+describe("useCreatePageState — scenario save flow", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("creates a scenario, syncs the URL, and clears dirty state", async () => {
+    const navigate = vi.fn();
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, navigate),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.createNew("Scenarios");
+      result.current.updateScenarioField("name", "Frontier Watch");
+      result.current.updateScenarioField("rows", [
+        { rowType: "tank", unitIds: [] },
+        { rowType: "melee", unitIds: ["u-1"] },
+        { rowType: "ranged", unitIds: [] },
+        { rowType: "support", unitIds: [] },
+      ]);
+    });
+
+    await act(async () => {
+      await result.current.saveScenario();
+    });
+
+    expect(mockScenariosCreate).toHaveBeenCalledWith({
+      name: "Frontier Watch",
+      rows: [
+        { rowType: "tank", unitIds: [] },
+        { rowType: "melee", unitIds: ["u-1"] },
+        { rowType: "ranged", unitIds: [] },
+        { rowType: "support", unitIds: [] },
+      ],
+    });
+    expect(result.current.scenarioWorkspace.mode).toBe("edit");
+    expect(result.current.scenarioWorkspace.isDirty).toBe(false);
+
+    const navigateCall = navigate.mock.calls.at(-1)?.[0];
+    expect(navigateCall).toEqual({
+      search: expect.any(Function),
+      replace: true,
+    });
+    expect(navigateCall.search({ tab: "Scenarios" })).toEqual({
+      tab: "Scenarios",
+      scenario_id: "sc-new",
+    });
+    expect(setQueryDataSpy).toHaveBeenCalledWith(
+      ["scenarioBuilder", "scenarios", "get", "sc-new"],
+      expect.objectContaining({
+        id: "sc-new",
+        name: "New Scenario",
+      }),
+    );
+  });
+
+  it("updates an existing scenario", async () => {
+    mockScenariosGet.mockResolvedValueOnce({
+      id: "sc1",
+      name: "Ambush at Dawn",
+      rows: [
+        { id: "r1", rowType: "melee", assignments: [] },
+        { id: "r2", rowType: "ranged", assignments: [] },
+        { id: "r3", rowType: "support", assignments: [] },
+        { id: "r4", rowType: "tank", assignments: [] },
+      ],
+    });
+
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Scenarios", "sc1");
+    });
+
+    act(() => {
+      result.current.updateScenarioField("name", "Ambush at Dusk");
+    });
+
+    await act(async () => {
+      await result.current.saveScenario();
+    });
+
+    expect(mockScenariosUpdate).toHaveBeenCalledWith({
+      id: "sc1",
+      name: "Ambush at Dusk",
+      rows: [
+        { rowType: "tank", unitIds: [] },
+        { rowType: "melee", unitIds: [] },
+        { rowType: "ranged", unitIds: [] },
+        { rowType: "support", unitIds: [] },
+      ],
+    });
+    expect(setQueryDataSpy).toHaveBeenCalledWith(
+      ["scenarioBuilder", "scenarios", "get", "sc1"],
+      expect.objectContaining({
+        id: "sc1",
+        name: "Updated Scenario",
+      }),
+    );
+  });
+
+  it("blocks saving when the scenario name is missing", async () => {
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Scenarios");
+    });
+
+    await act(async () => {
+      await result.current.saveScenario();
+    });
+
+    expect(mockScenariosCreate).not.toHaveBeenCalled();
+  });
+
+  it("maps duplicate-name errors to the scenario save error message", async () => {
+    mockScenariosCreate.mockRejectedValueOnce(new Error("A scenario with this name already exists."));
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => {
+      result.current.createNew("Scenarios");
+      result.current.updateScenarioField("name", "Ambush at Dawn");
+    });
+
+    await act(async () => {
+      await result.current.saveScenario();
+    });
+
+    expect(result.current.scenarioSaveError).toBe("A scenario with this name already exists");
   });
 });

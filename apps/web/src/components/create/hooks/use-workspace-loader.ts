@@ -27,6 +27,12 @@ import {
   unitRecordToFormValues,
   type UnitFormValues,
 } from "../unit-form";
+import {
+  createDefaultScenarioFormValues,
+  isScenarioFormDirty,
+  scenarioRecordToFormValues,
+  type ScenarioFormValues,
+} from "../scenario-form";
 
 interface UseWorkspaceLoaderOptions {
   search: {
@@ -53,6 +59,12 @@ function computeIsDirty(
   }
   if (entityType === "unit") {
     return isUnitFormDirty(formValues as UnitFormValues, originalData as Record<string, unknown> | null);
+  }
+  if (entityType === "scenario") {
+    return isScenarioFormDirty(
+      formValues as ScenarioFormValues,
+      originalData as Record<string, unknown> | null,
+    );
   }
 
   const normalise = (value: unknown) => (value === null || value === undefined ? "" : value);
@@ -427,7 +439,7 @@ export function useWorkspaceLoader({
         entityType: "scenario",
         entityId: search.scenario_id,
         data: scenarioData,
-        formValues: { name: scenarioData.name },
+        formValues: scenarioRecordToFormValues(scenarioData),
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Scenarios: search.scenario_id! }));
@@ -547,7 +559,7 @@ export function useWorkspaceLoader({
         entityType: "scenario",
         entityId: id,
         data: scenarioData,
-        formValues: { name: scenarioData.name },
+        formValues: scenarioRecordToFormValues(scenarioData),
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, Scenarios: id }));
@@ -583,7 +595,7 @@ export function useWorkspaceLoader({
             entityType: "scenario",
             entityId: null,
             data: null,
-            formValues: { name: "" },
+            formValues: createDefaultScenarioFormValues(),
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));

@@ -19,7 +19,6 @@ interface TargetedSlotInfo {
 export function computeTargetedSlots(config: {
   targetRowCount: number;
   maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
   allowedRowTypes: RowType[];
 }): Map<string, TargetedSlotInfo> {
   const allowedRows =
@@ -50,20 +49,17 @@ export function computeTargetedSlots(config: {
 interface TargetingGridPreviewProps {
   targetRowCount: number;
   maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
   allowedRowTypes: RowType[];
 }
 
 export function TargetingGridPreview({
   targetRowCount,
   maxTargetsPerRow,
-  targetOnlyAdjacent,
   allowedRowTypes,
 }: TargetingGridPreviewProps) {
   const slots = computeTargetedSlots({
     targetRowCount,
     maxTargetsPerRow,
-    targetOnlyAdjacent,
     allowedRowTypes,
   });
 

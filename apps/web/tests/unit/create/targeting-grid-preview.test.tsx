@@ -7,7 +7,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 1,
       maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: [],
     });
     expect(result.get("ranged")).toEqual({ enabled: true, targetedCount: 1 });
@@ -20,7 +20,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 1,
       maxTargetsPerRow: null,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: [],
     });
     expect(result.get("ranged")).toEqual({ enabled: true, targetedCount: 5 });
@@ -31,7 +31,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 2,
       maxTargetsPerRow: 3,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: [],
     });
     expect(result.get("ranged")).toEqual({ enabled: true, targetedCount: 3 });
@@ -44,7 +44,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 1,
       maxTargetsPerRow: 2,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: ["melee", "tank"],
     });
     expect(result.get("ranged")).toEqual({ enabled: false, targetedCount: 0 });
@@ -57,7 +57,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 4,
       maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: ["melee", "tank"],
     });
     expect(result.get("melee")).toEqual({ enabled: true, targetedCount: 1 });
@@ -70,7 +70,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 1,
       maxTargetsPerRow: 2,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: [],
     });
     expect(result.get("ranged")!.enabled).toBe(true);
@@ -83,7 +83,7 @@ describe("computeTargetedSlots", () => {
     const result = computeTargetedSlots({
       targetRowCount: 1,
       maxTargetsPerRow: 10,
-      targetOnlyAdjacent: false,
+
       allowedRowTypes: [],
     });
     expect(result.get("ranged")!.targetedCount).toBe(5);

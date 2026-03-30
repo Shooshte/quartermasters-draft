@@ -19,6 +19,7 @@ export function WorkspaceRowTypePill({
       className={`ws-row-type-pill ${rowType}`}
       data-testid={testId}
       data-active={active ? "true" : "false"}
+      aria-pressed={active}
       onClick={onClick}
     >
       {capitalize(rowType)}

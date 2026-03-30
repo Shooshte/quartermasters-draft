@@ -57,7 +57,6 @@ export function TargetingCard({
           <TargetingGridPreview
             targetRowCount={formValues.targetRowCount}
             maxTargetsPerRow={formValues.maxTargetsPerRow}
-            targetOnlyAdjacent={formValues.targetOnlyAdjacent}
             allowedRowTypes={formValues.allowedRowTypes}
           />
 

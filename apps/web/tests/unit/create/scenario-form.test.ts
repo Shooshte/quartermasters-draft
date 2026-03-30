@@ -14,10 +14,10 @@ describe("scenario-form", () => {
     expect(createDefaultScenarioFormValues()).toEqual({
       name: "",
       rows: [
-        { rowType: "tank", unitIds: [] },
-        { rowType: "melee", unitIds: [] },
         { rowType: "ranged", unitIds: [] },
         { rowType: "support", unitIds: [] },
+        { rowType: "melee", unitIds: [] },
+        { rowType: "tank", unitIds: [] },
       ],
     });
   });
@@ -36,10 +36,10 @@ describe("scenario-form", () => {
     ).toEqual({
       name: "Siege Breakers",
       rows: [
-        { rowType: "tank", unitIds: [] },
-        { rowType: "melee", unitIds: ["u-1", "u-1", "u-2"] },
         { rowType: "ranged", unitIds: ["u-3"] },
         { rowType: "support", unitIds: [] },
+        { rowType: "melee", unitIds: ["u-1", "u-1", "u-2"] },
+        { rowType: "tank", unitIds: [] },
       ],
     });
   });
@@ -69,10 +69,10 @@ describe("scenario-form", () => {
     ).toEqual({
       name: "Ambush at Dawn",
       rows: [
-        { rowType: "tank", unitIds: [] },
-        { rowType: "melee", unitIds: ["u-1", "u-2"] },
         { rowType: "ranged", unitIds: [] },
         { rowType: "support", unitIds: ["u-3"] },
+        { rowType: "melee", unitIds: ["u-1", "u-2"] },
+        { rowType: "tank", unitIds: [] },
       ],
     });
   });
@@ -91,7 +91,7 @@ describe("scenario-form", () => {
         ],
       }),
     ).toEqual({
-      rows: "Rows must include tank, melee, ranged, and support exactly once",
+      rows: "Rows must include ranged, support, melee, and tank exactly once",
     });
   });
 

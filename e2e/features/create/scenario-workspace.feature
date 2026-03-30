@@ -8,7 +8,7 @@ Feature: Scenario workspace create and edit
     And I am on the "/create" page
     And I have opened the "Scenarios" tab
 
-  # Saved scenarios always include the four fixed rows: tank, melee, ranged, and support.
+  # Saved scenarios always include the four fixed rows: ranged, support, melee, and tank.
   # Units in a row are ordered by 1-based slot.
   # The same unit may be assigned more than once in the same row and across multiple rows.
 

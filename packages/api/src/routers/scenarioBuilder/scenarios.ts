@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
@@ -11,7 +11,7 @@ const scenarioListInput = listInputSchema.extend({
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});
 
-const SCENARIO_ROW_TYPES = ["tank", "melee", "ranged", "support"] as const;
+const SCENARIO_ROW_TYPES = ["ranged", "support", "melee", "tank"] as const;
 const scenarioRowSchema = z.object({
   rowType: z.enum(SCENARIO_ROW_TYPES),
   unitIds: z.array(z.string().uuid()),
@@ -54,7 +54,7 @@ function ensureFixedRows(
     throw new TRPCError({
       code: options?.code ?? "BAD_REQUEST",
       message:
-        options?.message ?? "Rows must include tank, melee, ranged, and support exactly once.",
+        options?.message ?? "Rows must include ranged, support, melee, and tank exactly once.",
     });
   }
 }
@@ -75,8 +75,7 @@ async function getScenarioById(
   const rows = await executor
     .select({ id: scenariosRows.id, rowType: scenariosRows.rowType })
     .from(scenariosRows)
-    .where(eq(scenariosRows.scenarioId, id))
-    .orderBy(asc(sql`${scenariosRows.rowType}::text`));
+    .where(eq(scenariosRows.scenarioId, id));
 
   const rowIds = rows.map((row) => row.id);
   let assignmentsWithUnits: {
@@ -106,23 +105,30 @@ async function getScenarioById(
       .orderBy(asc(scenariosRowsUnits.slot));
   }
 
+  const rowsByType = new Map(rows.map((row) => [row.rowType, row]));
+
   return {
     id: scenario.id,
     name: scenario.name,
     createdAt: scenario.createdAt,
     updatedAt: scenario.updatedAt,
-    rows: rows.map((row) => ({
-      id: row.id,
-      rowType: row.rowType,
-      assignments: assignmentsWithUnits
-        .filter((assignment) => assignment.scenarios_rows_units.rowId === row.id)
-        .map((assignment) => ({
-          assignmentId: assignment.scenarios_rows_units.id,
-          unitId: assignment.scenarios_rows_units.unitId,
-          unitName: assignment.units.name,
-          position: assignment.scenarios_rows_units.slot,
-        })),
-    })),
+    rows: SCENARIO_ROW_TYPES
+      .filter((rowType) => rowsByType.has(rowType))
+      .map((rowType) => {
+        const row = rowsByType.get(rowType)!;
+        return {
+          id: row.id,
+          rowType: row.rowType,
+          assignments: assignmentsWithUnits
+            .filter((a) => a.scenarios_rows_units.rowId === row.id)
+            .map((a) => ({
+              assignmentId: a.scenarios_rows_units.id,
+              unitId: a.scenarios_rows_units.unitId,
+              unitName: a.units.name,
+              position: a.scenarios_rows_units.slot,
+            })),
+        };
+      }),
   };
 }
 

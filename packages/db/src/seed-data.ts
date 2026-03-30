@@ -1315,16 +1315,6 @@ export const scenarioSeedData: (typeof scenarios.$inferInsert)[] = [
 
 export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
   {
-    id: "a3000000-0000-0000-0000-000000000001",
-    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
-    rowType: "tank" as const,
-  },
-  {
-    id: "a3000000-0000-0000-0000-000000000002",
-    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
-    rowType: "melee" as const,
-  },
-  {
     id: "a3000000-0000-0000-0000-000000000003",
     scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
     rowType: "ranged" as const,
@@ -1335,14 +1325,14 @@ export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
     rowType: "support" as const,
   },
   {
-    id: "a3000000-0000-0000-0000-000000000005",
-    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
-    rowType: "tank" as const,
+    id: "a3000000-0000-0000-0000-000000000002",
+    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "melee" as const,
   },
   {
-    id: "a3000000-0000-0000-0000-000000000006",
-    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
-    rowType: "melee" as const,
+    id: "a3000000-0000-0000-0000-000000000001",
+    scenarioId: "a2000000-0000-0000-0000-000000000001", // Ambush at Dawn
+    rowType: "tank" as const,
   },
   {
     id: "a3000000-0000-0000-0000-000000000007",
@@ -1353,6 +1343,16 @@ export const scenariosRowsSeedData: (typeof scenariosRows.$inferInsert)[] = [
     id: "a3000000-0000-0000-0000-000000000008",
     scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
     rowType: "support" as const,
+  },
+  {
+    id: "a3000000-0000-0000-0000-000000000006",
+    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
+    rowType: "melee" as const,
+  },
+  {
+    id: "a3000000-0000-0000-0000-000000000005",
+    scenarioId: "a2000000-0000-0000-0000-000000000002", // Castle Siege
+    rowType: "tank" as const,
   },
 ];
 

@@ -549,6 +549,49 @@ describe("scenariosRouter", () => {
       ]);
     });
 
+    it("throws INTERNAL_SERVER_ERROR when persisted scenario rows are invalid", async () => {
+      const updatedScenario = {
+        id: "a2000000-0000-0000-0000-000000000003",
+        name: "Broken Scenario",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn().mockReturnValue(chainable([updatedScenario])),
+      };
+
+      tx.select.mockReturnValue(
+        chainable([
+          { id: "r1", rowType: "tank" },
+          { id: "r2", rowType: "melee" },
+          { id: "r3", rowType: "ranged" },
+        ]),
+      );
+
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.scenarios.update({
+          id: updatedScenario.id,
+          name: updatedScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: [] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Scenario data is in an unexpected state. Please contact support.",
+      });
+    });
+
     it("throws NOT_FOUND when updating a missing scenario", async () => {
       const tx = {
         insert: vi.fn(),

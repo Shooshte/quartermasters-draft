@@ -38,7 +38,13 @@ function normalizeScenarioInput(input: z.infer<typeof scenarioInputBaseSchema>) 
   };
 }
 
-function ensureFixedRows(rows: { rowType: string }[]) {
+function ensureFixedRows(
+  rows: { rowType: string }[],
+  options?: {
+    code?: "BAD_REQUEST" | "INTERNAL_SERVER_ERROR";
+    message?: string;
+  },
+) {
   const rowTypes = rows.map((row) => row.rowType);
   const isExactlyFixedRows =
     rowTypes.length === SCENARIO_ROW_TYPES.length &&
@@ -46,8 +52,9 @@ function ensureFixedRows(rows: { rowType: string }[]) {
 
   if (!isExactlyFixedRows) {
     throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Rows must include tank, melee, ranged, and support exactly once.",
+      code: options?.code ?? "BAD_REQUEST",
+      message:
+        options?.message ?? "Rows must include tank, melee, ranged, and support exactly once.",
     });
   }
 }
@@ -243,7 +250,10 @@ export const scenariosRouter = router({
             .from(scenariosRows)
             .where(eq(scenariosRows.scenarioId, id));
 
-          ensureFixedRows(existingRows);
+          ensureFixedRows(existingRows, {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Scenario data is in an unexpected state. Please contact support.",
+          });
 
           const rowIdByType = new Map(existingRows.map((row) => [row.rowType, row.id]));
           const rowIds = existingRows.map((row) => row.id);

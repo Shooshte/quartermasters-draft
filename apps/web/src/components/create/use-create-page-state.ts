@@ -435,6 +435,7 @@ export function useCreatePageState(
       if (scenarioWorkspace.mode === "create") {
         const created = await trpc.scenarioBuilder.scenarios.create.mutate(normalized);
         const createdData = created as { id: string; name: string; [key: string]: unknown };
+        queryClient.setQueryData(["scenarioBuilder", "scenarios", "get", createdData.id], createdData);
         setScenarioWorkspace({
           mode: "edit",
           entityType: "scenario",
@@ -458,6 +459,7 @@ export function useCreatePageState(
           ...normalized,
         });
         const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+        queryClient.setQueryData(["scenarioBuilder", "scenarios", "get", updatedData.id], updatedData);
         setScenarioWorkspace({
           mode: "edit",
           entityType: "scenario",

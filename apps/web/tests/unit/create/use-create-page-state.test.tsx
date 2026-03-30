@@ -166,15 +166,22 @@ vi.mock("~/lib/trpc", () => ({
 import { useCreatePageState } from "~/components/create/use-create-page-state";
 
 function createWrapper() {
+  return createWrapperWithClient().wrapper;
+}
+
+function createWrapperWithClient() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },
     },
   });
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+  return {
+    queryClient,
+    wrapper({ children }: { children: React.ReactNode }) {
+      return (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+    },
   };
 }
 
@@ -2321,9 +2328,11 @@ describe("useCreatePageState — scenario save flow", () => {
 
   it("creates a scenario, syncs the URL, and clears dirty state", async () => {
     const navigate = vi.fn();
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Scenarios" }, navigate),
-      { wrapper: createWrapper() },
+      { wrapper },
     );
 
     act(() => {
@@ -2362,6 +2371,13 @@ describe("useCreatePageState — scenario save flow", () => {
       tab: "Scenarios",
       scenario_id: "sc-new",
     });
+    expect(setQueryDataSpy).toHaveBeenCalledWith(
+      ["scenarioBuilder", "scenarios", "get", "sc-new"],
+      expect.objectContaining({
+        id: "sc-new",
+        name: "New Scenario",
+      }),
+    );
   });
 
   it("updates an existing scenario", async () => {
@@ -2376,9 +2392,11 @@ describe("useCreatePageState — scenario save flow", () => {
       ],
     });
 
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const setQueryDataSpy = vi.spyOn(queryClient, "setQueryData");
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
-      { wrapper: createWrapper() },
+      { wrapper },
     );
 
     await act(async () => {
@@ -2403,6 +2421,13 @@ describe("useCreatePageState — scenario save flow", () => {
         { rowType: "support", unitIds: [] },
       ],
     });
+    expect(setQueryDataSpy).toHaveBeenCalledWith(
+      ["scenarioBuilder", "scenarios", "get", "sc1"],
+      expect.objectContaining({
+        id: "sc1",
+        name: "Updated Scenario",
+      }),
+    );
   });
 
   it("blocks saving when the scenario name is missing", async () => {

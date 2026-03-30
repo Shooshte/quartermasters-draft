@@ -10,7 +10,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
         mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
         mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
         mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
-        mockUnitsCreate, mockUnitsUpdate, mockScenariosCreate, mockScenariosUpdate } = vi.hoisted(() => {
+        mockUnitsCreate, mockUnitsUpdate, mockUnitsDelete, mockScenariosCreate, mockScenariosUpdate } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
   const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
@@ -90,6 +90,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     itemIds: ["it-1"],
   });
   const mockUnitsGet = vi.fn().mockRejectedValue(new Error("not found"));
+  const mockUnitsDelete = vi.fn().mockResolvedValue({ success: true });
   const mockScenariosCreate = vi.fn().mockResolvedValue({
     id: "sc-new",
     name: "New Scenario",
@@ -118,7 +119,7 @@ const { mockEffectsList, mockSpellsList, mockItemsList, mockUnitsList, mockScena
     mockEffectsGet, mockSpellsGet, mockItemsGet, mockUnitsGet, mockScenariosGet,
     mockScenariosDelete, mockSpellsDelete, mockEffectsCreate, mockEffectsUpdate, mockEffectsDelete,
     mockSpellsCreate, mockSpellsUpdate, mockItemsCreate, mockItemsUpdate, mockItemsDelete,
-    mockUnitsCreate, mockUnitsUpdate, mockScenariosCreate, mockScenariosUpdate,
+    mockUnitsCreate, mockUnitsUpdate, mockUnitsDelete, mockScenariosCreate, mockScenariosUpdate,
   };
 });
 
@@ -151,6 +152,7 @@ vi.mock("~/lib/trpc", () => ({
         get: { query: mockUnitsGet },
         create: { mutate: mockUnitsCreate },
         update: { mutate: mockUnitsUpdate },
+        delete: { mutate: mockUnitsDelete },
       },
       scenarios: {
         list: { query: mockScenariosList },
@@ -266,6 +268,7 @@ function resetMocks() {
     itemIds: ["it-1"],
   });
   mockUnitsGet.mockRejectedValue(new Error("not found"));
+  mockUnitsDelete.mockResolvedValue({ success: true });
   mockScenariosCreate.mockResolvedValue({
     id: "sc-new",
     name: "New Scenario",
@@ -2465,5 +2468,244 @@ describe("useCreatePageState — scenario save flow", () => {
     });
 
     expect(result.current.scenarioSaveError).toBe("A scenario with this name already exists");
+  });
+});
+
+describe("useCreatePageState — query invalidation after save", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("invalidates all effect queries after creating an effect", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.createNew("Effects");
+      result.current.updateEntityField("name", "New Effect");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "effects"],
+    });
+  });
+
+  it("invalidates all spell queries after creating a spell", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.createNew("Spells");
+      result.current.updateEntityField("name", "New Spell");
+      result.current.updateEntityField("targetPolicy", "random");
+      result.current.updateEntityField("effectIds", ["eff-1"]);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "spells"],
+    });
+  });
+
+  it("invalidates all item queries after creating an item", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.createNew("Items");
+      result.current.updateEntityField("name", "New Item");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "items"],
+    });
+  });
+
+  it("invalidates all unit queries after creating a unit", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.createNew("Units");
+      result.current.updateEntityField("name", "New Unit");
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "units"],
+    });
+  });
+
+  it("invalidates all scenario queries after creating a scenario", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.createNew("Scenarios");
+      result.current.updateScenarioField("name", "Test Scenario");
+    });
+
+    await act(async () => {
+      await result.current.saveScenario();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "scenarios"],
+    });
+  });
+});
+
+describe("useCreatePageState — query invalidation after delete", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("invalidates all effect queries after deleting an effect", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Effects" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.requestDeleteEffect("eff1", "Barbarian Roar");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteEffect();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "effects"],
+    });
+  });
+
+  it("invalidates all spell queries after deleting a spell", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Spells" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.requestDeleteSpell("sp1", "Fireball");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteSpell();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "spells"],
+    });
+  });
+
+  it("invalidates all item queries after deleting an item", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.requestDeleteItem("it1", "Oak Staff");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteItem();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "items"],
+    });
+  });
+
+  it("invalidates all unit queries after deleting a unit", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Units" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.requestDeleteUnit("u1", "Barbarian");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteUnit();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "units"],
+    });
+  });
+
+  it("invalidates all scenario queries after deleting a scenario", async () => {
+    const { queryClient, wrapper } = createWrapperWithClient();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.requestDeleteScenario("sc1", "Ambush at Dawn");
+    });
+
+    await act(async () => {
+      await result.current.confirmDeleteScenario();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "scenarios"],
+    });
   });
 });

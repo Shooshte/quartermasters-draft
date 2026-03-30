@@ -56,7 +56,7 @@ export function useDeleteDialog({
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "scenarios", "list"],
+        queryKey: ["scenarioBuilder", "scenarios"],
       });
 
       const newTotalCount = scenarioTotalCount - 1;

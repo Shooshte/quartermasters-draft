@@ -77,7 +77,7 @@ export function useDeleteSpellDialog({
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "spells", "list"],
+        queryKey: ["scenarioBuilder", "spells"],
       });
 
       const newTotalCount = spellTotalCount - 1;

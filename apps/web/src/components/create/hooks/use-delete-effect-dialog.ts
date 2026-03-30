@@ -77,7 +77,7 @@ export function useDeleteEffectDialog({
       }
 
       await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "effects", "list"],
+        queryKey: ["scenarioBuilder", "effects"],
       });
 
       const newTotalCount = effectTotalCount - 1;

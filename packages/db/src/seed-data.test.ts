@@ -441,8 +441,8 @@ describe("scenarioSeedData", () => {
 });
 
 describe("scenariosRowsSeedData", () => {
-  it("has 8 records", () => {
-    expect(scenariosRowsSeedData).toHaveLength(8);
+  it("has 84 records", () => {
+    expect(scenariosRowsSeedData).toHaveLength(84);
   });
 
   it("each record has required fields: scenarioId, rowType", () => {
@@ -471,6 +471,22 @@ describe("scenariosRowsSeedData", () => {
     for (const record of scenariosRowsSeedData) {
       expect(record.id).toBeDefined();
       expect(typeof record.id).toBe("string");
+    }
+  });
+
+  it("every scenario has exactly 4 rows (ranged, support, melee, tank)", () => {
+    const rowsByScenario = new Map<string, string[]>();
+    for (const record of scenariosRowsSeedData) {
+      const existing = rowsByScenario.get(record.scenarioId) ?? [];
+      existing.push(record.rowType);
+      rowsByScenario.set(record.scenarioId, existing);
+    }
+
+    const scenarioIds = scenarioSeedData.map((s) => s.id);
+    for (const scenarioId of scenarioIds) {
+      const rows = rowsByScenario.get(scenarioId);
+      expect(rows, `scenario ${scenarioId} should have rows`).toBeDefined();
+      expect(rows!.sort()).toEqual(["melee", "ranged", "support", "tank"]);
     }
   });
 });

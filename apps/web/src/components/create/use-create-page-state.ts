@@ -53,6 +53,12 @@ import {
   type ItemOption,
   type UnitFormValues,
 } from "./unit-form";
+import {
+  normalizeScenarioFormValues,
+  scenarioRecordToFormValues,
+  validateScenarioForm,
+  type ScenarioFormValues,
+} from "./scenario-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -151,6 +157,10 @@ export interface CreatePageState {
   requestDeleteUnit: (id: string, name: string) => void;
   confirmDeleteUnit: () => void;
   cancelDeleteUnit: () => void;
+  saveScenario: () => Promise<void>;
+  isScenarioSaving: boolean;
+  scenarioSaveError: string | null;
+  scenarioUnitOptions: { id: string; name: string }[];
   saveEntity: () => Promise<void>;
   isEntitySaving: boolean;
   entitySaveError: string | null;
@@ -214,6 +224,8 @@ export function useCreatePageState(
   const [backgroundEnabled, setBackgroundEnabled] = useState(false);
   const [isEntitySaving, setIsEntitySaving] = useState(false);
   const [entitySaveError, setEntitySaveError] = useState<string | null>(null);
+  const [isScenarioSaving, setIsScenarioSaving] = useState(false);
+  const [scenarioSaveError, setScenarioSaveError] = useState<string | null>(null);
 
   const setActiveTab = useCallback((tab: TabName) => {
     setActiveTabState(tab);
@@ -269,6 +281,16 @@ export function useCreatePageState(
     queryKey: ["scenarioBuilder", "items", "all-options"],
     queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.items.list.query(input)),
     enabled: entityWorkspace.entityType === "unit",
+  });
+
+  const scenarioUnitOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
+    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.units.list.query(input)),
+    enabled:
+      scenarioWorkspace.entityType === "scenario" &&
+      (scenarioWorkspace.mode === "create" ||
+        scenarioWorkspace.mode === "edit" ||
+        (scenarioWorkspace.mode === "loading" && scenarioWorkspace.data !== null)),
   });
 
   // Compute combined loading and enable background after active tab settles
@@ -394,6 +416,81 @@ export function useCreatePageState(
     discard.confirmDiscard(executePendingAction);
   }, [discard, executePendingAction]);
 
+  const saveScenario = useCallback(async () => {
+    if (scenarioWorkspace.entityType !== "scenario") {
+      return;
+    }
+
+    const scenarioValues = scenarioWorkspace.formValues as ScenarioFormValues;
+    if (Object.keys(validateScenarioForm(scenarioValues)).length > 0) {
+      return;
+    }
+
+    const normalized = normalizeScenarioFormValues(scenarioValues);
+
+    try {
+      setIsScenarioSaving(true);
+      setScenarioSaveError(null);
+
+      if (scenarioWorkspace.mode === "create") {
+        const created = await trpc.scenarioBuilder.scenarios.create.mutate(normalized);
+        const createdData = created as { id: string; name: string; [key: string]: unknown };
+        setScenarioWorkspace({
+          mode: "edit",
+          entityType: "scenario",
+          entityId: createdData.id,
+          data: createdData,
+          formValues: scenarioRecordToFormValues(createdData),
+          isDirty: false,
+        });
+        setPerTabSelection((prev) => ({ ...prev, Scenarios: createdData.id }));
+        skipScenarioResetRef.current = true;
+        navigate?.({
+          search: (prev: Record<string, unknown>) => ({
+            ...prev,
+            scenario_id: createdData.id,
+          }),
+          replace: true,
+        });
+      } else if (scenarioWorkspace.mode === "edit" && scenarioWorkspace.entityId) {
+        const updated = await trpc.scenarioBuilder.scenarios.update.mutate({
+          id: scenarioWorkspace.entityId,
+          ...normalized,
+        });
+        const updatedData = updated as { id: string; name: string; [key: string]: unknown };
+        setScenarioWorkspace({
+          mode: "edit",
+          entityType: "scenario",
+          entityId: updatedData.id,
+          data: updatedData,
+          formValues: scenarioRecordToFormValues(updatedData),
+          isDirty: false,
+        });
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios", "list"] }),
+        queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios", "get"] }),
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save scenario. Please try again.";
+      if (message.includes("already exists")) {
+        setScenarioSaveError("A scenario with this name already exists");
+      } else {
+        setScenarioSaveError(message);
+      }
+    } finally {
+      setIsScenarioSaving(false);
+    }
+  }, [
+    navigate,
+    queryClient,
+    scenarioWorkspace,
+    setPerTabSelection,
+    setScenarioWorkspace,
+    skipScenarioResetRef,
+  ]);
+
   const saveEntity = useCallback(async () => {
     if (entityWorkspace.entityType === "effect") {
       const formValues = effectRecordToFormValues(entityWorkspace.formValues);
@@ -406,6 +503,7 @@ export function useCreatePageState(
 
         if (entityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.effects.create.mutate(normalized);
+          queryClient.setQueryData(["scenarioBuilder", "effects", "get", created.id], created);
           setEntityWorkspace({
             mode: "edit",
             entityType: "effect",
@@ -431,6 +529,7 @@ export function useCreatePageState(
             id: entityWorkspace.entityId,
             ...normalized,
           });
+          queryClient.setQueryData(["scenarioBuilder", "effects", "get", updated.id], updated);
           setEntityWorkspace({
             mode: "edit",
             entityType: "effect",
@@ -659,6 +758,13 @@ export function useCreatePageState(
     updateScenarioField,
     confirmDiscard,
     cancelDiscard: discard.cancelDiscard,
+    saveScenario,
+    isScenarioSaving,
+    scenarioSaveError,
+    scenarioUnitOptions: (scenarioUnitOptionsQuery.data ?? []).map((unit: { id: string; name: string }) => ({
+      id: unit.id,
+      name: unit.name,
+    })),
     saveEntity,
     isEntitySaving,
     entitySaveError,

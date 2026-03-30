@@ -1,94 +1,157 @@
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { capitalize } from "~/lib/string-utils";
+import { ScenarioRowEditor } from "./scenario-row-editor";
+import {
+  SCENARIO_ROW_TYPES,
+  hasScenarioFormErrors,
+  type ScenarioFormValues,
+  type ScenarioRowType,
+} from "./scenario-form";
 import type { WorkspaceState } from "./types";
-
-const ROW_TYPES = ["Tank", "Melee", "Ranged", "Support"] as const;
 
 interface ScenarioWorkspaceProps {
   workspace: WorkspaceState;
   onFieldChange: (field: string, value: unknown) => void;
+  onSave: () => void;
+  isSaving: boolean;
+  saveError: string | null;
+  unitOptions: { id: string; name: string }[];
 }
 
-export function ScenarioWorkspace({ workspace, onFieldChange }: ScenarioWorkspaceProps) {
-  const { mode, formValues, data } = workspace;
-  const isTransitioning = mode === "loading" && workspace.data !== null;
+function getWorkspaceTitle(workspace: WorkspaceState) {
+  const { mode, formValues } = workspace;
 
-  type ScenarioRow = { id: string; rowType: string; assignments: unknown[] };
-  const rows =
-    (mode === "edit" || isTransitioning) && data && Array.isArray(data.rows)
-      ? (data.rows as ScenarioRow[])
-      : null;
+  if (mode === "create") {
+    return "New Scenario";
+  }
+  if (mode === "edit") {
+    return `Scenario: ${String(formValues.name ?? "")}`;
+  }
+  if (mode === "loading" && workspace.data) {
+    return `Scenario: ${String(formValues.name ?? "")}`;
+  }
+
+  return "Scenario";
+}
+
+function getScenarioRows(formValues: WorkspaceState["formValues"]) {
+  const scenarioValues = formValues as ScenarioFormValues;
+  const rowMap = new Map(
+    (scenarioValues.rows ?? []).map((row) => [row.rowType, row.unitIds]),
+  );
+
+  return SCENARIO_ROW_TYPES.map((rowType) => ({
+    rowType,
+    unitIds: [...(rowMap.get(rowType) ?? [])],
+  }));
+}
+
+export function ScenarioWorkspace({
+  workspace,
+  onFieldChange,
+  onSave,
+  isSaving,
+  saveError,
+  unitOptions,
+}: ScenarioWorkspaceProps) {
+  const { mode, formValues } = workspace;
+  const isTransitioning = mode === "loading" && workspace.data !== null;
+  const scenarioValues = formValues as ScenarioFormValues;
+  const rows = getScenarioRows(formValues);
+  const hasErrors = hasScenarioFormErrors({
+    name: scenarioValues.name ?? "",
+    rows,
+  });
+
+  const updateRow = (rowType: ScenarioRowType, unitIds: string[]) => {
+    onFieldChange(
+      "rows",
+      rows.map((row) => (row.rowType === rowType ? { ...row, unitIds } : row)),
+    );
+  };
 
   return (
-    <div data-testid="scenario-workspace" className="flex flex-col">
-      <div
-        data-testid="scenario-workspace-header"
-        className="flex h-[41px] items-center border-b border-border bg-accent px-4 text-primary font-display tracking-wide"
-      >
-        {mode === "idle" && "Scenario"}
-        {mode === "loading" && !workspace.data && "Scenario"}
-        {mode === "loading" && workspace.data && `Scenario: ${formValues.name ?? ""}`}
-        {mode === "not-found" && "Scenario"}
-        {mode === "create" && "New Scenario"}
-        {mode === "edit" && `Scenario: ${formValues.name ?? ""}`}
+    <div data-testid="scenario-workspace" className="scenario-workspace">
+      <div data-testid="scenario-workspace-header" className="sw-header">
+        {getWorkspaceTitle(workspace)}
       </div>
-      <div className="p-4">
-        {mode === "idle" && (
-          <p className="text-sm text-muted-foreground" data-testid="scenario-idle">
-            Select a scenario from the library
-          </p>
-        )}
 
-        {mode === "loading" && !workspace.data && (
-          <p className="text-sm text-muted-foreground" data-testid="scenario-loading">
-            Loading…
-          </p>
-        )}
+      <div className="sw-content">
+        <div className="sw-body">
+          {mode === "idle" && (
+            <p className="text-sm text-muted-foreground" data-testid="scenario-idle">
+              Select a scenario from the library
+            </p>
+          )}
 
-        {mode === "not-found" && (
-          <p className="text-sm text-destructive" data-testid="scenario-not-found">
-            Scenario not found
-          </p>
-        )}
+          {mode === "loading" && !workspace.data && (
+            <p className="text-sm text-muted-foreground" data-testid="scenario-loading">
+              Loading…
+            </p>
+          )}
+
+          {mode === "not-found" && (
+            <p className="text-sm text-destructive" data-testid="scenario-not-found">
+              Scenario not found
+            </p>
+          )}
+
+          {(mode === "create" || mode === "edit" || isTransitioning) && (
+            <div
+              className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none sw-loading" : ""}`}
+              data-testid="scenario-form"
+            >
+              <div className="sw-name-field">
+                <label htmlFor="scenario-name" className="sw-name-label">
+                  Name
+                </label>
+                <Input
+                  id="scenario-name"
+                  data-testid="scenario-name-input"
+                  className="sw-name-input"
+                  value={scenarioValues.name ?? ""}
+                  aria-invalid={!scenarioValues.name?.trim() || undefined}
+                  placeholder="Enter scenario name..."
+                  onChange={(event) => onFieldChange("name", event.target.value)}
+                />
+              </div>
+
+              <div className="sw-rows" data-testid="scenario-rows">
+                {rows.map((row) => (
+                  <ScenarioRowEditor
+                    key={row.rowType}
+                    rowType={row.rowType}
+                    unitIds={row.unitIds}
+                    unitOptions={unitOptions}
+                    onChange={(unitIds) => updateRow(row.rowType, unitIds)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {(mode === "create" || mode === "edit" || isTransitioning) && (
-          <div className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="scenario-form">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="scenario-name">Name</Label>
-              <Input
-                id="scenario-name"
-                data-testid="scenario-name-input"
-                value={formValues.name ?? ""}
-                onChange={(e) => onFieldChange("name", e.target.value)}
-              />
-            </div>
+          <div className="sw-footer">
+            {saveError ? (
+              <div className="sw-save-error" data-testid="scenario-save-error">
+                {saveError}
+              </div>
+            ) : (
+              <span className="sw-footer-hint">
+                {!scenarioValues.name?.trim() ? "Name is required to save" : ""}
+              </span>
+            )}
 
-            <div className="flex flex-col gap-2" data-testid="scenario-rows">
-              {mode === "create" &&
-                ROW_TYPES.map((rowType) => (
-                  <div
-                    key={rowType}
-                    data-testid={`scenario-row-${rowType.toLowerCase()}`}
-                    className="rounded border border-border/50 p-2 text-sm text-muted-foreground"
-                  >
-                    {rowType}: Empty
-                  </div>
-                ))}
-              {(mode === "edit" || isTransitioning) &&
-                rows &&
-                rows.map((row) => (
-                  <div
-                    key={row.id}
-                    data-testid={`scenario-row-${row.rowType}`}
-                    className="rounded border border-border/50 p-2 text-sm"
-                  >
-                    {capitalize(row.rowType)}
-                    {row.assignments.length === 0 && (
-                      <span className="ml-2 text-muted-foreground">Empty</span>
-                    )}
-                  </div>
-                ))}
+            <div className="sw-footer-actions">
+              <button
+                type="button"
+                data-testid="scenario-save-button"
+                className="btn btn-primary"
+                disabled={isSaving || hasErrors}
+                onClick={onSave}
+              >
+                {isSaving ? "Saving..." : "Save Scenario"}
+              </button>
             </div>
           </div>
         )}

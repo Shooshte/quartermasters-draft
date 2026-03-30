@@ -81,6 +81,10 @@ export function CreatePage({ search }: CreatePageProps) {
         <ScenarioWorkspace
           workspace={state.scenarioWorkspace}
           onFieldChange={state.updateScenarioField}
+          onSave={state.saveScenario}
+          isSaving={state.isScenarioSaving}
+          saveError={state.scenarioSaveError}
+          unitOptions={state.scenarioUnitOptions}
         />
         <div
           data-testid="workspace-divider"

@@ -277,6 +277,32 @@
   color: var(--ws-color, oklch(0.78 0.15 75));
 }
 
+/* Healing cell — always green regardless of parent effect type */
+.ws-cell-healing {
+  --ws-color: oklch(0.65 0.17 145);
+  --ws-dim: oklch(0.65 0.17 145 / 12%);
+  --ws-subtle: oklch(0.65 0.17 145 / 6%);
+  --ws-border: oklch(0.65 0.17 145 / 18%);
+  background: var(--ws-subtle);
+  border: 1px solid var(--ws-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ws-cell-healing:hover {
+  background: var(--ws-dim);
+}
+.ws-cell-healing:focus-within {
+  border-color: var(--ws-color);
+  box-shadow: 0 0 0 2px oklch(0.65 0.17 145 / 15%);
+}
+.ws-cell-healing.has-value {
+  border-color: var(--ws-color);
+}
+.ws-cell-healing.has-value .ws-cell-input {
+  color: var(--ws-color);
+}
+
 /* Neutral cell (timing fields — no effect-type tint) */
 .ws-cell-neutral {
   background: rgba(255,255,255,0.03);

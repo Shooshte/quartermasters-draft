@@ -121,7 +121,7 @@ export function EffectWorkspaceForm({
                 label={COMPACT_LABELS[field] ?? field}
                 value={normalizedFormValues[field]}
                 error={errors[field]}
-                cellClassName="ws-cell"
+                cellClassName={field === "directHealing" ? "ws-cell-healing" : "ws-cell"}
                 onChange={(value) => onFieldChange(field, toNumericValue(value))}
               />
             ))}

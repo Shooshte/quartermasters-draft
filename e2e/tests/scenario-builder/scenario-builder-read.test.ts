@@ -1,19 +1,14 @@
 import { test, expect } from "../auth/auth.fixtures";
 import { test as base } from "../worker-base.fixture";
 
-const BASE = "/api/trpc";
-
-/** Helper to parse superjson tRPC response */
-async function parseTrpcResponse(response: Awaited<ReturnType<import("@playwright/test").APIRequestContext["get"]>>) {
-  const body = await response.json();
-  return body.result.data.json;
-}
+import { TRPC_BASE } from "../helpers/seed-constants";
+import { parseTrpcResponse } from "../helpers/trpc-api";
 
 test.describe("Scenario Builder Read API — GM access", () => {
   // ── Effects ──────────────────────────────────────────────────────
 
   test("GM can list effects (20 per page, alphabetical)", async ({ gmPage }) => {
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.effects.list`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.items).toHaveLength(20);
@@ -32,7 +27,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   test("GM can get effect by ID (Barbarian Roar)", async ({ gmPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "a0000000-0000-0000-0000-000000000001" } }));
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.effects.get?input=${input}`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Barbarian Roar");
@@ -43,7 +38,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
   // ── Spells ───────────────────────────────────────────────────────
 
   test("GM can list spells (20 per page, alphabetical)", async ({ gmPage }) => {
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.spells.list`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.spells.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.items).toHaveLength(20);
@@ -55,7 +50,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   test("GM can get spell with effectIds (Fireball)", async ({ gmPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "b0000000-0000-0000-0000-000000000001" } }));
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.spells.get?input=${input}`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.spells.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Fireball");
@@ -69,7 +64,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
   // ── Items ────────────────────────────────────────────────────────
 
   test("GM can list items (21 records, 20 per page, alphabetical)", async ({ gmPage }) => {
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.items.list`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.items.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.items).toHaveLength(20);
@@ -81,7 +76,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   test("GM can get item with spellIds (Oak Staff)", async ({ gmPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "d0000000-0000-0000-0000-000000000002" } }));
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.items.get?input=${input}`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.items.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Oak Staff");
@@ -91,7 +86,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
   // ── Units ────────────────────────────────────────────────────────
 
   test("GM can list units (21 records, 20 per page, alphabetical)", async ({ gmPage }) => {
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.units.list`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.units.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.items).toHaveLength(20);
@@ -103,7 +98,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   test("GM can get unit with itemIds (Barbarian)", async ({ gmPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "f0000000-0000-0000-0000-000000000001" } }));
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.units.get?input=${input}`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.units.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Barbarian");
@@ -113,7 +108,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
   // ── Scenarios ────────────────────────────────────────────────────
 
   test("GM can list scenarios (paginated, 20 per page)", async ({ gmPage }) => {
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.scenarios.list`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.list`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.items).toHaveLength(20);
@@ -127,7 +122,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   test("GM can get scenario with rows and assignments", async ({ gmPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "a2000000-0000-0000-0000-000000000001" } }));
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.scenarios.get?input=${input}`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Ambush at Dawn");
@@ -162,7 +157,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
   test("Nonexistent UUID returns NOT_FOUND", async ({ gmPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "00000000-0000-0000-0000-000000000099" } }));
-    const res = await gmPage.request.get(`${BASE}/scenarioBuilder.effects.get?input=${input}`);
+    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.get?input=${input}`);
     expect(res.ok()).toBe(false);
     const body = await res.json();
     expect(body.error.json.data.code).toBe("NOT_FOUND");
@@ -173,7 +168,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
 
 test.describe("Scenario Builder Read API — Player FORBIDDEN", () => {
   test("Player gets FORBIDDEN on effects.list", async ({ playerPage }) => {
-    const res = await playerPage.request.get(`${BASE}/scenarioBuilder.effects.list`);
+    const res = await playerPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(false);
     const body = await res.json();
     expect(body.error.json.data.code).toBe("FORBIDDEN");
@@ -181,7 +176,7 @@ test.describe("Scenario Builder Read API — Player FORBIDDEN", () => {
 
   test("Player gets FORBIDDEN on scenarios.get", async ({ playerPage }) => {
     const input = encodeURIComponent(JSON.stringify({ json: { id: "a2000000-0000-0000-0000-000000000001" } }));
-    const res = await playerPage.request.get(`${BASE}/scenarioBuilder.scenarios.get?input=${input}`);
+    const res = await playerPage.request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`);
     expect(res.ok()).toBe(false);
     const body = await res.json();
     expect(body.error.json.data.code).toBe("FORBIDDEN");
@@ -190,7 +185,7 @@ test.describe("Scenario Builder Read API — Player FORBIDDEN", () => {
 
 base.describe("Scenario Builder Read API — Unauthenticated UNAUTHORIZED", () => {
   base("Unauthenticated request gets UNAUTHORIZED", async ({ request }) => {
-    const res = await request.get(`${BASE}/scenarioBuilder.effects.list`);
+    const res = await request.get(`${TRPC_BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(false);
     const body = await res.json();
     expect(body.error.json.data.code).toBe("UNAUTHORIZED");

@@ -1,42 +1,28 @@
 import { test, expect } from "../db-reset.fixture";
+import { IRON_SWORD_ID, LEATHER_SHIELD_ID, generateEntityIds } from "../helpers/seed-constants";
+import { deleteEntityViaApi } from "../helpers/trpc-api";
+import { LibraryTabPage } from "../pages/library-tab.page";
+import { ITEMS_TAB } from "../pages/library-tab-configs";
 
 // All tests in this file share the same database and some mutate it,
 // so they must run serially to prevent race conditions.
 test.describe.configure({ mode: "serial" });
 
-const IRON_SWORD_ID = "d0000000-0000-0000-0000-000000000001";
-const LEATHER_SHIELD_ID = "d0000000-0000-0000-0000-000000000003";
-const WYRM_SCALE_ID = "d0000000-0000-0000-0000-000000000011";
-const BASE = "/api/trpc";
-
-/** Helper to delete an item via the tRPC mutation API */
-async function deleteItemViaApi(
-  request: import("@playwright/test").APIRequestContext,
-  id: string,
-) {
-  return request.post(`${BASE}/scenarioBuilder.items.delete`, {
-    data: { json: { id } },
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
 // ─── Display ────────────────────────────────────────────────────────────────
 
 test.describe("Items Library Tab — Display", () => {
   test("items are displayed with name and updated at", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    const ironSword = gmPage.getByRole("row", { name: /Iron Sword/ });
+    const ironSword = lib.getRow("Iron Sword");
     await expect(ironSword).toBeVisible();
     await expect(ironSword.getByText("Iron Sword")).toBeVisible();
-    // Verify updated_at date is displayed (e.g. "Jan 1, 2025")
     await expect(ironSword.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
 
-    const oakStaff = gmPage.getByRole("row", { name: /Oak Staff/ });
+    const oakStaff = lib.getRow("Oak Staff");
     await expect(oakStaff).toBeVisible();
     await expect(oakStaff.getByText("Oak Staff")).toBeVisible();
-    // Verify updated_at date is displayed (e.g. "Feb 1, 2025")
     await expect(oakStaff.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
@@ -44,21 +30,16 @@ test.describe("Items Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
-    // Delete all 21 items via API
-    const itemIds = Array.from(
-      { length: 21 },
-      (_, i) => `d0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-    );
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    const itemIds = generateEntityIds("items", 21);
     for (const id of itemIds) {
-      const response = await deleteItemViaApi(gmPage.request, id);
+      const response = await deleteEntityViaApi(gmPage.request, "items", id);
       expect(response.ok()).toBeTruthy();
     }
 
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
-    await expect(gmPage.getByTestId("empty-list")).toBeVisible();
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
 
-    // Restore DB for subsequent tests
     await resetDb();
   });
 });
@@ -69,75 +50,62 @@ test.describe("Items Library Tab — Pagination", () => {
   test("items are displayed one page at a time with pagination controls", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Page 1 should show 20 items
-    const rows = gmPage.locator('tr[aria-selected]');
-    await expect(rows).toHaveCount(20);
-
-    // Pagination controls visible
-    await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeVisible();
+    await expect(lib.rows).toHaveCount(20);
+    await expect(lib.nextPageButton).toBeVisible();
+    await expect(lib.prevPageButton).toBeVisible();
   });
 
   test("navigate to the next page", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // First page: "Iron Sword" visible (alphabetically first)
-    await expect(gmPage.getByRole("row", { name: /Iron Sword/ })).toBeVisible();
+    await expect(lib.getRow("Iron Sword")).toBeVisible();
+    await lib.clickNextPage();
 
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-
-    // Second page: only "Zircon Crown" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
-    // Iron Sword should no longer be shown
-    await expect(gmPage.getByRole("row", { name: /Iron Sword/ })).not.toBeVisible();
+    await expect(lib.getRow("Zircon Crown")).toBeVisible();
+    await expect(lib.getRow("Iron Sword")).not.toBeVisible();
   });
 
   test("navigate to previous page", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Go to page 2
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
+    await lib.clickNextPage();
+    await expect(lib.getRow("Zircon Crown")).toBeVisible();
 
-    // Go back to page 1
-    await gmPage.getByRole("button", { name: "Previous page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Iron Sword/ })).toBeVisible();
+    await lib.clickPrevPage();
+    await expect(lib.getRow("Iron Sword")).toBeVisible();
   });
 
   test("Previous page control is disabled on the first page", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
+    await expect(lib.prevPageButton).toBeDisabled();
   });
 
   test("Next page control is disabled on the last page", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("button", { name: "Next page" })).toBeDisabled();
+    await lib.clickNextPage();
+    await expect(lib.nextPageButton).toBeDisabled();
   });
 
   test("pagination resets when sort order changes", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Go to page 2
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
+    await lib.clickNextPage();
+    await expect(lib.getRow("Zircon Crown")).toBeVisible();
 
-    // Change sort to Updated At
-    await gmPage.getByRole("button", { name: /Updated At/ }).click();
+    await lib.clickSortColumn("Updated At");
 
-    // Should be back on page 1
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    await expect(lib.prevPageButton).toBeDisabled();
   });
 });
 
@@ -146,73 +114,54 @@ test.describe("Items Library Tab — Pagination", () => {
 test.describe("Items Library Tab — Sorting", () => {
   test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    const rows = gmPage.locator('tr[aria-selected]');
-    // Alphabetically: Iron Sword, Jade Lantern, ...
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Jade Lantern");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Jade Lantern");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Click Name to toggle to descending
-    await gmPage.getByRole("button", { name: /Name/ }).click();
+    await lib.clickSortColumn("Name");
 
-    const rows = gmPage.locator('tr[aria-selected]');
-    // Descending: Wyrm Scale, Venom Blade, ...
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Zircon Crown");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Yew Longbow");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zircon Crown");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Yew Longbow");
   });
 
   test("sort by updated at ascending", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Click Updated At to sort ascending
-    await gmPage.getByRole("button", { name: /Updated At/ }).click();
+    await lib.clickSortColumn("Updated At");
 
-    const rows = gmPage.locator('tr[aria-selected]');
-    // Iron Sword was updated before Oak Staff (2025-01-01 vs 2025-02-01)
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Oak Staff");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Oak Staff");
   });
 
   test("sort by updated at descending", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Click Updated At twice: ascending then descending
-    await gmPage.getByRole("button", { name: /Updated At/ }).click();
-    await gmPage.getByRole("button", { name: /Updated At/ }).click();
+    await lib.clickSortColumn("Updated At");
+    await lib.clickSortColumn("Updated At");
 
-    const rows = gmPage.locator('tr[aria-selected]');
-    // Wyrm Scale was updated last (2025-11-01)
-    await expect(rows.nth(0)).toHaveAttribute("aria-label", "Wyrm Scale");
-    await expect(rows.nth(1)).toHaveAttribute("aria-label", "Venom Blade");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Wyrm Scale");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Venom Blade");
   });
 
   test("clicking the active sort column toggles direction", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Default: Name ascending — Iron Sword first
-    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
-      "aria-label",
-      "Iron Sword",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Iron Sword");
 
-    // Click Name to toggle to descending
-    await gmPage.getByRole("button", { name: /Name/ }).click();
-    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
-      "aria-label",
-      "Zircon Crown",
-    );
+    await lib.clickSortColumn("Name");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zircon Crown");
   });
 });
 
@@ -220,23 +169,13 @@ test.describe("Items Library Tab — Sorting", () => {
 
 test.describe("Items Library Tab — Selection", () => {
   test("select an item from the list via edit button", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    const ironSwordRow = gmPage.getByRole("row", { name: "Iron Sword" });
-    await ironSwordRow.getByRole("button", { name: /Edit/ }).click();
+    await lib.editEntity("Iron Sword");
 
-    // Selected in list
-    await expect(
-      gmPage.getByRole("row", { name: "Iron Sword" }),
-    ).toHaveAttribute("aria-selected", "true");
-
-    // Loaded in workspace
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
-      "Iron Sword",
-    );
-
-    // URL updated
+    await expect(lib.getRow("Iron Sword")).toHaveAttribute("aria-selected", "true");
+    await expect(lib.nameInput).toHaveValue("Iron Sword");
     await expect(gmPage).toHaveURL(new RegExp(`item_id=${IRON_SWORD_ID}`));
   });
 });
@@ -247,53 +186,37 @@ test.describe("Items Library Tab — Unsaved Changes", () => {
   test("warn before opening a different item with unsaved changes", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?tab=Items&item_id=${IRON_SWORD_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
-      "Iron Sword",
-    );
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateWithEntity(IRON_SWORD_ID);
+    await expect(lib.nameInput).toHaveValue("Iron Sword");
 
-    // Make changes
-    await gmPage.getByTestId("entity-name-input").fill("Iron Sword Updated");
+    await lib.nameInput.fill("Iron Sword Updated");
 
-    // Try to select Leather Shield via edit button
-    const leatherShieldRow = gmPage.getByRole("row", { name: "Leather Shield" });
-    await leatherShieldRow.getByRole("button", { name: /Edit/ }).click();
+    await lib.editEntity("Leather Shield");
 
-    // Dialog appears
-    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
+    await expect(lib.unsavedChangesDialog).toBeVisible();
 
-    // Cancel preserves state
-    await gmPage.getByRole("button", { name: "Cancel" }).click();
-    await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
-    await expect(
-      gmPage.getByRole("row", { name: "Iron Sword" }),
-    ).toHaveAttribute("aria-selected", "true");
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
-      "Iron Sword Updated",
-    );
+    await lib.cancelUnsavedChanges();
+    await expect(lib.unsavedChangesDialog).not.toBeVisible();
+    await expect(lib.getRow("Iron Sword")).toHaveAttribute("aria-selected", "true");
+    await expect(lib.nameInput).toHaveValue("Iron Sword Updated");
   });
 
   test("discard unsaved changes and open a different item", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?tab=Items&item_id=${IRON_SWORD_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
-      "Iron Sword",
-    );
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateWithEntity(IRON_SWORD_ID);
+    await expect(lib.nameInput).toHaveValue("Iron Sword");
 
-    await gmPage.getByTestId("entity-name-input").fill("Iron Sword Updated");
-    const leatherShieldRow = gmPage.getByRole("row", { name: "Leather Shield" });
-    await leatherShieldRow.getByRole("button", { name: /Edit/ }).click();
+    await lib.nameInput.fill("Iron Sword Updated");
+    await lib.editEntity("Leather Shield");
 
-    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
-    await gmPage.getByRole("button", { name: "Discard" }).click();
+    await expect(lib.unsavedChangesDialog).toBeVisible();
+    await lib.discardUnsavedChanges();
 
-    await expect(
-      gmPage.getByRole("row", { name: "Leather Shield" }),
-    ).toHaveAttribute("aria-selected", "true");
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
-      "Leather Shield",
-    );
+    await expect(lib.getRow("Leather Shield")).toHaveAttribute("aria-selected", "true");
+    await expect(lib.nameInput).toHaveValue("Leather Shield");
   });
 });
 
@@ -305,61 +228,44 @@ test.describe.serial("Items Library Tab — Deletion", () => {
     resetDb,
   }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
-    await expect(gmPage.getByRole("row", { name: "Leather Shield" })).toBeVisible();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
+    await expect(lib.getRow("Leather Shield")).toBeVisible();
 
-    // Click delete on Leather Shield
-    const leatherShieldRow = gmPage.getByRole("row", { name: "Leather Shield" });
-    await leatherShieldRow.getByRole("button", { name: /Delete/ }).click();
+    await lib.clickDeleteOnRow("Leather Shield");
 
-    // Confirmation dialog
-    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
+    await expect(lib.deleteConfirmDialog).toBeVisible();
 
-    // Confirm
-    await gmPage.getByRole("button", { name: "Delete" }).click();
+    await lib.confirmDeletion();
 
-    // Leather Shield gone
-    await expect(gmPage.getByRole("row", { name: "Leather Shield" })).not.toBeVisible();
-
-    // Workspace should remain idle
-    await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
+    await expect(lib.getRow("Leather Shield")).not.toBeVisible();
+    await expect(lib.idleState).toBeVisible();
   });
 
   test("cancel deletion of an item", async ({ gmPage, resetDb }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    const leatherShieldRow = gmPage.getByRole("row", { name: "Leather Shield" });
-    await leatherShieldRow.getByRole("button", { name: /Delete/ }).click();
+    await lib.clickDeleteOnRow("Leather Shield");
 
-    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
-    await gmPage.getByRole("button", { name: "Cancel" }).click();
+    await expect(lib.deleteConfirmDialog).toBeVisible();
+    await lib.cancelDeletion();
 
-    // Leather Shield should still be visible
-    await expect(gmPage.getByRole("row", { name: "Leather Shield" })).toBeVisible();
+    await expect(lib.getRow("Leather Shield")).toBeVisible();
   });
 
   test("delete the currently open item", async ({ gmPage, resetDb }) => {
     await resetDb();
-    await gmPage.goto(`/create?tab=Items&item_id=${IRON_SWORD_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue(
-      "Iron Sword",
-    );
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateWithEntity(IRON_SWORD_ID);
+    await expect(lib.nameInput).toHaveValue("Iron Sword");
 
-    const ironSwordRow = gmPage.getByRole("row", { name: "Iron Sword" });
-    await ironSwordRow.getByRole("button", { name: /Delete/ }).click();
+    await lib.clickDeleteOnRow("Iron Sword");
+    await lib.confirmDeletion();
 
-    await gmPage.getByRole("button", { name: "Delete" }).click();
-
-    // Should be gone from list
-    await expect(gmPage.getByRole("row", { name: "Iron Sword" })).not.toBeVisible();
-
-    // Workspace cleared
-    await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
-
-    // URL should not contain item_id
+    await expect(lib.getRow("Iron Sword")).not.toBeVisible();
+    await expect(lib.idleState).toBeVisible();
     expect(gmPage.url()).not.toContain("item_id");
   });
 
@@ -368,30 +274,23 @@ test.describe.serial("Items Library Tab — Deletion", () => {
     resetDb,
   }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Items" }).click();
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
 
-    // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
+    await expect(lib.rows).toHaveCount(20);
 
-    // Go to page 2
-    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await lib.clickNextPage();
 
-    // Only Zircon Crown on page 2
-    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).toBeVisible();
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
+    await expect(lib.getRow("Zircon Crown")).toBeVisible();
+    await expect(lib.rows).toHaveCount(1);
 
-    // Delete it
-    const zirconCrownRow = gmPage.getByRole("row", { name: /Zircon Crown/ });
-    await zirconCrownRow.getByRole("button", { name: /Delete/ }).click();
-    await gmPage.getByRole("button", { name: "Delete" }).click();
+    await lib.clickDeleteOnRow("Zircon Crown");
+    await lib.confirmDeletion();
 
-    // Should be returned to page 1
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
-    await expect(gmPage.getByRole("row", { name: /Iron Sword/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Zircon Crown/ })).not.toBeVisible();
+    await expect(lib.prevPageButton).toBeDisabled();
+    await expect(lib.getRow("Iron Sword")).toBeVisible();
+    await expect(lib.getRow("Zircon Crown")).not.toBeVisible();
 
-    // Restore DB for subsequent test files
     await resetDb();
   });
 });

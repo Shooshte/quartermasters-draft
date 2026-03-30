@@ -30,7 +30,7 @@ export const COMPACT_LABELS: Record<string, string> = {
   criticalChance: "Crit",
   speed: "Speed",
   manaRegen: "Mana",
-  directHealing: "D.Heal",
+  directHealing: "Heal",
   directMeleeDmg: "D.Mel",
   directRangedDmg: "D.Rng",
   directSpellDmg: "D.Spl",

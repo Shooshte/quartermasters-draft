@@ -6,9 +6,8 @@ import {
   validateSpellForm,
   type SpellFormValues,
   type EffectOption,
-  type RowType,
 } from "./spell-form";
-import { WorkspaceSelectChip } from "./workspace-select-chip";
+import { TargetingCard } from "./targeting-card";
 
 interface SpellWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
@@ -90,155 +89,11 @@ export function SpellWorkspaceForm({
         />
       </div>
 
-      <div>
-        <div className="ws-section-header">Target Selection</div>
-        <div className="flex gap-2 items-center flex-wrap">
-          <WorkspaceSelectChip
-            chipTestId="spell-target-policy-chip"
-            selectTestId="spell-target-policy-select"
-            className="ws-chip"
-            style={{
-              background: "oklch(0.78 0.15 75 / 12%)",
-              color: "oklch(0.78 0.15 75)",
-              border: "1px solid oklch(0.78 0.15 75 / 18%)",
-            }}
-            value={normalizedFormValues.targetPolicy}
-            includeEmptyOption
-            options={[
-              { value: "highest_health" },
-              { value: "lowest_health" },
-              { value: "highest_damage" },
-              { value: "random" },
-            ]}
-            onChange={(value) => onFieldChange("targetPolicy", value)}
-          />
-        </div>
-        {errors.targetPolicy ? (
-          <p className="text-sm text-destructive mt-1">{errors.targetPolicy}</p>
-        ) : null}
-      </div>
-
-      <div>
-        <div className="ws-section-header">Target Scope</div>
-        <div className="flex flex-col gap-3">
-          <div className="ws-cell-neutral">
-            <label htmlFor="spell-target-row-count" className="ws-cell-label">
-              Target Row Count
-            </label>
-            <input
-              id="spell-target-row-count"
-              data-testid="spell-target-row-count-input"
-              type="number"
-              min={1}
-              max={4}
-              className="ws-cell-input"
-              value={normalizedFormValues.targetRowCount}
-              onChange={(event) => {
-                const val = parseInt(event.target.value, 10);
-                if (!isNaN(val)) onFieldChange("targetRowCount", val);
-              }}
-            />
-            {errors.targetRowCount ? (
-              <p className="text-sm text-destructive">{errors.targetRowCount}</p>
-            ) : null}
-          </div>
-
-          <div className="ws-cell-neutral">
-            <label className="ws-cell-label flex items-center gap-2">
-              <input
-                type="checkbox"
-                data-testid="spell-whole-row-checkbox"
-                checked={normalizedFormValues.maxTargetsPerRow === null}
-                onChange={() => {
-                  if (normalizedFormValues.maxTargetsPerRow === null) {
-                    onFieldChange("maxTargetsPerRow", 1);
-                  } else {
-                    if (normalizedFormValues.targetOnlyAdjacent) {
-                      onFieldChange("targetOnlyAdjacent", false);
-                    }
-                    onFieldChange("maxTargetsPerRow", null);
-                  }
-                }}
-              />
-              Target whole row
-            </label>
-          </div>
-
-          {normalizedFormValues.maxTargetsPerRow !== null ? (
-            <div className="ws-cell-neutral">
-              <label htmlFor="spell-max-targets-per-row" className="ws-cell-label">
-                Max Targets Per Row
-              </label>
-              <input
-                id="spell-max-targets-per-row"
-                data-testid="spell-max-targets-per-row-input"
-                type="number"
-                min={1}
-                className="ws-cell-input"
-                value={normalizedFormValues.maxTargetsPerRow}
-                onChange={(event) => {
-                  const val = parseInt(event.target.value, 10);
-                  if (!isNaN(val)) onFieldChange("maxTargetsPerRow", val);
-                }}
-              />
-              {errors.maxTargetsPerRow ? (
-                <p className="text-sm text-destructive">{errors.maxTargetsPerRow}</p>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="ws-cell-neutral">
-            <label className="ws-cell-label flex items-center gap-2">
-              <input
-                type="checkbox"
-                data-testid="spell-target-only-adjacent-checkbox"
-                checked={normalizedFormValues.targetOnlyAdjacent}
-                disabled={
-                  normalizedFormValues.maxTargetsPerRow === null ||
-                  normalizedFormValues.maxTargetsPerRow < 2
-                }
-                onChange={() =>
-                  onFieldChange("targetOnlyAdjacent", !normalizedFormValues.targetOnlyAdjacent)
-                }
-              />
-              Target only adjacent targets
-            </label>
-            {errors.targetOnlyAdjacent ? (
-              <p className="text-sm text-destructive">{errors.targetOnlyAdjacent}</p>
-            ) : null}
-          </div>
-
-          <div className="ws-cell-neutral">
-            <span className="ws-cell-label">
-              Allowed Row Types{" "}
-              <span style={{ opacity: 0.5, textTransform: "none", letterSpacing: 0 }}>
-                {normalizedFormValues.allowedRowTypes.length === 0
-                  ? "(all rows)"
-                  : ""}
-              </span>
-            </span>
-            <div className="flex gap-3 flex-wrap mt-1">
-              {(["support", "ranged", "melee", "tank"] as const).map((rowType) => (
-                <label key={rowType} className="flex items-center gap-1 text-sm">
-                  <input
-                    type="checkbox"
-                    data-testid={`spell-allowed-row-${rowType}`}
-                    checked={normalizedFormValues.allowedRowTypes.includes(rowType)}
-                    onChange={() => {
-                      const current = normalizedFormValues.allowedRowTypes;
-                      const next = current.includes(rowType)
-                        ? current.filter((r: RowType) => r !== rowType)
-                        : [...current, rowType];
-                      onFieldChange("allowedRowTypes", next);
-                    }}
-                  />
-                  {rowType}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      <TargetingCard
+        formValues={normalizedFormValues}
+        errors={errors}
+        onFieldChange={onFieldChange}
+      />
 
       <div>
         <div className="ws-section-header">Spell Effects</div>

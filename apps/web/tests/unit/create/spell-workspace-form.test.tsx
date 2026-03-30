@@ -69,10 +69,10 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByText(/Description/)).toBeInTheDocument();
     });
 
-    it("renders Target Selection section header", () => {
+    it("renders Targeting section header", () => {
       renderForm();
 
-      expect(screen.getByText("Target Selection")).toBeInTheDocument();
+      expect(screen.getByText("Targeting")).toBeInTheDocument();
     });
 
     it("renders only the real target policy options", () => {
@@ -532,11 +532,17 @@ describe("SpellWorkspaceForm", () => {
     });
   });
 
-  describe("Target Scope section", () => {
-    it("renders Target Scope section header", () => {
+  describe("Targeting section", () => {
+    it("renders Targeting section header", () => {
       renderForm();
 
-      expect(screen.getByText("Target Scope")).toBeInTheDocument();
+      expect(screen.getByText("Targeting")).toBeInTheDocument();
+    });
+
+    it("renders targeting grid preview", () => {
+      renderForm();
+
+      expect(screen.getByTestId("targeting-grid")).toBeInTheDocument();
     });
 
     it("renders target row count input", () => {
@@ -545,19 +551,21 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByTestId("spell-target-row-count-input")).toBeInTheDocument();
     });
 
-    it("renders whole row checkbox", () => {
+    it("renders per-row segment toggle with All and Limit options", () => {
       renderForm();
 
-      expect(screen.getByTestId("spell-whole-row-checkbox")).toBeInTheDocument();
+      expect(screen.getByTestId("per-row-toggle")).toBeInTheDocument();
+      expect(screen.getByTestId("per-row-toggle-all")).toBeInTheDocument();
+      expect(screen.getByTestId("per-row-toggle-limit")).toBeInTheDocument();
     });
 
-    it("renders max targets per row input when whole row is not checked", () => {
+    it("renders max targets per row input when Limit is selected", () => {
       renderForm({ formValues: { maxTargetsPerRow: 2 } });
 
       expect(screen.getByTestId("spell-max-targets-per-row-input")).toBeInTheDocument();
     });
 
-    it("hides max targets per row input when whole row is checked", () => {
+    it("hides max targets per row input when All is selected", () => {
       renderForm({ formValues: { maxTargetsPerRow: null } });
 
       expect(screen.queryByTestId("spell-max-targets-per-row-input")).not.toBeInTheDocument();
@@ -569,11 +577,11 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeInTheDocument();
     });
 
-    it("renders allowed row type checkboxes", () => {
+    it("renders allowed row type pills", () => {
       renderForm();
 
-      expect(screen.getByTestId("spell-allowed-row-support")).toBeInTheDocument();
       expect(screen.getByTestId("spell-allowed-row-ranged")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-allowed-row-support")).toBeInTheDocument();
       expect(screen.getByTestId("spell-allowed-row-melee")).toBeInTheDocument();
       expect(screen.getByTestId("spell-allowed-row-tank")).toBeInTheDocument();
     });
@@ -588,38 +596,38 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("targetRowCount", 2);
     });
 
-    it("calls onFieldChange with null when whole row checkbox is checked", async () => {
+    it("calls onFieldChange with null when All segment is clicked", async () => {
       const onFieldChange = vi.fn();
       renderForm({ onFieldChange, formValues: { maxTargetsPerRow: 1 } });
 
-      await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
+      await userEvent.click(screen.getByTestId("per-row-toggle-all"));
 
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
     });
 
-    it("auto-clears targetOnlyAdjacent when whole row is checked while adjacent is true", async () => {
+    it("auto-clears targetOnlyAdjacent when All is clicked while adjacent is true", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
         formValues: { maxTargetsPerRow: 3, targetOnlyAdjacent: true },
       });
 
-      await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
+      await userEvent.click(screen.getByTestId("per-row-toggle-all"));
 
       expect(onFieldChange).toHaveBeenCalledWith("targetOnlyAdjacent", false);
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
     });
 
-    it("calls onFieldChange with 1 when whole row checkbox is unchecked", async () => {
+    it("calls onFieldChange with 1 when Limit segment is clicked", async () => {
       const onFieldChange = vi.fn();
       renderForm({ onFieldChange, formValues: { maxTargetsPerRow: null } });
 
-      await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
+      await userEvent.click(screen.getByTestId("per-row-toggle-limit"));
 
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", 1);
     });
 
-    it("target only adjacent checkbox is disabled when maxTargetsPerRow is null", () => {
+    it("target only adjacent checkbox is disabled when All is selected", () => {
       renderForm({ formValues: { maxTargetsPerRow: null } });
 
       expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
@@ -649,7 +657,7 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("targetOnlyAdjacent", true);
     });
 
-    it("calls onFieldChange when allowed row type is toggled on", async () => {
+    it("calls onFieldChange when allowed row type pill is toggled on", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
@@ -661,7 +669,7 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["melee"]);
     });
 
-    it("calls onFieldChange when allowed row type is toggled off", async () => {
+    it("calls onFieldChange when allowed row type pill is toggled off", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
@@ -671,6 +679,14 @@ describe("SpellWorkspaceForm", () => {
       await userEvent.click(screen.getByTestId("spell-allowed-row-melee"));
 
       expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["tank"]);
+    });
+
+    it("grid preview shows correct targeted slots for default state", () => {
+      renderForm();
+
+      expect(screen.getByTestId("targeting-grid-slot-ranged-0")).toHaveAttribute("data-targeted", "true");
+      expect(screen.getByTestId("targeting-grid-slot-ranged-1")).toHaveAttribute("data-targeted", "false");
+      expect(screen.getByTestId("targeting-grid-slot-support-0")).toHaveAttribute("data-targeted", "false");
     });
 
     it("save button is disabled when targeting validation fails", () => {

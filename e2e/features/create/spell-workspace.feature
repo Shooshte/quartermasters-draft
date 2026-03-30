@@ -96,7 +96,7 @@ Feature: Spell workspace create and edit
     When I start creating a new spell
     Then the target row count should default to 1
     And the max targets per row should default to 1
-    And requires adjacent should default to unchecked
+    And target only adjacent should default to unchecked
     And no row type restrictions should be selected
 
   Scenario: Create a spell targeting a whole row
@@ -109,20 +109,20 @@ Feature: Spell workspace create and edit
   Scenario: Create a spell with adjacent targeting
     When I create a new spell named "Lightning Chain" with target policy "highest_damage"
     And I set max targets per row to 3
-    And I check requires adjacent
+    And I check target only adjacent
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
-    Then reloading the spell by URL should show requires adjacent as checked
+    Then reloading the spell by URL should show target only adjacent as checked
 
   Scenario: Adjacent requires at least 2 targets per row
     When I start creating a new spell
     And I set max targets per row to 1
-    Then the requires adjacent checkbox should be disabled
+    Then the target only adjacent checkbox should be disabled
 
   Scenario: Adjacent is disabled for whole row targeting
     When I start creating a new spell
     And I set "Target whole row" to checked
-    Then the requires adjacent checkbox should be disabled
+    Then the target only adjacent checkbox should be disabled
 
   Scenario: Create a spell with row type restrictions
     When I create a new spell named "Tank Buster" with target policy "highest_health"

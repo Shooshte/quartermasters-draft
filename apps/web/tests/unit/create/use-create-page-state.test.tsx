@@ -206,7 +206,7 @@ function resetMocks() {
     effectIds: ["eff-1"],
     targetRowCount: 1,
     maxTargetsPerRow: 1,
-    requiresAdjacent: false,
+    targetOnlyAdjacent: false,
     allowedRowTypes: [],
   });
   mockSpellsUpdate.mockResolvedValue({
@@ -217,7 +217,7 @@ function resetMocks() {
     effectIds: ["eff-1"],
     targetRowCount: 1,
     maxTargetsPerRow: 1,
-    requiresAdjacent: false,
+    targetOnlyAdjacent: false,
     allowedRowTypes: [],
   });
   mockSpellsGet.mockRejectedValue(new Error("not found"));
@@ -308,7 +308,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty is false when formValues match original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, requiresAdjacent: false, allowedRowTypes: [] });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -323,7 +323,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty is true when any form field differs from original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, requiresAdjacent: false, allowedRowTypes: [] });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -343,7 +343,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty returns to false when field is reverted to original", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, requiresAdjacent: false, allowedRowTypes: [] });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -374,7 +374,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
       effectIds: ["eff-1"],
       targetRowCount: 1,
       maxTargetsPerRow: 1,
-      requiresAdjacent: false,
+      targetOnlyAdjacent: false,
       allowedRowTypes: [],
     });
 
@@ -829,7 +829,7 @@ describe("useCreatePageState — URL param change resets", () => {
   });
 
   it("resets entity workspace to idle when entity_id is removed", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, requiresAdjacent: false, allowedRowTypes: [] });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const search = { tab: "Spells" as const, entity_id: "s1" };
     const { result, rerender } = renderHook(
@@ -1257,7 +1257,7 @@ describe("useCreatePageState — spell save flows", () => {
       effectIds: ["eff-1"],
       targetRowCount: 1,
       maxTargetsPerRow: 1,
-      requiresAdjacent: false,
+      targetOnlyAdjacent: false,
       allowedRowTypes: [],
     });
 
@@ -1285,7 +1285,7 @@ describe("useCreatePageState — spell save flows", () => {
       effectIds: ["eff-1"],
       targetRowCount: 1,
       maxTargetsPerRow: 1,
-      requiresAdjacent: false,
+      targetOnlyAdjacent: false,
       allowedRowTypes: [],
     });
     expect(result.current.entityWorkspace.mode).toBe("edit");

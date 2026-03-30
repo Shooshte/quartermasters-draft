@@ -17,7 +17,7 @@ describe("spell-form", () => {
       effectIds: [],
       targetRowCount: 1,
       maxTargetsPerRow: 1,
-      requiresAdjacent: false,
+      targetOnlyAdjacent: false,
       allowedRowTypes: [],
     });
   });
@@ -174,38 +174,38 @@ describe("spell-form", () => {
     expect(errors.maxTargetsPerRow).toBe("Max targets per row must be at least 1");
   });
 
-  it("returns error when requiresAdjacent is true and maxTargetsPerRow is null", () => {
+  it("returns error when targetOnlyAdjacent is true and maxTargetsPerRow is null", () => {
     const errors = validateSpellForm({
       ...createDefaultSpellFormValues(),
       name: "Fireball",
       targetPolicy: "highest_health",
       effectIds: ["id-1"],
       maxTargetsPerRow: null,
-      requiresAdjacent: true,
+      targetOnlyAdjacent: true,
     });
-    expect(errors.requiresAdjacent).toBe("Adjacent targeting requires a limited number of targets per row");
+    expect(errors.targetOnlyAdjacent).toBe("Adjacent targeting requires a limited number of targets per row");
   });
 
-  it("returns error when requiresAdjacent is true and maxTargetsPerRow is 1", () => {
+  it("returns error when targetOnlyAdjacent is true and maxTargetsPerRow is 1", () => {
     const errors = validateSpellForm({
       ...createDefaultSpellFormValues(),
       name: "Fireball",
       targetPolicy: "highest_health",
       effectIds: ["id-1"],
       maxTargetsPerRow: 1,
-      requiresAdjacent: true,
+      targetOnlyAdjacent: true,
     });
-    expect(errors.requiresAdjacent).toBe("Adjacent targeting requires at least 2 targets per row");
+    expect(errors.targetOnlyAdjacent).toBe("Adjacent targeting requires at least 2 targets per row");
   });
 
-  it("no error when maxTargetsPerRow is null and requiresAdjacent is false", () => {
+  it("no error when maxTargetsPerRow is null and targetOnlyAdjacent is false", () => {
     const errors = validateSpellForm({
       ...createDefaultSpellFormValues(),
       name: "Fireball",
       targetPolicy: "highest_health",
       effectIds: ["id-1"],
       maxTargetsPerRow: null,
-      requiresAdjacent: false,
+      targetOnlyAdjacent: false,
     });
     expect(errors).toEqual({});
   });
@@ -218,7 +218,7 @@ describe("spell-form", () => {
       effectIds: ["id-1"],
       targetRowCount: 1,
       maxTargetsPerRow: 3,
-      requiresAdjacent: true,
+      targetOnlyAdjacent: true,
       allowedRowTypes: ["melee", "tank"],
     });
     expect(errors).toEqual({});
@@ -232,12 +232,12 @@ describe("spell-form", () => {
       effectIds: ["id-1"],
       targetRowCount: 2,
       maxTargetsPerRow: null,
-      requiresAdjacent: false,
+      targetOnlyAdjacent: false,
       allowedRowTypes: ["melee", "tank"],
     });
     expect(result.targetRowCount).toBe(2);
     expect(result.maxTargetsPerRow).toBeNull();
-    expect(result.requiresAdjacent).toBe(false);
+    expect(result.targetOnlyAdjacent).toBe(false);
     expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
   });
 
@@ -248,12 +248,12 @@ describe("spell-form", () => {
       effectIds: ["id-1"],
       targetRowCount: 1,
       maxTargetsPerRow: 3,
-      requiresAdjacent: true,
+      targetOnlyAdjacent: true,
       allowedRowTypes: ["melee", "tank"],
     });
     expect(result.targetRowCount).toBe(1);
     expect(result.maxTargetsPerRow).toBe(3);
-    expect(result.requiresAdjacent).toBe(true);
+    expect(result.targetOnlyAdjacent).toBe(true);
     expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
   });
 
@@ -265,7 +265,7 @@ describe("spell-form", () => {
     });
     expect(result.targetRowCount).toBe(1);
     expect(result.maxTargetsPerRow).toBe(1);
-    expect(result.requiresAdjacent).toBe(false);
+    expect(result.targetOnlyAdjacent).toBe(false);
     expect(result.allowedRowTypes).toEqual([]);
   });
 

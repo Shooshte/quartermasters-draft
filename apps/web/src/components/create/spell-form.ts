@@ -22,7 +22,7 @@ export interface SpellFormValues {
   effectIds: string[];
   targetRowCount: number;
   maxTargetsPerRow: number | null;
-  requiresAdjacent: boolean;
+  targetOnlyAdjacent: boolean;
   allowedRowTypes: RowType[];
 }
 
@@ -33,11 +33,11 @@ interface SpellRecord {
   effectIds?: string[] | null;
   targetRowCount?: number | null;
   maxTargetsPerRow?: number | null;
-  requiresAdjacent?: boolean | null;
+  targetOnlyAdjacent?: boolean | null;
   allowedRowTypes?: RowType[] | null;
 }
 
-export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds" | "targetRowCount" | "maxTargetsPerRow" | "requiresAdjacent", string>>;
+export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds" | "targetRowCount" | "maxTargetsPerRow" | "targetOnlyAdjacent", string>>;
 
 export function createDefaultSpellFormValues(): SpellFormValues {
   return {
@@ -47,7 +47,7 @@ export function createDefaultSpellFormValues(): SpellFormValues {
     effectIds: [],
     targetRowCount: 1,
     maxTargetsPerRow: 1,
-    requiresAdjacent: false,
+    targetOnlyAdjacent: false,
     allowedRowTypes: [],
   };
 }
@@ -75,10 +75,10 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
     errors.maxTargetsPerRow = "Max targets per row must be at least 1";
   }
 
-  if (values.requiresAdjacent && values.maxTargetsPerRow === null) {
-    errors.requiresAdjacent = "Adjacent targeting requires a limited number of targets per row";
-  } else if (values.requiresAdjacent && values.maxTargetsPerRow !== null && values.maxTargetsPerRow < 2) {
-    errors.requiresAdjacent = "Adjacent targeting requires at least 2 targets per row";
+  if (values.targetOnlyAdjacent && values.maxTargetsPerRow === null) {
+    errors.targetOnlyAdjacent = "Adjacent targeting requires a limited number of targets per row";
+  } else if (values.targetOnlyAdjacent && values.maxTargetsPerRow !== null && values.maxTargetsPerRow < 2) {
+    errors.targetOnlyAdjacent = "Adjacent targeting requires at least 2 targets per row";
   }
 
   return errors;
@@ -97,7 +97,7 @@ export function spellRecordToFormValues(record: Partial<SpellRecord>): SpellForm
     effectIds: record.effectIds ?? [],
     targetRowCount: record.targetRowCount ?? 1,
     maxTargetsPerRow: record.maxTargetsPerRow === undefined ? 1 : record.maxTargetsPerRow,
-    requiresAdjacent: record.requiresAdjacent ?? false,
+    targetOnlyAdjacent: record.targetOnlyAdjacent ?? false,
     allowedRowTypes: record.allowedRowTypes ?? [],
   };
 }
@@ -109,7 +109,7 @@ export interface NormalizedSpellInput {
   effectIds: string[];
   targetRowCount: number;
   maxTargetsPerRow: number | null;
-  requiresAdjacent: boolean;
+  targetOnlyAdjacent: boolean;
   allowedRowTypes: RowType[];
 }
 
@@ -122,7 +122,7 @@ export function normalizeSpellFormValues(values: SpellFormValues): NormalizedSpe
     effectIds: values.effectIds,
     targetRowCount: values.targetRowCount,
     maxTargetsPerRow: values.maxTargetsPerRow,
-    requiresAdjacent: values.requiresAdjacent,
+    targetOnlyAdjacent: values.targetOnlyAdjacent,
     allowedRowTypes: values.allowedRowTypes,
   };
 }

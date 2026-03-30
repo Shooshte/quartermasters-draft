@@ -252,7 +252,7 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
     description: "Unleashes a bolt of lightning that jumps between nearby enemies.",
     targetPolicy: "highest_damage" as const,
     maxTargetsPerRow: 3,
-    requiresAdjacent: true,
+    targetOnlyAdjacent: true,
     updatedAt: new Date("2025-05-01T00:00:00Z"),
   },
   {

@@ -153,8 +153,8 @@ export function SpellWorkspaceForm({
                   if (normalizedFormValues.maxTargetsPerRow === null) {
                     onFieldChange("maxTargetsPerRow", 1);
                   } else {
-                    if (normalizedFormValues.requiresAdjacent) {
-                      onFieldChange("requiresAdjacent", false);
+                    if (normalizedFormValues.targetOnlyAdjacent) {
+                      onFieldChange("targetOnlyAdjacent", false);
                     }
                     onFieldChange("maxTargetsPerRow", null);
                   }
@@ -191,20 +191,20 @@ export function SpellWorkspaceForm({
             <label className="ws-cell-label flex items-center gap-2">
               <input
                 type="checkbox"
-                data-testid="spell-requires-adjacent-checkbox"
-                checked={normalizedFormValues.requiresAdjacent}
+                data-testid="spell-target-only-adjacent-checkbox"
+                checked={normalizedFormValues.targetOnlyAdjacent}
                 disabled={
                   normalizedFormValues.maxTargetsPerRow === null ||
                   normalizedFormValues.maxTargetsPerRow < 2
                 }
                 onChange={() =>
-                  onFieldChange("requiresAdjacent", !normalizedFormValues.requiresAdjacent)
+                  onFieldChange("targetOnlyAdjacent", !normalizedFormValues.targetOnlyAdjacent)
                 }
               />
-              Requires adjacent targets
+              Target only adjacent targets
             </label>
-            {errors.requiresAdjacent ? (
-              <p className="text-sm text-destructive">{errors.requiresAdjacent}</p>
+            {errors.targetOnlyAdjacent ? (
+              <p className="text-sm text-destructive">{errors.targetOnlyAdjacent}</p>
             ) : null}
           </div>
 

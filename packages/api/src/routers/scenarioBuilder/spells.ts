@@ -25,25 +25,25 @@ const spellInputFields = z.object({
   effectIds: z.array(z.string().uuid()).min(1, "At least one linked effect is required"),
   targetRowCount: z.number().int().min(1).max(4).default(1),
   maxTargetsPerRow: z.number().int().min(1).nullable().default(1),
-  requiresAdjacent: z.boolean().default(false),
+  targetOnlyAdjacent: z.boolean().default(false),
   allowedRowTypes: z.array(allowedRowTypeEnum).default([]),
 });
 
 function addTargetingRefinements<T extends z.ZodType<z.infer<typeof spellInputFields>>>(schema: T) {
   return schema.superRefine((data, ctx) => {
     const d = data as z.infer<typeof spellInputFields>;
-    if (d.requiresAdjacent && d.maxTargetsPerRow === null) {
+    if (d.targetOnlyAdjacent && d.maxTargetsPerRow === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Requires adjacent cannot be true when targeting whole row",
-        path: ["requiresAdjacent"],
+        message: "Target only adjacent cannot be true when targeting whole row",
+        path: ["targetOnlyAdjacent"],
       });
     }
-    if (d.requiresAdjacent && d.maxTargetsPerRow !== null && d.maxTargetsPerRow < 2) {
+    if (d.targetOnlyAdjacent && d.maxTargetsPerRow !== null && d.maxTargetsPerRow < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Requires adjacent needs at least 2 targets per row",
-        path: ["requiresAdjacent"],
+        message: "Target only adjacent needs at least 2 targets per row",
+        path: ["targetOnlyAdjacent"],
       });
     }
   });
@@ -59,7 +59,7 @@ function normalizeSpellInput(input: z.infer<typeof spellInputBaseSchema>) {
     effectIds: input.effectIds,
     targetRowCount: input.targetRowCount,
     maxTargetsPerRow: input.maxTargetsPerRow,
-    requiresAdjacent: input.requiresAdjacent,
+    targetOnlyAdjacent: input.targetOnlyAdjacent,
     allowedRowTypes: input.allowedRowTypes,
   };
 }
@@ -146,7 +146,7 @@ export const spellsRouter = router({
           targetPolicy: spells.targetPolicy,
           targetRowCount: spells.targetRowCount,
           maxTargetsPerRow: spells.maxTargetsPerRow,
-          requiresAdjacent: spells.requiresAdjacent,
+          targetOnlyAdjacent: spells.targetOnlyAdjacent,
           updatedAt: spells.updatedAt,
         })
         .from(spells)
@@ -209,7 +209,7 @@ export const spellsRouter = router({
               targetPolicy: normalized.targetPolicy,
               targetRowCount: normalized.targetRowCount,
               maxTargetsPerRow: normalized.maxTargetsPerRow,
-              requiresAdjacent: normalized.requiresAdjacent,
+              targetOnlyAdjacent: normalized.targetOnlyAdjacent,
             })
             .returning();
 
@@ -254,7 +254,7 @@ export const spellsRouter = router({
               targetPolicy: normalized.targetPolicy,
               targetRowCount: normalized.targetRowCount,
               maxTargetsPerRow: normalized.maxTargetsPerRow,
-              requiresAdjacent: normalized.requiresAdjacent,
+              targetOnlyAdjacent: normalized.targetOnlyAdjacent,
             })
             .where(eq(spells.id, id))
             .returning();

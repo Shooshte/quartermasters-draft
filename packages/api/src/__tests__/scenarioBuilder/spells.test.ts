@@ -139,7 +139,7 @@ describe("spellsRouter", () => {
         targetPolicy: "highest_health",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
       };
       const mockEffectLinks = [
         { effectTemplateId: "a0000000-0000-0000-0000-000000000006" },
@@ -266,7 +266,7 @@ describe("spellsRouter", () => {
         targetPolicy: "random",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
       });
     });
 
@@ -396,7 +396,7 @@ describe("spellsRouter", () => {
         targetPolicy: "highest_damage",
         targetRowCount: 1,
         maxTargetsPerRow: 3,
-        requiresAdjacent: true,
+        targetOnlyAdjacent: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -411,13 +411,13 @@ describe("spellsRouter", () => {
         effectIds: ["a0000000-0000-0000-0000-000000000001"],
         targetRowCount: 1,
         maxTargetsPerRow: 3,
-        requiresAdjacent: true,
+        targetOnlyAdjacent: true,
         allowedRowTypes: [],
       });
 
       expect(result.targetRowCount).toBe(1);
       expect(result.maxTargetsPerRow).toBe(3);
-      expect(result.requiresAdjacent).toBe(true);
+      expect(result.targetOnlyAdjacent).toBe(true);
     });
 
     it("creates a spell with maxTargetsPerRow null (whole row)", async () => {
@@ -428,7 +428,7 @@ describe("spellsRouter", () => {
         targetPolicy: "random",
         targetRowCount: 2,
         maxTargetsPerRow: null,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -457,7 +457,7 @@ describe("spellsRouter", () => {
         targetPolicy: "highest_health",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -485,7 +485,7 @@ describe("spellsRouter", () => {
         targetPolicy: "random",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -502,7 +502,7 @@ describe("spellsRouter", () => {
 
       expect(result.targetRowCount).toBe(1);
       expect(result.maxTargetsPerRow).toBe(1);
-      expect(result.requiresAdjacent).toBe(false);
+      expect(result.targetOnlyAdjacent).toBe(false);
       expect(result.allowedRowTypes).toEqual([]);
     });
 
@@ -530,7 +530,7 @@ describe("spellsRouter", () => {
       ).rejects.toThrow();
     });
 
-    it("rejects requiresAdjacent true with maxTargetsPerRow null", async () => {
+    it("rejects targetOnlyAdjacent true with maxTargetsPerRow null", async () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.spells.create({
@@ -538,12 +538,12 @@ describe("spellsRouter", () => {
           targetPolicy: "random",
           effectIds: ["a0000000-0000-0000-0000-000000000001"],
           maxTargetsPerRow: null,
-          requiresAdjacent: true,
+          targetOnlyAdjacent: true,
         }),
       ).rejects.toThrow();
     });
 
-    it("rejects requiresAdjacent true with maxTargetsPerRow 1", async () => {
+    it("rejects targetOnlyAdjacent true with maxTargetsPerRow 1", async () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.spells.create({
@@ -551,7 +551,7 @@ describe("spellsRouter", () => {
           targetPolicy: "random",
           effectIds: ["a0000000-0000-0000-0000-000000000001"],
           maxTargetsPerRow: 1,
-          requiresAdjacent: true,
+          targetOnlyAdjacent: true,
         }),
       ).rejects.toThrow();
     });
@@ -617,7 +617,7 @@ describe("spellsRouter", () => {
         targetPolicy: "highest_damage",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
       });
     });
 
@@ -651,7 +651,7 @@ describe("spellsRouter", () => {
         targetPolicy: "random",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
       });
     });
 
@@ -831,7 +831,7 @@ describe("spellsRouter", () => {
         targetPolicy: "highest_health" as const,
         targetRowCount: 2,
         maxTargetsPerRow: null,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -854,7 +854,7 @@ describe("spellsRouter", () => {
         effectIds: ["a0000000-0000-0000-0000-000000000006"],
         targetRowCount: 2,
         maxTargetsPerRow: null,
-        requiresAdjacent: false,
+        targetOnlyAdjacent: false,
         allowedRowTypes: ["melee", "tank"],
       });
 

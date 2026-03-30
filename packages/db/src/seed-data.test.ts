@@ -166,12 +166,12 @@ describe("spellSeedData", () => {
     expect(spellSeedData.some((s) => s.maxTargetsPerRow === null)).toBe(true);
   });
 
-  it("at least one spell has requiresAdjacent set to true", () => {
-    expect(spellSeedData.some((s) => s.requiresAdjacent === true)).toBe(true);
+  it("at least one spell has targetOnlyAdjacent set to true", () => {
+    expect(spellSeedData.some((s) => s.targetOnlyAdjacent === true)).toBe(true);
   });
 
-  it("spells with requiresAdjacent true have maxTargetsPerRow >= 2", () => {
-    const adjacentSpells = spellSeedData.filter((s) => s.requiresAdjacent === true);
+  it("spells with targetOnlyAdjacent true have maxTargetsPerRow >= 2", () => {
+    const adjacentSpells = spellSeedData.filter((s) => s.targetOnlyAdjacent === true);
     for (const spell of adjacentSpells) {
       expect(spell.maxTargetsPerRow).toBeDefined();
       expect(spell.maxTargetsPerRow).not.toBeNull();
@@ -179,10 +179,10 @@ describe("spellSeedData", () => {
     }
   });
 
-  it("spells with maxTargetsPerRow null do not have requiresAdjacent true", () => {
+  it("spells with maxTargetsPerRow null do not have targetOnlyAdjacent true", () => {
     const wholeRowSpells = spellSeedData.filter((s) => s.maxTargetsPerRow === null);
     for (const spell of wholeRowSpells) {
-      expect(spell.requiresAdjacent ?? false).toBe(false);
+      expect(spell.targetOnlyAdjacent ?? false).toBe(false);
     }
   });
 });

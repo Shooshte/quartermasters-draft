@@ -11,7 +11,7 @@ const defaultFormValues: SpellFormValues = {
   effectIds: [],
   targetRowCount: 1,
   maxTargetsPerRow: 1,
-  requiresAdjacent: false,
+  targetOnlyAdjacent: false,
   allowedRowTypes: [],
 };
 
@@ -563,10 +563,10 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.queryByTestId("spell-max-targets-per-row-input")).not.toBeInTheDocument();
     });
 
-    it("renders requires adjacent checkbox", () => {
+    it("renders target only adjacent checkbox", () => {
       renderForm();
 
-      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeInTheDocument();
     });
 
     it("renders allowed row type checkboxes", () => {
@@ -597,16 +597,16 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
     });
 
-    it("auto-clears requiresAdjacent when whole row is checked while adjacent is true", async () => {
+    it("auto-clears targetOnlyAdjacent when whole row is checked while adjacent is true", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
-        formValues: { maxTargetsPerRow: 3, requiresAdjacent: true },
+        formValues: { maxTargetsPerRow: 3, targetOnlyAdjacent: true },
       });
 
       await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
 
-      expect(onFieldChange).toHaveBeenCalledWith("requiresAdjacent", false);
+      expect(onFieldChange).toHaveBeenCalledWith("targetOnlyAdjacent", false);
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
     });
 
@@ -619,34 +619,34 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", 1);
     });
 
-    it("requires adjacent checkbox is disabled when maxTargetsPerRow is null", () => {
+    it("target only adjacent checkbox is disabled when maxTargetsPerRow is null", () => {
       renderForm({ formValues: { maxTargetsPerRow: null } });
 
-      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeDisabled();
+      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
     });
 
-    it("requires adjacent checkbox is disabled when maxTargetsPerRow is 1", () => {
+    it("target only adjacent checkbox is disabled when maxTargetsPerRow is 1", () => {
       renderForm({ formValues: { maxTargetsPerRow: 1 } });
 
-      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeDisabled();
+      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
     });
 
-    it("requires adjacent checkbox is enabled when maxTargetsPerRow >= 2", () => {
+    it("target only adjacent checkbox is enabled when maxTargetsPerRow >= 2", () => {
       renderForm({ formValues: { maxTargetsPerRow: 3 } });
 
-      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeEnabled();
+      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeEnabled();
     });
 
-    it("calls onFieldChange when requires adjacent is toggled", async () => {
+    it("calls onFieldChange when target only adjacent is toggled", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
-        formValues: { maxTargetsPerRow: 3, requiresAdjacent: false },
+        formValues: { maxTargetsPerRow: 3, targetOnlyAdjacent: false },
       });
 
-      await userEvent.click(screen.getByTestId("spell-requires-adjacent-checkbox"));
+      await userEvent.click(screen.getByTestId("spell-target-only-adjacent-checkbox"));
 
-      expect(onFieldChange).toHaveBeenCalledWith("requiresAdjacent", true);
+      expect(onFieldChange).toHaveBeenCalledWith("targetOnlyAdjacent", true);
     });
 
     it("calls onFieldChange when allowed row type is toggled on", async () => {
@@ -680,7 +680,7 @@ describe("SpellWorkspaceForm", () => {
           targetPolicy: "random",
           effectIds: ["eff-1"],
           maxTargetsPerRow: null,
-          requiresAdjacent: true,
+          targetOnlyAdjacent: true,
         },
       });
 

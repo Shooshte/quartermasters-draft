@@ -71,6 +71,13 @@
       "when": 1774894054713,
       "tag": "0009_wealthy_fat_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775148000000,
+      "tag": "0010_rename_requires_adjacent",
+      "breakpoints": true
     }
   ]
 }

@@ -597,6 +597,19 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
     });
 
+    it("auto-clears requiresAdjacent when whole row is checked while adjacent is true", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({
+        onFieldChange,
+        formValues: { maxTargetsPerRow: 3, requiresAdjacent: true },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("requiresAdjacent", false);
+      expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
+    });
+
     it("calls onFieldChange with 1 when whole row checkbox is unchecked", async () => {
       const onFieldChange = vi.fn();
       renderForm({ onFieldChange, formValues: { maxTargetsPerRow: null } });

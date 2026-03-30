@@ -23,22 +23,23 @@ const spellInputFields = z.object({
     "random",
   ]),
   effectIds: z.array(z.string().uuid()).min(1, "At least one linked effect is required"),
-  targetRowCount: z.number().int().min(1).default(1),
+  targetRowCount: z.number().int().min(1).max(4).default(1),
   maxTargetsPerRow: z.number().int().min(1).nullable().default(1),
   requiresAdjacent: z.boolean().default(false),
   allowedRowTypes: z.array(allowedRowTypeEnum).default([]),
 });
 
-function addTargetingRefinements<T extends z.ZodTypeAny>(schema: T) {
-  return schema.superRefine((data: z.infer<typeof spellInputFields>, ctx: z.RefinementCtx) => {
-    if (data.requiresAdjacent && data.maxTargetsPerRow === null) {
+function addTargetingRefinements<T extends z.ZodType<z.infer<typeof spellInputFields>>>(schema: T) {
+  return schema.superRefine((data, ctx) => {
+    const d = data as z.infer<typeof spellInputFields>;
+    if (d.requiresAdjacent && d.maxTargetsPerRow === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Requires adjacent cannot be true when targeting whole row",
         path: ["requiresAdjacent"],
       });
     }
-    if (data.requiresAdjacent && data.maxTargetsPerRow !== null && data.maxTargetsPerRow < 2) {
+    if (d.requiresAdjacent && d.maxTargetsPerRow !== null && d.maxTargetsPerRow < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Requires adjacent needs at least 2 targets per row",

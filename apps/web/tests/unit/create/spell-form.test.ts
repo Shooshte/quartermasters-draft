@@ -149,7 +149,18 @@ describe("spell-form", () => {
       effectIds: ["id-1"],
       targetRowCount: 0,
     });
-    expect(errors.targetRowCount).toBe("Target row count must be at least 1");
+    expect(errors.targetRowCount).toBe("Target row count must be between 1 and 4");
+  });
+
+  it("returns error when targetRowCount exceeds 4", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      targetRowCount: 5,
+    });
+    expect(errors.targetRowCount).toBe("Target row count must be between 1 and 4");
   });
 
   it("returns error when maxTargetsPerRow is less than 1 and not null", () => {

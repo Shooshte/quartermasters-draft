@@ -67,8 +67,8 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
     errors.effectIds = "At least one linked effect is required";
   }
 
-  if (values.targetRowCount < 1) {
-    errors.targetRowCount = "Target row count must be at least 1";
+  if (values.targetRowCount < 1 || values.targetRowCount > 4) {
+    errors.targetRowCount = "Target row count must be between 1 and 4";
   }
 
   if (values.maxTargetsPerRow !== null && values.maxTargetsPerRow < 1) {

@@ -1,0 +1,2 @@
+ALTER TABLE "spells" DROP CONSTRAINT "target_row_count_positive";--> statement-breakpoint
+ALTER TABLE "spells" ADD CONSTRAINT "target_row_count_range" CHECK ("spells"."target_row_count" >= 1 AND "spells"."target_row_count" <= 4);

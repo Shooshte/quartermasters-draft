@@ -64,6 +64,13 @@
       "when": 1774887969438,
       "tag": "0008_spotty_polaris",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774894054713,
+      "tag": "0009_wealthy_fat_cobra",
+      "breakpoints": true
     }
   ]
 }

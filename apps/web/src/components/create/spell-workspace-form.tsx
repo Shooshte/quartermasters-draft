@@ -130,6 +130,7 @@ export function SpellWorkspaceForm({
               data-testid="spell-target-row-count-input"
               type="number"
               min={1}
+              max={4}
               className="ws-cell-input"
               value={normalizedFormValues.targetRowCount}
               onChange={(event) => {
@@ -152,6 +153,9 @@ export function SpellWorkspaceForm({
                   if (normalizedFormValues.maxTargetsPerRow === null) {
                     onFieldChange("maxTargetsPerRow", 1);
                   } else {
+                    if (normalizedFormValues.requiresAdjacent) {
+                      onFieldChange("requiresAdjacent", false);
+                    }
                     onFieldChange("maxTargetsPerRow", null);
                   }
                 }}

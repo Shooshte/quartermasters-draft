@@ -204,6 +204,10 @@ function resetMocks() {
     description: null,
     targetPolicy: "random",
     effectIds: ["eff-1"],
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
+    allowedRowTypes: [],
   });
   mockSpellsUpdate.mockResolvedValue({
     id: "s1",
@@ -211,6 +215,10 @@ function resetMocks() {
     description: null,
     targetPolicy: "random",
     effectIds: ["eff-1"],
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
+    allowedRowTypes: [],
   });
   mockSpellsGet.mockRejectedValue(new Error("not found"));
   mockItemsCreate.mockResolvedValue({
@@ -300,7 +308,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty is false when formValues match original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -315,7 +323,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty is true when any form field differs from original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -335,7 +343,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
   });
 
   it("entity isDirty returns to false when field is reverted to original", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Spells" }, vi.fn()),
@@ -364,6 +372,10 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
       description: null,
       targetPolicy: "random",
       effectIds: ["eff-1"],
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
 
     const { result } = renderHook(
@@ -817,7 +829,7 @@ describe("useCreatePageState — URL param change resets", () => {
   });
 
   it("resets entity workspace to idle when entity_id is removed", async () => {
-    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50 });
+    mockSpellsGet.mockResolvedValueOnce({ id: "s1", name: "Fireball", description: "", targetPolicy: "random", effectIds: ["eff-1"], damage: 50, targetRowCount: 1, maxTargetsPerRow: 1, targetOnlyAdjacent: false, allowedRowTypes: [] });
 
     const search = { tab: "Spells" as const, entity_id: "s1" };
     const { result, rerender } = renderHook(
@@ -1243,6 +1255,10 @@ describe("useCreatePageState — spell save flows", () => {
       description: null,
       targetPolicy: "random",
       effectIds: ["eff-1"],
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
 
     const { result, rerender } = renderHook(
@@ -1267,6 +1283,10 @@ describe("useCreatePageState — spell save flows", () => {
       description: null,
       targetPolicy: "random",
       effectIds: ["eff-1"],
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
     expect(result.current.entityWorkspace.mode).toBe("edit");
     expect(result.current.entityWorkspace.entityId).toBe("s-created");

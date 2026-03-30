@@ -1,4 +1,4 @@
-import { effects, items, itemsSpells, scenarios, scenariosRows, scenariosRowsUnits, spells, spellsEffects, units, unitsItems } from "./schema";
+import { effects, items, itemsSpells, scenarios, scenariosRows, scenariosRowsUnits, spells, spellsAllowedRows, spellsEffects, units, unitsItems } from "./schema";
 
 const now = new Date();
 
@@ -251,6 +251,8 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
     name: "Chain Lightning",
     description: "Unleashes a bolt of lightning that jumps between nearby enemies.",
     targetPolicy: "highest_damage" as const,
+    maxTargetsPerRow: 3,
+    targetOnlyAdjacent: true,
     updatedAt: new Date("2025-05-01T00:00:00Z"),
   },
   {
@@ -265,6 +267,8 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
     name: "Earthquake",
     description: "Shakes the ground beneath all enemies, dealing area damage.",
     targetPolicy: "random" as const,
+    targetRowCount: 2,
+    maxTargetsPerRow: null,
     updatedAt: new Date("2025-07-01T00:00:00Z"),
   },
   {
@@ -272,6 +276,7 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
     name: "Frost Nova",
     description: "Releases a burst of frost that slows and damages nearby foes.",
     targetPolicy: "highest_damage" as const,
+    maxTargetsPerRow: null,
     updatedAt: new Date("2025-08-01T00:00:00Z"),
   },
   {
@@ -286,6 +291,7 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
     name: "Holy Light",
     description: "Channels divine energy to restore a large amount of health.",
     targetPolicy: "lowest_health" as const,
+    maxTargetsPerRow: 2,
     updatedAt: new Date("2025-10-01T00:00:00Z"),
   },
   {
@@ -505,6 +511,29 @@ export const spellsEffectsSeedData: (typeof spellsEffects.$inferInsert)[] = [
     spellId: "b0000000-0000-0000-0000-000000000021",
     effectTemplateId: "a0000000-0000-0000-0000-000000000019",
     sequenceOrder: 1,
+  },
+];
+
+export const spellsAllowedRowsSeedData: (typeof spellsAllowedRows.$inferInsert)[] = [
+  {
+    id: "f0000000-0000-0000-0000-000000000001",
+    spellId: "b0000000-0000-0000-0000-000000000005", // Chain Lightning
+    rowType: "melee" as const,
+  },
+  {
+    id: "f0000000-0000-0000-0000-000000000002",
+    spellId: "b0000000-0000-0000-0000-000000000005", // Chain Lightning
+    rowType: "tank" as const,
+  },
+  {
+    id: "f0000000-0000-0000-0000-000000000003",
+    spellId: "b0000000-0000-0000-0000-000000000008", // Frost Nova
+    rowType: "ranged" as const,
+  },
+  {
+    id: "f0000000-0000-0000-0000-000000000004",
+    spellId: "b0000000-0000-0000-0000-000000000008", // Frost Nova
+    rowType: "support" as const,
   },
 ];
 

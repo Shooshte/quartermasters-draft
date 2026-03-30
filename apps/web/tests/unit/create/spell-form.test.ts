@@ -15,6 +15,10 @@ describe("spell-form", () => {
       description: "",
       targetPolicy: "",
       effectIds: [],
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
   });
 
@@ -50,8 +54,8 @@ describe("spell-form", () => {
 
   it("returns no errors for valid form", () => {
     const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
       name: "Fireball",
-      description: "",
       targetPolicy: "highest_health",
       effectIds: ["id-1"],
     });
@@ -65,8 +69,8 @@ describe("spell-form", () => {
   it("hasSpellFormErrors returns false when form is valid", () => {
     expect(
       hasSpellFormErrors({
+        ...createDefaultSpellFormValues(),
         name: "Fireball",
-        description: "",
         targetPolicy: "highest_health",
         effectIds: ["id-1"],
       }),
@@ -75,48 +79,48 @@ describe("spell-form", () => {
 
   it("normalizes name by trimming whitespace", () => {
     const result = normalizeSpellFormValues({
+      ...createDefaultSpellFormValues(),
       name: "  Fireball  ",
       description: "test",
       targetPolicy: "random",
-      effectIds: [],
     });
     expect(result.name).toBe("Fireball");
   });
 
   it("normalizes empty description to null", () => {
     const result = normalizeSpellFormValues({
+      ...createDefaultSpellFormValues(),
       name: "Fireball",
       description: "",
       targetPolicy: "random",
-      effectIds: [],
     });
     expect(result.description).toBeNull();
   });
 
   it("normalizes whitespace-only description to null", () => {
     const result = normalizeSpellFormValues({
+      ...createDefaultSpellFormValues(),
       name: "Fireball",
       description: "   ",
       targetPolicy: "random",
-      effectIds: [],
     });
     expect(result.description).toBeNull();
   });
 
   it("normalizes non-empty description by trimming", () => {
     const result = normalizeSpellFormValues({
+      ...createDefaultSpellFormValues(),
       name: "Fireball",
       description: "  A blazing sphere  ",
       targetPolicy: "random",
-      effectIds: [],
     });
     expect(result.description).toBe("A blazing sphere");
   });
 
   it("passes through targetPolicy and effectIds unchanged", () => {
     const result = normalizeSpellFormValues({
+      ...createDefaultSpellFormValues(),
       name: "Fireball",
-      description: "",
       targetPolicy: "highest_health",
       effectIds: ["id-1", "id-2"],
     });
@@ -133,5 +137,145 @@ describe("spell-form", () => {
     });
 
     expect(result.description).toBe("");
+  });
+
+  // --- Targeting field tests ---
+
+  it("returns error when targetRowCount is less than 1", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      targetRowCount: 0,
+    });
+    expect(errors.targetRowCount).toBe("Target row count must be between 1 and 4");
+  });
+
+  it("returns error when targetRowCount exceeds 4", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      targetRowCount: 5,
+    });
+    expect(errors.targetRowCount).toBe("Target row count must be between 1 and 4");
+  });
+
+  it("returns error when maxTargetsPerRow is less than 1 and not null", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      maxTargetsPerRow: 0,
+    });
+    expect(errors.maxTargetsPerRow).toBe("Max targets per row must be at least 1");
+  });
+
+  it("returns error when targetOnlyAdjacent is true and maxTargetsPerRow is null", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      maxTargetsPerRow: null,
+      targetOnlyAdjacent: true,
+    });
+    expect(errors.targetOnlyAdjacent).toBe("Adjacent targeting requires a limited number of targets per row");
+  });
+
+  it("returns error when targetOnlyAdjacent is true and maxTargetsPerRow is 1", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: true,
+    });
+    expect(errors.targetOnlyAdjacent).toBe("Adjacent targeting requires at least 2 targets per row");
+  });
+
+  it("no error when maxTargetsPerRow is null and targetOnlyAdjacent is false", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Fireball",
+      targetPolicy: "highest_health",
+      effectIds: ["id-1"],
+      maxTargetsPerRow: null,
+      targetOnlyAdjacent: false,
+    });
+    expect(errors).toEqual({});
+  });
+
+  it("no error for valid targeting combination", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Chain Lightning",
+      targetPolicy: "highest_damage",
+      effectIds: ["id-1"],
+      targetRowCount: 1,
+      maxTargetsPerRow: 3,
+      targetOnlyAdjacent: true,
+      allowedRowTypes: ["melee", "tank"],
+    });
+    expect(errors).toEqual({});
+  });
+
+  it("normalizes targeting fields through unchanged", () => {
+    const result = normalizeSpellFormValues({
+      ...createDefaultSpellFormValues(),
+      name: "Earthquake",
+      targetPolicy: "random",
+      effectIds: ["id-1"],
+      targetRowCount: 2,
+      maxTargetsPerRow: null,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: ["melee", "tank"],
+    });
+    expect(result.targetRowCount).toBe(2);
+    expect(result.maxTargetsPerRow).toBeNull();
+    expect(result.targetOnlyAdjacent).toBe(false);
+    expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
+  });
+
+  it("spellRecordToFormValues maps targeting fields", () => {
+    const result = spellRecordToFormValues({
+      name: "Chain Lightning",
+      targetPolicy: "highest_damage",
+      effectIds: ["id-1"],
+      targetRowCount: 1,
+      maxTargetsPerRow: 3,
+      targetOnlyAdjacent: true,
+      allowedRowTypes: ["melee", "tank"],
+    });
+    expect(result.targetRowCount).toBe(1);
+    expect(result.maxTargetsPerRow).toBe(3);
+    expect(result.targetOnlyAdjacent).toBe(true);
+    expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
+  });
+
+  it("spellRecordToFormValues defaults missing targeting fields", () => {
+    const result = spellRecordToFormValues({
+      name: "Fireball",
+      targetPolicy: "random",
+      effectIds: ["id-1"],
+    });
+    expect(result.targetRowCount).toBe(1);
+    expect(result.maxTargetsPerRow).toBe(1);
+    expect(result.targetOnlyAdjacent).toBe(false);
+    expect(result.allowedRowTypes).toEqual([]);
+  });
+
+  it("spellRecordToFormValues maps null maxTargetsPerRow from DB", () => {
+    const result = spellRecordToFormValues({
+      name: "Earthquake",
+      targetPolicy: "random",
+      effectIds: ["id-1"],
+      maxTargetsPerRow: null,
+    });
+    expect(result.maxTargetsPerRow).toBeNull();
   });
 });

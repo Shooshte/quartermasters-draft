@@ -5,6 +5,7 @@ export interface EffectOption {
 }
 
 export type TargetPolicy = "highest_health" | "lowest_health" | "highest_damage" | "random";
+export type RowType = "support" | "ranged" | "melee" | "tank";
 
 const VALID_TARGET_POLICIES: readonly string[] = [
   "highest_health",
@@ -19,6 +20,10 @@ export interface SpellFormValues {
   description: string;
   targetPolicy: TargetPolicy | "";
   effectIds: string[];
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
+  allowedRowTypes: RowType[];
 }
 
 interface SpellRecord {
@@ -26,9 +31,13 @@ interface SpellRecord {
   description?: string | null;
   targetPolicy?: string | null;
   effectIds?: string[] | null;
+  targetRowCount?: number | null;
+  maxTargetsPerRow?: number | null;
+  targetOnlyAdjacent?: boolean | null;
+  allowedRowTypes?: RowType[] | null;
 }
 
-export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds", string>>;
+export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds" | "targetRowCount" | "maxTargetsPerRow" | "targetOnlyAdjacent", string>>;
 
 export function createDefaultSpellFormValues(): SpellFormValues {
   return {
@@ -36,6 +45,10 @@ export function createDefaultSpellFormValues(): SpellFormValues {
     description: "",
     targetPolicy: "",
     effectIds: [],
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
+    allowedRowTypes: [],
   };
 }
 
@@ -54,6 +67,20 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
     errors.effectIds = "At least one linked effect is required";
   }
 
+  if (values.targetRowCount < 1 || values.targetRowCount > 4) {
+    errors.targetRowCount = "Target row count must be between 1 and 4";
+  }
+
+  if (values.maxTargetsPerRow !== null && values.maxTargetsPerRow < 1) {
+    errors.maxTargetsPerRow = "Max targets per row must be at least 1";
+  }
+
+  if (values.targetOnlyAdjacent && values.maxTargetsPerRow === null) {
+    errors.targetOnlyAdjacent = "Adjacent targeting requires a limited number of targets per row";
+  } else if (values.targetOnlyAdjacent && values.maxTargetsPerRow !== null && values.maxTargetsPerRow < 2) {
+    errors.targetOnlyAdjacent = "Adjacent targeting requires at least 2 targets per row";
+  }
+
   return errors;
 }
 
@@ -68,6 +95,10 @@ export function spellRecordToFormValues(record: Partial<SpellRecord>): SpellForm
     description: record.description ?? "",
     targetPolicy: (record.targetPolicy as TargetPolicy | "") ?? "",
     effectIds: record.effectIds ?? [],
+    targetRowCount: record.targetRowCount ?? 1,
+    maxTargetsPerRow: record.maxTargetsPerRow === undefined ? 1 : record.maxTargetsPerRow,
+    targetOnlyAdjacent: record.targetOnlyAdjacent ?? false,
+    allowedRowTypes: record.allowedRowTypes ?? [],
   };
 }
 
@@ -76,6 +107,10 @@ export interface NormalizedSpellInput {
   description: string | null;
   targetPolicy: TargetPolicy;
   effectIds: string[];
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
+  allowedRowTypes: RowType[];
 }
 
 export function normalizeSpellFormValues(values: SpellFormValues): NormalizedSpellInput {
@@ -85,5 +120,9 @@ export function normalizeSpellFormValues(values: SpellFormValues): NormalizedSpe
     description: trimmedDesc || null,
     targetPolicy: values.targetPolicy as TargetPolicy,
     effectIds: values.effectIds,
+    targetRowCount: values.targetRowCount,
+    maxTargetsPerRow: values.maxTargetsPerRow,
+    targetOnlyAdjacent: values.targetOnlyAdjacent,
+    allowedRowTypes: values.allowedRowTypes,
   };
 }

@@ -1,10 +1,9 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
-
-test.describe.configure({ mode: "serial" });
-
 import { BARBARIAN_ID } from "../helpers/seed-constants";
 import { openNewEntity, saveEntityAndWait, expectAllStats, addLinkedEntity } from "../helpers/workspace-helpers";
+
+test.describe.configure({ mode: "serial" });
 
 async function saveCreatedUnitAndWaitForUrl(gmPage: Page) {
   await saveEntityAndWait(gmPage, "units", "create");

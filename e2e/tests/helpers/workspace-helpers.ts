@@ -4,7 +4,6 @@
  */
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
-import { TRPC_BASE } from "./seed-constants";
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
 

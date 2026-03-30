@@ -1,8 +1,7 @@
 import { expect, test } from "../db-reset.fixture";
+import { BARBARIAN_ROAR_ID } from "../helpers/seed-constants";
 
 test.describe.configure({ mode: "serial" });
-
-import { BARBARIAN_ROAR_ID } from "../helpers/seed-constants";
 
 test.describe("Effect Workspace CRUD", () => {
   test("interval fields are visible but disabled for instant timing", async ({ gmPage }) => {

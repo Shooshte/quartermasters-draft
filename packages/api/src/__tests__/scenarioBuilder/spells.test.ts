@@ -132,15 +132,22 @@ describe("spellsRouter", () => {
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("returns spell with effectIds when found", async () => {
+    it("returns spell with effectIds and allowedRowTypes when found", async () => {
       const mockSpell = {
         id: "b0000000-0000-0000-0000-000000000001",
         name: "Fireball",
         targetPolicy: "highest_health",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        requiresAdjacent: false,
       };
       const mockEffectLinks = [
         { effectTemplateId: "a0000000-0000-0000-0000-000000000006" },
         { effectTemplateId: "a0000000-0000-0000-0000-000000000007" },
+      ];
+      const mockAllowedRows = [
+        { rowType: "melee" },
+        { rowType: "tank" },
       ];
 
       let callCount = 0;
@@ -149,7 +156,10 @@ describe("spellsRouter", () => {
         if (callCount === 1) {
           return chainable([mockSpell]);
         }
-        return chainable(mockEffectLinks);
+        if (callCount === 2) {
+          return chainable(mockEffectLinks);
+        }
+        return chainable(mockAllowedRows);
       });
 
       const caller = createCaller(gmCtx);
@@ -162,6 +172,7 @@ describe("spellsRouter", () => {
           "a0000000-0000-0000-0000-000000000006",
           "a0000000-0000-0000-0000-000000000007",
         ],
+        allowedRowTypes: ["melee", "tank"],
       });
     });
 
@@ -221,6 +232,7 @@ describe("spellsRouter", () => {
       expect(result).toEqual({
         ...created,
         effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        allowedRowTypes: [],
       });
       expect(mockInsertFn).toHaveBeenCalledTimes(2);
     });
@@ -252,6 +264,9 @@ describe("spellsRouter", () => {
         name: "Silent Strike",
         description: null,
         targetPolicy: "random",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        requiresAdjacent: false,
       });
     });
 
@@ -372,6 +387,174 @@ describe("spellsRouter", () => {
 
       expect(mockInsertFn).not.toHaveBeenCalled();
     });
+
+    it("creates a spell with explicit targeting fields", async () => {
+      const created = {
+        id: "b0000000-0000-0000-0000-000000000030",
+        name: "Chain Lightning",
+        description: null,
+        targetPolicy: "highest_damage",
+        targetRowCount: 1,
+        maxTargetsPerRow: 3,
+        requiresAdjacent: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockInsertFn
+        .mockReturnValueOnce(chainable([created]))
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.spells.create({
+        name: "Chain Lightning",
+        targetPolicy: "highest_damage",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        targetRowCount: 1,
+        maxTargetsPerRow: 3,
+        requiresAdjacent: true,
+        allowedRowTypes: [],
+      });
+
+      expect(result.targetRowCount).toBe(1);
+      expect(result.maxTargetsPerRow).toBe(3);
+      expect(result.requiresAdjacent).toBe(true);
+    });
+
+    it("creates a spell with maxTargetsPerRow null (whole row)", async () => {
+      const created = {
+        id: "b0000000-0000-0000-0000-000000000031",
+        name: "Earthquake",
+        description: null,
+        targetPolicy: "random",
+        targetRowCount: 2,
+        maxTargetsPerRow: null,
+        requiresAdjacent: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockInsertFn
+        .mockReturnValueOnce(chainable([created]))
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.spells.create({
+        name: "Earthquake",
+        targetPolicy: "random",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        targetRowCount: 2,
+        maxTargetsPerRow: null,
+      });
+
+      expect(result.maxTargetsPerRow).toBeNull();
+      expect(result.targetRowCount).toBe(2);
+    });
+
+    it("creates a spell with allowedRowTypes", async () => {
+      const created = {
+        id: "b0000000-0000-0000-0000-000000000032",
+        name: "Tank Buster",
+        description: null,
+        targetPolicy: "highest_health",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        requiresAdjacent: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockInsertFn
+        .mockReturnValueOnce(chainable([created]))
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) })
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.spells.create({
+        name: "Tank Buster",
+        targetPolicy: "highest_health",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        allowedRowTypes: ["melee", "tank"],
+      });
+
+      expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
+    });
+
+    it("applies targeting defaults when new fields omitted", async () => {
+      const created = {
+        id: "b0000000-0000-0000-0000-000000000033",
+        name: "Simple Spell",
+        description: null,
+        targetPolicy: "random",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        requiresAdjacent: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockInsertFn
+        .mockReturnValueOnce(chainable([created]))
+        .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.spells.create({
+        name: "Simple Spell",
+        targetPolicy: "random",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+      });
+
+      expect(result.targetRowCount).toBe(1);
+      expect(result.maxTargetsPerRow).toBe(1);
+      expect(result.requiresAdjacent).toBe(false);
+      expect(result.allowedRowTypes).toEqual([]);
+    });
+
+    it("rejects targetRowCount less than 1", async () => {
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.spells.create({
+          name: "Bad Spell",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          targetRowCount: 0,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("rejects maxTargetsPerRow less than 1 when not null", async () => {
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.spells.create({
+          name: "Bad Spell",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          maxTargetsPerRow: 0,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("rejects requiresAdjacent true with maxTargetsPerRow null", async () => {
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.spells.create({
+          name: "Bad Spell",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          maxTargetsPerRow: null,
+          requiresAdjacent: true,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("rejects requiresAdjacent true with maxTargetsPerRow 1", async () => {
+      const caller = createCaller(gmCtx);
+      await expect(
+        caller.spells.create({
+          name: "Bad Spell",
+          targetPolicy: "random",
+          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          maxTargetsPerRow: 1,
+          requiresAdjacent: true,
+        }),
+      ).rejects.toThrow();
+    });
   });
 
   describe("update", () => {
@@ -410,7 +593,8 @@ describe("spellsRouter", () => {
       };
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      // delete effects, insert effects, delete allowed rows
+      mockDeleteFn.mockReturnValueOnce(chainable([])).mockReturnValueOnce(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
 
       const caller = createCaller(gmCtx);
@@ -425,11 +609,15 @@ describe("spellsRouter", () => {
       expect(result).toEqual({
         ...updated,
         effectIds: ["a0000000-0000-0000-0000-000000000006"],
+        allowedRowTypes: [],
       });
       expect(updateSet).toHaveBeenCalledWith({
         name: "Fireball Updated",
         description: "Updated desc",
         targetPolicy: "highest_damage",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        requiresAdjacent: false,
       });
     });
 
@@ -444,7 +632,7 @@ describe("spellsRouter", () => {
       };
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockDeleteFn.mockReturnValueOnce(chainable([])).mockReturnValueOnce(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
 
       const caller = createCaller(gmCtx);
@@ -461,6 +649,9 @@ describe("spellsRouter", () => {
         name: "Silent Spell",
         description: null,
         targetPolicy: "random",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        requiresAdjacent: false,
       });
     });
 
@@ -474,7 +665,7 @@ describe("spellsRouter", () => {
         updatedAt: new Date(),
       };
       mockUpdateFn.mockReturnValueOnce({ set: vi.fn().mockReturnValue(chainable([updated])) });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockDeleteFn.mockReturnValueOnce(chainable([])).mockReturnValueOnce(chainable([]));
       const linksValues = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: linksValues });
 
@@ -517,7 +708,7 @@ describe("spellsRouter", () => {
         updatedAt: new Date(),
       };
       mockUpdateFn.mockReturnValueOnce({ set: vi.fn().mockReturnValue(chainable([updated])) });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockDeleteFn.mockReturnValueOnce(chainable([])).mockReturnValueOnce(chainable([]));
       const linksValues = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: linksValues });
 
@@ -551,7 +742,7 @@ describe("spellsRouter", () => {
         updatedAt: new Date(),
       };
       mockUpdateFn.mockReturnValueOnce({ set: vi.fn().mockReturnValue(chainable([updated])) });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockDeleteFn.mockReturnValueOnce(chainable([])).mockReturnValueOnce(chainable([]));
       const linksValues = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: linksValues });
 
@@ -630,6 +821,46 @@ describe("spellsRouter", () => {
 
       expect(mockUpdateFn).not.toHaveBeenCalled();
       expect(mockDeleteFn).not.toHaveBeenCalled();
+    });
+
+    it("updates targeting fields and replaces allowedRowTypes", async () => {
+      const updated = {
+        id: "b0000000-0000-0000-0000-000000000001",
+        name: "Fireball",
+        description: null,
+        targetPolicy: "highest_health" as const,
+        targetRowCount: 2,
+        maxTargetsPerRow: null,
+        requiresAdjacent: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const updateSet = vi.fn().mockReturnValue(chainable([updated]));
+      mockUpdateFn.mockReturnValueOnce({ set: updateSet });
+      // delete effects
+      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      // insert effects
+      mockInsertFn.mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
+      // delete allowed rows
+      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      // insert allowed rows
+      mockInsertFn.mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.spells.update({
+        id: updated.id,
+        name: updated.name,
+        targetPolicy: updated.targetPolicy,
+        effectIds: ["a0000000-0000-0000-0000-000000000006"],
+        targetRowCount: 2,
+        maxTargetsPerRow: null,
+        requiresAdjacent: false,
+        allowedRowTypes: ["melee", "tank"],
+      });
+
+      expect(result.targetRowCount).toBe(2);
+      expect(result.maxTargetsPerRow).toBeNull();
+      expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
     });
   });
 

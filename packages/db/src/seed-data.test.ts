@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, scenarioSeedData, scenariosRowsSeedData, scenariosRowsUnitsSeedData, spellSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
+import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, scenarioSeedData, scenariosRowsSeedData, scenariosRowsUnitsSeedData, spellSeedData, spellsAllowedRowsSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -156,6 +156,82 @@ describe("spellSeedData", () => {
       expect(spell.id).toBeDefined();
       expect(typeof spell.id).toBe("string");
     }
+  });
+
+  it("at least one spell has targetRowCount > 1", () => {
+    expect(spellSeedData.some((s) => s.targetRowCount !== undefined && s.targetRowCount > 1)).toBe(true);
+  });
+
+  it("at least one spell has maxTargetsPerRow set to null (whole row)", () => {
+    expect(spellSeedData.some((s) => s.maxTargetsPerRow === null)).toBe(true);
+  });
+
+  it("at least one spell has requiresAdjacent set to true", () => {
+    expect(spellSeedData.some((s) => s.requiresAdjacent === true)).toBe(true);
+  });
+
+  it("spells with requiresAdjacent true have maxTargetsPerRow >= 2", () => {
+    const adjacentSpells = spellSeedData.filter((s) => s.requiresAdjacent === true);
+    for (const spell of adjacentSpells) {
+      expect(spell.maxTargetsPerRow).toBeDefined();
+      expect(spell.maxTargetsPerRow).not.toBeNull();
+      expect(spell.maxTargetsPerRow!).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("spells with maxTargetsPerRow null do not have requiresAdjacent true", () => {
+    const wholeRowSpells = spellSeedData.filter((s) => s.maxTargetsPerRow === null);
+    for (const spell of wholeRowSpells) {
+      expect(spell.requiresAdjacent ?? false).toBe(false);
+    }
+  });
+});
+
+describe("spellsAllowedRowsSeedData", () => {
+  it("has expected number of records", () => {
+    expect(spellsAllowedRowsSeedData.length).toBeGreaterThan(0);
+  });
+
+  it("each record has required fields: spellId, rowType", () => {
+    for (const record of spellsAllowedRowsSeedData) {
+      expect(record.spellId).toBeDefined();
+      expect(record.rowType).toBeDefined();
+    }
+  });
+
+  it("all spellId values reference spells in spellSeedData", () => {
+    const spellIds = new Set(spellSeedData.map((s) => s.id));
+    for (const record of spellsAllowedRowsSeedData) {
+      expect(spellIds.has(record.spellId)).toBe(true);
+    }
+  });
+
+  it("rowType values are valid", () => {
+    const validRowTypes = ["support", "ranged", "melee", "tank"];
+    for (const record of spellsAllowedRowsSeedData) {
+      expect(validRowTypes).toContain(record.rowType);
+    }
+  });
+
+  it("no duplicate (spellId, rowType) combinations", () => {
+    const seen = new Set<string>();
+    for (const record of spellsAllowedRowsSeedData) {
+      const key = `${record.spellId}:${record.rowType}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  it("each record has a deterministic id", () => {
+    for (const record of spellsAllowedRowsSeedData) {
+      expect(record.id).toBeDefined();
+      expect(typeof record.id).toBe("string");
+    }
+  });
+
+  it("at least one spell has no allowed-row restrictions", () => {
+    const restrictedSpellIds = new Set(spellsAllowedRowsSeedData.map((r) => r.spellId));
+    expect(spellSeedData.some((spell) => spell.id && !restrictedSpellIds.has(spell.id))).toBe(true);
   });
 });
 

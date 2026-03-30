@@ -122,14 +122,26 @@ export const effects = pgTable(
   ],
 );
 
-export const spells = pgTable("spells", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull().unique(),
-  description: text("description"),
-  targetPolicy: targetPolicyEnum("target_policy").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+export const spells = pgTable(
+  "spells",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    description: text("description"),
+    targetPolicy: targetPolicyEnum("target_policy").notNull(),
+    targetRowCount: integer("target_row_count").notNull().default(1),
+    maxTargetsPerRow: integer("max_targets_per_row").default(1),
+    requiresAdjacent: boolean("requires_adjacent").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (table) => [
+    check("target_row_count_positive", sql`${table.targetRowCount} >= 1`),
+    check("max_targets_per_row_positive", sql`${table.maxTargetsPerRow} IS NULL OR ${table.maxTargetsPerRow} >= 1`),
+    check("requires_adjacent_whole_row", sql`${table.maxTargetsPerRow} IS NOT NULL OR ${table.requiresAdjacent} = false`),
+    check("requires_adjacent_min_targets", sql`${table.requiresAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`),
+  ],
+);
 
 export const spellsEffects = pgTable(
   "spells_effects",
@@ -147,6 +159,19 @@ export const spellsEffects = pgTable(
   ],
 );
 // Migration 0005 adds deferred constraint triggers so every spell keeps at least one linked effect.
+
+export const spellsAllowedRows = pgTable(
+  "spells_allowed_rows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
+    rowType: rowTypeEnum("row_type").notNull(),
+  },
+  (table) => [
+    index("spells_allowed_rows_spell_id_idx").on(table.spellId),
+    unique("spells_allowed_rows_spell_id_row_type_unique").on(table.spellId, table.rowType),
+  ],
+);
 
 export const items = pgTable("items", {
   id: uuid("id").primaryKey().defaultRandom(),

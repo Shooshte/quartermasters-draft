@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, spells, spellsEffects } from "@qd/db";
+import { db, spells, spellsEffects, spellsAllowedRows } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
 import { findDbError, listInputSchema } from "./shared";
 
@@ -11,7 +11,9 @@ const spellListInput = listInputSchema.extend({
   sortDir: z.enum(["asc", "desc"]).default("asc"),
 }).default({});
 
-const spellInputBaseSchema = z.object({
+const allowedRowTypeEnum = z.enum(["support", "ranged", "melee", "tank"]);
+
+const spellInputFields = z.object({
   name: z.string().trim().min(1),
   description: z.string().nullable().optional().default(null),
   targetPolicy: z.enum([
@@ -21,7 +23,32 @@ const spellInputBaseSchema = z.object({
     "random",
   ]),
   effectIds: z.array(z.string().uuid()).min(1, "At least one linked effect is required"),
+  targetRowCount: z.number().int().min(1).default(1),
+  maxTargetsPerRow: z.number().int().min(1).nullable().default(1),
+  requiresAdjacent: z.boolean().default(false),
+  allowedRowTypes: z.array(allowedRowTypeEnum).default([]),
 });
+
+function addTargetingRefinements<T extends z.ZodTypeAny>(schema: T) {
+  return schema.superRefine((data: z.infer<typeof spellInputFields>, ctx: z.RefinementCtx) => {
+    if (data.requiresAdjacent && data.maxTargetsPerRow === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Requires adjacent cannot be true when targeting whole row",
+        path: ["requiresAdjacent"],
+      });
+    }
+    if (data.requiresAdjacent && data.maxTargetsPerRow !== null && data.maxTargetsPerRow < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Requires adjacent needs at least 2 targets per row",
+        path: ["requiresAdjacent"],
+      });
+    }
+  });
+}
+
+const spellInputBaseSchema = addTargetingRefinements(spellInputFields);
 
 function normalizeSpellInput(input: z.infer<typeof spellInputBaseSchema>) {
   return {
@@ -29,6 +56,10 @@ function normalizeSpellInput(input: z.infer<typeof spellInputBaseSchema>) {
     description: input.description?.trim() ? input.description.trim() : null,
     targetPolicy: input.targetPolicy,
     effectIds: input.effectIds,
+    targetRowCount: input.targetRowCount,
+    maxTargetsPerRow: input.maxTargetsPerRow,
+    requiresAdjacent: input.requiresAdjacent,
+    allowedRowTypes: input.allowedRowTypes,
   };
 }
 
@@ -48,6 +79,20 @@ async function insertSpellEffects(
   effectIds: string[],
 ) {
   await tx.insert(spellsEffects).values(buildSpellEffectRows(spellId, effectIds));
+}
+
+async function insertSpellAllowedRows(
+  tx: SpellEffectsTransaction,
+  spellId: string,
+  rowTypes: string[],
+) {
+  if (rowTypes.length === 0) return;
+  await tx.insert(spellsAllowedRows).values(
+    rowTypes.map((rowType) => ({
+      spellId,
+      rowType: rowType as "support" | "ranged" | "melee" | "tank",
+    })),
+  );
 }
 
 function maybeThrowConflict(error: unknown): never {
@@ -98,6 +143,9 @@ export const spellsRouter = router({
           name: spells.name,
           description: spells.description,
           targetPolicy: spells.targetPolicy,
+          targetRowCount: spells.targetRowCount,
+          maxTargetsPerRow: spells.maxTargetsPerRow,
+          requiresAdjacent: spells.requiresAdjacent,
           updatedAt: spells.updatedAt,
         })
         .from(spells)
@@ -133,9 +181,15 @@ export const spellsRouter = router({
         .where(eq(spellsEffects.spellId, input.id))
         .orderBy(asc(spellsEffects.sequenceOrder));
 
+      const allowedRows = await db
+        .select({ rowType: spellsAllowedRows.rowType })
+        .from(spellsAllowedRows)
+        .where(eq(spellsAllowedRows.spellId, input.id));
+
       return {
         ...spell,
         effectIds: effectLinks.map((e) => e.effectTemplateId),
+        allowedRowTypes: allowedRows.map((r) => r.rowType),
       };
     }),
 
@@ -152,6 +206,9 @@ export const spellsRouter = router({
               name: normalized.name,
               description: normalized.description,
               targetPolicy: normalized.targetPolicy,
+              targetRowCount: normalized.targetRowCount,
+              maxTargetsPerRow: normalized.maxTargetsPerRow,
+              requiresAdjacent: normalized.requiresAdjacent,
             })
             .returning();
 
@@ -163,10 +220,12 @@ export const spellsRouter = router({
           }
 
           await insertSpellEffects(tx, created.id, normalized.effectIds);
+          await insertSpellAllowedRows(tx, created.id, normalized.allowedRowTypes);
 
           return {
             ...created,
             effectIds: normalized.effectIds,
+            allowedRowTypes: normalized.allowedRowTypes,
           };
         });
       } catch (error) {
@@ -179,7 +238,7 @@ export const spellsRouter = router({
     }),
 
   update: gmProcedure
-    .input(z.object({ id: z.string().uuid() }).merge(spellInputBaseSchema))
+    .input(addTargetingRefinements(z.object({ id: z.string().uuid() }).merge(spellInputFields)))
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeSpellInput(rest);
@@ -192,6 +251,9 @@ export const spellsRouter = router({
               name: normalized.name,
               description: normalized.description,
               targetPolicy: normalized.targetPolicy,
+              targetRowCount: normalized.targetRowCount,
+              maxTargetsPerRow: normalized.maxTargetsPerRow,
+              requiresAdjacent: normalized.requiresAdjacent,
             })
             .where(eq(spells.id, id))
             .returning();
@@ -203,9 +265,13 @@ export const spellsRouter = router({
           await tx.delete(spellsEffects).where(eq(spellsEffects.spellId, id));
           await insertSpellEffects(tx, id, normalized.effectIds);
 
+          await tx.delete(spellsAllowedRows).where(eq(spellsAllowedRows.spellId, id));
+          await insertSpellAllowedRows(tx, id, normalized.allowedRowTypes);
+
           return {
             ...updated,
             effectIds: normalized.effectIds,
+            allowedRowTypes: normalized.allowedRowTypes,
           };
         });
       } catch (error) {

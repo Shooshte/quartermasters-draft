@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SpellWorkspaceForm } from "~/components/create/spell-workspace-form";
 import type { SpellFormValues } from "~/components/create/spell-form";
@@ -9,6 +9,10 @@ const defaultFormValues: SpellFormValues = {
   description: "",
   targetPolicy: "",
   effectIds: [],
+  targetRowCount: 1,
+  maxTargetsPerRow: 1,
+  requiresAdjacent: false,
+  allowedRowTypes: [],
 };
 
 const sampleEffectOptions = [
@@ -525,6 +529,149 @@ describe("SpellWorkspaceForm", () => {
       await userEvent.click(screen.getByTestId("spell-effect-remove-0"));
 
       expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-1"]);
+    });
+  });
+
+  describe("Target Scope section", () => {
+    it("renders Target Scope section header", () => {
+      renderForm();
+
+      expect(screen.getByText("Target Scope")).toBeInTheDocument();
+    });
+
+    it("renders target row count input", () => {
+      renderForm();
+
+      expect(screen.getByTestId("spell-target-row-count-input")).toBeInTheDocument();
+    });
+
+    it("renders whole row checkbox", () => {
+      renderForm();
+
+      expect(screen.getByTestId("spell-whole-row-checkbox")).toBeInTheDocument();
+    });
+
+    it("renders max targets per row input when whole row is not checked", () => {
+      renderForm({ formValues: { maxTargetsPerRow: 2 } });
+
+      expect(screen.getByTestId("spell-max-targets-per-row-input")).toBeInTheDocument();
+    });
+
+    it("hides max targets per row input when whole row is checked", () => {
+      renderForm({ formValues: { maxTargetsPerRow: null } });
+
+      expect(screen.queryByTestId("spell-max-targets-per-row-input")).not.toBeInTheDocument();
+    });
+
+    it("renders requires adjacent checkbox", () => {
+      renderForm();
+
+      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeInTheDocument();
+    });
+
+    it("renders allowed row type checkboxes", () => {
+      renderForm();
+
+      expect(screen.getByTestId("spell-allowed-row-support")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-allowed-row-ranged")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-allowed-row-melee")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-allowed-row-tank")).toBeInTheDocument();
+    });
+
+    it("calls onFieldChange when target row count changes", () => {
+      const onFieldChange = vi.fn();
+      renderForm({ onFieldChange, formValues: { targetRowCount: 1 } });
+
+      const input = screen.getByTestId("spell-target-row-count-input");
+      fireEvent.change(input, { target: { value: "2" } });
+
+      expect(onFieldChange).toHaveBeenCalledWith("targetRowCount", 2);
+    });
+
+    it("calls onFieldChange with null when whole row checkbox is checked", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({ onFieldChange, formValues: { maxTargetsPerRow: 1 } });
+
+      await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", null);
+    });
+
+    it("calls onFieldChange with 1 when whole row checkbox is unchecked", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({ onFieldChange, formValues: { maxTargetsPerRow: null } });
+
+      await userEvent.click(screen.getByTestId("spell-whole-row-checkbox"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", 1);
+    });
+
+    it("requires adjacent checkbox is disabled when maxTargetsPerRow is null", () => {
+      renderForm({ formValues: { maxTargetsPerRow: null } });
+
+      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeDisabled();
+    });
+
+    it("requires adjacent checkbox is disabled when maxTargetsPerRow is 1", () => {
+      renderForm({ formValues: { maxTargetsPerRow: 1 } });
+
+      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeDisabled();
+    });
+
+    it("requires adjacent checkbox is enabled when maxTargetsPerRow >= 2", () => {
+      renderForm({ formValues: { maxTargetsPerRow: 3 } });
+
+      expect(screen.getByTestId("spell-requires-adjacent-checkbox")).toBeEnabled();
+    });
+
+    it("calls onFieldChange when requires adjacent is toggled", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({
+        onFieldChange,
+        formValues: { maxTargetsPerRow: 3, requiresAdjacent: false },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-requires-adjacent-checkbox"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("requiresAdjacent", true);
+    });
+
+    it("calls onFieldChange when allowed row type is toggled on", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({
+        onFieldChange,
+        formValues: { allowedRowTypes: [] },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-allowed-row-melee"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["melee"]);
+    });
+
+    it("calls onFieldChange when allowed row type is toggled off", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({
+        onFieldChange,
+        formValues: { allowedRowTypes: ["melee", "tank"] },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-allowed-row-melee"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["tank"]);
+    });
+
+    it("save button is disabled when targeting validation fails", () => {
+      renderForm({
+        formValues: {
+          name: "Test Spell",
+          targetPolicy: "random",
+          effectIds: ["eff-1"],
+          maxTargetsPerRow: null,
+          requiresAdjacent: true,
+        },
+      });
+
+      expect(screen.getByTestId("entity-save-button")).toBeDisabled();
     });
   });
 });

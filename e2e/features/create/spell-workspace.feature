@@ -95,13 +95,13 @@ Feature: Spell workspace create and edit
   Scenario: Target scope defaults are set on new spell
     When I start creating a new spell
     Then the target row count should default to 1
-    And the max targets per row should default to 1
+    And the per-row toggle should default to "Limit" with value 1
     And target only adjacent should default to unchecked
-    And no row type restrictions should be selected
+    And no row type restriction pills should be active
 
   Scenario: Create a spell targeting a whole row
     When I create a new spell named "Inferno Wave" with target policy "random"
-    And I set "Target whole row" to checked
+    And I click the "All" per-row toggle segment
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
     Then reloading the spell by URL should show max targets per row as "whole row"
@@ -121,12 +121,12 @@ Feature: Spell workspace create and edit
 
   Scenario: Adjacent is disabled for whole row targeting
     When I start creating a new spell
-    And I set "Target whole row" to checked
+    And I click the "All" per-row toggle segment
     Then the target only adjacent checkbox should be disabled
 
   Scenario: Create a spell with row type restrictions
     When I create a new spell named "Tank Buster" with target policy "highest_health"
-    And I restrict targeting to "melee" and "tank" rows
+    And I click the "melee" and "tank" row type pills
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
     Then reloading the spell by URL should show row restrictions "melee" and "tank"
@@ -134,7 +134,7 @@ Feature: Spell workspace create and edit
   Scenario: Create a spell targeting multiple rows
     When I create a new spell named "Earthquake II" with target policy "random"
     And I set target row count to 2
-    And I set "Target whole row" to checked
+    And I click the "All" per-row toggle segment
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
     Then reloading the spell by URL should show target row count as 2

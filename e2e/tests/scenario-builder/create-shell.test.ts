@@ -1,48 +1,19 @@
 import { test, expect } from "../auth/auth.fixtures";
 import { test as dbTest } from "../db-reset.fixture";
 
-// Seed entity IDs
-const BARBARIAN_ROAR_ID = "a0000000-0000-0000-0000-000000000001";
-const FIREBALL_ID = "b0000000-0000-0000-0000-000000000001";
-const BATTLE_CRY_ID = "b0000000-0000-0000-0000-000000000002";
-const IRON_SWORD_ID = "d0000000-0000-0000-0000-000000000001";
-const BARBARIAN_ID = "f0000000-0000-0000-0000-000000000001";
-const AMBUSH_AT_DAWN_ID = "a2000000-0000-0000-0000-000000000001";
-const CASTLE_SIEGE_ID = "a2000000-0000-0000-0000-000000000002";
-const UNKNOWN_UUID = "00000000-0000-0000-0000-000000000099";
-
-const BASE = "/api/trpc";
-
-/** Helper to delete an effect via the tRPC mutation API */
-async function deleteEffectViaApi(
-  request: import("@playwright/test").APIRequestContext,
-  id: string,
-) {
-  return request.post(`${BASE}/scenarioBuilder.effects.delete`, {
-    data: { json: { id } },
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-async function deleteSpellViaApi(
-  request: import("@playwright/test").APIRequestContext,
-  id: string,
-) {
-  return request.post(`${BASE}/scenarioBuilder.spells.delete`, {
-    data: { json: { id } },
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-async function deleteItemViaApi(
-  request: import("@playwright/test").APIRequestContext,
-  id: string,
-) {
-  return request.post(`${BASE}/scenarioBuilder.items.delete`, {
-    data: { json: { id } },
-    headers: { "Content-Type": "application/json" },
-  });
-}
+import {
+  BARBARIAN_ROAR_ID,
+  FIREBALL_ID,
+  BATTLE_CRY_ID,
+  IRON_SWORD_ID,
+  BARBARIAN_ID,
+  AMBUSH_AT_DAWN_ID,
+  CASTLE_SIEGE_ID,
+  UNKNOWN_UUID,
+  TRPC_BASE,
+  generateEntityIds,
+} from "../helpers/seed-constants";
+import { deleteEntityViaApi } from "../helpers/trpc-api";
 
 // ─── Core Shell Layout ───────────────────────────────────────────────────────
 
@@ -492,27 +463,21 @@ dbTest.describe("Create Shell — Empty Tab State", () => {
     resetDb,
   }) => {
     try {
-      const itemIds = Array.from({ length: 21 }, (_, i) =>
-        `d0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-      );
+      const itemIds = generateEntityIds("items", 21);
       for (const id of itemIds) {
-        const response = await deleteItemViaApi(gmPage.request, id);
+        const response = await deleteEntityViaApi(gmPage.request, "items", id);
         expect(response.ok()).toBeTruthy();
       }
 
-      const spellIds = Array.from({ length: 21 }, (_, i) =>
-        `b0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-      );
+      const spellIds = generateEntityIds("spells", 21);
       for (const id of spellIds) {
-        const response = await deleteSpellViaApi(gmPage.request, id);
+        const response = await deleteEntityViaApi(gmPage.request, "spells", id);
         expect(response.ok()).toBeTruthy();
       }
 
-      const effectIds = Array.from({ length: 21 }, (_, i) =>
-        `a0000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-      );
+      const effectIds = generateEntityIds("effects", 21);
       for (const id of effectIds) {
-        const response = await deleteEffectViaApi(gmPage.request, id);
+        const response = await deleteEntityViaApi(gmPage.request, "effects", id);
         expect(response.ok()).toBeTruthy();
       }
 

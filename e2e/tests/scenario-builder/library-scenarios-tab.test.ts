@@ -1,23 +1,12 @@
 import { test, expect } from "../db-reset.fixture";
+import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID, generateEntityIds } from "../helpers/seed-constants";
+import { deleteEntityViaApi } from "../helpers/trpc-api";
+import { LibraryTabPage } from "../pages/library-tab.page";
+import { SCENARIOS_TAB } from "../pages/library-tab-configs";
 
 // All tests in this file share the same database and some mutate it,
 // so they must run serially to prevent race conditions.
 test.describe.configure({ mode: "serial" });
-
-const AMBUSH_AT_DAWN_ID = "a2000000-0000-0000-0000-000000000001";
-const CASTLE_SIEGE_ID = "a2000000-0000-0000-0000-000000000002";
-const BASE = "/api/trpc";
-
-/** Helper to delete a scenario via the tRPC mutation API */
-async function deleteScenarioViaApi(
-  request: import("@playwright/test").APIRequestContext,
-  id: string,
-) {
-  return request.post(`${BASE}/scenarioBuilder.scenarios.delete`, {
-    data: { json: { id } },
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -25,15 +14,15 @@ test.describe("Scenarios Library Tab — Display", () => {
   test("scenarios are displayed with name and last update date", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
-    const ambush = gmPage.getByRole("row", { name: /Ambush at Dawn/ });
+    const ambush = lib.getRow("Ambush at Dawn");
     await expect(ambush).toBeVisible();
     // Verify last update date is displayed (e.g. "Apr 1, 2025")
     await expect(ambush.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
 
-    const castle = gmPage.getByRole("row", { name: /Castle Siege/ });
+    const castle = lib.getRow("Castle Siege");
     await expect(castle).toBeVisible();
     // Verify last update date is displayed (e.g. "May 1, 2025")
     await expect(castle.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
@@ -43,17 +32,15 @@ test.describe("Scenarios Library Tab — Display", () => {
     gmPage,
     resetDb,
   }) => {
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     // Delete all 21 scenarios via API
-    const scenarioIds = Array.from({ length: 21 }, (_, i) =>
-      `a2000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-    );
+    const scenarioIds = generateEntityIds("scenarios", 21);
     for (const id of scenarioIds) {
-      await deleteScenarioViaApi(gmPage.request, id);
+      await deleteEntityViaApi(gmPage.request, "scenarios", id);
     }
 
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await expect(gmPage.getByTestId("empty-list")).toBeVisible();
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
 
     // Restore DB for subsequent tests
     await resetDb();
@@ -66,77 +53,76 @@ test.describe("Scenarios Library Tab — Pagination", () => {
   test("scenarios are displayed one page at a time with pagination controls", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Page 1 should show 20 items
-    const options = gmPage.locator('tr[aria-selected]');
-    await expect(options).toHaveCount(20);
+    await expect(lib.rows).toHaveCount(20);
 
     // Pagination controls visible
-    await expect(gmPage.getByRole("button", { name: "Next page" })).toBeVisible();
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeVisible();
+    await expect(lib.nextPageButton).toBeVisible();
+    await expect(lib.prevPageButton).toBeVisible();
   });
 
   test("navigate to the next page", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // First page: "Ambush at Dawn" visible
-    await expect(gmPage.getByRole("row", { name: /Ambush at Dawn/ })).toBeVisible();
+    await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
 
-    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await lib.clickNextPage();
 
     // Second page: only "Zorath Keep" (alphabetically last)
-    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
+    await expect(lib.getRow("Zorath Keep")).toBeVisible();
     // Ambush at Dawn should no longer be shown
-    await expect(gmPage.getByRole("row", { name: /Ambush at Dawn/ })).not.toBeVisible();
+    await expect(lib.getRow("Ambush at Dawn")).not.toBeVisible();
   });
 
   test("navigate to previous page", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Go to page 2
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
+    await lib.clickNextPage();
+    await expect(lib.getRow("Zorath Keep")).toBeVisible();
 
     // Go back to page 1
-    await gmPage.getByRole("button", { name: "Previous page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Ambush at Dawn/ })).toBeVisible();
+    await lib.clickPrevPage();
+    await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
   });
 
   test("Previous page control is disabled on the first page", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
+    await expect(lib.prevPageButton).toBeDisabled();
   });
 
   test("Next page control is disabled on the last page", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("button", { name: "Next page" })).toBeDisabled();
+    await lib.clickNextPage();
+    await expect(lib.nextPageButton).toBeDisabled();
   });
 
   test("pagination resets when sort order changes", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Go to page 2
-    await gmPage.getByRole("button", { name: "Next page" }).click();
-    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
+    await lib.clickNextPage();
+    await expect(lib.getRow("Zorath Keep")).toBeVisible();
 
     // Change sort to Last Update
-    await gmPage.getByRole("button", { name: /Last Update/ }).click();
+    await lib.clickSortColumn("Last Update");
 
     // Should be back on page 1
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    await expect(lib.prevPageButton).toBeDisabled();
   });
 });
 
@@ -145,70 +131,66 @@ test.describe("Scenarios Library Tab — Pagination", () => {
 test.describe("Scenarios Library Tab — Sorting", () => {
   test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
-    const options = gmPage.locator('tr[aria-selected]');
-    await expect(options.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
-    await expect(options.nth(1)).toHaveAttribute("aria-label", "Bridge Defense");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Bridge Defense");
   });
 
   test("sort by name descending", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Click Name to toggle to descending
-    await gmPage.getByRole("button", { name: /Name/ }).click();
+    await lib.clickSortColumn("Name");
 
-    const options = gmPage.locator('tr[aria-selected]');
     // Descending: Zombie Horde, Jungle Trek, ...
-    await expect(options.nth(0)).toHaveAttribute("aria-label", "Zorath Keep");
-    await expect(options.nth(1)).toHaveAttribute("aria-label", "Zombie Horde");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zorath Keep");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Zombie Horde");
   });
 
   test("sort by last update date ascending", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Click Last Update to sort by updatedAt ascending
-    await gmPage.getByRole("button", { name: /Last Update/ }).click();
+    await lib.clickSortColumn("Last Update");
 
-    const options = gmPage.locator('tr[aria-selected]');
     // Oldest first: Ambush at Dawn (2025-04), Castle Siege (2025-05), Zombie Horde (2025-06)
-    await expect(options.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
-    await expect(options.nth(1)).toHaveAttribute("aria-label", "Castle Siege");
-    await expect(options.nth(2)).toHaveAttribute("aria-label", "Zombie Horde");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Castle Siege");
+    await expect(lib.rows.nth(2)).toHaveAttribute("aria-label", "Zombie Horde");
   });
 
   test("sort by last update date descending", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Click Last Update to sort ascending, then click again for descending
-    await gmPage.getByRole("button", { name: /Last Update/ }).click();
-    await gmPage.getByRole("button", { name: /Last Update/ }).click();
+    await lib.clickSortColumn("Last Update");
+    await lib.clickSortColumn("Last Update");
 
-    const options = gmPage.locator('tr[aria-selected]');
     // Newest first: Jungle Trek (2026-02), Ice Cavern (2026-01)
-    await expect(options.nth(0)).toHaveAttribute("aria-label", "Jungle Trek");
-    await expect(options.nth(1)).toHaveAttribute("aria-label", "Ice Cavern");
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Jungle Trek");
+    await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Ice Cavern");
   });
 
   test("clicking the active sort column toggles direction", async ({
     gmPage,
   }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Default: Name ascending — Ambush at Dawn first
-    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
+    await expect(lib.rows.nth(0)).toHaveAttribute(
       "aria-label",
       "Ambush at Dawn",
     );
 
     // Click Name to toggle to descending
-    await gmPage.getByRole("button", { name: /Name/ }).click();
-    await expect(gmPage.locator('tr[aria-selected]').nth(0)).toHaveAttribute(
+    await lib.clickSortColumn("Name");
+    await expect(lib.rows.nth(0)).toHaveAttribute(
       "aria-label",
       "Zorath Keep",
     );
@@ -219,21 +201,16 @@ test.describe("Scenarios Library Tab — Sorting", () => {
 
 test.describe("Scenarios Library Tab — Selection", () => {
   test("select a scenario from the list via edit button", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
-    const ambushRow = gmPage.getByRole("row", { name: "Ambush at Dawn" });
-    await ambushRow.getByRole("button", { name: /Edit/ }).click();
+    await lib.editEntity("Ambush at Dawn");
 
     // Selected in list
-    await expect(
-      gmPage.getByRole("row", { name: "Ambush at Dawn" }),
-    ).toHaveAttribute("aria-selected", "true");
+    await expect(lib.getRow("Ambush at Dawn")).toHaveAttribute("aria-selected", "true");
 
     // Loaded in workspace
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
-      "Ambush at Dawn",
-    );
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
 
     // URL updated
     await expect(gmPage).toHaveURL(new RegExp(`scenario_id=${AMBUSH_AT_DAWN_ID}`));
@@ -246,53 +223,41 @@ test.describe("Scenarios Library Tab — Unsaved Changes", () => {
   test("warn before opening a different scenario with unsaved changes", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
-      "Ambush at Dawn",
-    );
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
 
     // Make changes
-    await gmPage.getByTestId("scenario-name-input").fill("Ambush at Dawn Updated");
+    await lib.nameInput.fill("Ambush at Dawn Updated");
 
     // Try to select Castle Siege via edit button
-    const castleRow = gmPage.getByRole("row", { name: "Castle Siege" });
-    await castleRow.getByRole("button", { name: /Edit/ }).click();
+    await lib.editEntity("Castle Siege");
 
     // Dialog appears
-    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
+    await expect(lib.unsavedChangesDialog).toBeVisible();
 
     // Cancel preserves state
-    await gmPage.getByRole("button", { name: "Cancel" }).click();
-    await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
-    await expect(
-      gmPage.getByRole("row", { name: "Ambush at Dawn" }),
-    ).toHaveAttribute("aria-selected", "true");
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
-      "Ambush at Dawn Updated",
-    );
+    await lib.cancelUnsavedChanges();
+    await expect(lib.unsavedChangesDialog).not.toBeVisible();
+    await expect(lib.getRow("Ambush at Dawn")).toHaveAttribute("aria-selected", "true");
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn Updated");
   });
 
   test("discard unsaved changes and open a different scenario", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
-      "Ambush at Dawn",
-    );
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
 
-    await gmPage.getByTestId("scenario-name-input").fill("Ambush at Dawn Updated");
-    const castleRow2 = gmPage.getByRole("row", { name: "Castle Siege" });
-    await castleRow2.getByRole("button", { name: /Edit/ }).click();
+    await lib.nameInput.fill("Ambush at Dawn Updated");
+    await lib.editEntity("Castle Siege");
 
-    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
-    await gmPage.getByRole("button", { name: "Discard" }).click();
+    await expect(lib.unsavedChangesDialog).toBeVisible();
+    await lib.discardUnsavedChanges();
 
-    await expect(
-      gmPage.getByRole("row", { name: "Castle Siege" }),
-    ).toHaveAttribute("aria-selected", "true");
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
-      "Castle Siege",
-    );
+    await expect(lib.getRow("Castle Siege")).toHaveAttribute("aria-selected", "true");
+    await expect(lib.nameInput).toHaveValue("Castle Siege");
   });
 });
 
@@ -304,59 +269,54 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     resetDb,
   }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
-    await expect(gmPage.getByRole("row", { name: "Castle Siege" })).toBeVisible();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
+    await expect(lib.getRow("Castle Siege")).toBeVisible();
 
     // Click delete on Castle Siege
-    const castleRow = gmPage.getByRole("row", { name: "Castle Siege" });
-    await castleRow.getByRole("button", { name: /Delete/ }).click();
+    await lib.clickDeleteOnRow("Castle Siege");
 
     // Confirmation dialog
-    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
+    await expect(lib.deleteConfirmDialog).toBeVisible();
 
     // Confirm
-    await gmPage.getByRole("button", { name: "Delete" }).click();
+    await lib.confirmDeletion();
 
     // Castle Siege gone
-    await expect(gmPage.getByRole("row", { name: "Castle Siege" })).not.toBeVisible();
+    await expect(lib.getRow("Castle Siege")).not.toBeVisible();
 
     // Workspace should remain idle
-    await expect(gmPage.getByTestId("scenario-idle")).toBeVisible();
+    await expect(lib.idleState).toBeVisible();
   });
 
   test("cancel deletion of a scenario", async ({ gmPage, resetDb }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
-    const castleRow = gmPage.getByRole("row", { name: "Castle Siege" });
-    await castleRow.getByRole("button", { name: /Delete/ }).click();
+    await lib.clickDeleteOnRow("Castle Siege");
 
-    await expect(gmPage.getByTestId("delete-confirm-dialog")).toBeVisible();
-    await gmPage.getByRole("button", { name: "Cancel" }).click();
+    await expect(lib.deleteConfirmDialog).toBeVisible();
+    await lib.cancelDeletion();
 
     // Castle Siege should still be visible
-    await expect(gmPage.getByRole("row", { name: "Castle Siege" })).toBeVisible();
+    await expect(lib.getRow("Castle Siege")).toBeVisible();
   });
 
   test("delete the currently open scenario", async ({ gmPage, resetDb }) => {
     await resetDb();
-    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue(
-      "Ambush at Dawn",
-    );
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
 
-    const ambushRow = gmPage.getByRole("row", { name: "Ambush at Dawn" });
-    await ambushRow.getByRole("button", { name: /Delete/ }).click();
-
-    await gmPage.getByRole("button", { name: "Delete" }).click();
+    await lib.clickDeleteOnRow("Ambush at Dawn");
+    await lib.confirmDeletion();
 
     // Should be gone from list
-    await expect(gmPage.getByRole("row", { name: "Ambush at Dawn" })).not.toBeVisible();
+    await expect(lib.getRow("Ambush at Dawn")).not.toBeVisible();
 
     // Workspace cleared
-    await expect(gmPage.getByTestId("scenario-idle")).toBeVisible();
+    await expect(lib.idleState).toBeVisible();
 
     // URL should not contain scenario_id
     expect(gmPage.url()).not.toContain("scenario_id");
@@ -367,28 +327,27 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     resetDb,
   }) => {
     await resetDb();
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Scenarios" }).click();
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
 
     // Verify we have 2 pages
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(20);
+    await expect(lib.rows).toHaveCount(20);
 
     // Go to page 2
-    await gmPage.getByRole("button", { name: "Next page" }).click();
+    await lib.clickNextPage();
 
     // Only Zorath Keep on page 2
-    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).toBeVisible();
-    await expect(gmPage.locator('tr[aria-selected]')).toHaveCount(1);
+    await expect(lib.getRow("Zorath Keep")).toBeVisible();
+    await expect(lib.rows).toHaveCount(1);
 
     // Delete it
-    const zorathRow = gmPage.getByRole("row", { name: /Zorath Keep/ });
-    await zorathRow.getByRole("button", { name: /Delete/ }).click();
-    await gmPage.getByRole("button", { name: "Delete" }).click();
+    await lib.clickDeleteOnRow("Zorath Keep");
+    await lib.confirmDeletion();
 
     // Should be returned to page 1
-    await expect(gmPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
-    await expect(gmPage.getByRole("row", { name: /Ambush at Dawn/ })).toBeVisible();
-    await expect(gmPage.getByRole("row", { name: /Zorath Keep/ })).not.toBeVisible();
+    await expect(lib.prevPageButton).toBeDisabled();
+    await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
+    await expect(lib.getRow("Zorath Keep")).not.toBeVisible();
 
     // Restore DB for subsequent test files
     await resetDb();

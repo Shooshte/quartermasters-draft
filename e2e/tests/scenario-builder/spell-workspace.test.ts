@@ -1,36 +1,38 @@
+// Source of truth: e2e/features/create/spell-workspace.feature
+// Cross-reference: effect-picker and deletion scenarios for this feature are
+// covered in e2e/tests/scenario-builder/library-spells-tab.test.ts.
 import type { Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
-import { FIREBALL_ID, BATTLE_CRY_ID, BARBARIAN_ROAR_ID } from "../helpers/seed-constants";
-import { openNewEntity, saveEntityAndWait, addLinkedEntity } from "../helpers/workspace-helpers";
+import { FIREBALL_ID, BATTLE_CRY_ID } from "../helpers/seed-constants";
+import { SpellWorkspacePage } from "../pages/spell-workspace.page";
 
-test.describe.configure({ mode: "serial" });
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function openNewSpell(page: Page) {
-  await openNewEntity(page, "Spells", "New Spell");
+  await new SpellWorkspacePage(page).openNew();
 }
 
 async function addEffect(page: Page, effectName: string, search?: string) {
-  await addLinkedEntity(
-    page,
-    "spell-effect-picker",
-    "spell-effect-picker-search",
-    "spell-add-effect-button",
-    effectName,
-    search,
-  );
+  await new SpellWorkspacePage(page).addEffect(effectName, search);
 }
 
 async function saveSpellAndWait(page: Page, mutation: "create" | "update") {
-  await saveEntityAndWait(page, "spells", mutation);
+  const spell = new SpellWorkspacePage(page);
+  if (mutation === "create") {
+    await spell.saveCreate();
+    return;
+  }
+  await spell.saveUpdate();
 }
 
 // ─── Basic CRUD ──────────────────────────────────────────────────────────────
 
 test.describe("Spell Workspace — CRUD", () => {
-  test("create a new spell with target policy and effect", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a new spell with target policy and effect", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Arcane Volley");
@@ -71,8 +73,7 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
   });
 
-  test("description is optional — spell saves without one", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("description is optional — spell saves without one", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Silent Strike");
@@ -84,8 +85,7 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(gmPage).toHaveURL(/spell_id=/);
   });
 
-  test("description persists on edit", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("description persists on edit", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Ember Wave");
@@ -100,8 +100,7 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(gmPage.getByTestId("spell-description-input")).toHaveValue("A rolling wave of fire");
   });
 
-  test("edit an existing spell and persist changes", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("edit an existing spell and persist changes", async ({ gmPage }) => {
     await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
 
     await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
@@ -111,8 +110,7 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball Updated");
   });
 
-  test("duplicate name shows a save error", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("duplicate name shows a save error", async ({ gmPage }) => {
     await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
 
     await gmPage.getByTestId("entity-name-input").fill("Battle Cry");
@@ -135,8 +133,7 @@ test.describe("Spell Workspace — Linked Effects", () => {
     await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
   });
 
-  test("add multiple effects in sequence order", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("add multiple effects in sequence order", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Combo Strike");
@@ -152,8 +149,7 @@ test.describe("Spell Workspace — Linked Effects", () => {
     await expect(gmPage.getByTestId("spell-effect-row-1")).toContainText("Exhaust");
   });
 
-  test("reorder linked effects", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("reorder linked effects", async ({ gmPage }) => {
     await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
 
     // Fireball has effects: Arcane Damage (pos 0), Sizzling Flesh (pos 1)
@@ -162,6 +158,8 @@ test.describe("Spell Workspace — Linked Effects", () => {
 
     // Move first effect down (swap positions)
     await gmPage.getByTestId("spell-effect-move-down-0").click();
+    await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Sizzling Flesh");
+    await expect(gmPage.getByTestId("spell-effect-row-1")).toContainText("Arcane Damage");
 
     await saveSpellAndWait(gmPage, "update");
     await gmPage.reload();
@@ -171,8 +169,7 @@ test.describe("Spell Workspace — Linked Effects", () => {
     await expect(gmPage.getByTestId("spell-effect-row-1")).toContainText("Arcane Damage");
   });
 
-  test("remove a linked effect while at least one remains", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("remove a linked effect while at least one remains", async ({ gmPage }) => {
     await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
 
     // Fireball has 2 effects
@@ -183,6 +180,8 @@ test.describe("Spell Workspace — Linked Effects", () => {
 
     // Should still have one effect
     await expect(gmPage.getByTestId("spell-effect-row-0")).toBeVisible();
+    await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Arcane Damage");
+    await expect(gmPage.getByTestId("spell-effect-row-1")).not.toBeVisible();
 
     await saveSpellAndWait(gmPage, "update");
     await gmPage.reload();
@@ -192,8 +191,7 @@ test.describe("Spell Workspace — Linked Effects", () => {
     await expect(gmPage.getByTestId("spell-effect-row-1")).not.toBeVisible();
   });
 
-  test("at least one linked effect is required on edit", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("at least one linked effect is required on edit", async ({ gmPage }) => {
     await gmPage.goto(`/create?tab=Spells&spell_id=${BATTLE_CRY_ID}`);
 
     // Battle Cry has 1 effect
@@ -205,8 +203,7 @@ test.describe("Spell Workspace — Linked Effects", () => {
     await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
   });
 
-  test("duplicate effects are allowed in the same spell", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("duplicate effects are allowed in the same spell", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Echo Blast");
@@ -239,8 +236,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     }
   });
 
-  test("create a spell targeting a whole row", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a spell targeting a whole row", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Inferno Wave");
@@ -256,8 +252,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(gmPage.getByTestId("spell-max-targets-per-row-input")).not.toBeVisible();
   });
 
-  test("create a spell with adjacent targeting", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a spell with adjacent targeting", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Lightning Chain");
@@ -287,8 +282,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
   });
 
-  test("create a spell with row type restrictions", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a spell with row type restrictions", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Tank Buster");
@@ -307,8 +301,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(gmPage.getByTestId("spell-allowed-row-support")).not.toHaveAttribute("aria-pressed", "true");
   });
 
-  test("create a spell targeting multiple rows", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a spell targeting multiple rows", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Earthquake II");

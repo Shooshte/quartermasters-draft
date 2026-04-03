@@ -1,3 +1,6 @@
+// Source of truth: e2e/features/create/library-spells-tab.feature
+// Also covers spell-workspace.feature scenarios for effect-picker behavior and
+// deletion flows.
 import { test, expect } from "../db-reset.fixture";
 import { FIREBALL_ID, BATTLE_CRY_ID, ZENITH_BLOOM_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";

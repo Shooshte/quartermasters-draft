@@ -25,6 +25,7 @@ coverage/
 # playwright
 playwright-report/
 test-results/
+e2e/.app-image-fingerprint
 
 # nitro
 .nitro/

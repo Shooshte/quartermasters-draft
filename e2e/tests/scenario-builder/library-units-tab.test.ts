@@ -1,6 +1,6 @@
 import { test, expect } from "../db-reset.fixture";
-import { BARBARIAN_ID, RANGER_ID, ZEPHYR_MONK_ID, generateEntityIds } from "../helpers/seed-constants";
-import { deleteEntityViaApi } from "../helpers/trpc-api";
+import { BARBARIAN_ID, RANGER_ID, ZEPHYR_MONK_ID } from "../helpers/seed-constants";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { UNITS_TAB } from "../pages/library-tab-configs";
 
@@ -34,18 +34,18 @@ test.describe("Units Library Tab — Display", () => {
     resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
-    // Delete all 21 units via API
-    const unitIds = generateEntityIds("units", 21);
-    for (const id of unitIds) {
-      const response = await deleteEntityViaApi(gmPage.request, "units", id);
-      expect(response.ok()).toBeTruthy();
+    try {
+      const unitIds = await listEntityIdsViaApi(gmPage.request, "units");
+      for (const id of unitIds) {
+        const response = await deleteEntityViaApi(gmPage.request, "units", id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      await lib.navigateToTab();
+      await expect(lib.emptyList).toBeVisible();
+    } finally {
+      await resetDb();
     }
-
-    await lib.navigateToTab();
-    await expect(lib.emptyList).toBeVisible();
-
-    // Restore DB for subsequent tests
-    await resetDb();
   });
 });
 

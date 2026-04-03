@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "~/lib/trpc";
 import {
@@ -30,7 +31,7 @@ import { useEffectList } from "./hooks/use-effect-list";
 import { useSpellList } from "./hooks/use-spell-list";
 import { useItemList } from "./hooks/use-item-list";
 import { useUnitList } from "./hooks/use-unit-list";
-import { useWorkspaceLoader } from "./hooks/use-workspace-loader";
+import { computeIsDirty, useWorkspaceLoader } from "./hooks/use-workspace-loader";
 import { effectRecordToFormValues, normalizeEffectFormValues, validateEffectForm } from "./effect-form";
 import {
   normalizeSpellFormValues,
@@ -54,6 +55,7 @@ import {
   type UnitFormValues,
 } from "./unit-form";
 import {
+  isScenarioFormDirty,
   normalizeScenarioFormValues,
   scenarioRecordToFormValues,
   validateScenarioForm,
@@ -245,9 +247,49 @@ export function useCreatePageState(
     loadEntity,
     loadScenario,
     executePendingAction,
-    updateEntityField,
-    updateScenarioField,
   } = useWorkspaceLoader({ search, activeTab, setActiveTabState, navigate });
+
+  const entityWorkspaceRef = useRef(entityWorkspace);
+  entityWorkspaceRef.current = entityWorkspace;
+
+  const scenarioWorkspaceRef = useRef(scenarioWorkspace);
+  scenarioWorkspaceRef.current = scenarioWorkspace;
+
+  const updateEntityField = useCallback((field: string, value: unknown) => {
+    flushSync(() => {
+      setEntityWorkspace((prev) => {
+        const newFormValues = { ...prev.formValues, [field]: value };
+        const nextWorkspace = {
+          ...prev,
+          formValues: newFormValues,
+          isDirty: computeIsDirty(newFormValues, prev.data, prev.entityType),
+        };
+        entityWorkspaceRef.current = nextWorkspace;
+        return nextWorkspace;
+      });
+    });
+  }, [setEntityWorkspace]);
+
+  const updateScenarioField = useCallback((field: string, value: unknown) => {
+    flushSync(() => {
+      setScenarioWorkspace((prev) => {
+        const newFormValues = { ...prev.formValues, [field]: value };
+        const nextWorkspace = {
+          ...prev,
+          formValues: newFormValues,
+          isDirty:
+            prev.entityType === "scenario"
+              ? isScenarioFormDirty(
+                  newFormValues as ScenarioFormValues,
+                  prev.data as Record<string, unknown> | null,
+                )
+              : prev.isDirty,
+        };
+        scenarioWorkspaceRef.current = nextWorkspace;
+        return nextWorkspace;
+      });
+    });
+  }, [setScenarioWorkspace]);
 
   // Scenario list (pagination, sorting, query)
   const scenarioList = useScenarioList(activeTab === "Scenarios", backgroundEnabled);
@@ -417,11 +459,13 @@ export function useCreatePageState(
   }, [discard, executePendingAction]);
 
   const saveScenario = useCallback(async () => {
-    if (scenarioWorkspace.entityType !== "scenario") {
+    const currentScenarioWorkspace = scenarioWorkspaceRef.current;
+
+    if (currentScenarioWorkspace.entityType !== "scenario") {
       return;
     }
 
-    const scenarioValues = scenarioWorkspace.formValues as ScenarioFormValues;
+    const scenarioValues = currentScenarioWorkspace.formValues as ScenarioFormValues;
     if (Object.keys(validateScenarioForm(scenarioValues)).length > 0) {
       return;
     }
@@ -432,18 +476,20 @@ export function useCreatePageState(
       setIsScenarioSaving(true);
       setScenarioSaveError(null);
 
-      if (scenarioWorkspace.mode === "create") {
+      if (currentScenarioWorkspace.mode === "create") {
         const created = await trpc.scenarioBuilder.scenarios.create.mutate(normalized);
         const createdData = created as { id: string; name: string; [key: string]: unknown };
         queryClient.setQueryData(["scenarioBuilder", "scenarios", "get", createdData.id], createdData);
-        setScenarioWorkspace({
+        const nextWorkspace: WorkspaceState = {
           mode: "edit",
           entityType: "scenario",
           entityId: createdData.id,
           data: createdData,
           formValues: scenarioRecordToFormValues(createdData),
           isDirty: false,
-        });
+        };
+        scenarioWorkspaceRef.current = nextWorkspace;
+        setScenarioWorkspace(nextWorkspace);
         setPerTabSelection((prev) => ({ ...prev, Scenarios: createdData.id }));
         skipScenarioResetRef.current = true;
         navigate?.({
@@ -453,21 +499,23 @@ export function useCreatePageState(
           }),
           replace: true,
         });
-      } else if (scenarioWorkspace.mode === "edit" && scenarioWorkspace.entityId) {
+      } else if (currentScenarioWorkspace.mode === "edit" && currentScenarioWorkspace.entityId) {
         const updated = await trpc.scenarioBuilder.scenarios.update.mutate({
-          id: scenarioWorkspace.entityId,
+          id: currentScenarioWorkspace.entityId,
           ...normalized,
         });
         const updatedData = updated as { id: string; name: string; [key: string]: unknown };
         queryClient.setQueryData(["scenarioBuilder", "scenarios", "get", updatedData.id], updatedData);
-        setScenarioWorkspace({
+        const nextWorkspace: WorkspaceState = {
           mode: "edit",
           entityType: "scenario",
           entityId: updatedData.id,
           data: updatedData,
           formValues: scenarioRecordToFormValues(updatedData),
           isDirty: false,
-        });
+        };
+        scenarioWorkspaceRef.current = nextWorkspace;
+        setScenarioWorkspace(nextWorkspace);
       }
 
       await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios"] });
@@ -484,15 +532,16 @@ export function useCreatePageState(
   }, [
     navigate,
     queryClient,
-    scenarioWorkspace,
     setPerTabSelection,
     setScenarioWorkspace,
     skipScenarioResetRef,
   ]);
 
   const saveEntity = useCallback(async () => {
-    if (entityWorkspace.entityType === "effect") {
-      const formValues = effectRecordToFormValues(entityWorkspace.formValues);
+    const currentEntityWorkspace = entityWorkspaceRef.current;
+
+    if (currentEntityWorkspace.entityType === "effect") {
+      const formValues = effectRecordToFormValues(currentEntityWorkspace.formValues);
       const normalized = normalizeEffectFormValues(formValues);
       if (Object.keys(validateEffectForm(normalized)).length > 0) return;
 
@@ -500,17 +549,19 @@ export function useCreatePageState(
         setIsEntitySaving(true);
         setEntitySaveError(null);
 
-        if (entityWorkspace.mode === "create") {
+        if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.effects.create.mutate(normalized);
           queryClient.setQueryData(["scenarioBuilder", "effects", "get", created.id], created);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "effect",
             entityId: created.id,
             data: created,
             formValues: effectRecordToFormValues(created),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
           setPerTabSelection((prev) => ({ ...prev, Effects: created.id }));
           skipEntityResetRef.current = true;
           navigate?.({
@@ -523,20 +574,22 @@ export function useCreatePageState(
             },
             replace: true,
           });
-        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+        } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
           const updated = await trpc.scenarioBuilder.effects.update.mutate({
-            id: entityWorkspace.entityId,
+            id: currentEntityWorkspace.entityId,
             ...normalized,
           });
           queryClient.setQueryData(["scenarioBuilder", "effects", "get", updated.id], updated);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "effect",
             entityId: updated.id,
             data: updated,
             formValues: effectRecordToFormValues(updated),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
         }
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects"] });
@@ -545,8 +598,8 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
-    } else if (entityWorkspace.entityType === "spell") {
-      const spellValues = entityWorkspace.formValues as SpellFormValues;
+    } else if (currentEntityWorkspace.entityType === "spell") {
+      const spellValues = currentEntityWorkspace.formValues as SpellFormValues;
       if (Object.keys(validateSpellForm(spellValues)).length > 0) return;
       const normalized = normalizeSpellFormValues(spellValues);
 
@@ -554,18 +607,20 @@ export function useCreatePageState(
         setIsEntitySaving(true);
         setEntitySaveError(null);
 
-        if (entityWorkspace.mode === "create") {
+        if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.spells.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(["scenarioBuilder", "spells", "get", createdData.id], createdData);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "spell",
             entityId: createdData.id,
             data: createdData,
             formValues: spellRecordToFormValues(createdData),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
           setPerTabSelection((prev) => ({ ...prev, Spells: createdData.id }));
           skipEntityResetRef.current = true;
           navigate?.({
@@ -578,21 +633,23 @@ export function useCreatePageState(
             },
             replace: true,
           });
-        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+        } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
           const updated = await trpc.scenarioBuilder.spells.update.mutate({
-            id: entityWorkspace.entityId,
+            id: currentEntityWorkspace.entityId,
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(["scenarioBuilder", "spells", "get", updatedData.id], updatedData);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "spell",
             entityId: updatedData.id,
             data: updatedData,
             formValues: spellRecordToFormValues(updatedData),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
         }
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells"] });
@@ -606,8 +663,8 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
-    } else if (entityWorkspace.entityType === "item") {
-      const itemValues = entityWorkspace.formValues as ItemFormValues;
+    } else if (currentEntityWorkspace.entityType === "item") {
+      const itemValues = currentEntityWorkspace.formValues as ItemFormValues;
       if (Object.keys(validateItemForm(itemValues)).length > 0) return;
       const normalized = normalizeItemFormValues(itemValues);
 
@@ -615,18 +672,20 @@ export function useCreatePageState(
         setIsEntitySaving(true);
         setEntitySaveError(null);
 
-        if (entityWorkspace.mode === "create") {
+        if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.items.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(["scenarioBuilder", "items", "get", createdData.id], createdData);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "item",
             entityId: createdData.id,
             data: createdData,
             formValues: itemRecordToFormValues(createdData),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
           setPerTabSelection((prev) => ({ ...prev, Items: createdData.id }));
           skipEntityResetRef.current = true;
           navigate?.({
@@ -639,21 +698,23 @@ export function useCreatePageState(
             },
             replace: true,
           });
-        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+        } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
           const updated = await trpc.scenarioBuilder.items.update.mutate({
-            id: entityWorkspace.entityId,
+            id: currentEntityWorkspace.entityId,
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(["scenarioBuilder", "items", "get", updatedData.id], updatedData);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "item",
             entityId: updatedData.id,
             data: updatedData,
             formValues: itemRecordToFormValues(updatedData),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
         }
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] });
@@ -667,8 +728,8 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
-    } else if (entityWorkspace.entityType === "unit") {
-      const unitValues = entityWorkspace.formValues as UnitFormValues;
+    } else if (currentEntityWorkspace.entityType === "unit") {
+      const unitValues = currentEntityWorkspace.formValues as UnitFormValues;
       if (Object.keys(validateUnitForm(unitValues)).length > 0) return;
       const normalized = normalizeUnitFormValues(unitValues);
 
@@ -676,18 +737,20 @@ export function useCreatePageState(
         setIsEntitySaving(true);
         setEntitySaveError(null);
 
-        if (entityWorkspace.mode === "create") {
+        if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.units.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(["scenarioBuilder", "units", "get", createdData.id], createdData);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "unit",
             entityId: createdData.id,
             data: createdData,
             formValues: unitRecordToFormValues(createdData),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
           setPerTabSelection((prev) => ({ ...prev, Units: createdData.id }));
           skipEntityResetRef.current = true;
           navigate?.({
@@ -700,21 +763,23 @@ export function useCreatePageState(
             },
             replace: true,
           });
-        } else if (entityWorkspace.mode === "edit" && entityWorkspace.entityId) {
+        } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
           const updated = await trpc.scenarioBuilder.units.update.mutate({
-            id: entityWorkspace.entityId,
+            id: currentEntityWorkspace.entityId,
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(["scenarioBuilder", "units", "get", updatedData.id], updatedData);
-          setEntityWorkspace({
+          const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "unit",
             entityId: updatedData.id,
             data: updatedData,
             formValues: unitRecordToFormValues(updatedData),
             isDirty: false,
-          });
+          };
+          entityWorkspaceRef.current = nextWorkspace;
+          setEntityWorkspace(nextWorkspace);
         }
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units"] });
@@ -729,7 +794,7 @@ export function useCreatePageState(
         setIsEntitySaving(false);
       }
     }
-  }, [entityWorkspace, navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
+  }, [navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
 
   return {
     activeTab,

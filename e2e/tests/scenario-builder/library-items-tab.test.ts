@@ -1,6 +1,6 @@
 import { test, expect } from "../db-reset.fixture";
-import { IRON_SWORD_ID, LEATHER_SHIELD_ID, generateEntityIds } from "../helpers/seed-constants";
-import { deleteEntityViaApi } from "../helpers/trpc-api";
+import { IRON_SWORD_ID, LEATHER_SHIELD_ID } from "../helpers/seed-constants";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { ITEMS_TAB } from "../pages/library-tab-configs";
 
@@ -31,16 +31,18 @@ test.describe("Items Library Tab — Display", () => {
     resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
-    const itemIds = generateEntityIds("items", 21);
-    for (const id of itemIds) {
-      const response = await deleteEntityViaApi(gmPage.request, "items", id);
-      expect(response.ok()).toBeTruthy();
+    try {
+      const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
+      for (const id of itemIds) {
+        const response = await deleteEntityViaApi(gmPage.request, "items", id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      await lib.navigateToTab();
+      await expect(lib.emptyList).toBeVisible();
+    } finally {
+      await resetDb();
     }
-
-    await lib.navigateToTab();
-    await expect(lib.emptyList).toBeVisible();
-
-    await resetDb();
   });
 });
 

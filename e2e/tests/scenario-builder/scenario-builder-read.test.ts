@@ -1,10 +1,14 @@
-import { test, expect } from "../auth/auth.fixtures";
+import { test, expect } from "../db-reset.fixture";
 import { test as base } from "../worker-base.fixture";
 
 import { TRPC_BASE } from "../helpers/seed-constants";
 import { parseTrpcResponse } from "../helpers/trpc-api";
 
 test.describe("Scenario Builder Read API — GM access", () => {
+  test.beforeEach(async ({ resetDb }) => {
+    await resetDb();
+  });
+
   // ── Effects ──────────────────────────────────────────────────────
 
   test("GM can list effects (20 per page, alphabetical)", async ({ gmPage }) => {
@@ -167,6 +171,10 @@ test.describe("Scenario Builder Read API — GM access", () => {
 // ── Access control ───────────────────────────────────────────────
 
 test.describe("Scenario Builder Read API — Player FORBIDDEN", () => {
+  test.beforeEach(async ({ resetDb }) => {
+    await resetDb();
+  });
+
   test("Player gets FORBIDDEN on effects.list", async ({ playerPage }) => {
     const res = await playerPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.list`);
     expect(res.ok()).toBe(false);

@@ -6,7 +6,10 @@ Feature: Route Protection
   Background:
     Given I am an unauthenticated visitor
 
-  Scenario Outline: Unauthenticated user is redirected to login from protected routes
+  # "/403" is protected, but it intentionally does not preserve `next`.
+  # Sending users back to an access-denied page is not useful and this matches
+  # the logout flow's treatment of "/403".
+  Scenario Outline: Unauthenticated user is redirected to login from protected routes that preserve next
     When I navigate to "<route>"
     Then I should be redirected to "/login" with query params:
       | next | <route> |
@@ -14,7 +17,11 @@ Feature: Route Protection
     Examples:
       | route          |
       | /              |
-      | /403           |
       | /create        |
       | /play          |
       | /replay/abc123 |
+
+  Scenario: Unauthenticated user is redirected to login from /403 without next
+    When I navigate to "/403"
+    Then I should be on "/login"
+    And the "next" query param should not be present

@@ -2453,6 +2453,110 @@ describe("useCreatePageState — scenario save flow", () => {
     );
   });
 
+  it("saves the latest entity links even when the save callback was captured before a linked-record edit", async () => {
+    mockItemsGet.mockResolvedValueOnce({
+      id: "it1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-1", "sp-2"],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Items" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Items", "it1");
+    });
+
+    const staleSaveEntity = result.current.saveEntity;
+
+    act(() => {
+      result.current.updateEntityField("spellIds", ["sp-2"]);
+    });
+
+    await act(async () => {
+      await staleSaveEntity();
+    });
+
+    expect(mockItemsUpdate).toHaveBeenCalledWith({
+      id: "it1",
+      name: "Oak Staff",
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: ["sp-2"],
+    });
+  });
+
+  it("saves the latest scenario rows even when the save callback was captured before a row edit", async () => {
+    mockScenariosGet.mockResolvedValueOnce({
+      id: "sc1",
+      name: "Ambush at Dawn",
+      rows: [
+        {
+          id: "r1",
+          rowType: "melee",
+          assignments: [
+            { assignmentId: "a1", unitId: "u-1", unitName: "Barbarian", position: 1 },
+            { assignmentId: "a2", unitId: "u-4", unitName: "Samurai", position: 2 },
+          ],
+        },
+        { id: "r2", rowType: "ranged", assignments: [] },
+        { id: "r3", rowType: "support", assignments: [] },
+        { id: "r4", rowType: "tank", assignments: [] },
+      ],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await act(async () => {
+      result.current.selectRecord("Scenarios", "sc1");
+    });
+
+    const staleSaveScenario = result.current.saveScenario;
+
+    act(() => {
+      result.current.updateScenarioField("rows", [
+        { rowType: "ranged", unitIds: [] },
+        { rowType: "support", unitIds: [] },
+        { rowType: "melee", unitIds: ["u-1"] },
+        { rowType: "tank", unitIds: [] },
+      ]);
+    });
+
+    await act(async () => {
+      await staleSaveScenario();
+    });
+
+    expect(mockScenariosUpdate).toHaveBeenCalledWith({
+      id: "sc1",
+      name: "Ambush at Dawn",
+      rows: [
+        { rowType: "ranged", unitIds: [] },
+        { rowType: "support", unitIds: [] },
+        { rowType: "melee", unitIds: ["u-1"] },
+        { rowType: "tank", unitIds: [] },
+      ],
+    });
+  });
+
   it("blocks saving when the scenario name is missing", async () => {
     const { result } = renderHook(
       () => useCreatePageState({ tab: "Scenarios" }, vi.fn()),

@@ -1,62 +1,49 @@
-import { execSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+// Source of truth: e2e/features/authentication/session-management.feature
 import { test, expect } from "../worker-base.fixture";
+import type { BrowserContext } from "@playwright/test";
 import {
   GM_EMAIL,
   GM_PASSWORD,
   PLAYER_EMAIL,
   PLAYER_PASSWORD,
   login,
-  loginAsGM,
-  loginAsPlayer,
   logout,
   expectPath,
   expectQueryParams,
 } from "./auth.fixtures";
+import {
+  countSessionsByToken,
+  expireLatestSessionForUser,
+  getLatestSessionForUser,
+} from "../helpers/session-helpers";
 
-const E2E_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const COMPOSE_FILE = path.join(E2E_DIR, "docker-compose.yml");
+const GM_USER_ID = "seed-gm-001";
 const PLAYER_USER_ID = "seed-player-001";
 
-function expireUserSessions(userId: string, workerIndex: number, expiryExpression: string) {
-  const dbName = `qd_worker_${workerIndex}`;
-  const sql = `UPDATE session SET expires_at = ${expiryExpression} WHERE user_id = '${userId}';`;
-
-  execSync(
-    `docker compose -f "${COMPOSE_FILE}" exec -T postgres ` +
-      `psql -U postgres -d "${dbName}" -c "${sql}"`,
-    { stdio: "pipe", timeout: 15_000 },
-  );
+function getAuthCookies(context: BrowserContext) {
+  return context
+    .cookies()
+    .then((cookies) => cookies.filter((cookie) => cookie.name.startsWith("better-auth")));
 }
 
 test.describe("Session Management", () => {
-  /**
-   * NOTE: Tests involving time manipulation (session expiry, sliding expiration)
-   * require the ability to fast-forward time on the server side. These tests
-   * document the expected behavior but may need a server-side time manipulation
-   * endpoint or clock mocking to run in CI. For now they manipulate cookies
-   * to simulate expiration.
-   */
-
   test("session expires after 1 hour for GM without remember me — redirects to /login with reason=expired", async ({
     browser,
-  }) => {
+  }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/create");
 
-    // Corrupt session cookies to simulate expiration (cookie present but invalid)
-    const gmCookies = await context.cookies();
-    await context.clearCookies();
-    await context.addCookies(
-      gmCookies.map((c) =>
-        c.name.includes("better-auth")
-          ? { ...c, value: "invalid-" + c.value }
-          : c,
-      ),
-    );
+    const authCookies = await getAuthCookies(context);
+    expect(authCookies.length).toBeGreaterThan(0);
+    authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
+
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    const session = getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    expect(session.expiresAtEpoch).toBeGreaterThan(nowEpoch);
+
+    expireLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
 
     await page.goto("/create");
     await page.waitForURL("**/login**");
@@ -68,22 +55,21 @@ test.describe("Session Management", () => {
 
   test("session expires after 1 hour for player without remember me — redirects to /login with reason=expired", async ({
     browser,
-  }) => {
+  }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/play");
 
-    // Corrupt session cookies to simulate expiration (cookie present but invalid)
-    const playerCookies = await context.cookies();
-    await context.clearCookies();
-    await context.addCookies(
-      playerCookies.map((c) =>
-        c.name.includes("better-auth")
-          ? { ...c, value: "invalid-" + c.value }
-          : c,
-      ),
-    );
+    const authCookies = await getAuthCookies(context);
+    expect(authCookies.length).toBeGreaterThan(0);
+    authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
+
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    const session = getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    expect(session.expiresAtEpoch).toBeGreaterThan(nowEpoch);
+
+    expireLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
@@ -95,13 +81,18 @@ test.describe("Session Management", () => {
 
   test("session persists for 30 days with remember me — user stays on page after 1 hour", async ({
     browser,
-  }) => {
+  }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
     await page.waitForURL("**/play");
 
-    // With remember me, session should persist — navigate and verify still authenticated
+    const authCookies = await getAuthCookies(context);
+    expect(authCookies.length).toBeGreaterThan(0);
+    expect(authCookies.some((cookie) => cookie.expires > 0)).toBe(true);
+    const session = getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    expect(session.expiresAtEpoch).toBeGreaterThan(Math.floor(Date.now() / 1000));
+
     await page.goto("/play");
     await expect(page).toHaveURL(/\/play/);
     await context.close();
@@ -115,9 +106,11 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
     await page.waitForURL("**/play");
 
-    // Persisted sessions survive browser restarts, so expire the backing session
-    // row directly instead of mutating cookies.
-    expireUserSessions(PLAYER_USER_ID, testInfo.parallelIndex, "NOW() - INTERVAL '31 days'");
+    expireLatestSessionForUser(
+      PLAYER_USER_ID,
+      testInfo.parallelIndex,
+      "NOW() - INTERVAL '31 days'",
+    );
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
@@ -135,12 +128,11 @@ test.describe("Session Management", () => {
     await login(page1, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
     await page1.waitForURL("**/create");
 
-    // Store cookies before closing
-    const cookies = await context1.cookies();
+    const authCookies = await getAuthCookies(context1);
+    expect(authCookies.length).toBeGreaterThan(0);
+    authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
     await context1.close();
 
-    // Create a new context (simulates closing/reopening browser)
-    // Session cookies (no expiry) should not be carried over
     const context2 = await browser.newContext();
     const page2 = await context2.newPage();
 
@@ -159,51 +151,55 @@ test.describe("Session Management", () => {
     await login(page1, GM_EMAIL, GM_PASSWORD, { rememberMe: true });
     await page1.waitForURL("**/create");
 
-    // Get persistent cookies (with expiry)
     const cookies = await context1.cookies();
+    const authCookies = cookies.filter((cookie) => cookie.name.startsWith("better-auth"));
+    expect(authCookies.length).toBeGreaterThan(0);
+    expect(authCookies.some((cookie) => cookie.expires > 0)).toBe(true);
     await context1.close();
 
-    // Create new context and add the persistent cookies back (simulates browser reopen)
     const context2 = await browser.newContext();
     await context2.addCookies(cookies);
     const page2 = await context2.newPage();
 
     await page2.goto("/create");
-    // Should remain on /create since persistent cookies survive browser close
     await expect(page2).toHaveURL(/\/create/);
     await context2.close();
   });
 
   test("activity extends the session timeout (sliding expiration)", async ({
     browser,
-  }) => {
+  }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/create");
 
-    // Simulate activity by navigating — session should remain valid
+    const beforeActivity = getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+
+    await page.waitForTimeout(1_100);
     await page.goto("/create");
     await expect(page).toHaveURL(/\/create/);
 
-    // Navigate again — still valid
-    await page.goto("/create");
-    await expect(page).toHaveURL(/\/create/);
+    const afterActivity = getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    expect(afterActivity.token).toBe(beforeActivity.token);
+    expect(afterActivity.expiresAtEpoch).toBeGreaterThanOrEqual(beforeActivity.expiresAtEpoch);
+    expect(afterActivity.updatedAtEpoch).toBeGreaterThanOrEqual(beforeActivity.updatedAtEpoch);
+
     await context.close();
   });
 
-  test("session token cannot be reused after logout", async ({ browser }) => {
+  test("session token cannot be reused after logout", async ({ browser }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD);
     await page.waitForURL("**/play");
 
-    // Store cookies before logout
+    const sessionBeforeLogout = getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
     const cookiesBeforeLogout = await context.cookies();
 
     await logout(page);
+    expect(countSessionsByToken(sessionBeforeLogout.token, testInfo.parallelIndex)).toBe(0);
 
-    // Clear current cookies and try to use the old session
     await context.clearCookies();
     await context.addCookies(cookiesBeforeLogout);
 

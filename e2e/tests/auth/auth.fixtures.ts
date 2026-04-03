@@ -34,21 +34,8 @@ export async function loginAsPlayer(page: Page, options?: { rememberMe?: boolean
 
 /** Click the logout button in the header */
 export async function logout(page: Page) {
-  const logoutButton = page.getByRole("button", { name: /Log out|Logging out…/ });
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await logoutButton.click();
-
-    try {
-      await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 2_000 });
-      return;
-    } catch {
-      // The first click can land before the replay route hydrates under heavy load.
-      // Retry until the redirect is observed.
-    }
-  }
-
-  await expect(page).toHaveURL(/\/login(?:\?|$)/);
+  await page.getByRole("button", { name: /Log out|Logging out…/ }).click();
+  await page.waitForURL(/\/login(?:\?|$)/, { timeout: 10_000 });
 }
 
 /** Assert we're on a given path */

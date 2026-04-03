@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
@@ -63,14 +63,13 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const router = useRouter();
   const { notice } = Route.useSearch();
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
     setLoggingOut(true);
-    const currentPath = router.state.location.pathname;
-    const currentHref = router.state.location.href;
+    const currentPath = window.location.pathname;
+    const currentHref = window.location.href;
     try {
       await authClient.signOut();
       const excludedPaths = ["/login", "/403"];

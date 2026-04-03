@@ -259,13 +259,11 @@ export function useCreatePageState(
     flushSync(() => {
       setEntityWorkspace((prev) => {
         const newFormValues = { ...prev.formValues, [field]: value };
-        const nextWorkspace = {
+        return {
           ...prev,
           formValues: newFormValues,
           isDirty: computeIsDirty(newFormValues, prev.data, prev.entityType),
         };
-        entityWorkspaceRef.current = nextWorkspace;
-        return nextWorkspace;
       });
     });
   }, [setEntityWorkspace]);
@@ -274,7 +272,7 @@ export function useCreatePageState(
     flushSync(() => {
       setScenarioWorkspace((prev) => {
         const newFormValues = { ...prev.formValues, [field]: value };
-        const nextWorkspace = {
+        return {
           ...prev,
           formValues: newFormValues,
           isDirty:
@@ -285,8 +283,6 @@ export function useCreatePageState(
                 )
               : prev.isDirty,
         };
-        scenarioWorkspaceRef.current = nextWorkspace;
-        return nextWorkspace;
       });
     });
   }, [setScenarioWorkspace]);

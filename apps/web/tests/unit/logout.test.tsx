@@ -34,6 +34,19 @@ vi.mock("@tanstack/react-start/server", () => ({
   getRequestHeaders: vi.fn(),
 }));
 
+function stubWindowLocation(path: string, assignSpy: ReturnType<typeof vi.fn>) {
+  const url = new URL(path, "http://localhost:3000");
+  vi.stubGlobal("location", {
+    ...window.location,
+    assign: assignSpy,
+    origin: url.origin,
+    href: url.href,
+    pathname: url.pathname,
+    search: url.search,
+    hash: url.hash,
+  });
+}
+
 async function renderAuthenticatedLayoutAt(path: string) {
   const { Route: AuthRoute } = await import(
     "../../src/routes/_authenticated"
@@ -92,11 +105,7 @@ describe("Logout functionality", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal("location", {
-      ...window.location,
-      assign: assignSpy,
-      origin: "http://localhost:3000",
-    });
+    stubWindowLocation("/dashboard", assignSpy);
   });
 
   it("renders a logout button in the authenticated layout", async () => {
@@ -151,6 +160,7 @@ describe("Logout functionality", () => {
   it("redirects to /login?next=<route> when logged out from a protected route", async () => {
     mockSignOut.mockResolvedValue({});
 
+    stubWindowLocation("/replay/abc445", assignSpy);
     await renderAuthenticatedLayoutAt("/replay/abc445");
 
     await waitFor(() => {
@@ -172,6 +182,7 @@ describe("Logout functionality", () => {
   it("preserves query params in the next param when logging out", async () => {
     mockSignOut.mockResolvedValue({});
 
+    stubWindowLocation("/replay/abc445?tab=details", assignSpy);
     await renderAuthenticatedLayoutAt("/replay/abc445?tab=details");
 
     await waitFor(() => {
@@ -193,6 +204,7 @@ describe("Logout functionality", () => {
   it("strips transient notice param from next when logging out", async () => {
     mockSignOut.mockResolvedValue({});
 
+    stubWindowLocation("/dashboard?notice=Invalid+return+URL", assignSpy);
     await renderAuthenticatedLayoutAt("/dashboard?notice=Invalid+return+URL");
 
     await waitFor(() => {
@@ -214,6 +226,7 @@ describe("Logout functionality", () => {
   it("redirects to /login without next param when logged out from /403", async () => {
     mockSignOut.mockResolvedValue({});
 
+    stubWindowLocation("/403", assignSpy);
     await renderAuthenticatedLayoutAt("/403");
 
     await waitFor(() => {

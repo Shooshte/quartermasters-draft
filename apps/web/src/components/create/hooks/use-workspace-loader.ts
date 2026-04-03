@@ -49,7 +49,7 @@ interface UseWorkspaceLoaderOptions {
   navigate?: CreatePageNavigate;
 }
 
-function computeIsDirty(
+export function computeIsDirty(
   formValues: WorkspaceState["formValues"],
   originalData: WorkspaceState["data"],
   entityType: WorkspaceState["entityType"],

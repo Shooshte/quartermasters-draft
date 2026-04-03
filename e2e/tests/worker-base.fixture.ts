@@ -1,5 +1,6 @@
 import { test as base } from "@playwright/test";
 import { BASE_PORT } from "../constants";
+import { closeAllWorkerDbs } from "./helpers/worker-db";
 
 /**
  * Base fixture that routes each Playwright worker to its dedicated app instance.
@@ -19,7 +20,11 @@ export const test = base.extend<
   // Worker-scoped fixture that computes the per-worker base URL
   workerBaseURL: [
     async ({}, use, workerInfo) => {
-      await use(`http://localhost:${BASE_PORT + workerInfo.parallelIndex}`);
+      try {
+        await use(`http://localhost:${BASE_PORT + workerInfo.parallelIndex}`);
+      } finally {
+        await closeAllWorkerDbs();
+      }
     },
     { scope: "worker" },
   ],

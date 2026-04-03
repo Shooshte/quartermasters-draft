@@ -1,37 +1,38 @@
+// Source of truth: e2e/features/create/item-workspace.feature
 import { expect, test } from "../db-reset.fixture";
-
-test.describe.configure({ mode: "serial" });
-
 import { OAK_STAFF_ID } from "../helpers/seed-constants";
-import { openNewEntity, saveEntityAndWait, expectAllStats, addLinkedEntity } from "../helpers/workspace-helpers";
+import { expectAllStats } from "../helpers/workspace-helpers";
+import { ItemWorkspacePage } from "../pages/item-workspace.page";
+
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 test.describe("Item Workspace", () => {
-  test("create a new item with default stats", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("create a new item with default stats", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Bronze Buckler");
-    await saveEntityAndWait(gmPage, "items", "create");
+    await item.fillName("Bronze Buckler");
+    await item.saveCreate();
 
     await expect(gmPage).toHaveURL(/item_id=/);
     await expect(gmPage.getByTestId("entity-workspace-header")).toContainText("Item: Bronze Buckler");
   });
 
-  test("save stays blocked until a name is present", async ({ gmPage }) => {
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("name is required", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
-    await gmPage.getByTestId("entity-name-input").fill("Nameless No More");
-    await expect(gmPage.getByTestId("entity-save-button")).toBeEnabled();
+    await expect(item.saveButton).toBeDisabled();
   });
 
-  test("default zero stats persist after reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("stat fields default to zero", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Empty Hilt");
-    await saveEntityAndWait(gmPage, "items", "create");
-    await expect(gmPage).toHaveURL(/item_id=/);
+    await item.fillName("Empty Hilt");
+    await item.saveCreate();
 
     await gmPage.reload();
 
@@ -47,120 +48,262 @@ test.describe("Item Workspace", () => {
     });
   });
 
-  test("decimal and negative non-cost stats persist after reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("create an item with combat stats", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Cursed Sigil");
-    await gmPage.getByTestId("item-meleeDmg-input").fill("12.5");
-    await gmPage.getByTestId("item-spellDmg-input").fill("-3.5");
-    await gmPage.getByTestId("item-dodge-input").fill("-1");
-    await gmPage.getByTestId("item-criticalChance-input").fill("7.25");
-    await saveEntityAndWait(gmPage, "items", "create");
-    await expect(gmPage).toHaveURL(/item_id=/);
+    await item.fillName("Obsidian Blade");
+    await item.fillStats({
+      meleeDmg: "18",
+      rangedDmg: "0",
+      spellDmg: "5",
+      criticalChance: "12",
+    });
+    await item.saveCreate();
 
     await gmPage.reload();
+    await expectAllStats(gmPage, "item", {
+      meleeDmg: "18",
+      rangedDmg: "0",
+      spellDmg: "5",
+      criticalChance: "12",
+    });
+  });
 
+  test("create an item with utility stats", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.fillName("Shade Charm");
+    await item.fillStats({
+      manaRegen: "4.5",
+      dodge: "6",
+    });
+    await item.saveCreate();
+
+    await gmPage.reload();
+    await expectAllStats(gmPage, "item", {
+      manaRegen: "4.5",
+      dodge: "6",
+    });
+  });
+
+  test("create an item with activation costs", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.fillName("Mana Gauntlet");
+    await item.fillStats({
+      activationManaCost: "8",
+      activationHealthCost: "3",
+    });
+    await item.saveCreate();
+
+    await gmPage.reload();
+    await expectAllStats(gmPage, "item", {
+      activationManaCost: "8",
+      activationHealthCost: "3",
+    });
+  });
+
+  test("stat fields accept decimal values", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.fillName("Precise Blade");
+    await item.fillStats({
+      meleeDmg: "12.5",
+      criticalChance: "7.25",
+    });
+    await item.saveCreate();
+
+    await gmPage.reload();
     await expectAllStats(gmPage, "item", {
       meleeDmg: "12.5",
-      spellDmg: "-3.5",
-      dodge: "-1",
       criticalChance: "7.25",
     });
   });
 
-  test("negative activation costs block saving", async ({ gmPage }) => {
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("stat fields accept negative values", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Broken Relay");
-    await gmPage.getByTestId("item-activationManaCost-input").fill("-1");
-    await gmPage.getByTestId("item-activationHealthCost-input").fill("-2");
-
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
-    await expect(gmPage.getByText("Must be zero or greater")).toHaveCount(2);
-  });
-
-  test("editing an existing item persists name and stat changes", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Items&item_id=${OAK_STAFF_ID}`);
-
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Oak Staff");
-    await gmPage.getByTestId("entity-name-input").fill("Oak Staff Updated");
-    await gmPage.getByTestId("item-spellDmg-input").fill("20");
-    await saveEntityAndWait(gmPage, "items", "update");
+    await item.fillName("Cursed Sigil");
+    await item.fillStats({
+      spellDmg: "-3.5",
+      dodge: "-1",
+    });
+    await item.saveCreate();
 
     await gmPage.reload();
+    await expectAllStats(gmPage, "item", {
+      spellDmg: "-3.5",
+      dodge: "-1",
+    });
+  });
 
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Oak Staff Updated");
+  test("edit an existing item", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
+
+    await item.fillName("Oak Staff Updated");
+    await item.saveUpdate();
+
+    await gmPage.reload();
+    await expect(item.nameInput).toHaveValue("Oak Staff Updated");
+  });
+
+  test("edit stat values on an existing item", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
+
+    await item.fillStats({ spellDmg: "20" });
+    await item.saveUpdate();
+
+    await gmPage.reload();
     await expect(gmPage.getByTestId("item-spellDmg-input")).toHaveValue("20");
   });
 
-  test("duplicate item names surface a save error", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Items&item_id=${OAK_STAFF_ID}`);
+  test("duplicate name shows a save error", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
 
-    await gmPage.getByTestId("entity-name-input").fill("Iron Sword");
-    await gmPage.getByTestId("entity-save-button").click();
+    await item.fillName("Iron Sword");
+    await item.saveButton.click();
 
-    await expect(gmPage.getByTestId("entity-save-error")).toHaveText("An item with this name already exists");
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
+    await expect(item.saveError).toHaveText("An item with this name already exists");
+    await expect(item.nameInput).toHaveValue("Iron Sword");
   });
 
-  test("multiple linked spells persist as membership after reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("linked spells are optional on create", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Arcane Focus");
-    await addLinkedEntity(gmPage, "item-spell-picker", "item-spell-picker-search", "item-add-spell-button", "Fireball");
-    await addLinkedEntity(gmPage, "item-spell-picker", "item-spell-picker-search", "item-add-spell-button", "Healing Touch");
-    await saveEntityAndWait(gmPage, "items", "create");
-    await expect(gmPage).toHaveURL(/item_id=/);
+    await item.fillName("Spell-less Relic");
+    await item.saveCreate();
 
     await gmPage.reload();
-
-    await expect(gmPage.getByTestId("item-form-fields")).toContainText("Fireball");
-    await expect(gmPage.getByTestId("item-form-fields")).toContainText("Healing Touch");
-    await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(2);
+    await expect(item.spellRows).toHaveCount(0);
   });
 
-  test("removing the final linked spell persists after save", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Items&item_id=${OAK_STAFF_ID}`);
+  test("activation costs cannot be negative", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
+    await item.fillName("Broken Relay");
+    await item.fillStats({
+      activationManaCost: "-1",
+      activationHealthCost: "-2",
+    });
+
+    await expect(item.saveButton).toBeDisabled();
+    await expect(gmPage.getByText("Must be zero or greater")).toHaveCount(2);
+  });
+
+  test("add a spell to an item", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.fillName("Flame Rod");
+    await item.linkSpell("Fireball");
+    await item.saveCreate();
+
+    await gmPage.reload();
     await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Fireball");
-    await gmPage.getByTestId("item-spell-remove-0").click();
-    await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(0);
-
-    await saveEntityAndWait(gmPage, "items", "update");
-
-    await gmPage.reload();
-
-    await expect(gmPage.locator('[data-testid^="item-spell-row-"]')).toHaveCount(0);
-
-    await resetDb();
   });
 
-  test("the spell picker supports search, shows at most five options, and hides already linked spells", async ({
-    gmPage,
-  }) => {
-    await openNewEntity(gmPage, "Items", "New Item");
+  test("add multiple spells to an item", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("item-spell-picker").click();
-    await expect(gmPage.getByTestId("item-spell-picker-search")).toHaveAttribute(
-      "placeholder",
-      "Search spells...",
-    );
-    await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5);
-    await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search spells..." })).toHaveCount(0);
+    await item.fillName("Arcane Focus");
+    await item.linkSpell("Fireball");
+    await item.linkSpell("Healing Touch");
+    await item.saveCreate();
 
-    await gmPage.getByTestId("item-spell-picker-search").fill("fire");
+    await gmPage.reload();
+    await expect(item.formFields).toContainText("Fireball");
+    await expect(item.formFields).toContainText("Healing Touch");
+    await expect(item.spellRows).toHaveCount(2);
+  });
+
+  test("remove a linked spell while at least one remains", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
+
+    await item.linkSpell("Healing Touch");
+    await item.saveUpdate();
+
+    await item.removeSpell(0);
+    await expect(item.spellRows).toHaveCount(1);
+    await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Healing Touch");
+    await item.saveUpdate();
+
+    await gmPage.reload();
+    await expect(item.spellRows).toHaveCount(1);
+    await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Healing Touch");
+  });
+
+  test("removing the final linked spell is allowed on edit", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
+
+    await item.removeSpell(0);
+    await item.saveUpdate();
+
+    await gmPage.reload();
+    await expect(item.spellRows).toHaveCount(0);
+  });
+
+  test("edit linked spells on an existing item", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
+
+    await item.linkSpell("Battle Cry");
+    await item.saveUpdate();
+
+    await gmPage.reload();
+    await expect(item.formFields).toContainText("Fireball");
+    await expect(item.formFields).toContainText("Battle Cry");
+    await expect(item.spellRows).toHaveCount(2);
+  });
+
+  test("search for a specific spell before linking it", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.spellPicker.click();
+    await item.spellPickerSearch.fill("fire");
     await expect(gmPage.getByRole("option", { name: "Fireball" })).toBeVisible();
+  });
 
-    await gmPage.getByRole("option", { name: "Fireball" }).click();
-    await gmPage.getByTestId("item-add-spell-button").click();
-    await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Fireball");
+  test("link-spell picker shows at most five options", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
 
-    await gmPage.getByTestId("item-spell-picker").click();
+    await item.spellPicker.click();
+    await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5);
+  });
+
+  test("link-spell picker does not include the search prompt as an option", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.spellPicker.click();
+    await expect(item.spellPickerSearch).toHaveAttribute("placeholder", "Search spells...");
+    await expect(
+      gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search spells..." }),
+    ).toHaveCount(0);
+  });
+
+  test("duplicate spell links are not allowed", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openNew();
+
+    await item.fillName("Echo Crystal");
+    await item.linkSpell("Fireball");
+
+    await item.spellPicker.click();
     await expect(gmPage.getByRole("option", { name: "Fireball" })).toHaveCount(0);
   });
 });

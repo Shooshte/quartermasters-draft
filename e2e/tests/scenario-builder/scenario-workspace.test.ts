@@ -1,10 +1,11 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
-
-test.describe.configure({ mode: "serial" });
-
 import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID, UNIT_IDS } from "../helpers/seed-constants";
 import { openNewEntity, saveEntityAndWait } from "../helpers/workspace-helpers";
+
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 async function loadScenarioFromLibrary(gmPage: Page, scenarioName: string) {
   await gmPage.goto("/create");
@@ -46,8 +47,7 @@ async function expectRowUnits(
 }
 
 test.describe("Scenario Workspace", () => {
-  test("create a new empty scenario", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a new empty scenario", async ({ gmPage }) => {
     await openNewEntity(gmPage, "Scenarios", "New Scenario");
 
     await gmPage.getByTestId("scenario-name-input").fill("Frontier Watch");
@@ -63,8 +63,7 @@ test.describe("Scenario Workspace", () => {
     await expect(gmPage.getByText("Name is required to save")).toBeVisible();
   });
 
-  test("duplicate name shows a save error", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("duplicate name shows a save error", async ({ gmPage }) => {
     await openNewEntity(gmPage, "Scenarios", "New Scenario");
 
     await gmPage.getByTestId("scenario-name-input").fill("Ambush at Dawn");
@@ -75,8 +74,7 @@ test.describe("Scenario Workspace", () => {
     );
   });
 
-  test("a new scenario starts with four fixed empty rows", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("a new scenario starts with four fixed empty rows", async ({ gmPage }) => {
     await openNewEntity(gmPage, "Scenarios", "New Scenario");
 
     await gmPage.getByTestId("scenario-name-input").fill("Silent Outpost");
@@ -91,8 +89,7 @@ test.describe("Scenario Workspace", () => {
     await expectRowEmpty(gmPage, "support");
   });
 
-  test("create a scenario with units assigned across rows", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("create a scenario with units assigned across rows", async ({ gmPage }) => {
     await openNewEntity(gmPage, "Scenarios", "New Scenario");
 
     await gmPage.getByTestId("scenario-name-input").fill("Siege Breakers");
@@ -110,8 +107,7 @@ test.describe("Scenario Workspace", () => {
     await expectRowEmpty(gmPage, "tank");
   });
 
-  test("edit an existing scenario name", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("edit an existing scenario name", async ({ gmPage }) => {
     await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
 
@@ -122,8 +118,7 @@ test.describe("Scenario Workspace", () => {
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dusk");
   });
 
-  test("edit row assignments on an existing scenario", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("edit row assignments on an existing scenario", async ({ gmPage }) => {
     await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
 
     await assignUnit(gmPage, "tank", "Templar");
@@ -136,8 +131,7 @@ test.describe("Scenario Workspace", () => {
     await expectRowUnits(gmPage, "support", ["Ranger"]);
   });
 
-  test("add multiple units to the same row in slot order", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("add multiple units to the same row in slot order", async ({ gmPage }) => {
     await gmPage.goto(`/create?scenario_id=${CASTLE_SIEGE_ID}`);
 
     await assignUnit(gmPage, "melee", "Barbarian");
@@ -149,8 +143,7 @@ test.describe("Scenario Workspace", () => {
     await expectRowUnits(gmPage, "melee", ["Barbarian", "Samurai", "Undead Knight"]);
   });
 
-  test("reorder units within a row", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("reorder units within a row", async ({ gmPage }) => {
     await gmPage.goto(`/create?scenario_id=${CASTLE_SIEGE_ID}`);
 
     await assignUnit(gmPage, "melee", "Barbarian");
@@ -158,20 +151,22 @@ test.describe("Scenario Workspace", () => {
     await saveEntityAndWait(gmPage, "scenarios", "update", { saveButtonTestId: "scenario-save-button" });
 
     await gmPage.getByTestId("scenario-row-melee-move-up-2").click();
+    await expectRowUnits(gmPage, "melee", ["Samurai", "Barbarian"]);
     await saveEntityAndWait(gmPage, "scenarios", "update", { saveButtonTestId: "scenario-save-button" });
 
     await gmPage.reload();
     await expectRowUnits(gmPage, "melee", ["Samurai", "Barbarian"]);
   });
 
-  test("remove a unit while other assignments remain", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("remove a unit while other assignments remain", async ({ gmPage }) => {
     await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
 
     await assignUnit(gmPage, "melee", "Samurai");
     await saveEntityAndWait(gmPage, "scenarios", "update", { saveButtonTestId: "scenario-save-button" });
 
     await gmPage.getByTestId("scenario-row-melee-remove-2").click();
+    await expectRowUnits(gmPage, "melee", ["Barbarian"]);
+    await expect(gmPage.locator('[data-testid^="scenario-row-melee-slot-"]')).toHaveCount(1);
     await saveEntityAndWait(gmPage, "scenarios", "update", { saveButtonTestId: "scenario-save-button" });
 
     await gmPage.reload();
@@ -179,8 +174,7 @@ test.describe("Scenario Workspace", () => {
     await expect(gmPage.locator('[data-testid^="scenario-row-melee-slot-"]')).toHaveCount(1);
   });
 
-  test("removing the final unit from a row is allowed", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("removing the final unit from a row is allowed", async ({ gmPage }) => {
     await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
 
     await gmPage.getByTestId("scenario-row-support-remove-1").click();
@@ -193,8 +187,7 @@ test.describe("Scenario Workspace", () => {
     await expectRowUnits(gmPage, "ranged", ["Mage"]);
   });
 
-  test("duplicate units in the same row are allowed", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("duplicate units in the same row are allowed", async ({ gmPage }) => {
     await openNewEntity(gmPage, "Scenarios", "New Scenario");
 
     await gmPage.getByTestId("scenario-name-input").fill("Mirror Line");
@@ -207,8 +200,7 @@ test.describe("Scenario Workspace", () => {
     await expectRowUnits(gmPage, "melee", ["Barbarian", "Barbarian"]);
   });
 
-  test("the same unit can appear in multiple rows", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("the same unit can appear in multiple rows", async ({ gmPage }) => {
     await openNewEntity(gmPage, "Scenarios", "New Scenario");
 
     await gmPage.getByTestId("scenario-name-input").fill("Flexible Vanguard");
@@ -241,9 +233,7 @@ test.describe("Scenario Workspace", () => {
 
   test("loading an existing scenario from the library preserves the create workspace flow", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     await loadScenarioFromLibrary(gmPage, "Ambush at Dawn");
 
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");

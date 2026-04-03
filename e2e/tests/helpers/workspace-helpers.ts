@@ -38,14 +38,16 @@ export async function saveEntityAndWait(
   opts?: { saveButtonTestId?: string },
 ): Promise<void> {
   const buttonTestId = opts?.saveButtonTestId ?? "entity-save-button";
+  const saveButton = page.getByTestId(buttonTestId);
   await Promise.all([
     page.waitForResponse((response) =>
       response.url().includes(`/api/trpc/scenarioBuilder.${entityType}.${mutation}`) &&
       response.request().method() === "POST" &&
       response.ok(),
     ),
-    page.getByTestId(buttonTestId).click(),
+    saveButton.click(),
   ]);
+  await expect(saveButton).toBeEnabled();
 }
 
 // ─── Stats ───────────────────────────────────────────────────────────────────

@@ -1,42 +1,40 @@
-import type { Page } from "@playwright/test";
+// Source of truth: e2e/features/create/unit-workspace.feature
 import { expect, test } from "../db-reset.fixture";
 import { BARBARIAN_ID } from "../helpers/seed-constants";
-import { openNewEntity, saveEntityAndWait, expectAllStats, addLinkedEntity } from "../helpers/workspace-helpers";
+import { expectAllStats } from "../helpers/workspace-helpers";
+import { UnitWorkspacePage } from "../pages/unit-workspace.page";
 
-test.describe.configure({ mode: "serial" });
-
-async function saveCreatedUnitAndWaitForUrl(gmPage: Page) {
-  await saveEntityAndWait(gmPage, "units", "create");
-  await expect(gmPage).toHaveURL(/unit_id=/);
-}
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 test.describe("Unit Workspace", () => {
-  test("create a new unit with default stats", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("create a new unit with default stats", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Bronze Sentinel");
-    await saveCreatedUnitAndWaitForUrl(gmPage);
+    await unit.fillName("Bronze Sentinel");
+    await unit.saveCreate();
+
+    await expect(gmPage).toHaveURL(/unit_id=/);
     await expect(gmPage.getByTestId("entity-workspace-header")).toContainText("Unit: Bronze Sentinel");
   });
 
-  test("save stays blocked until a name is present", async ({ gmPage }) => {
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("name is required", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
-    await gmPage.getByTestId("entity-name-input").fill("Nameless No More");
-    await expect(gmPage.getByTestId("entity-save-button")).toBeEnabled();
+    await expect(unit.saveButton).toBeDisabled();
   });
 
-  test("default zero stats persist after reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("stat fields default to zero", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Blank Recruit");
-    await saveCreatedUnitAndWaitForUrl(gmPage);
+    await unit.fillName("Blank Recruit");
+    await unit.saveCreate();
 
     await gmPage.reload();
-
     await expectAllStats(gmPage, "unit", {
       meleeDmg: "0",
       health: "0",
@@ -49,149 +47,212 @@ test.describe("Unit Workspace", () => {
     });
   });
 
-  test("saved stats and decimal values persist after reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("create a unit with saved stats", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Glass Runner");
-    await gmPage.getByTestId("unit-meleeDmg-input").fill("18");
-    await gmPage.getByTestId("unit-health-input").fill("82.25");
-    await gmPage.getByTestId("unit-rangedDmg-input").fill("6");
-    await gmPage.getByTestId("unit-manaRegen-input").fill("2");
-    await gmPage.getByTestId("unit-spellDmg-input").fill("4");
-    await gmPage.getByTestId("unit-speed-input").fill("1.35");
-    await gmPage.getByTestId("unit-dodge-input").fill("6.5");
-    await gmPage.getByTestId("unit-criticalChance-input").fill("12");
-    await saveCreatedUnitAndWaitForUrl(gmPage);
-
-    await gmPage.reload();
-
-    await expectAllStats(gmPage, "unit", {
+    await unit.fillName("Storm Lancer");
+    await unit.fillStats({
       meleeDmg: "18",
-      health: "82.25",
+      health: "95",
       rangedDmg: "6",
       manaRegen: "2",
       spellDmg: "4",
-      speed: "1.35",
-      dodge: "6.5",
+      speed: "1.1",
+      dodge: "7",
+      criticalChance: "12",
+    });
+    await unit.saveCreate();
+
+    await gmPage.reload();
+    await expectAllStats(gmPage, "unit", {
+      meleeDmg: "18",
+      health: "95",
+      rangedDmg: "6",
+      manaRegen: "2",
+      spellDmg: "4",
+      speed: "1.1",
+      dodge: "7",
       criticalChance: "12",
     });
   });
 
-  test("editing an existing unit persists name and stat changes", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+  test("stat fields accept decimal values", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
-    await gmPage.getByTestId("entity-name-input").fill("Barbarian Updated");
-    await gmPage.getByTestId("unit-health-input").fill("120");
-    await saveEntityAndWait(gmPage, "units", "update");
+    await unit.fillName("Glass Runner");
+    await unit.fillStats({
+      health: "82.25",
+      speed: "1.35",
+      dodge: "6.5",
+    });
+    await unit.saveCreate();
 
     await gmPage.reload();
+    await expectAllStats(gmPage, "unit", {
+      health: "82.25",
+      speed: "1.35",
+      dodge: "6.5",
+    });
+  });
 
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Updated");
+  test("edit an existing unit", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
+
+    await unit.fillName("Barbarian Updated");
+    await unit.saveUpdate();
+
+    await gmPage.reload();
+    await expect(unit.nameInput).toHaveValue("Barbarian Updated");
+  });
+
+  test("edit stat values on an existing unit", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
+
+    await unit.fillStats({ health: "120" });
+    await unit.saveUpdate();
+
+    await gmPage.reload();
     await expect(gmPage.getByTestId("unit-health-input")).toHaveValue("120");
   });
 
-  test("duplicate unit names surface a save error", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+  test("duplicate name shows a save error", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
 
-    await gmPage.getByTestId("entity-name-input").fill("Mage");
-    await gmPage.getByTestId("entity-save-button").click();
+    await unit.fillName("Mage");
+    await unit.saveButton.click();
 
-    await expect(gmPage.getByTestId("entity-save-error")).toHaveText("A unit with this name already exists");
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Mage");
+    await expect(unit.saveError).toHaveText("A unit with this name already exists");
+    await expect(unit.nameInput).toHaveValue("Mage");
   });
 
-  test("a unit can save without linked items", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("linked items are optional on create", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Barehand Adept");
-    await saveCreatedUnitAndWaitForUrl(gmPage);
+    await unit.fillName("Barehand Adept");
+    await unit.saveCreate();
 
     await gmPage.reload();
-
-    await expect(gmPage.locator('[data-testid^="unit-item-row-"]')).toHaveCount(0);
+    await expect(unit.itemRows).toHaveCount(0);
   });
 
-  test("linked items persist in order after save and reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("add an item to a unit", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Field Captain");
-    await addLinkedEntity(gmPage, "unit-item-picker", "unit-item-picker-search", "unit-add-item-button", "Iron Sword");
-    await addLinkedEntity(gmPage, "unit-item-picker", "unit-item-picker-search", "unit-add-item-button", "Leather Shield");
-    await saveCreatedUnitAndWaitForUrl(gmPage);
+    await unit.fillName("Iron Vanguard");
+    await unit.linkItem("Iron Sword");
+    await unit.saveCreate();
 
     await gmPage.reload();
+    await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Iron Sword");
+  });
 
+  test("add multiple items to a unit in priority order", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
+
+    await unit.fillName("Field Captain");
+    await unit.linkItem("Iron Sword");
+    await unit.linkItem("Leather Shield");
+    await unit.saveCreate();
+
+    await gmPage.reload();
     await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Iron Sword");
     await expect(gmPage.getByTestId("unit-item-row-1")).toContainText("Leather Shield");
   });
 
-  test("the item picker supports search, shows at most five options, and does not render the placeholder as an option", async ({
-    gmPage,
-  }) => {
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("search for a specific item before linking it", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Scout");
-    await gmPage.getByTestId("unit-item-picker").click();
-    await expect(gmPage.getByTestId("unit-item-picker-search")).toHaveAttribute(
-      "placeholder",
-      "Search items...",
-    );
-    await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5);
-    await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search items..." })).toHaveCount(0);
-
-    await gmPage.getByTestId("unit-item-picker-search").fill("oak");
+    await unit.itemPicker.click();
+    await unit.itemPickerSearch.fill("oak");
     await expect(gmPage.getByRole("option", { name: "Oak Staff" })).toBeVisible();
   });
 
-  test("reordering linked items persists after save", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+  test("link-item picker shows at most five options", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
 
-    await addLinkedEntity(gmPage, "unit-item-picker", "unit-item-picker-search", "unit-add-item-button", "Leather Shield");
-    await saveEntityAndWait(gmPage, "units", "update");
+    await unit.itemPicker.click();
+    await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5);
+  });
+
+  test("link-item picker does not include the search prompt as an option", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
+
+    await unit.itemPicker.click();
+    await expect(unit.itemPickerSearch).toHaveAttribute("placeholder", "Search items...");
+    await expect(
+      gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search items..." }),
+    ).toHaveCount(0);
+  });
+
+  test("reorder linked items", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
+
+    await unit.linkItem("Leather Shield");
+    await unit.saveUpdate();
 
     await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Iron Sword");
     await expect(gmPage.getByTestId("unit-item-row-1")).toContainText("Leather Shield");
 
     await gmPage.getByTestId("unit-item-move-down-0").click();
-    await saveEntityAndWait(gmPage, "units", "update");
-    await gmPage.reload();
+    await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Leather Shield");
+    await expect(gmPage.getByTestId("unit-item-row-1")).toContainText("Iron Sword");
+    await unit.saveUpdate();
 
+    await gmPage.reload();
     await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Leather Shield");
     await expect(gmPage.getByTestId("unit-item-row-1")).toContainText("Iron Sword");
   });
 
-  test("removing the final linked item persists after save", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+  test("remove a linked item while at least one remains", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
 
+    await unit.linkItem("Leather Shield");
+    await unit.saveUpdate();
+
+    await unit.removeItem(1);
+    await expect(unit.itemRows).toHaveCount(1);
     await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Iron Sword");
-    await gmPage.getByTestId("unit-item-remove-0").click();
-    await expect(gmPage.locator('[data-testid^="unit-item-row-"]')).toHaveCount(0);
+    await unit.saveUpdate();
 
-    await saveEntityAndWait(gmPage, "units", "update");
     await gmPage.reload();
-
-    await expect(gmPage.locator('[data-testid^="unit-item-row-"]')).toHaveCount(0);
+    await expect(unit.itemRows).toHaveCount(1);
+    await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Iron Sword");
   });
 
-  test("duplicate item links are allowed and persist after reload", async ({ gmPage, resetDb }) => {
-    await resetDb();
-    await openNewEntity(gmPage, "Units", "New Unit");
+  test("removing the final linked item is allowed on edit", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
 
-    await gmPage.getByTestId("entity-name-input").fill("Twinblade Adept");
-    await addLinkedEntity(gmPage, "unit-item-picker", "unit-item-picker-search", "unit-add-item-button", "Iron Sword");
-    await addLinkedEntity(gmPage, "unit-item-picker", "unit-item-picker-search", "unit-add-item-button", "Iron Sword");
-    await saveCreatedUnitAndWaitForUrl(gmPage);
+    await unit.removeItem(0);
+    await unit.saveUpdate();
 
     await gmPage.reload();
+    await expect(unit.itemRows).toHaveCount(0);
+  });
 
+  test("duplicate item links are allowed", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
+
+    await unit.fillName("Twinblade Adept");
+    await unit.linkItem("Iron Sword");
+    await unit.linkItem("Iron Sword");
+    await unit.saveCreate();
+
+    await gmPage.reload();
     await expect(gmPage.getByTestId("unit-item-row-0")).toContainText("Iron Sword");
     await expect(gmPage.getByTestId("unit-item-row-1")).toContainText("Iron Sword");
   });

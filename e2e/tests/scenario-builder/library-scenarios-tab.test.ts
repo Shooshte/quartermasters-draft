@@ -1,6 +1,6 @@
 import { test, expect } from "../db-reset.fixture";
-import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID, generateEntityIds } from "../helpers/seed-constants";
-import { deleteEntityViaApi } from "../helpers/trpc-api";
+import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID } from "../helpers/seed-constants";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { SCENARIOS_TAB } from "../pages/library-tab-configs";
 
@@ -33,17 +33,18 @@ test.describe("Scenarios Library Tab — Display", () => {
     resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
-    // Delete all 21 scenarios via API
-    const scenarioIds = generateEntityIds("scenarios", 21);
-    for (const id of scenarioIds) {
-      await deleteEntityViaApi(gmPage.request, "scenarios", id);
+    try {
+      const scenarioIds = await listEntityIdsViaApi(gmPage.request, "scenarios");
+      for (const id of scenarioIds) {
+        const response = await deleteEntityViaApi(gmPage.request, "scenarios", id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      await lib.navigateToTab();
+      await expect(lib.emptyList).toBeVisible();
+    } finally {
+      await resetDb();
     }
-
-    await lib.navigateToTab();
-    await expect(lib.emptyList).toBeVisible();
-
-    // Restore DB for subsequent tests
-    await resetDb();
   });
 });
 

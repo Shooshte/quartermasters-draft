@@ -1,5 +1,6 @@
 import { test as base, expect } from "../worker-base.fixture";
 import type { Page } from "@playwright/test";
+import { LoginPage } from "../pages/login.page";
 
 /** Seed credentials */
 export const GM_EMAIL = "gm@example.com";
@@ -14,15 +15,9 @@ export async function login(
   password: string,
   options?: { rememberMe?: boolean },
 ) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-
-  if (options?.rememberMe) {
-    await page.getByLabel("Remember me").check();
-  }
-
-  await page.getByRole("button", { name: "Sign in" }).click();
+  const loginPage = new LoginPage(page);
+  await loginPage.goto();
+  await loginPage.signIn(email, password, options);
 }
 
 /** Log in as GM and wait for redirect */
@@ -39,8 +34,8 @@ export async function loginAsPlayer(page: Page, options?: { rememberMe?: boolean
 
 /** Click the logout button in the header */
 export async function logout(page: Page) {
-  await page.getByRole("button", { name: "Log out" }).click();
-  await page.waitForURL("**/login**");
+  await page.getByRole("button", { name: /Log out|Logging out…/ }).click();
+  await page.waitForURL(/\/login(?:\?|$)/, { timeout: 10_000 });
 }
 
 /** Assert we're on a given path */

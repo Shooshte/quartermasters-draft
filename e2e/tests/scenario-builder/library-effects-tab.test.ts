@@ -1,15 +1,14 @@
+// Source of truth: e2e/features/create/library-effects-tab.feature
+// Also covers effect-workspace.feature deletion scenarios.
 import { test, expect } from "../db-reset.fixture";
-import { BARBARIAN_ROAR_ID, ZODIAC_BURST_ID, generateEntityIds } from "../helpers/seed-constants";
-import { deleteEntityViaApi } from "../helpers/trpc-api";
+import { BARBARIAN_ROAR_ID, ZODIAC_BURST_ID } from "../helpers/seed-constants";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { EFFECTS_TAB } from "../pages/library-tab-configs";
 
 // All tests in this file share the same database and some mutate it,
 // so they must run serially to prevent race conditions.
 test.describe.configure({ mode: "serial" });
-
-const ITEM_IDS = generateEntityIds("items", 21);
-const SPELL_IDS = generateEntityIds("spells", 21);
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -36,24 +35,34 @@ test.describe("Effects Library Tab — Display", () => {
     resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
+    try {
+      const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
+      for (const id of itemIds) {
+        const response = await deleteEntityViaApi(gmPage.request, "items", id);
+        expect(response.ok()).toBeTruthy();
+      }
 
-    for (const id of ITEM_IDS) {
-      await deleteEntityViaApi(gmPage.request, "items", id);
+      const spellIds = await listEntityIdsViaApi(gmPage.request, "spells");
+      for (const id of spellIds) {
+        const response = await deleteEntityViaApi(gmPage.request, "spells", id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      const effectIds = await listEntityIdsViaApi(gmPage.request, "effects");
+      for (const id of effectIds) {
+        const response = await deleteEntityViaApi(gmPage.request, "effects", id);
+        expect(response.ok()).toBeTruthy();
+      }
+
+      await lib.navigateToTab();
+      await expect(lib.emptyList).toBeVisible();
+      await expect(gmPage.getByText("No effect records yet")).toBeVisible();
+      await expect(
+        gmPage.getByRole("button", { name: "Create the first effect" }),
+      ).toBeVisible();
+    } finally {
+      await resetDb();
     }
-    for (const id of SPELL_IDS) {
-      await deleteEntityViaApi(gmPage.request, "spells", id);
-    }
-
-    const effectIds = generateEntityIds("effects", 21);
-    for (const id of effectIds) {
-      await deleteEntityViaApi(gmPage.request, "effects", id);
-    }
-
-    await lib.navigateToTab();
-    await expect(lib.emptyList).toBeVisible();
-
-    // Restore DB for subsequent tests
-    await resetDb();
   });
 });
 

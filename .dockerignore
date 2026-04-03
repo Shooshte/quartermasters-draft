@@ -1,10 +1,13 @@
 node_modules
+**/node_modules
 .git
 .turbo
 .output
+**/.output
 dist
+**/dist
 coverage
-e2e/node_modules
+**/coverage
 .env
 .env.*
 !.env.example

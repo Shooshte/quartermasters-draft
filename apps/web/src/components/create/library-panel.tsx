@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ScenarioLibraryList } from "./scenario-library-list";
 import { EffectLibraryList } from "./effect-library-list";
@@ -110,6 +111,94 @@ export function LibraryPanel({
   onUnitSortChange,
   onDeleteUnit,
 }: LibraryPanelProps) {
+  const tabContentByName: Record<TabName, ReactNode> = {
+    Effects: (
+      <EffectLibraryList
+        items={effectListItems}
+        isLoading={listLoading.Effects}
+        isFetching={listFetching.Effects}
+        selectedId={perTabSelection.Effects}
+        page={effectPage}
+        totalPages={effectTotalPages}
+        sortBy={effectSortBy}
+        sortDir={effectSortDir}
+        onSelect={(id) => onSelectRecord("Effects", id)}
+        onCreateNew={() => onCreateNew("Effects")}
+        onDelete={onDeleteEffect}
+        onPageChange={onEffectPageChange}
+        onSortChange={onEffectSortChange}
+      />
+    ),
+    Spells: (
+      <SpellLibraryList
+        items={spellListItems}
+        isLoading={listLoading.Spells}
+        isFetching={listFetching.Spells}
+        selectedId={perTabSelection.Spells}
+        page={spellPage}
+        totalPages={spellTotalPages}
+        sortBy={spellSortBy}
+        sortDir={spellSortDir}
+        onSelect={(id) => onSelectRecord("Spells", id)}
+        onCreateNew={() => onCreateNew("Spells")}
+        onDelete={onDeleteSpell}
+        onPageChange={onSpellPageChange}
+        onSortChange={onSpellSortChange}
+      />
+    ),
+    Items: (
+      <ItemLibraryList
+        items={itemListItems}
+        isLoading={listLoading.Items}
+        isFetching={listFetching.Items}
+        selectedId={perTabSelection.Items}
+        page={itemPage}
+        totalPages={itemTotalPages}
+        sortBy={itemSortBy}
+        sortDir={itemSortDir}
+        onSelect={(id) => onSelectRecord("Items", id)}
+        onCreateNew={() => onCreateNew("Items")}
+        onDelete={onDeleteItem}
+        onPageChange={onItemPageChange}
+        onSortChange={onItemSortChange}
+      />
+    ),
+    Units: (
+      <UnitLibraryList
+        items={unitListItems}
+        isLoading={listLoading.Units}
+        isFetching={listFetching.Units}
+        selectedId={perTabSelection.Units}
+        page={unitPage}
+        totalPages={unitTotalPages}
+        sortBy={unitSortBy}
+        sortDir={unitSortDir}
+        onSelect={(id) => onSelectRecord("Units", id)}
+        onCreateNew={() => onCreateNew("Units")}
+        onDelete={onDeleteUnit}
+        onPageChange={onUnitPageChange}
+        onSortChange={onUnitSortChange}
+      />
+    ),
+    Scenarios: (
+      <ScenarioLibraryList
+        items={scenarioListItems}
+        isLoading={listLoading.Scenarios}
+        isFetching={listFetching.Scenarios}
+        selectedId={perTabSelection.Scenarios}
+        page={scenarioPage}
+        totalPages={scenarioTotalPages}
+        sortBy={scenarioSortBy}
+        sortDir={scenarioSortDir}
+        onSelect={(id) => onSelectRecord("Scenarios", id)}
+        onCreateNew={() => onCreateNew("Scenarios")}
+        onDelete={onDeleteScenario}
+        onPageChange={onScenarioPageChange}
+        onSortChange={onScenarioSortChange}
+      />
+    ),
+  };
+
   return (
     <div data-testid="library-panel" className="flex flex-1 flex-col overflow-hidden">
       <Tabs
@@ -124,106 +213,11 @@ export function LibraryPanel({
               </TabsTrigger>
             ))}
           </TabsList>
-          <TabsContent value="Effects" className="flex-1 min-h-0 overflow-auto p-4">
-            <EffectLibraryList
-              items={effectListItems}
-              isLoading={listLoading.Effects}
-              isFetching={listFetching.Effects}
-              selectedId={perTabSelection.Effects}
-              page={effectPage}
-              totalPages={effectTotalPages}
-              sortBy={effectSortBy}
-              sortDir={effectSortDir}
-              onSelect={(id) => onSelectRecord("Effects", id)}
-              onCreateNew={() => onCreateNew("Effects")}
-              onDelete={(id) => {
-                const item = effectListItems.find((e) => e.id === id);
-                onDeleteEffect(id, item?.name ?? "");
-              }}
-              onPageChange={onEffectPageChange}
-              onSortChange={onEffectSortChange}
-            />
-          </TabsContent>
-          <TabsContent value="Spells" className="flex-1 min-h-0 overflow-auto p-4">
-            <SpellLibraryList
-              items={spellListItems}
-              isLoading={listLoading.Spells}
-              isFetching={listFetching.Spells}
-              selectedId={perTabSelection.Spells}
-              page={spellPage}
-              totalPages={spellTotalPages}
-              sortBy={spellSortBy}
-              sortDir={spellSortDir}
-              onSelect={(id) => onSelectRecord("Spells", id)}
-              onCreateNew={() => onCreateNew("Spells")}
-              onDelete={(id) => {
-                const item = spellListItems.find((s) => s.id === id);
-                onDeleteSpell(id, item?.name ?? "");
-              }}
-              onPageChange={onSpellPageChange}
-              onSortChange={onSpellSortChange}
-            />
-          </TabsContent>
-          <TabsContent value="Items" className="flex-1 min-h-0 overflow-auto p-4">
-            <ItemLibraryList
-              items={itemListItems}
-              isLoading={listLoading.Items}
-              isFetching={listFetching.Items}
-              selectedId={perTabSelection.Items}
-              page={itemPage}
-              totalPages={itemTotalPages}
-              sortBy={itemSortBy}
-              sortDir={itemSortDir}
-              onSelect={(id) => onSelectRecord("Items", id)}
-              onCreateNew={() => onCreateNew("Items")}
-              onDelete={(id) => {
-                const item = itemListItems.find((i) => i.id === id);
-                onDeleteItem(id, item?.name ?? "");
-              }}
-              onPageChange={onItemPageChange}
-              onSortChange={onItemSortChange}
-            />
-          </TabsContent>
-          <TabsContent value="Units" className="flex-1 min-h-0 overflow-auto p-4">
-            <UnitLibraryList
-              items={unitListItems}
-              isLoading={listLoading.Units}
-              isFetching={listFetching.Units}
-              selectedId={perTabSelection.Units}
-              page={unitPage}
-              totalPages={unitTotalPages}
-              sortBy={unitSortBy}
-              sortDir={unitSortDir}
-              onSelect={(id) => onSelectRecord("Units", id)}
-              onCreateNew={() => onCreateNew("Units")}
-              onDelete={(id) => {
-                const item = unitListItems.find((u) => u.id === id);
-                onDeleteUnit(id, item?.name ?? "");
-              }}
-              onPageChange={onUnitPageChange}
-              onSortChange={onUnitSortChange}
-            />
-          </TabsContent>
-          <TabsContent value="Scenarios" className="flex-1 min-h-0 overflow-auto p-4">
-            <ScenarioLibraryList
-              items={scenarioListItems}
-              isLoading={listLoading.Scenarios}
-              isFetching={listFetching.Scenarios}
-              selectedId={perTabSelection.Scenarios}
-              page={scenarioPage}
-              totalPages={scenarioTotalPages}
-              sortBy={scenarioSortBy}
-              sortDir={scenarioSortDir}
-              onSelect={(id) => onSelectRecord("Scenarios", id)}
-              onCreateNew={() => onCreateNew("Scenarios")}
-              onDelete={(id) => {
-                const item = scenarioListItems.find((s) => s.id === id);
-                onDeleteScenario(id, item?.name ?? "");
-              }}
-              onPageChange={onScenarioPageChange}
-              onSortChange={onScenarioSortChange}
-            />
-          </TabsContent>
+          {TABS.map((tab) => (
+            <TabsContent key={tab} value={tab} className="flex-1 min-h-0 overflow-auto p-4">
+              {tabContentByName[tab]}
+            </TabsContent>
+          ))}
       </Tabs>
     </div>
   );

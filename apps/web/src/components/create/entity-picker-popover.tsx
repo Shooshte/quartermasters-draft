@@ -25,6 +25,18 @@ interface EntityPickerPopoverProps {
   popoverClassName?: string;
 }
 
+function filterEntityPickerOptions(options: EntityPickerOption[], search: string) {
+  const searchTerm = search.trim().toLowerCase();
+
+  if (!searchTerm) {
+    return options.slice(0, 5);
+  }
+
+  return options
+    .filter((option) => option.name.toLowerCase().includes(searchTerm))
+    .slice(0, 5);
+}
+
 export function EntityPickerPopover({
   pickerTestId,
   searchTestId,
@@ -54,14 +66,7 @@ export function EntityPickerPopover({
     searchInputRef.current?.focus();
   }, [isOpen]);
 
-  const filteredOptions = useMemo(() => {
-    const searchTerm = search.trim().toLowerCase();
-    const matchingOptions = searchTerm
-      ? options.filter((option) => option.name.toLowerCase().includes(searchTerm))
-      : options;
-
-    return matchingOptions.slice(0, 5);
-  }, [options, search]);
+  const filteredOptions = useMemo(() => filterEntityPickerOptions(options, search), [options, search]);
 
   const selectedOption = options.find((option) => option.id === selectedId);
 

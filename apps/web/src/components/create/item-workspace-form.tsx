@@ -1,5 +1,4 @@
-import { Button } from "~/components/ui/button";
-import { LinkedEntityPicker, type LinkedEntityOption } from "./linked-entity-picker";
+import type { LinkedEntityOption } from "./linked-entity-picker";
 import {
   ITEM_ACTIVATION_FIELDS,
   ITEM_COMBAT_FIELDS,
@@ -11,6 +10,10 @@ import {
   type SpellOption,
 } from "./item-form";
 import { WorkspaceNumericField } from "./workspace-numeric-field";
+import { LinkedEntitySection } from "./linked-entity-section";
+import { WorkspaceNameField } from "./workspace-name-field";
+import { WorkspaceSaveFooter } from "./workspace-save-footer";
+import { WorkspaceSection } from "./workspace-section";
 
 interface ItemWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
@@ -54,47 +57,34 @@ export function ItemWorkspaceForm({
 
   return (
     <div className="flex flex-col gap-4" data-testid="item-form-fields">
-      <div className="ws-cell-neutral">
-        <label htmlFor="entity-name" className="ws-cell-label">
-          Name
-        </label>
-        <input
-          id="entity-name"
-          data-testid="entity-name-input"
-          className="ws-cell-input ws-name-input"
-          value={formValues.name}
-          placeholder="—"
-          aria-invalid={errors.name ? true : undefined}
-          onChange={(event) => onFieldChange("name", event.target.value)}
-        />
-        {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
-      </div>
+      <WorkspaceNameField
+        value={formValues.name}
+        error={errors.name}
+        onChange={(value) => onFieldChange("name", value)}
+      />
 
-      <div>
-        <div className="ws-section-header">Linked Spells</div>
-        <LinkedEntityPicker
-          pickerTestId="item-spell-picker"
-          searchTestId="item-spell-picker-search"
-          addButtonTestId="item-add-spell-button"
-          emptyTestId="item-spell-picker-empty"
-          optionTestIdPrefix="item-spell-picker-option"
-          rowTestIdPrefix="item-spell-row"
-          removeTestIdPrefix="item-spell-remove"
-          options={linkedSpellOptions}
-          linkedIds={formValues.spellIds}
-          allowDuplicates={false}
-          searchPlaceholder="Search spells..."
-          triggerPlaceholder="Select spell"
-          listboxLabel="Item spell options"
-          emptyMessage="No spells found."
-          addButtonLabel="+ Add"
-          onChange={handleSpellIdsChange}
-        />
-        {errors.spellIds ? <p className="text-sm text-destructive mt-1">{errors.spellIds}</p> : null}
-      </div>
+      <LinkedEntitySection
+        title="Linked Spells"
+        options={linkedSpellOptions}
+        linkedIds={formValues.spellIds}
+        allowDuplicates={false}
+        searchPlaceholder="Search spells..."
+        triggerPlaceholder="Select spell"
+        listboxLabel="Item spell options"
+        emptyMessage="No spells found."
+        addButtonLabel="+ Add"
+        error={errors.spellIds}
+        onChange={handleSpellIdsChange}
+        pickerTestId="item-spell-picker"
+        searchTestId="item-spell-picker-search"
+        addButtonTestId="item-add-spell-button"
+        emptyTestId="item-spell-picker-empty"
+        optionTestIdPrefix="item-spell-picker-option"
+        rowTestIdPrefix="item-spell-row"
+        removeTestIdPrefix="item-spell-remove"
+      />
 
-      <div>
-        <div className="ws-section-header">Combat Stats</div>
+      <WorkspaceSection title="Combat Stats">
         <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4">
           {ITEM_COMBAT_FIELDS.map((field) => (
             <WorkspaceNumericField
@@ -108,10 +98,9 @@ export function ItemWorkspaceForm({
             />
           ))}
         </div>
-      </div>
+      </WorkspaceSection>
 
-      <div>
-        <div className="ws-section-header">Utility Stats</div>
+      <WorkspaceSection title="Utility Stats">
         <div className="grid grid-cols-2 gap-1.5">
           {ITEM_UTILITY_FIELDS.map((field) => (
             <WorkspaceNumericField
@@ -125,10 +114,9 @@ export function ItemWorkspaceForm({
             />
           ))}
         </div>
-      </div>
+      </WorkspaceSection>
 
-      <div>
-        <div className="ws-section-header">Activation Costs</div>
+      <WorkspaceSection title="Activation Costs">
         <div className="grid grid-cols-2 gap-1.5">
           {ITEM_ACTIVATION_FIELDS.map((field) => (
             <WorkspaceNumericField
@@ -142,23 +130,15 @@ export function ItemWorkspaceForm({
             />
           ))}
         </div>
-      </div>
+      </WorkspaceSection>
 
-      {saveError ? (
-        <p className="text-sm text-destructive" data-testid="entity-save-error">
-          {saveError}
-        </p>
-      ) : null}
-
-      <div className="flex justify-end">
-        <Button
-          data-testid="entity-save-button"
-          onClick={onSave}
-          disabled={isSaving || hasItemFormErrors(formValues)}
-        >
-          {isSaving ? "Saving..." : saveLabel}
-        </Button>
-      </div>
+      <WorkspaceSaveFooter
+        saveLabel={saveLabel}
+        isSaving={isSaving}
+        isDisabled={hasItemFormErrors(formValues)}
+        saveError={saveError}
+        onSave={onSave}
+      />
     </div>
   );
 }

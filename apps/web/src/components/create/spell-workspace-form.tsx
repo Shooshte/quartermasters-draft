@@ -1,5 +1,4 @@
-import { Button } from "~/components/ui/button";
-import { LinkedEntityPicker, type LinkedEntityOption } from "./linked-entity-picker";
+import type { LinkedEntityOption } from "./linked-entity-picker";
 import {
   hasSpellFormErrors,
   spellRecordToFormValues,
@@ -8,6 +7,9 @@ import {
   type EffectOption,
 } from "./spell-form";
 import { TargetingCard } from "./targeting-card";
+import { LinkedEntitySection } from "./linked-entity-section";
+import { WorkspaceNameField } from "./workspace-name-field";
+import { WorkspaceSaveFooter } from "./workspace-save-footer";
 
 interface SpellWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
@@ -55,21 +57,11 @@ export function SpellWorkspaceForm({
 
   return (
     <div className="flex flex-col gap-4" data-testid="spell-form-fields">
-      <div className="ws-cell-neutral">
-        <label htmlFor="entity-name" className="ws-cell-label">
-          Name
-        </label>
-        <input
-          id="entity-name"
-          data-testid="entity-name-input"
-          className="ws-cell-input ws-name-input"
-          value={normalizedFormValues.name}
-          placeholder="—"
-          aria-invalid={errors.name ? true : undefined}
-          onChange={(event) => onFieldChange("name", event.target.value)}
-        />
-        {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
-      </div>
+      <WorkspaceNameField
+        value={normalizedFormValues.name}
+        error={errors.name}
+        onChange={(value) => onFieldChange("name", value)}
+      />
 
       <div className="ws-cell-neutral">
         <label htmlFor="spell-description" className="ws-cell-label">
@@ -95,50 +87,38 @@ export function SpellWorkspaceForm({
         onFieldChange={onFieldChange}
       />
 
-      <div>
-        <div className="ws-section-header">Spell Effects</div>
-        <LinkedEntityPicker
-          pickerTestId="spell-effect-picker"
-          searchTestId="spell-effect-picker-search"
-          addButtonTestId="spell-add-effect-button"
-          emptyTestId="spell-effect-picker-empty"
-          optionTestIdPrefix="spell-effect-picker-option"
-          rowTestIdPrefix="spell-effect-row"
-          removeTestIdPrefix="spell-effect-remove"
-          moveUpTestIdPrefix="spell-effect-move-up"
-          moveDownTestIdPrefix="spell-effect-move-down"
-          options={linkedEffectOptions}
-          linkedIds={normalizedFormValues.effectIds}
-          allowDuplicates
-          searchPlaceholder="Search effects..."
-          triggerPlaceholder="Select effect"
-          listboxLabel="Spell effect options"
-          emptyMessage="No effects found."
-          addButtonLabel="+ Add"
-          showSequence
-          allowReorder
-          onChange={(nextIds) => onFieldChange("effectIds", nextIds)}
-        />
-        {errors.effectIds ? (
-          <p className="text-sm text-destructive mt-1">{errors.effectIds}</p>
-        ) : null}
-      </div>
+      <LinkedEntitySection
+        title="Spell Effects"
+        pickerTestId="spell-effect-picker"
+        searchTestId="spell-effect-picker-search"
+        addButtonTestId="spell-add-effect-button"
+        emptyTestId="spell-effect-picker-empty"
+        optionTestIdPrefix="spell-effect-picker-option"
+        rowTestIdPrefix="spell-effect-row"
+        removeTestIdPrefix="spell-effect-remove"
+        moveUpTestIdPrefix="spell-effect-move-up"
+        moveDownTestIdPrefix="spell-effect-move-down"
+        options={linkedEffectOptions}
+        linkedIds={normalizedFormValues.effectIds}
+        allowDuplicates
+        searchPlaceholder="Search effects..."
+        triggerPlaceholder="Select effect"
+        listboxLabel="Spell effect options"
+        emptyMessage="No effects found."
+        addButtonLabel="+ Add"
+        showSequence
+        allowReorder
+        error={errors.effectIds}
+        onChange={(nextIds) => onFieldChange("effectIds", nextIds)}
+      />
 
-      {saveError ? (
-        <p className="text-sm text-destructive" data-testid="entity-save-error">
-          {saveError}
-        </p>
-      ) : null}
-
-      <div className="flex justify-end">
-        <Button
-          data-testid="entity-save-button"
-          onClick={onSave}
-          disabled={isSaving || hasSpellFormErrors(normalizedFormValues)}
-        >
-          {isSaving ? "Saving..." : saveLabel}
-        </Button>
-      </div>
+      <WorkspaceSaveFooter
+        saveLabel={saveLabel}
+        isSaving={isSaving}
+        isDisabled={hasSpellFormErrors(normalizedFormValues)}
+        saveError={saveError}
+        onSave={onSave}
+      />
     </div>
   );
 }

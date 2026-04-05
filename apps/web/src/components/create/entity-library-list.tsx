@@ -54,7 +54,7 @@ function capitalizeEntityLabel(entityLabel: string) {
 }
 
 export function formatLibraryDate(date: Date) {
-  return new Date(date).toLocaleDateString("en-US", {
+  return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -122,7 +122,7 @@ export function EntityLibraryList<TItem extends { id: string }, TSort extends st
           <TableHeader>
             <TableRow disableHover>
               {columns.map((column) => (
-                <TableHead key={column.key} className={column.className}>
+                <TableHead key={column.key}>
                   <button
                     type="button"
                     className="inline-flex cursor-pointer items-center border-none bg-transparent p-0 font-medium text-foreground"

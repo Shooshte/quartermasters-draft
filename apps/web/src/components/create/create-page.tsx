@@ -23,6 +23,48 @@ export function CreatePage({ search }: CreatePageProps) {
   const navigate = useNavigate();
   const navigateWithSearchUpdate: CreatePageNavigate = (opts) => navigate(opts as Parameters<typeof navigate>[0]);
   const state = useCreatePageState(search, navigateWithSearchUpdate);
+  const deleteDialogs = [
+    {
+      open: state.isDeleteDialogOpen,
+      entityName: state.deleteTarget?.name ?? "",
+      entityLabel: "scenario",
+      errorMessage: state.deleteError,
+      onCancel: state.cancelDeleteScenario,
+      onConfirm: state.confirmDeleteScenario,
+    },
+    {
+      open: state.isDeleteEffectDialogOpen,
+      entityName: state.deleteEffectTarget?.name ?? "",
+      entityLabel: "effect",
+      errorMessage: state.deleteEffectError,
+      onCancel: state.cancelDeleteEffect,
+      onConfirm: state.confirmDeleteEffect,
+    },
+    {
+      open: state.isDeleteSpellDialogOpen,
+      entityName: state.deleteSpellTarget?.name ?? "",
+      entityLabel: "spell",
+      errorMessage: state.deleteSpellError,
+      onCancel: state.cancelDeleteSpell,
+      onConfirm: state.confirmDeleteSpell,
+    },
+    {
+      open: state.isDeleteItemDialogOpen,
+      entityName: state.deleteItemTarget?.name ?? "",
+      entityLabel: "item",
+      errorMessage: state.deleteItemError,
+      onCancel: state.cancelDeleteItem,
+      onConfirm: state.confirmDeleteItem,
+    },
+    {
+      open: state.isDeleteUnitDialogOpen,
+      entityName: state.deleteUnitTarget?.name ?? "",
+      entityLabel: "unit",
+      errorMessage: state.deleteUnitError,
+      onCancel: state.cancelDeleteUnit,
+      onConfirm: state.confirmDeleteUnit,
+    },
+  ];
 
   return (
     <main className="flex flex-1 min-h-0 overflow-hidden">
@@ -106,46 +148,9 @@ export function CreatePage({ search }: CreatePageProps) {
         onCancel={state.cancelDiscard}
         onDiscard={state.confirmDiscard}
       />
-      <DeleteConfirmDialog
-        open={state.isDeleteDialogOpen}
-        entityName={state.deleteTarget?.name ?? ""}
-        entityLabel="scenario"
-        errorMessage={state.deleteError}
-        onCancel={state.cancelDeleteScenario}
-        onConfirm={state.confirmDeleteScenario}
-      />
-      <DeleteConfirmDialog
-        open={state.isDeleteEffectDialogOpen}
-        entityName={state.deleteEffectTarget?.name ?? ""}
-        entityLabel="effect"
-        errorMessage={state.deleteEffectError}
-        onCancel={state.cancelDeleteEffect}
-        onConfirm={state.confirmDeleteEffect}
-      />
-      <DeleteConfirmDialog
-        open={state.isDeleteSpellDialogOpen}
-        entityName={state.deleteSpellTarget?.name ?? ""}
-        entityLabel="spell"
-        errorMessage={state.deleteSpellError}
-        onCancel={state.cancelDeleteSpell}
-        onConfirm={state.confirmDeleteSpell}
-      />
-      <DeleteConfirmDialog
-        open={state.isDeleteItemDialogOpen}
-        entityName={state.deleteItemTarget?.name ?? ""}
-        entityLabel="item"
-        errorMessage={state.deleteItemError}
-        onCancel={state.cancelDeleteItem}
-        onConfirm={state.confirmDeleteItem}
-      />
-      <DeleteConfirmDialog
-        open={state.isDeleteUnitDialogOpen}
-        entityName={state.deleteUnitTarget?.name ?? ""}
-        entityLabel="unit"
-        errorMessage={state.deleteUnitError}
-        onCancel={state.cancelDeleteUnit}
-        onConfirm={state.confirmDeleteUnit}
-      />
+      {deleteDialogs.map((dialog) => (
+        <DeleteConfirmDialog key={dialog.entityLabel} {...dialog} />
+      ))}
     </main>
   );
 }

@@ -183,6 +183,6 @@ describe("ScenarioLibraryList", () => {
     render(<ScenarioLibraryList {...defaultProps} onDelete={onDelete} />);
     const deleteButtons = screen.getAllByRole("button", { name: /Delete/ });
     await userEvent.click(deleteButtons[0]);
-    expect(onDelete).toHaveBeenCalledWith("1");
+    expect(onDelete).toHaveBeenCalledWith("1", "Ambush at Dawn");
   });
 });

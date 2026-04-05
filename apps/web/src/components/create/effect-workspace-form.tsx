@@ -14,6 +14,9 @@ import {
 } from "./effect-colors";
 import { WorkspaceNumericField } from "./workspace-numeric-field";
 import { WorkspaceSelectChip } from "./workspace-select-chip";
+import { WorkspaceNameField } from "./workspace-name-field";
+import { WorkspaceSaveFooter } from "./workspace-save-footer";
+import { WorkspaceSection } from "./workspace-section";
 
 interface EffectWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
@@ -44,21 +47,11 @@ export function EffectWorkspaceForm({
 
   return (
     <div className={`flex flex-col gap-4 ${colorClass}`} data-testid="effect-form-fields">
-      <div className="ws-cell-neutral">
-        <label htmlFor="entity-name" className="ws-cell-label">
-          Name
-        </label>
-        <input
-          id="entity-name"
-          data-testid="entity-name-input"
-          className="ws-cell-input ws-name-input"
-          value={normalizedFormValues.name}
-          placeholder="—"
-          aria-invalid={errors.name ? true : undefined}
-          onChange={(event) => onFieldChange("name", event.target.value)}
-        />
-        {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
-      </div>
+      <WorkspaceNameField
+        value={normalizedFormValues.name}
+        error={errors.name}
+        onChange={(value) => onFieldChange("name", value)}
+      />
 
       <div className="flex gap-2 items-center flex-wrap">
         <WorkspaceSelectChip
@@ -87,8 +80,7 @@ export function EffectWorkspaceForm({
         />
       </div>
 
-      <div data-testid="effect-timing-section">
-        <div className="ws-section-header">Timing</div>
+      <WorkspaceSection title="Timing">
         <div className="grid grid-cols-3 gap-1.5">
           {TIMING_FIELDS.map((field) => (
             <WorkspaceNumericField
@@ -104,11 +96,10 @@ export function EffectWorkspaceForm({
             />
           ))}
         </div>
-      </div>
+      </WorkspaceSection>
 
       {MODIFIER_GROUPS.map((group) => (
-        <div key={group.label}>
-          <div className="ws-section-header">{group.label}</div>
+        <WorkspaceSection key={group.label} title={group.label}>
           <div
             className={`grid gap-1.5 ${group.cols === 2 ? "grid-cols-2" : group.cols === 4 ? "grid-cols-4" : "grid-cols-3"}`}
             data-testid={`effect-group-${group.label.toLowerCase().replaceAll(" ", "-")}`}
@@ -126,24 +117,16 @@ export function EffectWorkspaceForm({
               />
             ))}
           </div>
-        </div>
+        </WorkspaceSection>
       ))}
 
-      {saveError ? (
-        <p className="text-sm text-destructive" data-testid="entity-save-error">
-          {saveError}
-        </p>
-      ) : null}
-
-      <div className="flex justify-end">
-        <Button
-          data-testid="entity-save-button"
-          onClick={onSave}
-          disabled={isSaving || hasEffectFormErrors(normalizedFormValues)}
-        >
-          {isSaving ? "Saving..." : saveLabel}
-        </Button>
-      </div>
+      <WorkspaceSaveFooter
+        saveLabel={saveLabel}
+        isSaving={isSaving}
+        isDisabled={hasEffectFormErrors(normalizedFormValues)}
+        saveError={saveError}
+        onSave={onSave}
+      />
     </div>
   );
 }

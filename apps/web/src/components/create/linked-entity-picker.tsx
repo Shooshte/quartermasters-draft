@@ -27,6 +27,34 @@ interface LinkedEntityPickerProps {
   onChange: (nextIds: string[]) => void;
 }
 
+function getAvailableLinkedEntityOptions(
+  options: LinkedEntityOption[],
+  linkedIds: string[],
+  allowDuplicates: boolean,
+) {
+  if (allowDuplicates) {
+    return options;
+  }
+
+  const linkedSet = new Set(linkedIds);
+  return options.filter((option) => !linkedSet.has(option.id));
+}
+
+function moveLinkedEntityId(linkedIds: string[], index: number, direction: "up" | "down") {
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= linkedIds.length) {
+    return linkedIds;
+  }
+
+  const nextIds = [...linkedIds];
+  [nextIds[index], nextIds[targetIndex]] = [nextIds[targetIndex], nextIds[index]];
+  return nextIds;
+}
+
+function removeLinkedEntityId(linkedIds: string[], index: number) {
+  return linkedIds.filter((_, currentIndex) => currentIndex !== index);
+}
+
 export function LinkedEntityPicker({
   pickerTestId,
   searchTestId,
@@ -52,12 +80,7 @@ export function LinkedEntityPicker({
   const [selectedId, setSelectedId] = useState("");
 
   const availableOptions = useMemo(() => {
-    if (allowDuplicates) {
-      return options;
-    }
-
-    const linkedSet = new Set(linkedIds);
-    return options.filter((option) => !linkedSet.has(option.id));
+    return getAvailableLinkedEntityOptions(options, linkedIds, allowDuplicates);
   }, [allowDuplicates, linkedIds, options]);
 
   const optionMap = useMemo(
@@ -79,17 +102,15 @@ export function LinkedEntityPicker({
   };
 
   const handleRemove = (index: number) => {
-    onChange(linkedIds.filter((_, currentIndex) => currentIndex !== index));
+    onChange(removeLinkedEntityId(linkedIds, index));
   };
 
   const handleMove = (index: number, direction: "up" | "down") => {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= linkedIds.length) {
+    const nextIds = moveLinkedEntityId(linkedIds, index, direction);
+    if (nextIds === linkedIds) {
       return;
     }
 
-    const nextIds = [...linkedIds];
-    [nextIds[index], nextIds[targetIndex]] = [nextIds[targetIndex], nextIds[index]];
     onChange(nextIds);
   };
 

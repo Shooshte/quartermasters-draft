@@ -211,7 +211,7 @@ Feature: Scenario builder effects library tab
       And I have loaded the effect "Barbarian Roar" in the effect workspace
       When I delete the effect "Barbarian Roar"
       And I confirm the deletion
-      Then I should see an effect dependency delete error
+      Then I should see a linked-spell dependency delete error
       And the effect "Barbarian Roar" should still appear in the list
       And the effect workspace should remain loaded
 

@@ -209,7 +209,7 @@ Feature: Scenario builder spells library tab
       And I have loaded the spell "Fireball" in the spell workspace
       When I delete the spell "Fireball"
       And I confirm the deletion
-      Then I should see a spell dependency delete error
+      Then I should see a linked-item dependency delete error
       And the spell "Fireball" should still appear in the list
       And the spell workspace should remain loaded
 

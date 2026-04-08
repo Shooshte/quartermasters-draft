@@ -247,7 +247,10 @@ export function processCurrentTickEffects(state: BattleState): void {
       if (effect.timingType === "interval" && effect.nextTriggerTick != null && effect.remainingTriggers) {
         if (effect.nextTriggerTick <= currentTick && unit.currentHealth > 0) {
           const source = findUnitById(state, effect.sourceUnitId);
-          if (!source) continue;
+          if (!source) {
+            logEffectExpired(state, currentTick, unit, effect.name);
+            continue;
+          }
           const sourceStats = getUnitEffectiveStats(source);
           const targetStats = getUnitEffectiveStats(unit);
           if (effect.effectType === "healing") {

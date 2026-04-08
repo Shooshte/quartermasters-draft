@@ -71,6 +71,31 @@ describe("effects", () => {
     expect(mage.activeEffects).toHaveLength(0);
   });
 
+  it("expires interval effects cleanly if the source unit no longer exists", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applySpell(state, mage, createSpell({
+      name: "Burn",
+      targetPolicy: "highest_health",
+      effects: effectSequence(createEffect({
+        name: "Burning",
+        effectType: "damage",
+        timingType: "interval",
+        directSpellDmg: 20,
+        intervalMs: 1,
+        triggerCount: 2,
+      })),
+    }));
+
+    state.scenarios[0].rows.ranged = [];
+    processOngoingEffects(state, 1);
+
+    expect(warrior.activeEffects).toHaveLength(0);
+    expect(state.log.some((entry) => entry.type === "effect-expire" && entry.effect === "Burning")).toBe(true);
+  });
+
   it("supports buff and debuff stat modifiers across supported stats and stops dead-target sequences", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

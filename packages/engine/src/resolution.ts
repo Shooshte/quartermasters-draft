@@ -87,12 +87,7 @@ export function resolveUnitAction(
   const castSpellNames: string[] = [];
   let totalDamage = 0;
 
-  const items = [...unit.items].sort((left, right) => left.name.localeCompare(right.name));
-  items.sort((left, right) => {
-    const leftIndex = unit.items.findIndex((item) => item.name === left.name);
-    const rightIndex = unit.items.findIndex((item) => item.name === right.name);
-    return leftIndex - rightIndex;
-  });
+  const items = [...unit.items];
 
   for (const item of items) {
     if (item.linkedSpells.length === 0) continue;
@@ -106,12 +101,16 @@ export function resolveUnitAction(
     unit.currentHealth -= item.activationHealthCost;
 
     for (const spell of [...castableSpells].sort((left, right) => left.name.localeCompare(right.name))) {
+      const startingHealthByTarget = new Map(
+        selectTargets(state, unit, spell).map((target) => [target.instanceId, target.currentHealth]),
+      );
       const result = applySpell(state, unit, spell, tick);
       castSpellNames.push(spell.name);
       totalDamage += result.targets.reduce((sum, target) => {
         const scenario = findScenario(state, target.scenarioId)!;
         const updated = scenario.rows[target.rowType].find((candidate) => candidate.instanceId === target.instanceId)!;
-        return sum + Math.max(0, updated.baseStats.health - updated.currentHealth);
+        const startingHealth = startingHealthByTarget.get(target.instanceId) ?? updated.currentHealth;
+        return sum + Math.max(0, startingHealth - updated.currentHealth);
       }, 0);
     }
 

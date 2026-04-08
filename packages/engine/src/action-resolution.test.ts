@@ -65,6 +65,35 @@ describe("action resolution", () => {
     expect(warrior.mana).toBe(40);
   });
 
+  it("reports only the damage dealt during the current action", () => {
+    const state = makeStateWithWarrior("melee", [
+      createItem({
+        name: "Fire Sword",
+        linkedSpells: [
+          createSpell({
+            name: "Flame Strike",
+            targetPolicy: "highest_health",
+            effects: effectSequence(
+              createEffect({
+                name: "Flame",
+                effectType: "damage",
+                timingType: "instant",
+                directSpellDmg: 10,
+              }),
+            ),
+          }),
+        ],
+      }),
+    ]);
+    const warrior = state.scenarios[0].rows.melee[0]!;
+    const dummy = state.scenarios[1].rows.tank[0]!;
+    dummy.currentHealth = 150;
+
+    const outcome = resolveUnitAction(state, warrior);
+    expect(outcome.totalDamage).toBe(10);
+    expect(dummy.currentHealth).toBe(140);
+  });
+
   it("deducts health costs and blocks unaffordable items", () => {
     const aimedShot = createSpell({
       name: "Aimed Shot",

@@ -1,6 +1,4 @@
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+import { runWorkerSql } from "./worker-db";
 
 type SessionRow = {
   id: string;
@@ -11,44 +9,12 @@ type SessionRow = {
   updatedAtEpoch: number;
 };
 
-const E2E_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const COMPOSE_FILE = path.join(E2E_DIR, "docker-compose.yml");
-
-function runSql(workerIndex: number, sql: string): string {
-  const dbName = `qd_worker_${workerIndex}`;
-  return execFileSync(
-    "docker",
-    [
-      "compose",
-      "-f",
-      COMPOSE_FILE,
-      "exec",
-      "-T",
-      "postgres",
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      dbName,
-      "-At",
-      "-F",
-      "\t",
-      "-c",
-      sql,
-    ],
-    {
-      encoding: "utf8",
-      timeout: 15_000,
-    },
-  ).trim();
-}
-
 function escapeSqlLiteral(value: string): string {
   return value.replace(/'/g, "''");
 }
 
-function parseSessionRow(row: string): SessionRow {
-  const [id, userId, token, expiresAtEpoch, createdAtEpoch, updatedAtEpoch] = row.split("\t");
+function parseSessionRow(values: string[]): SessionRow {
+  const [id, userId, token, expiresAtEpoch, createdAtEpoch, updatedAtEpoch] = values;
   return {
     id,
     userId,
@@ -59,11 +25,11 @@ function parseSessionRow(row: string): SessionRow {
   };
 }
 
-export function getLatestSessionForUser(
+export async function getLatestSessionForUser(
   userId: string,
   workerIndex: number,
-): SessionRow {
-  const row = runSql(
+): Promise<SessionRow> {
+  const rows = await runWorkerSql(
     workerIndex,
     [
       "SELECT id, user_id, token,",
@@ -77,20 +43,20 @@ export function getLatestSessionForUser(
     ].join(" "),
   );
 
-  if (!row) {
+  if (rows.length === 0) {
     throw new Error(`No session found for user ${userId} on worker ${workerIndex}`);
   }
 
-  return parseSessionRow(row);
+  return parseSessionRow(rows[0]);
 }
 
-export function expireLatestSessionForUser(
+export async function expireLatestSessionForUser(
   userId: string,
   workerIndex: number,
   expiryExpression = "NOW() - INTERVAL '1 second'",
-): void {
-  const session = getLatestSessionForUser(userId, workerIndex);
-  runSql(
+): Promise<void> {
+  const session = await getLatestSessionForUser(userId, workerIndex);
+  await runWorkerSql(
     workerIndex,
     [
       "UPDATE session",
@@ -100,11 +66,11 @@ export function expireLatestSessionForUser(
   );
 }
 
-export function countSessionsByToken(
+export async function countSessionsByToken(
   token: string,
   workerIndex: number,
-): number {
-  const value = runSql(
+): Promise<number> {
+  const rows = await runWorkerSql(
     workerIndex,
     [
       "SELECT COUNT(*)",
@@ -112,5 +78,5 @@ export function countSessionsByToken(
       `WHERE token = '${escapeSqlLiteral(token)}';`,
     ].join(" "),
   );
-  return Number(value);
+  return Number(rows[0][0]);
 }

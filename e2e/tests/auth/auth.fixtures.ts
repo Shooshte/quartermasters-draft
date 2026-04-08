@@ -32,23 +32,14 @@ export async function loginAsPlayer(page: Page, options?: { rememberMe?: boolean
   await page.waitForURL("**/play");
 }
 
-/** Click the logout button in the header */
+/** Click the logout button in the header and wait for redirect to /login */
 export async function logout(page: Page) {
   const loginUrlPattern = /\/login(?:\?|$)/;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const button = page.getByRole("button", { name: /Log out|Logging out…/ });
-    await button.click();
-
-    try {
-      await page.waitForURL(loginUrlPattern, { timeout: 20_000 });
-      return;
-    } catch (error) {
-      if (attempt === 1) {
-        throw error;
-      }
-    }
-  }
+  const button = page.getByRole("button", { name: /Log out|Logging out…/ });
+  await Promise.all([
+    page.waitForURL(loginUrlPattern, { timeout: 15_000 }),
+    button.click(),
+  ]);
 }
 
 /** Assert we're on a given path */
@@ -82,16 +73,26 @@ export const test = base.extend<{
   gmPage: async ({ browser }, use) => {
     const context = await browser.newContext();
     const page = await context.newPage();
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
     await loginAsGM(page);
     await use(page);
     await context.close();
+    if (errors.length > 0) {
+      throw new Error(`Unexpected browser errors:\n${errors.join("\n")}`);
+    }
   },
   playerPage: async ({ browser }, use) => {
     const context = await browser.newContext();
     const page = await context.newPage();
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
     await loginAsPlayer(page);
     await use(page);
     await context.close();
+    if (errors.length > 0) {
+      throw new Error(`Unexpected browser errors:\n${errors.join("\n")}`);
+    }
   },
 });
 

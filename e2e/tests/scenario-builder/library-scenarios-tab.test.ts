@@ -4,9 +4,7 @@ import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { SCENARIOS_TAB } from "../pages/library-tab-configs";
 
-// All tests in this file share the same database and some mutate it,
-// so they must run serially to prevent race conditions.
-test.describe.configure({ mode: "serial" });
+test.beforeEach(async ({ resetDb }) => { await resetDb(); });
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -30,21 +28,16 @@ test.describe("Scenarios Library Tab — Display", () => {
 
   test("empty state is shown when no scenarios exist", async ({
     gmPage,
-    resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
-    try {
-      const scenarioIds = await listEntityIdsViaApi(gmPage.request, "scenarios");
-      for (const id of scenarioIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "scenarios", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      await lib.navigateToTab();
-      await expect(lib.emptyList).toBeVisible();
-    } finally {
-      await resetDb();
+    const scenarioIds = await listEntityIdsViaApi(gmPage.request, "scenarios");
+    for (const id of scenarioIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "scenarios", id);
+      expect(response.ok()).toBeTruthy();
     }
+
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
   });
 });
 
@@ -130,8 +123,7 @@ test.describe("Scenarios Library Tab — Pagination", () => {
 // ─── Sorting ────────────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Sorting", () => {
-  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("default sort order is by name ascending", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 
@@ -262,14 +254,12 @@ test.describe("Scenarios Library Tab — Unsaved Changes", () => {
   });
 });
 
-// ─── Deletion (serial to prevent DB race conditions) ────────────────────────
+// ─── Deletion ────────────────────────────────────────────────────────────────
 
-test.describe.serial("Scenarios Library Tab — Deletion", () => {
+test.describe("Scenarios Library Tab — Deletion", () => {
   test("delete a scenario that is not currently open", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
     await expect(lib.getRow("Castle Siege")).toBeVisible();
@@ -290,8 +280,7 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     await expect(lib.idleState).toBeVisible();
   });
 
-  test("cancel deletion of a scenario", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cancel deletion of a scenario", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 
@@ -304,8 +293,7 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     await expect(lib.getRow("Castle Siege")).toBeVisible();
   });
 
-  test("delete the currently open scenario", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("delete the currently open scenario", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
     await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
@@ -325,9 +313,7 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
 
   test("deleting the last scenario on a page returns to the previous page", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 
@@ -349,8 +335,5 @@ test.describe.serial("Scenarios Library Tab — Deletion", () => {
     await expect(lib.prevPageButton).toBeDisabled();
     await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
     await expect(lib.getRow("Zorath Keep")).not.toBeVisible();
-
-    // Restore DB for subsequent test files
-    await resetDb();
   });
 });

@@ -6,7 +6,7 @@ test.describe("Route Protection", () => {
   const protectedRoutes = ["/", "/create", "/play", "/replay/abc123"];
 
   for (const route of protectedRoutes) {
-    test(`unauthenticated user is redirected to /login from ${route}`, async ({
+    test(`unauthenticated user is redirected to /login from ${route} @smoke`, async ({
       page,
     }) => {
       await page.goto(route);

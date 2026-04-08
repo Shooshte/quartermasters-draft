@@ -8,7 +8,7 @@ import {
 } from "./auth.fixtures";
 
 test.describe("Logout", () => {
-  test("game master can log out", async ({ browser }) => {
+  test("game master can log out @smoke", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await loginAsGM(page);

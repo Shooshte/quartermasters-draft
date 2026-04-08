@@ -24,7 +24,7 @@ test.describe("Login", () => {
       ).toBeVisible();
     });
 
-    test("game master is redirected to /create after login", async ({
+    test("game master is redirected to /create after login @smoke", async ({
       page,
     }) => {
       await login(page, GM_EMAIL, GM_PASSWORD);
@@ -32,7 +32,7 @@ test.describe("Login", () => {
       await expectPath(page, "/create");
     });
 
-    test("player is redirected to /play after login", async ({ page }) => {
+    test("player is redirected to /play after login @smoke", async ({ page }) => {
       await login(page, PLAYER_EMAIL, PLAYER_PASSWORD);
       await page.waitForURL("**/play");
       await expectPath(page, "/play");

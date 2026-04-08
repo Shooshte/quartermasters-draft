@@ -6,14 +6,12 @@ import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { EFFECTS_TAB } from "../pages/library-tab-configs";
 
-// All tests in this file share the same database and some mutate it,
-// so they must run serially to prevent race conditions.
-test.describe.configure({ mode: "serial" });
+test.beforeEach(async ({ resetDb }) => { await resetDb(); });
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
 test.describe("Effects Library Tab — Display", () => {
-  test("effects are displayed with name, timing type, and effect type", async ({
+  test("effects are displayed with name, timing type, and effect type @smoke", async ({
     gmPage,
   }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
@@ -32,44 +30,39 @@ test.describe("Effects Library Tab — Display", () => {
 
   test("empty state is shown when no effects exist", async ({
     gmPage,
-    resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
-    try {
-      const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
-      for (const id of itemIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "items", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      const spellIds = await listEntityIdsViaApi(gmPage.request, "spells");
-      for (const id of spellIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "spells", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      const effectIds = await listEntityIdsViaApi(gmPage.request, "effects");
-      for (const id of effectIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "effects", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      await lib.navigateToTab();
-      await expect(lib.emptyList).toBeVisible();
-      await expect(gmPage.getByText("No effect records yet")).toBeVisible();
-      await expect(
-        gmPage.getByRole("button", { name: "Create the first effect" }),
-      ).toBeVisible();
-    } finally {
-      await resetDb();
+    const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
+    for (const id of itemIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "items", id);
+      expect(response.ok()).toBeTruthy();
     }
+
+    const spellIds = await listEntityIdsViaApi(gmPage.request, "spells");
+    for (const id of spellIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "spells", id);
+      expect(response.ok()).toBeTruthy();
+    }
+
+    const effectIds = await listEntityIdsViaApi(gmPage.request, "effects");
+    for (const id of effectIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "effects", id);
+      expect(response.ok()).toBeTruthy();
+    }
+
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
+    await expect(gmPage.getByText("No effect records yet")).toBeVisible();
+    await expect(
+      gmPage.getByRole("button", { name: "Create the first effect" }),
+    ).toBeVisible();
   });
 });
 
 // ─── Pagination ─────────────────────────────────────────────────────────────
 
 test.describe("Effects Library Tab — Pagination", () => {
-  test("effects are displayed one page at a time with pagination controls", async ({
+  test("effects are displayed one page at a time with pagination controls @smoke", async ({
     gmPage,
   }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
@@ -148,8 +141,7 @@ test.describe("Effects Library Tab — Pagination", () => {
 // ─── Sorting ────────────────────────────────────────────────────────────────
 
 test.describe("Effects Library Tab — Sorting", () => {
-  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("default sort order is by name ascending", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
 
@@ -302,14 +294,12 @@ test.describe("Effects Library Tab — Unsaved Changes", () => {
   });
 });
 
-// ─── Deletion (serial to prevent DB race conditions) ────────────────────────
+// ─── Deletion ────────────────────────────────────────────────────────────────
 
-test.describe.serial("Effects Library Tab — Deletion", () => {
+test.describe("Effects Library Tab — Deletion", () => {
   test("delete an effect that is not currently open", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
     await lib.clickNextPage();
@@ -328,8 +318,7 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await expect(lib.idleState).toBeVisible();
   });
 
-  test("cancel deletion of an effect", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cancel deletion of an effect", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
 
@@ -343,8 +332,7 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await expect(lib.getRow("Zodiac Burst")).toBeVisible();
   });
 
-  test("cannot delete an effect that is linked to a spell", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cannot delete an effect that is linked to a spell", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ROAR_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian Roar");
@@ -362,8 +350,7 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await expect(lib.getRow("Barbarian Roar")).toBeVisible();
   });
 
-  test("delete the currently open unlinked effect", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("delete the currently open unlinked effect", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
     await lib.clickNextPage();
@@ -383,9 +370,7 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
 
   test("deleting the last effect on a page returns to the previous page", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
 
@@ -407,8 +392,5 @@ test.describe.serial("Effects Library Tab — Deletion", () => {
     await expect(lib.prevPageButton).toBeDisabled();
     await expect(lib.getRow("Arcane Damage")).toBeVisible();
     await expect(lib.getRow("Zodiac Burst")).not.toBeVisible();
-
-    // Restore DB for subsequent test files
-    await resetDb();
   });
 });

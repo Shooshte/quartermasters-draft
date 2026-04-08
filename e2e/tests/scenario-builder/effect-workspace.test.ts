@@ -40,7 +40,7 @@ test.describe("Effect Workspace CRUD", () => {
     await expect(effect.timingTypeSelect).toBeFocused();
   });
 
-  test("create a new effect from the workspace", async ({ gmPage }) => {
+  test("create a new effect from the workspace @smoke", async ({ gmPage }) => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openNew();
 

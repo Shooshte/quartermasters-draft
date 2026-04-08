@@ -4,10 +4,7 @@ import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { UNITS_TAB } from "../pages/library-tab-configs";
 
-// All tests in this file share the same database and some mutate it,
-// so they must run serially to prevent race conditions.
-test.describe.configure({ mode: "serial" });
-
+test.beforeEach(async ({ resetDb }) => { await resetDb(); });
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -31,21 +28,16 @@ test.describe("Units Library Tab — Display", () => {
 
   test("empty state is shown when no units exist", async ({
     gmPage,
-    resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
-    try {
-      const unitIds = await listEntityIdsViaApi(gmPage.request, "units");
-      for (const id of unitIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "units", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      await lib.navigateToTab();
-      await expect(lib.emptyList).toBeVisible();
-    } finally {
-      await resetDb();
+    const unitIds = await listEntityIdsViaApi(gmPage.request, "units");
+    for (const id of unitIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "units", id);
+      expect(response.ok()).toBeTruthy();
     }
+
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
   });
 });
 
@@ -129,8 +121,7 @@ test.describe("Units Library Tab — Pagination", () => {
 // ─── Sorting ────────────────────────────────────────────────────────────────
 
 test.describe("Units Library Tab — Sorting", () => {
-  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("default sort order is by name ascending", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
 
@@ -261,14 +252,12 @@ test.describe("Units Library Tab — Unsaved Changes", () => {
   });
 });
 
-// ─── Deletion (serial to prevent DB race conditions) ────────────────────────
+// ─── Deletion ────────────────────────────────────────────────────────────────
 
-test.describe.serial("Units Library Tab — Deletion", () => {
+test.describe("Units Library Tab — Deletion", () => {
   test("delete a unit that is not currently open", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
     await expect(lib.getRow("Ranger")).toBeVisible();
@@ -289,8 +278,7 @@ test.describe.serial("Units Library Tab — Deletion", () => {
     await expect(lib.idleState).toBeVisible();
   });
 
-  test("cancel deletion of a unit", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cancel deletion of a unit", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
 
@@ -303,8 +291,7 @@ test.describe.serial("Units Library Tab — Deletion", () => {
     await expect(lib.getRow("Ranger")).toBeVisible();
   });
 
-  test("delete the currently open unit", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("delete the currently open unit", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian");
@@ -324,9 +311,7 @@ test.describe.serial("Units Library Tab — Deletion", () => {
 
   test("deleting the last unit on a page returns to the previous page", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
 
@@ -348,8 +333,5 @@ test.describe.serial("Units Library Tab — Deletion", () => {
     await expect(lib.prevPageButton).toBeDisabled();
     await expect(lib.getRow("Barbarian")).toBeVisible();
     await expect(lib.getRow("Zircon Juggernaut")).not.toBeVisible();
-
-    // Restore DB for subsequent test files
-    await resetDb();
   });
 });

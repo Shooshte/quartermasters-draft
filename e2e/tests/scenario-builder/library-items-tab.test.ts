@@ -4,9 +4,7 @@ import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { ITEMS_TAB } from "../pages/library-tab-configs";
 
-// All tests in this file share the same database and some mutate it,
-// so they must run serially to prevent race conditions.
-test.describe.configure({ mode: "serial" });
+test.beforeEach(async ({ resetDb }) => { await resetDb(); });
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -28,21 +26,16 @@ test.describe("Items Library Tab — Display", () => {
 
   test("empty state is shown when no items exist", async ({
     gmPage,
-    resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
-    try {
-      const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
-      for (const id of itemIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "items", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      await lib.navigateToTab();
-      await expect(lib.emptyList).toBeVisible();
-    } finally {
-      await resetDb();
+    const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
+    for (const id of itemIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "items", id);
+      expect(response.ok()).toBeTruthy();
     }
+
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
   });
 });
 
@@ -114,8 +107,7 @@ test.describe("Items Library Tab — Pagination", () => {
 // ─── Sorting ────────────────────────────────────────────────────────────────
 
 test.describe("Items Library Tab — Sorting", () => {
-  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("default sort order is by name ascending", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
 
@@ -222,14 +214,12 @@ test.describe("Items Library Tab — Unsaved Changes", () => {
   });
 });
 
-// ─── Deletion (serial to prevent DB race conditions) ────────────────────────
+// ─── Deletion ────────────────────────────────────────────────────────────────
 
-test.describe.serial("Items Library Tab — Deletion", () => {
+test.describe("Items Library Tab — Deletion", () => {
   test("delete an item that is not currently open", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
     await expect(lib.getRow("Leather Shield")).toBeVisible();
@@ -244,8 +234,7 @@ test.describe.serial("Items Library Tab — Deletion", () => {
     await expect(lib.idleState).toBeVisible();
   });
 
-  test("cancel deletion of an item", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cancel deletion of an item", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
 
@@ -257,8 +246,7 @@ test.describe.serial("Items Library Tab — Deletion", () => {
     await expect(lib.getRow("Leather Shield")).toBeVisible();
   });
 
-  test("delete the currently open item", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("delete the currently open item", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateWithEntity(IRON_SWORD_ID);
     await expect(lib.nameInput).toHaveValue("Iron Sword");
@@ -273,9 +261,7 @@ test.describe.serial("Items Library Tab — Deletion", () => {
 
   test("deleting the last item on a page returns to the previous page", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
 
@@ -292,7 +278,5 @@ test.describe.serial("Items Library Tab — Deletion", () => {
     await expect(lib.prevPageButton).toBeDisabled();
     await expect(lib.getRow("Iron Sword")).toBeVisible();
     await expect(lib.getRow("Zircon Crown")).not.toBeVisible();
-
-    await resetDb();
   });
 });

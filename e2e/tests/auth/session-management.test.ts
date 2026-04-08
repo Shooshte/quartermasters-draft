@@ -27,7 +27,7 @@ function getAuthCookies(context: BrowserContext) {
 }
 
 test.describe("Session Management", () => {
-  test("session expires after 1 hour for GM without remember me — redirects to /login with reason=expired", async ({
+  test("session expires after 1 hour for GM without remember me — redirects to /login with reason=expired @smoke", async ({
     browser,
   }, testInfo) => {
     const context = await browser.newContext();
@@ -40,10 +40,10 @@ test.describe("Session Management", () => {
     authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
 
     const nowEpoch = Math.floor(Date.now() / 1000);
-    const session = getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    const session = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
     expect(session.expiresAtEpoch).toBeGreaterThan(nowEpoch);
 
-    expireLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    await expireLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
 
     await page.goto("/create");
     await page.waitForURL("**/login**");
@@ -66,10 +66,10 @@ test.describe("Session Management", () => {
     authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
 
     const nowEpoch = Math.floor(Date.now() / 1000);
-    const session = getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    const session = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
     expect(session.expiresAtEpoch).toBeGreaterThan(nowEpoch);
 
-    expireLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    await expireLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
@@ -90,7 +90,7 @@ test.describe("Session Management", () => {
     const authCookies = await getAuthCookies(context);
     expect(authCookies.length).toBeGreaterThan(0);
     expect(authCookies.some((cookie) => cookie.expires > 0)).toBe(true);
-    const session = getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    const session = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
     expect(session.expiresAtEpoch).toBeGreaterThan(Math.floor(Date.now() / 1000));
 
     await page.goto("/play");
@@ -106,7 +106,7 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
     await page.waitForURL("**/play");
 
-    expireLatestSessionForUser(
+    await expireLatestSessionForUser(
       PLAYER_USER_ID,
       testInfo.parallelIndex,
       "NOW() - INTERVAL '31 days'",
@@ -174,13 +174,15 @@ test.describe("Session Management", () => {
     await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/create");
 
-    const beforeActivity = getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    const beforeActivity = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
 
+    // Wait >1s so that the database updated_at / expires_at timestamps
+    // (which have 1-second granularity) will differ after the next request.
     await page.waitForTimeout(1_100);
     await page.goto("/create");
     await expect(page).toHaveURL(/\/create/);
 
-    const afterActivity = getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    const afterActivity = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
     expect(afterActivity.token).toBe(beforeActivity.token);
     expect(afterActivity.expiresAtEpoch).toBeGreaterThanOrEqual(beforeActivity.expiresAtEpoch);
     expect(afterActivity.updatedAtEpoch).toBeGreaterThanOrEqual(beforeActivity.updatedAtEpoch);
@@ -194,11 +196,11 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD);
     await page.waitForURL("**/play");
 
-    const sessionBeforeLogout = getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    const sessionBeforeLogout = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
     const cookiesBeforeLogout = await context.cookies();
 
     await logout(page);
-    expect(countSessionsByToken(sessionBeforeLogout.token, testInfo.parallelIndex)).toBe(0);
+    expect(await countSessionsByToken(sessionBeforeLogout.token, testInfo.parallelIndex)).toBe(0);
 
     await context.clearCookies();
     await context.addCookies(cookiesBeforeLogout);

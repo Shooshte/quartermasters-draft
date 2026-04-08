@@ -1,4 +1,4 @@
-import { getUnitEffectiveStats } from "./math";
+import { computeSpellDamageWithModifiers, getUnitEffectiveStats } from "./math";
 import {
   clampHealth,
   findUnitById,
@@ -93,6 +93,8 @@ function applyInstantEffect(
   effect: EffectTemplateInput,
 ): ActiveEffectState[] {
   const appliedModifiers: ActiveEffectState[] = [];
+  const casterStats = getUnitEffectiveStats(caster);
+  const targetStats = getUnitEffectiveStats(target);
   const maxHealth = getUnitEffectiveStats(target).health;
 
   if (typeof effect.directHealing === "number") {
@@ -104,8 +106,9 @@ function applyInstantEffect(
   const directDamage =
     effect.directMeleeDmg ?? effect.directRangedDmg ?? effect.directSpellDmg ?? null;
   if (typeof directDamage === "number") {
-    target.currentHealth = Math.max(0, target.currentHealth - directDamage);
-    logDamage(state, tick, caster, target, directDamage);
+    const modifiedDamage = computeSpellDamageWithModifiers(directDamage, casterStats, targetStats);
+    target.currentHealth = Math.max(0, target.currentHealth - modifiedDamage);
+    logDamage(state, tick, caster, target, modifiedDamage);
     if (target.currentHealth === 0) {
       logDeath(state, tick, target);
     }
@@ -245,13 +248,16 @@ export function processCurrentTickEffects(state: BattleState): void {
         if (effect.nextTriggerTick <= currentTick && unit.currentHealth > 0) {
           const source = findUnitById(state, effect.sourceUnitId);
           if (!source) continue;
+          const sourceStats = getUnitEffectiveStats(source);
+          const targetStats = getUnitEffectiveStats(unit);
           if (effect.effectType === "healing") {
             unit.currentHealth += effect.value;
             clampHealth(unit, getUnitEffectiveStats(unit).health);
             logHeal(state, currentTick, source, unit, effect.value);
           } else {
-            unit.currentHealth = Math.max(0, unit.currentHealth - effect.value);
-            logDamage(state, currentTick, source, unit, effect.value);
+            const modifiedDamage = computeSpellDamageWithModifiers(effect.value, sourceStats, targetStats);
+            unit.currentHealth = Math.max(0, unit.currentHealth - modifiedDamage);
+            logDamage(state, currentTick, source, unit, modifiedDamage);
             if (unit.currentHealth === 0) {
               logDeath(state, currentTick, unit);
             }

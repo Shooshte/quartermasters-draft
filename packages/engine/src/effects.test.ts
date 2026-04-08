@@ -91,4 +91,41 @@ describe("effects", () => {
     expect(result.appliedEffectNames).toEqual(["One", "Two"]);
     expect(warrior.currentHealth).toBe(0);
   });
+
+  it("applies crit and dodge modifiers to instant and interval damage effects", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("alpha", {
+          ranged: [createUnit("mage", { stats: createStats({ health: 200, spellDmg: 40, criticalChance: 50 }) })],
+        }),
+        createScenario("bravo", {
+          tank: [createUnit("warrior", { stats: createStats({ health: 300, dodge: 20 }) })],
+        }),
+      ]),
+    );
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applySpell(state, mage, createSpell({
+      name: "Blast",
+      targetPolicy: "highest_health",
+      effects: effectSequence(createEffect({ name: "Arcane Damage", effectType: "damage", timingType: "instant", directSpellDmg: 40 })),
+    }));
+    expect(warrior.currentHealth).toBe(252);
+
+    applySpell(state, mage, createSpell({
+      name: "Burn",
+      targetPolicy: "highest_health",
+      effects: effectSequence(createEffect({
+        name: "Burning",
+        effectType: "damage",
+        timingType: "interval",
+        directSpellDmg: 20,
+        intervalMs: 1,
+        triggerCount: 2,
+      })),
+    }));
+    processOngoingEffects(state, 2);
+    expect(warrior.currentHealth).toBe(204);
+  });
 });

@@ -17,7 +17,12 @@ function candidateUnits(
     state,
     spellTargetsAllies(spell) ? caster.scenarioId : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId)!.id,
   )!;
-  return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter((unit) => unit.currentHealth > 0);
+  const allowedRows = spell.allowedRowTypes ?? [];
+  return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter((unit) => {
+    if (unit.currentHealth <= 0) return false;
+    if (allowedRows.length > 0 && !allowedRows.includes(unit.rowType)) return false;
+    return true;
+  });
 }
 
 function policyValue(unit: BattleUnitState, policy: NonNullable<BattleUnitState["targetPolicy"] | SpellInput["targetPolicy"]>) {

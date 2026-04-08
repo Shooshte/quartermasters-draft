@@ -1,5 +1,6 @@
 import {
   computeBasicAttackDamage,
+  computeBasicDamageWithModifiers,
   getUnitEffectiveStats,
 } from "./math";
 import { compareUnitOrder } from "./rows";
@@ -37,11 +38,13 @@ export function performBasicAttack(
   if (!target) return 0;
 
   const attackerStats = getUnitEffectiveStats(attacker);
+  const targetStats = getUnitEffectiveStats(target);
   const baseStat =
     attacker.rowType === "tank" || attacker.rowType === "melee"
       ? attackerStats.meleeDmg
       : attackerStats.rangedDmg;
-  const damage = computeBasicAttackDamage(baseStat, attacker.rowType, target.rowType);
+  const distanceAdjustedDamage = computeBasicAttackDamage(baseStat, attacker.rowType, target.rowType);
+  const damage = computeBasicDamageWithModifiers(distanceAdjustedDamage, attackerStats, targetStats);
 
   target.currentHealth = Math.max(0, target.currentHealth - damage);
   pushLog(state, {
@@ -96,11 +99,7 @@ export function resolveUnitAction(
     if (unit.mana < item.activationManaCost) continue;
     if (unit.currentHealth < item.activationHealthCost) continue;
 
-    const castableSpells = item.linkedSpells.filter((spell) =>
-      spell.allowedRowTypes == null ||
-      spell.allowedRowTypes.length === 0 ||
-      spell.allowedRowTypes.includes(unit.rowType),
-    );
+    const castableSpells = item.linkedSpells;
     if (castableSpells.length === 0) continue;
 
     unit.mana -= item.activationManaCost;

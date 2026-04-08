@@ -118,4 +118,23 @@ describe("spell targeting", () => {
 
     expect(targets.map((unit) => unit.name)).toEqual(["Guard", "Tank", "Brute"]);
   });
+
+  it("filters candidates by allowed target row types", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+
+    const targets = selectTargets(
+      state,
+      caster,
+      createSpell({
+        name: "Backline Hunt",
+        targetPolicy: "highest_health",
+        targetRowCount: 2,
+        maxTargetsPerRow: 1,
+        allowedRowTypes: ["ranged", "support"],
+      }),
+    );
+
+    expect(targets.map((unit) => unit.name)).toEqual(["Ranger", "Sorcerer"]);
+  });
 });

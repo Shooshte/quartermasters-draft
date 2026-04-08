@@ -15,7 +15,7 @@ function makeStateWithWarrior(row: "tank" | "melee" | "ranged" | "support", item
 }
 
 describe("action resolution", () => {
-  it("falls back to a basic attack and uses melee or ranged stat by row", () => {
+  it("falls back to a basic attack, uses melee or ranged stat by row, and applies crit or dodge modifiers", () => {
     const tankState = makeStateWithWarrior("tank");
     const tankWarrior = tankState.scenarios[0].rows.tank[0]!;
     const tankOutcome = resolveUnitAction(tankState, tankWarrior);
@@ -27,6 +27,19 @@ describe("action resolution", () => {
     const rangedOutcome = resolveUnitAction(rangedState, rangedWarrior);
     expect(rangedOutcome.usedBasicAttack).toBe(true);
     expect(rangedOutcome.totalDamage).toBe(3);
+
+    const critState = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          tank: [createUnit("Critter", { stats: createStats({ meleeDmg: 20, criticalChance: 50 }) })],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Dodger", { stats: createStats({ health: 200, dodge: 20 }) })],
+        }),
+      ]),
+    );
+    const critOutcome = resolveUnitAction(critState, critState.scenarios[0].rows.tank[0]!);
+    expect(critOutcome.totalDamage).toBe(24);
   });
 
   it("casts affordable item spells in priority order and skips unaffordable or stat-only items", () => {
@@ -52,7 +65,7 @@ describe("action resolution", () => {
     expect(warrior.mana).toBe(40);
   });
 
-  it("deducts health costs, blocks unaffordable items, and respects caster row restrictions", () => {
+  it("deducts health costs and blocks unaffordable items", () => {
     const aimedShot = createSpell({
       name: "Aimed Shot",
       targetPolicy: "highest_health",
@@ -68,7 +81,7 @@ describe("action resolution", () => {
     warrior.mana = 10;
 
     const outcome = resolveUnitAction(state, warrior);
-    expect(outcome.castSpellNames).toEqual(["Flame Strike", "Flame Strike"]);
+    expect(outcome.castSpellNames).toEqual(["Flame Strike", "Aimed Shot"]);
     expect(warrior.currentHealth).toBe(80);
     expect(warrior.mana).toBe(0);
   });

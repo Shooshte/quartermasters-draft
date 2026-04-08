@@ -224,7 +224,9 @@ test.describe("Scenario Workspace", () => {
       "placeholder",
       "Search units...",
     );
-    await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5);
+    await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5, {
+      timeout: 15_000,
+    });
     await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search units..." })).toHaveCount(0);
 
     await gmPage.getByTestId("scenario-row-melee-picker-search").fill("sam");

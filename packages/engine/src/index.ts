@@ -1,2 +1,19 @@
 export { BattleEngine } from "./battle-engine";
 export type { BattleResult } from "./battle-engine";
+export type {
+  BattleInput,
+  BattleOptions,
+  BattleScenarioState,
+  BattleState,
+  BattleUnitState,
+  EffectTemplateInput,
+  ItemInput,
+  RowType,
+  ScenarioInput,
+  SpellInput,
+  StatKey,
+  TargetPolicy,
+  UnitInput,
+  UnitStats,
+} from "./types";
+export type { BattleLogEntry } from "./log";

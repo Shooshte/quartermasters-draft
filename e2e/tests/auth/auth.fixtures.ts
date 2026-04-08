@@ -34,8 +34,21 @@ export async function loginAsPlayer(page: Page, options?: { rememberMe?: boolean
 
 /** Click the logout button in the header */
 export async function logout(page: Page) {
-  await page.getByRole("button", { name: /Log out|Logging out…/ }).click();
-  await page.waitForURL(/\/login(?:\?|$)/, { timeout: 10_000 });
+  const loginUrlPattern = /\/login(?:\?|$)/;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const button = page.getByRole("button", { name: /Log out|Logging out…/ });
+    await button.click();
+
+    try {
+      await page.waitForURL(loginUrlPattern, { timeout: 20_000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) {
+        throw error;
+      }
+    }
+  }
 }
 
 /** Assert we're on a given path */

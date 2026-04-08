@@ -6,11 +6,12 @@ Feature: Scenario builder page shell
 
   The "/create" route accepts the optional query parameters "scenario_id",
   "entity_id", "effect_id", "spell_id", "item_id", "unit_id", and "tab".
-  The "scenario_id", "entity_id", "effect_id", "spell_id", "item_id", and "unit_id" parameters are UUIDs.
-  The "effect_id" and "spell_id" parameters are type-specific alternatives to
-  "entity_id" for effects and spells respectively.
-  The "item_id" and "unit_id" parameters are type-specific alternatives to
-  "entity_id" for items and units respectively.
+  The "scenario_id", "entity_id", "effect_id", "spell_id", "item_id", and
+  "unit_id" parameters are UUIDs.
+  The "entity_id" parameter is supported for generic entity selection and
+  chooses the matching entity tab for effects and spells.
+  The "effect_id", "spell_id", "item_id", and "unit_id" parameters directly
+  load the matching entity type.
   The "tab" parameter accepts the exact tab labels "Effects", "Spells",
   "Items", "Units", and "Scenarios".
 
@@ -68,8 +69,19 @@ Feature: Scenario builder page shell
         | tab_name | entity_type | record_name    |
         | Effects  | effect      | Barbarian Roar |
         | Spells   | spell       | Fireball       |
-        | Items    | item        | Iron Sword     |
-        | Units    | unit        | Barbarian      |
+
+    Scenario Outline: Open the page with only a type-specific entity parameter
+      Given a <entity_type> named "<record_name>" exists
+      When I navigate to "/create" with the "<url_param>" parameter for the <entity_type> "<record_name>"
+      Then the "<tab_name>" tab should be selected
+      And the "<record_name>" record should be selected in the visible library
+      And the entity workspace should load the <entity_type> "<record_name>" in edit mode
+      And no scenario should be loaded in the scenario workspace
+
+      Examples:
+        | tab_name | url_param | entity_type | record_name |
+        | Items    | item_id   | item        | Iron Sword  |
+        | Units    | unit_id   | unit        | Barbarian   |
 
     Scenario: Open the page with a tab parameter and a scenario_id parameter
       Given a scenario named "Ambush at Dawn" exists
@@ -91,29 +103,36 @@ Feature: Scenario builder page shell
         | tab_name | entity_type | record_name    |
         | Effects  | effect      | Barbarian Roar |
         | Spells   | spell       | Fireball       |
-        | Items    | item        | Iron Sword     |
-        | Units    | unit        | Barbarian      |
 
-    Scenario Outline: Open the page with tab, entity_id, and scenario_id parameters
+    Scenario Outline: Open the page with matching tab and a type-specific entity parameter
+      Given a <entity_type> named "<record_name>" exists
+      When I navigate to "/create" with the "tab" parameter "<tab_name>" and the "<url_param>" parameter for the <entity_type> "<record_name>"
+      Then the "<tab_name>" tab should be selected
+      And the "<record_name>" record should be selected in the visible library
+      And the entity workspace should load the <entity_type> "<record_name>" in edit mode
+      And no scenario should be loaded in the scenario workspace
+
+      Examples:
+        | tab_name | url_param | entity_type | record_name |
+        | Items    | item_id   | item        | Iron Sword  |
+        | Units    | unit_id   | unit        | Barbarian   |
+
+    Scenario Outline: Open the page with tab, an entity selection parameter, and scenario_id
       Given a <entity_type> named "<record_name>" exists
       And a scenario named "Ambush at Dawn" exists
-      When I navigate to "/create" with the "tab" parameter "<tab_name>", the "entity_id" parameter for the <entity_type> "<record_name>", and the "scenario_id" parameter for the scenario "Ambush at Dawn"
+      When I navigate to "/create" with the "tab" parameter "<tab_name>", the "<url_param>" parameter for the <entity_type> "<record_name>", and the "scenario_id" parameter for the scenario "Ambush at Dawn"
       Then the "<tab_name>" tab should be selected
       And the "<record_name>" record should be selected in the visible library
       And the entity workspace should load the <entity_type> "<record_name>" in edit mode
       And the scenario workspace should load the scenario "Ambush at Dawn" in edit mode
 
       Examples:
-        | tab_name | entity_type | record_name    |
-        | Effects  | effect      | Barbarian Roar |
-        | Spells   | spell       | Fireball       |
-        | Items    | item        | Iron Sword     |
-        | Units    | unit        | Barbarian      |
+        | tab_name | url_param | entity_type | record_name |
+        | Spells   | entity_id | spell       | Fireball    |
+        | Spells   | spell_id  | spell       | Fireball    |
+        | Items    | item_id   | item        | Iron Sword  |
 
     Scenario: Open the page with a tab that does not match the entity type
-      # The tab parameter controls which tab is active and therefore what the visible library shows.
-      # The entity_id parameter independently controls what is loaded in the entity workspace.
-      # A mismatch means the entity is loaded in the workspace but is not listed in the visible library.
       Given a spell named "Battle Cry" exists
       When I navigate to "/create" with the "tab" parameter "Items" and the "entity_id" parameter for the spell "Battle Cry"
       Then the "Items" tab should be selected
@@ -336,8 +355,6 @@ Feature: Scenario builder page shell
       And the entity workspace should continue showing "Fireball Updated"
 
     Scenario: Warn before starting a different entity type with unsaved changes
-      # Switching the tab itself does not trigger a warning; the warning fires
-      # when the create action would replace the entity workspace.
       Given a spell named "Fireball" exists
       And I am on the "/create" page
       And I have opened the "Spells" tab

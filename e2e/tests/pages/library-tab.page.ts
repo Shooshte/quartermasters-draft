@@ -6,7 +6,7 @@
  * unsaved changes, and deletion. This page object encapsulates those shared
  * interactions, parameterized by a LibraryTabConfig.
  */
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export interface LibraryTabConfig {
   /** Tab label displayed in the UI (e.g. "Effects", "Scenarios") */
@@ -126,6 +126,7 @@ export class LibraryTabPage {
   /** Click Discard in the unsaved changes dialog */
   async discardUnsavedChanges(): Promise<void> {
     await this.page.getByRole("button", { name: "Discard" }).click();
+    await expect(this.unsavedChangesDialog).not.toBeVisible();
   }
 
   // ─── Deletion ────────────────────────────────────────────────────────────

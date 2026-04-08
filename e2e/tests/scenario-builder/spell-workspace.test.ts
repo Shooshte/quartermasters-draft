@@ -85,7 +85,7 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(gmPage).toHaveURL(/spell_id=/);
   });
 
-  test("description persists on edit", async ({ gmPage }) => {
+  test("description persists after save and reload", async ({ gmPage }) => {
     await openNewSpell(gmPage);
 
     await gmPage.getByTestId("entity-name-input").fill("Ember Wave");

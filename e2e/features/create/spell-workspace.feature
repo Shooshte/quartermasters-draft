@@ -8,7 +8,7 @@ Feature: Spell workspace create and edit
     And I am on the "/create" page
     And I have opened the "Spells" tab
 
-  Scenario: Create a new spell with a dropdown enum
+  Scenario: Create a new spell with a target policy and linked effect
     When I create a new spell named "Arcane Volley" with target policy "highest_health"
     And I add effect "Barbarian Roar" at sequence position 1
     Then the spell workspace should save the spell in edit mode
@@ -25,9 +25,9 @@ Feature: Spell workspace create and edit
   Scenario: Description is optional
     When I create a new spell named "Silent Strike" without a description
     And I add effect "Barbarian Roar" at sequence position 1
-    Then the spell should save successfully
+    Then the URL should contain the created "spell_id"
 
-  Scenario: Description persists on edit
+  Scenario: Description persists after save and reload
     When I create a new spell named "Ember Wave" with description "A rolling wave of fire"
     Then reloading the spell by URL should show description "A rolling wave of fire"
 

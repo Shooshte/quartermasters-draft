@@ -388,8 +388,8 @@ test.describe("Spells Library Tab — Unsaved Changes", () => {
     await expect(lib.unsavedChangesDialog).toBeVisible();
     await lib.discardUnsavedChanges();
 
-    await expect(lib.getRow("Battle Cry")).toHaveAttribute("aria-selected", "true");
     await expect(lib.nameInput).toHaveValue("Battle Cry");
+    await expect(lib.getRow("Battle Cry")).toHaveAttribute("aria-selected", "true");
   });
 });
 

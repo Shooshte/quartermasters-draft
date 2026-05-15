@@ -87,6 +87,13 @@ export async function resetWorkerDbByIndex(parallelIndex: number) {
   await resetWorkerDb(getWorkerDbName(parallelIndex));
 }
 
+export async function runWorkerSql(parallelIndex: number, sql: string): Promise<string[][]> {
+  const dbName = getWorkerDbName(parallelIndex);
+  const { client } = getWorkerDb(dbName);
+  const result = await client.unsafe(sql);
+  return result.map((row: Record<string, unknown>) => Object.values(row).map(String));
+}
+
 export async function closeAllWorkerDbs() {
   await Promise.all([...workerDbs.values()].map(({ client }) => client.end()));
   workerDbs.clear();

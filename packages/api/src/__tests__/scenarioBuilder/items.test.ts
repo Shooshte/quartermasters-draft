@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
+import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
@@ -39,19 +39,7 @@ describe("itemsRouter", () => {
   });
 
   describe("list", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(caller.items.list()).rejects.toMatchObject({
-        code: "UNAUTHORIZED",
-      });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(caller.items.list()).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-    });
+    describeAuthGuard((ctx) => createCaller(ctx).items.list());
 
     it("returns items with totalCount and default limit=20", async () => {
       const mockItems = [

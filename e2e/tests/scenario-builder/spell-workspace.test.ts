@@ -1,7 +1,6 @@
 // Source of truth: e2e/features/create/spell-workspace.feature
 // Cross-reference: effect-picker and deletion scenarios for this feature are
 // covered in e2e/tests/scenario-builder/library-spells-tab.test.ts.
-import type { Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
 import { FIREBALL_ID, BATTLE_CRY_ID } from "../helpers/seed-constants";
 import { SpellWorkspacePage } from "../pages/spell-workspace.page";
@@ -10,114 +9,102 @@ test.beforeEach(async ({ resetDb }) => {
   await resetDb();
 });
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-async function openNewSpell(page: Page) {
-  await new SpellWorkspacePage(page).openNew();
-}
-
-async function addEffect(page: Page, effectName: string, search?: string) {
-  await new SpellWorkspacePage(page).addEffect(effectName, search);
-}
-
-async function saveSpellAndWait(page: Page, mutation: "create" | "update") {
-  const spell = new SpellWorkspacePage(page);
-  if (mutation === "create") {
-    await spell.saveCreate();
-    return;
-  }
-  await spell.saveUpdate();
-}
-
 // ─── Basic CRUD ──────────────────────────────────────────────────────────────
 
 test.describe("Spell Workspace — CRUD", () => {
-  test("create a new spell with target policy and effect", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+  test("create a new spell with target policy and effect @smoke", async ({ gmPage }) => {
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Arcane Volley");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("highest_health");
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.fillName("Arcane Volley");
+    await spell.setTargetPolicy("highest_health");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
 
     await expect(gmPage).toHaveURL(/spell_id=/);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Arcane Volley");
+    await expect(spell.nameInput).toHaveValue("Arcane Volley");
   });
 
   test("target policy offers all four options", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    const select = gmPage.getByTestId("spell-target-policy-select");
     for (const policy of ["highest_health", "lowest_health", "highest_damage", "random"]) {
-      await expect(select.locator(`option[value="${policy}"]`)).toBeAttached();
+      await expect(spell.targetPolicySelect.locator(`option[value="${policy}"]`)).toBeAttached();
     }
   });
 
   test("target policy is required — save stays blocked without one", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("No Policy Spell");
+    await spell.fillName("No Policy Spell");
     // Don't select a target policy
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(spell.saveButton).toBeDisabled();
   });
 
   test("name is required — save stays blocked without one", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.setTargetPolicy("random");
+    await spell.addEffect("Barbarian Roar");
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(spell.saveButton).toBeDisabled();
   });
 
   test("description is optional — spell saves without one", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Silent Strike");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
+    await spell.fillName("Silent Strike");
+    await spell.setTargetPolicy("random");
     // No description
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
   });
 
   test("description persists after save and reload", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Ember Wave");
-    await gmPage.getByTestId("spell-description-input").fill("A rolling wave of fire");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.fillName("Ember Wave");
+    await spell.setDescription("A rolling wave of fire");
+    await spell.setTargetPolicy("random");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("spell-description-input")).toHaveValue("A rolling wave of fire");
+    await expect(spell.descriptionInput).toHaveValue("A rolling wave of fire");
   });
 
   test("edit an existing spell and persist changes", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openById(FIREBALL_ID);
 
-    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
-    await saveSpellAndWait(gmPage, "update");
+    await spell.fillName("Fireball Updated");
+    await spell.saveUpdate();
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball Updated");
+    await expect(spell.nameInput).toHaveValue("Fireball Updated");
   });
 
   test("duplicate name shows a save error", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openById(FIREBALL_ID);
 
-    await gmPage.getByTestId("entity-name-input").fill("Battle Cry");
-    await gmPage.getByTestId("entity-save-button").click();
+    await spell.fillName("Battle Cry");
+    await spell.saveButton.click();
 
-    await expect(gmPage.getByTestId("entity-save-error")).toBeVisible();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Battle Cry");
+    await expect(spell.saveError).toBeVisible();
+    await expect(spell.nameInput).toHaveValue("Battle Cry");
   });
 });
 
@@ -125,23 +112,25 @@ test.describe("Spell Workspace — CRUD", () => {
 
 test.describe("Spell Workspace — Linked Effects", () => {
   test("at least one linked effect is required on create", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Empty Spell");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
+    await spell.fillName("Empty Spell");
+    await spell.setTargetPolicy("random");
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(spell.saveButton).toBeDisabled();
   });
 
   test("add multiple effects in sequence order", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Combo Strike");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
-    await addEffect(gmPage, "Barbarian Roar");
-    await addEffect(gmPage, "Exhaust");
+    await spell.fillName("Combo Strike");
+    await spell.setTargetPolicy("random");
+    await spell.addEffect("Barbarian Roar");
+    await spell.addEffect("Exhaust");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
@@ -150,7 +139,8 @@ test.describe("Spell Workspace — Linked Effects", () => {
   });
 
   test("reorder linked effects", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openById(FIREBALL_ID);
 
     // Fireball has effects: Arcane Damage (pos 0), Sizzling Flesh (pos 1)
     await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Arcane Damage");
@@ -161,7 +151,7 @@ test.describe("Spell Workspace — Linked Effects", () => {
     await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Sizzling Flesh");
     await expect(gmPage.getByTestId("spell-effect-row-1")).toContainText("Arcane Damage");
 
-    await saveSpellAndWait(gmPage, "update");
+    await spell.saveUpdate();
     await gmPage.reload();
 
     // Order should be swapped
@@ -170,20 +160,21 @@ test.describe("Spell Workspace — Linked Effects", () => {
   });
 
   test("remove a linked effect while at least one remains", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&spell_id=${FIREBALL_ID}`);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openById(FIREBALL_ID);
 
     // Fireball has 2 effects
     await expect(gmPage.getByTestId("spell-effect-row-1")).toBeVisible();
 
     // Remove the second effect
-    await gmPage.getByTestId("spell-effect-remove-1").click();
+    await spell.removeEffect(1);
 
     // Should still have one effect
     await expect(gmPage.getByTestId("spell-effect-row-0")).toBeVisible();
     await expect(gmPage.getByTestId("spell-effect-row-0")).toContainText("Arcane Damage");
     await expect(gmPage.getByTestId("spell-effect-row-1")).not.toBeVisible();
 
-    await saveSpellAndWait(gmPage, "update");
+    await spell.saveUpdate();
     await gmPage.reload();
 
     // Only one effect should remain
@@ -192,26 +183,28 @@ test.describe("Spell Workspace — Linked Effects", () => {
   });
 
   test("at least one linked effect is required on edit", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&spell_id=${BATTLE_CRY_ID}`);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openById(BATTLE_CRY_ID);
 
     // Battle Cry has 1 effect
     await expect(gmPage.getByTestId("spell-effect-row-0")).toBeVisible();
 
     // Remove the only effect
-    await gmPage.getByTestId("spell-effect-remove-0").click();
+    await spell.removeEffect(0);
 
-    await expect(gmPage.getByTestId("entity-save-button")).toBeDisabled();
+    await expect(spell.saveButton).toBeDisabled();
   });
 
   test("duplicate effects are allowed in the same spell", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Echo Blast");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
-    await addEffect(gmPage, "Barbarian Roar");
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.fillName("Echo Blast");
+    await spell.setTargetPolicy("random");
+    await spell.addEffect("Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
@@ -224,7 +217,8 @@ test.describe("Spell Workspace — Linked Effects", () => {
 
 test.describe("Spell Workspace — Target Scope", () => {
   test("target scope defaults on new spell", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
     await expect(gmPage.getByTestId("spell-target-row-count-input")).toHaveValue("1");
     await expect(gmPage.getByTestId("spell-max-targets-per-row-input")).toHaveValue("1");
@@ -237,14 +231,15 @@ test.describe("Spell Workspace — Target Scope", () => {
   });
 
   test("create a spell targeting a whole row", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Inferno Wave");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
+    await spell.fillName("Inferno Wave");
+    await spell.setTargetPolicy("random");
     await gmPage.getByTestId("per-row-toggle").getByText("All").click();
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
@@ -253,15 +248,16 @@ test.describe("Spell Workspace — Target Scope", () => {
   });
 
   test("create a spell with adjacent targeting", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Lightning Chain");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("highest_damage");
+    await spell.fillName("Lightning Chain");
+    await spell.setTargetPolicy("highest_damage");
     await gmPage.getByTestId("spell-max-targets-per-row-input").fill("3");
     await gmPage.getByTestId("spell-target-only-adjacent-checkbox").check();
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
@@ -269,29 +265,32 @@ test.describe("Spell Workspace — Target Scope", () => {
   });
 
   test("adjacent requires at least 2 targets per row", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
     await gmPage.getByTestId("spell-max-targets-per-row-input").fill("1");
     await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
   });
 
   test("adjacent is disabled for whole row targeting", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
     await gmPage.getByTestId("per-row-toggle").getByText("All").click();
     await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
   });
 
   test("create a spell with row type restrictions", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Tank Buster");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("highest_health");
+    await spell.fillName("Tank Buster");
+    await spell.setTargetPolicy("highest_health");
     await gmPage.getByTestId("spell-allowed-row-melee").click();
     await gmPage.getByTestId("spell-allowed-row-tank").click();
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
@@ -302,15 +301,16 @@ test.describe("Spell Workspace — Target Scope", () => {
   });
 
   test("create a spell targeting multiple rows", async ({ gmPage }) => {
-    await openNewSpell(gmPage);
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
 
-    await gmPage.getByTestId("entity-name-input").fill("Earthquake II");
-    await gmPage.getByTestId("spell-target-policy-select").selectOption("random");
+    await spell.fillName("Earthquake II");
+    await spell.setTargetPolicy("random");
     await gmPage.getByTestId("spell-target-row-count-input").fill("2");
     await gmPage.getByTestId("per-row-toggle").getByText("All").click();
-    await addEffect(gmPage, "Barbarian Roar");
+    await spell.addEffect("Barbarian Roar");
 
-    await saveSpellAndWait(gmPage, "create");
+    await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();

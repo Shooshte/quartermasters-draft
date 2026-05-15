@@ -1,33 +1,67 @@
 import { describe, expect, it } from "vitest";
 import { initializeBattleState } from "./state";
 import { resolveUnitAction } from "./resolution";
-import { createBattleInput, createEffect, createItem, createScenario, createSpell, createStats, createUnit, effectSequence } from "./test-helpers";
+import {
+  createBattleInput,
+  createEffect,
+  createItem,
+  createScenario,
+  createSpell,
+  createStats,
+  createUnit,
+  effectSequence,
+} from "./test-helpers";
 
 function makeStateWithWarrior(row: "tank" | "melee" | "ranged" | "support", items = [] as ReturnType<typeof createItem>[]) {
   return initializeBattleState(
     createBattleInput([
       createScenario("Alpha", {
-        [row]: [createUnit("Warrior", { stats: createStats({ health: 100, meleeDmg: 15, rangedDmg: 5, speed: 1, manaRegen: 2, spellDmg: 0 }), items })],
+        [row]: [
+          createUnit("Warrior", {
+            stats: createStats({
+              health: 100,
+              meleeDmg: 15,
+              rangedDmg: 5,
+              speed: 1,
+              manaRegen: 2,
+              spellDmg: 0,
+            }),
+            items,
+          }),
+        ],
       }),
-      createScenario("Bravo", { tank: [createUnit("Dummy", { stats: createStats({ health: 200, speed: 1 }) })] }),
+      createScenario("Bravo", {
+        tank: [
+          createUnit("Dummy", {
+            stats: createStats({ health: 200, speed: 1 }),
+          }),
+        ],
+      }),
     ]),
   );
 }
 
 describe("action resolution", () => {
-  it("falls back to a basic attack, uses melee or ranged stat by row, and applies crit or dodge modifiers", () => {
+  it("falls back to a basic attack when no item spells are available", () => {
     const tankState = makeStateWithWarrior("tank");
     const tankWarrior = tankState.scenarios[0].rows.tank[0]!;
     const tankOutcome = resolveUnitAction(tankState, tankWarrior);
+
     expect(tankOutcome.usedBasicAttack).toBe(true);
     expect(tankOutcome.totalDamage).toBe(15);
+  });
 
+  it("uses ranged stat with row distance penalty for ranged-row attackers", () => {
     const rangedState = makeStateWithWarrior("ranged");
     const rangedWarrior = rangedState.scenarios[0].rows.ranged[0]!;
     const rangedOutcome = resolveUnitAction(rangedState, rangedWarrior);
-    expect(rangedOutcome.usedBasicAttack).toBe(true);
-    expect(rangedOutcome.totalDamage).toBe(3);
 
+    expect(rangedOutcome.usedBasicAttack).toBe(true);
+    // rangedDmg=5, ranged->tank multiplier=0.5, no crit/dodge => round(5 * 0.5) = 3.
+    expect(rangedOutcome.totalDamage).toBe(3);
+  });
+
+  it("applies crit and dodge modifiers multiplicatively to basic attack damage", () => {
     const critState = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
@@ -39,6 +73,8 @@ describe("action resolution", () => {
       ]),
     );
     const critOutcome = resolveUnitAction(critState, critState.scenarios[0].rows.tank[0]!);
+
+    // meleeDmg=20, tank->tank multiplier=1.0, crit=50%, dodge=20% => round(20 * 1.5 * 0.8) = 24.
     expect(critOutcome.totalDamage).toBe(24);
   });
 
@@ -48,7 +84,20 @@ describe("action resolution", () => {
       createItem({
         name: "Fire Sword",
         activationManaCost: 10,
-        linkedSpells: [createSpell({ name: "Flame Strike", targetPolicy: "highest_health", effects: effectSequence(createEffect({ name: "Flame", effectType: "damage", timingType: "instant", directSpellDmg: 10 })) })],
+        linkedSpells: [
+          createSpell({
+            name: "Flame Strike",
+            targetPolicy: "highest_health",
+            effects: effectSequence(
+              createEffect({
+                name: "Flame",
+                effectType: "damage",
+                timingType: "instant",
+                directSpellDmg: 10,
+              }),
+            ),
+          }),
+        ],
       }),
       createItem({
         name: "Arcane Staff",

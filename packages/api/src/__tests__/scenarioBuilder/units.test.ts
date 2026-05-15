@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
+import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
@@ -40,19 +40,7 @@ describe("unitsRouter", () => {
   const ITEM_ID_2 = "d0000000-0000-0000-0000-000000000002";
 
   describe("list", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(caller.units.list()).rejects.toMatchObject({
-        code: "UNAUTHORIZED",
-      });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(caller.units.list()).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-    });
+    describeAuthGuard((ctx) => createCaller(ctx).units.list());
 
     it("returns units with totalCount and default limit=20", async () => {
       const mockUnits = [
@@ -125,19 +113,9 @@ describe("unitsRouter", () => {
   });
 
   describe("get", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.units.get({ id: "f0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.units.get({ id: "f0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).units.get({ id: "f0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("returns unit with itemIds when found", async () => {
       const mockUnit = {
@@ -178,19 +156,9 @@ describe("unitsRouter", () => {
   });
 
   describe("delete", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.units.delete({ id: "f0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.units.delete({ id: "f0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).units.delete({ id: "f0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("deletes unit and returns success", async () => {
       mockDeleteFn.mockReturnValue(
@@ -215,41 +183,20 @@ describe("unitsRouter", () => {
   });
 
   describe("create", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.units.create({
-          name: "Bronze Sentinel",
-          meleeDmg: 0,
-          health: 0,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          speed: 0,
-          dodge: 0,
-          criticalChance: 0,
-          itemIds: [],
-        }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.units.create({
-          name: "Bronze Sentinel",
-          meleeDmg: 0,
-          health: 0,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          speed: 0,
-          dodge: 0,
-          criticalChance: 0,
-          itemIds: [],
-        }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).units.create({
+        name: "Bronze Sentinel",
+        meleeDmg: 0,
+        health: 0,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 0,
+        dodge: 0,
+        criticalChance: 0,
+        itemIds: [],
+      }),
+    );
 
     it("creates a unit with no linked items", async () => {
       const created = {
@@ -351,43 +298,21 @@ describe("unitsRouter", () => {
   });
 
   describe("update", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.units.update({
-          id: "f0000000-0000-0000-0000-000000000001",
-          name: "Barbarian Updated",
-          meleeDmg: 20,
-          health: 120,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          speed: 1,
-          dodge: 5,
-          criticalChance: 10,
-          itemIds: [ITEM_ID_2, ITEM_ID_1],
-        }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.units.update({
-          id: "f0000000-0000-0000-0000-000000000001",
-          name: "Barbarian Updated",
-          meleeDmg: 20,
-          health: 120,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          speed: 1,
-          dodge: 5,
-          criticalChance: 10,
-          itemIds: [ITEM_ID_2, ITEM_ID_1],
-        }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).units.update({
+        id: "f0000000-0000-0000-0000-000000000001",
+        name: "Barbarian Updated",
+        meleeDmg: 20,
+        health: 120,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 1,
+        dodge: 5,
+        criticalChance: 10,
+        itemIds: [ITEM_ID_2, ITEM_ID_1],
+      }),
+    );
 
     it("updates unit fields and replaces linked item order", async () => {
       const updated = {

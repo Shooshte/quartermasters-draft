@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { BattleEngine } from "./battle-engine";
-import { createBattleInput, createEffect, createItem, createScenario, createSpell, createStats, createUnit, effectSequence } from "./test-helpers";
+import {
+  createBattleInput,
+  createEffect,
+  createItem,
+  createScenario,
+  createSpell,
+  createStats,
+  createUnit,
+  effectSequence,
+} from "./test-helpers";
 
 function createLoggedBattle() {
   const burning = createEffect({
@@ -14,18 +23,43 @@ function createLoggedBattle() {
   const fireball = createSpell({
     name: "Fireball",
     targetPolicy: "highest_health",
-    effects: effectSequence(createEffect({ name: "Impact", effectType: "damage", timingType: "instant", directSpellDmg: 20 }), burning),
+    effects: effectSequence(
+      createEffect({
+        name: "Impact",
+        effectType: "damage",
+        timingType: "instant",
+        directSpellDmg: 20,
+      }),
+      burning,
+    ),
   });
 
   return new BattleEngine(
     createBattleInput([
       createScenario("alpha", {
-        tank: [createUnit("alpha-1", { stats: createStats({ health: 200, meleeDmg: 30, speed: 10 }) })],
-        ranged: [createUnit("alpha-2", { stats: createStats({ health: 100, rangedDmg: 25, speed: 15, manaRegen: 5 }), items: [createItem({ name: "Fire Staff", linkedSpells: [fireball] })] })],
+        tank: [
+          createUnit("alpha-1", {
+            stats: createStats({ health: 200, meleeDmg: 30, speed: 10 }),
+          }),
+        ],
+        ranged: [
+          createUnit("alpha-2", {
+            stats: createStats({ health: 100, rangedDmg: 25, speed: 15, manaRegen: 5 }),
+            items: [createItem({ name: "Fire Staff", linkedSpells: [fireball] })],
+          }),
+        ],
       }),
       createScenario("bravo", {
-        melee: [createUnit("bravo-1", { stats: createStats({ health: 150, meleeDmg: 20, speed: 12 }) })],
-        support: [createUnit("bravo-2", { stats: createStats({ health: 40, rangedDmg: 10, spellDmg: 50, speed: 8 }) })],
+        melee: [
+          createUnit("bravo-1", {
+            stats: createStats({ health: 150, meleeDmg: 20, speed: 12 }),
+          }),
+        ],
+        support: [
+          createUnit("bravo-2", {
+            stats: createStats({ health: 40, rangedDmg: 10, spellDmg: 50, speed: 8 }),
+          }),
+        ],
       }),
     ]),
   );

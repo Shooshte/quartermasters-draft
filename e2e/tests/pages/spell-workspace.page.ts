@@ -37,6 +37,10 @@ export class SpellWorkspacePage {
     return this.page.getByTestId("spell-effect-picker-search");
   }
 
+  get effectPickerOptions() {
+    return this.page.locator('[role="listbox"] [role="option"]');
+  }
+
   async openNew() {
     await this.shell.startNewEntity("Spells", "New Spell");
   }

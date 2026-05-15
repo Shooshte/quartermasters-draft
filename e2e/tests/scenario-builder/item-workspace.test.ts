@@ -9,7 +9,7 @@ test.beforeEach(async ({ resetDb }) => {
 });
 
 test.describe("Item Workspace", () => {
-  test("create a new item with default stats", async ({ gmPage }) => {
+  test("create a new item with default stats @smoke", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 

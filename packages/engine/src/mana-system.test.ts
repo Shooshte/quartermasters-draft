@@ -1,14 +1,38 @@
 import { describe, expect, it } from "vitest";
 import { BattleEngine } from "./battle-engine";
-import { createBattleInput, createItem, createScenario, createSpell, createStats, createUnit } from "./test-helpers";
+import {
+  createBattleInput,
+  createItem,
+  createScenario,
+  createSpell,
+  createStats,
+  createUnit,
+} from "./test-helpers";
 
 function makeManaEngine() {
   return new BattleEngine(
     createBattleInput([
       createScenario("A", {
-        melee: [createUnit("Warrior", { stats: createStats({ health: 100, meleeDmg: 10, rangedDmg: 10, speed: 50, manaRegen: 5, spellDmg: 20 }) })],
+        melee: [
+          createUnit("Warrior", {
+            stats: createStats({
+              health: 100,
+              meleeDmg: 10,
+              rangedDmg: 10,
+              speed: 50,
+              manaRegen: 5,
+              spellDmg: 20,
+            }),
+          }),
+        ],
       }),
-      createScenario("B", { tank: [createUnit("Dummy", { stats: createStats({ health: 200, speed: 1 }) })] }),
+      createScenario("B", {
+        tank: [
+          createUnit("Dummy", {
+            stats: createStats({ health: 200, speed: 1 }),
+          }),
+        ],
+      }),
     ]),
     { resolveActionsOnTick: false },
   );
@@ -60,8 +84,18 @@ describe("mana system", () => {
               startingMana: 50,
               startingActionBar: 100,
               items: [
-                createItem({ name: "Blood Hex", activationManaCost: 20, activationHealthCost: 15, linkedSpells: [fireball] }),
-                createItem({ name: "Ice Focus", activationManaCost: 10, activationHealthCost: 0, linkedSpells: [iceShard] }),
+                createItem({
+                  name: "Blood Hex",
+                  activationManaCost: 20,
+                  activationHealthCost: 15,
+                  linkedSpells: [fireball],
+                }),
+                createItem({
+                  name: "Ice Focus",
+                  activationManaCost: 10,
+                  activationHealthCost: 0,
+                  linkedSpells: [iceShard],
+                }),
               ],
             }),
           ],
@@ -86,8 +120,20 @@ describe("mana system", () => {
               startingMana: 30,
               startingActionBar: 100,
               items: [
-                createItem({ name: "Fireball", activationManaCost: 25, linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })] }),
-                createItem({ name: "Ice Shard", activationManaCost: 10, linkedSpells: [createSpell({ name: "Ice Shard", targetPolicy: "highest_health" })] }),
+                createItem({
+                  name: "Fireball",
+                  activationManaCost: 25,
+                  linkedSpells: [
+                    createSpell({ name: "Fireball", targetPolicy: "highest_health" }),
+                  ],
+                }),
+                createItem({
+                  name: "Ice Shard",
+                  activationManaCost: 10,
+                  linkedSpells: [
+                    createSpell({ name: "Ice Shard", targetPolicy: "highest_health" }),
+                  ],
+                }),
               ],
             }),
           ],

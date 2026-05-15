@@ -6,10 +6,11 @@ import { FIREBALL_ID, BATTLE_CRY_ID, ZENITH_BLOOM_ID } from "../helpers/seed-con
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { SPELLS_TAB } from "../pages/library-tab-configs";
+import { SpellWorkspacePage } from "../pages/spell-workspace.page";
 
-// All tests in this file share the same database and some mutate it,
-// so they must run serially to prevent race conditions.
-test.describe.configure({ mode: "serial" });
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -35,33 +36,27 @@ test.describe("Spells Library Tab — Display", () => {
 
   test("empty state is shown when no spells exist", async ({
     gmPage,
-    resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
-    try {
-      await resetDb();
 
-      const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
-      for (const id of itemIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "items", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      const spellIds = await listEntityIdsViaApi(gmPage.request, "spells");
-      for (const id of spellIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "spells", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
-      await lib.navigateToTab();
-      await expect(lib.emptyList).toBeVisible();
-      await expect(gmPage.getByText("No spell records yet")).toBeVisible();
-      await expect(
-        gmPage.getByRole("button", { name: "Create the first spell" }),
-      ).toBeVisible();
-    } finally {
-      await resetDb();
+    const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
+    for (const id of itemIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "items", id);
+      expect(response.ok()).toBeTruthy();
     }
+
+    const spellIds = await listEntityIdsViaApi(gmPage.request, "spells");
+    for (const id of spellIds) {
+      const response = await deleteEntityViaApi(gmPage.request, "spells", id);
+      expect(response.ok()).toBeTruthy();
+    }
+
+    await lib.navigateToTab();
+    await expect(lib.emptyList).toBeVisible();
+    await expect(gmPage.getByText("No spell records yet")).toBeVisible();
+    await expect(
+      gmPage.getByRole("button", { name: "Create the first spell" }),
+    ).toBeVisible();
   });
 });
 
@@ -147,8 +142,7 @@ test.describe("Spells Library Tab — Pagination", () => {
 // ─── Sorting ────────────────────────────────────────────────────────────────
 
 test.describe("Spells Library Tab — Sorting", () => {
-  test("default sort order is by name ascending", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("default sort order is by name ascending", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 
@@ -281,39 +275,37 @@ test.describe("Spell Workspace — Effect Picker", () => {
     gmPage,
   }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
+    const spell = new SpellWorkspacePage(gmPage);
     await lib.navigateToTab();
     await gmPage.getByRole("button", { name: "New Spell" }).click();
 
-    await gmPage.getByTestId("spell-effect-picker").click();
+    await spell.effectPicker.click();
 
-    await expect(gmPage.getByTestId("spell-effect-picker-search")).toHaveAttribute(
+    await expect(spell.effectPickerSearch).toHaveAttribute(
       "placeholder",
       "Search effects...",
     );
-    const pickerOptions = gmPage.locator('[role="listbox"] [role="option"]');
-    await expect(pickerOptions).toHaveCount(5);
-    await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search effects..." })).toHaveCount(0);
+    await expect(spell.effectPickerOptions).toHaveCount(5);
+    await expect(spell.effectPickerOptions.filter({ hasText: "Search effects..." })).toHaveCount(0);
   });
 
   test("search narrows the effect picker results", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
+    const spell = new SpellWorkspacePage(gmPage);
     await lib.navigateToTab();
     await gmPage.getByRole("button", { name: "New Spell" }).click();
 
-    await gmPage.getByTestId("spell-effect-picker").click();
-    await gmPage.getByTestId("spell-effect-picker-search").fill("tect");
+    await spell.effectPicker.click();
+    await spell.effectPickerSearch.fill("tect");
 
-    const pickerOptions = gmPage.locator('[role="listbox"] [role="option"]');
-    await expect(pickerOptions).toHaveCount(1);
-    await expect(gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Tectonic Pulse" })).toBeVisible();
+    await expect(spell.effectPickerOptions).toHaveCount(1);
+    await expect(spell.effectPickerOptions.filter({ hasText: "Tectonic Pulse" })).toBeVisible();
   });
 
   test("a searched effect can be added to a spell and persists after saving", async ({
     gmPage,
-    resetDb,
   }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
-    await resetDb();
     await lib.navigateToTab();
     await gmPage.getByRole("button", { name: "New Spell" }).click();
 
@@ -393,14 +385,12 @@ test.describe("Spells Library Tab — Unsaved Changes", () => {
   });
 });
 
-// ─── Deletion (serial to prevent DB race conditions) ────────────────────────
+// ─── Deletion ────────────────────────────────────────────────────────────────
 
-test.describe.serial("Spells Library Tab — Deletion", () => {
+test.describe("Spells Library Tab — Deletion", () => {
   test("delete a spell that is not currently open", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
     await lib.clickNextPage();
@@ -419,8 +409,7 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await expect(lib.idleState).toBeVisible();
   });
 
-  test("cancel deletion of a spell", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cancel deletion of a spell", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 
@@ -434,8 +423,7 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await expect(lib.getRow("Zenith Bloom")).toBeVisible();
   });
 
-  test("cannot delete a spell that is linked to an item", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("cannot delete a spell that is linked to an item", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateWithEntity(FIREBALL_ID);
     await expect(lib.nameInput).toHaveValue("Fireball");
@@ -453,8 +441,7 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await expect(lib.getRow("Fireball")).toBeVisible();
   });
 
-  test("delete the currently open unlinked spell", async ({ gmPage, resetDb }) => {
-    await resetDb();
+  test("delete the currently open unlinked spell", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
     await lib.clickNextPage();
@@ -474,9 +461,7 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
 
   test("deleting the last spell on a page returns to the previous page", async ({
     gmPage,
-    resetDb,
   }) => {
-    await resetDb();
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 
@@ -498,8 +483,5 @@ test.describe.serial("Spells Library Tab — Deletion", () => {
     await expect(lib.prevPageButton).toBeDisabled();
     await expect(lib.getRow("Arcane Shield")).toBeVisible();
     await expect(lib.getRow("Zenith Bloom")).not.toBeVisible();
-
-    // Restore DB for subsequent test files
-    await resetDb();
   });
 });

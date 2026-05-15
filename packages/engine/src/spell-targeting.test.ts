@@ -1,43 +1,168 @@
 import { describe, expect, it } from "vitest";
 import { initializeBattleState } from "./state";
 import { selectTargets } from "./targeting";
-import { createBattleInput, createEffect, createScenario, createSpell, createStats, createUnit, effectSequence } from "./test-helpers";
+import {
+  createBattleInput,
+  createEffect,
+  createScenario,
+  createSpell,
+  createStats,
+  createUnit,
+  effectSequence,
+} from "./test-helpers";
 
 function setupBattle() {
   return initializeBattleState(
     createBattleInput([
       createScenario("Alpha", {
-        tank: [createUnit("Knight", { stats: createStats({ health: 120, meleeDmg: 25, speed: 3, manaRegen: 1, dodge: 5, criticalChance: 10 }) })],
-        melee: [createUnit("Cleric", { stats: createStats({ health: 80, meleeDmg: 5, spellDmg: 15, speed: 2, manaRegen: 8, dodge: 3, criticalChance: 5 }) })],
+        tank: [
+          createUnit("Knight", {
+            stats: createStats({
+              health: 120,
+              meleeDmg: 25,
+              speed: 3,
+              manaRegen: 1,
+              dodge: 5,
+              criticalChance: 10,
+            }),
+          }),
+        ],
+        melee: [
+          createUnit("Cleric", {
+            stats: createStats({
+              health: 80,
+              meleeDmg: 5,
+              spellDmg: 15,
+              speed: 2,
+              manaRegen: 8,
+              dodge: 3,
+              criticalChance: 5,
+            }),
+          }),
+        ],
         ranged: [
-          createUnit("Archer", { stats: createStats({ health: 70, meleeDmg: 5, rangedDmg: 30, speed: 4, manaRegen: 2, dodge: 10, criticalChance: 15 }) }),
-          createUnit("Mage", { stats: createStats({ health: 60, spellDmg: 40, speed: 2, manaRegen: 10, dodge: 8, criticalChance: 12 }) }),
+          createUnit("Archer", {
+            stats: createStats({
+              health: 70,
+              meleeDmg: 5,
+              rangedDmg: 30,
+              speed: 4,
+              manaRegen: 2,
+              dodge: 10,
+              criticalChance: 15,
+            }),
+          }),
+          createUnit("Mage", {
+            stats: createStats({
+              health: 60,
+              spellDmg: 40,
+              speed: 2,
+              manaRegen: 10,
+              dodge: 8,
+              criticalChance: 12,
+            }),
+          }),
         ],
       }),
       createScenario("Bravo", {
         tank: [
-          createUnit("Warrior", { stats: createStats({ health: 150, meleeDmg: 30, speed: 3, dodge: 4, criticalChance: 8 }) }),
-          createUnit("Paladin", { stats: createStats({ health: 130, meleeDmg: 20, spellDmg: 10, speed: 2, manaRegen: 5, dodge: 6, criticalChance: 7 }) }),
+          createUnit("Warrior", {
+            stats: createStats({
+              health: 150,
+              meleeDmg: 30,
+              speed: 3,
+              dodge: 4,
+              criticalChance: 8,
+            }),
+          }),
+          createUnit("Paladin", {
+            stats: createStats({
+              health: 130,
+              meleeDmg: 20,
+              spellDmg: 10,
+              speed: 2,
+              manaRegen: 5,
+              dodge: 6,
+              criticalChance: 7,
+            }),
+          }),
         ],
-        ranged: [createUnit("Ranger", { stats: createStats({ health: 75, meleeDmg: 8, rangedDmg: 28, speed: 5, manaRegen: 3, dodge: 12, criticalChance: 18 }) })],
-        support: [createUnit("Sorcerer", { stats: createStats({ health: 55, spellDmg: 45, speed: 2, manaRegen: 12, dodge: 7, criticalChance: 10 }) })],
+        ranged: [
+          createUnit("Ranger", {
+            stats: createStats({
+              health: 75,
+              meleeDmg: 8,
+              rangedDmg: 28,
+              speed: 5,
+              manaRegen: 3,
+              dodge: 12,
+              criticalChance: 18,
+            }),
+          }),
+        ],
+        support: [
+          createUnit("Sorcerer", {
+            stats: createStats({
+              health: 55,
+              spellDmg: 45,
+              speed: 2,
+              manaRegen: 12,
+              dodge: 7,
+              criticalChance: 10,
+            }),
+          }),
+        ],
       }),
     ]),
   );
 }
 
 describe("spell targeting", () => {
-  it("selects highest health, lowest health, highest damage, and deterministic random targets", () => {
+  it("selects the enemy with highest current health", () => {
     const state = setupBattle();
     const caster = state.scenarios[0].rows.tank[0]!;
 
-    expect(selectTargets(state, caster, createSpell({ name: "HH", targetPolicy: "highest_health" })).map((unit) => unit.name)).toEqual(["Warrior"]);
-    expect(selectTargets(state, caster, createSpell({ name: "LH", targetPolicy: "lowest_health" })).map((unit) => unit.name)).toEqual(["Sorcerer"]);
-    expect(selectTargets(state, caster, createSpell({ name: "HD", targetPolicy: "highest_damage" })).map((unit) => unit.name)).toEqual(["Sorcerer"]);
+    expect(
+      selectTargets(state, caster, createSpell({ name: "HH", targetPolicy: "highest_health" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Warrior"]);
+  });
+
+  it("selects the enemy with lowest current health", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+
+    expect(
+      selectTargets(state, caster, createSpell({ name: "LH", targetPolicy: "lowest_health" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Sorcerer"]);
+  });
+
+  it("selects the enemy with highest damage output", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+
+    expect(
+      selectTargets(state, caster, createSpell({ name: "HD", targetPolicy: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Sorcerer"]);
+  });
+
+  it("produces deterministic results for random targeting given the same seed", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
 
     const randomSpell = createSpell({ name: "Random", targetPolicy: "random" });
     const first = selectTargets(state, caster, randomSpell).map((unit) => unit.instanceId);
-    const second = selectTargets(setupBattle(), setupBattle().scenarios[0].rows.tank[0]!, randomSpell).map((unit) => unit.instanceId);
+    const secondState = setupBattle();
+    const second = selectTargets(
+      secondState,
+      secondState.scenarios[0].rows.tank[0]!,
+      randomSpell,
+    ).map((unit) => unit.instanceId);
     expect(first).toEqual(second);
   });
 
@@ -46,7 +171,13 @@ describe("spell targeting", () => {
     const caster = state.scenarios[0].rows.tank[0]!;
     caster.targetPolicyOverride = "lowest_health";
 
-    expect(selectTargets(state, caster, createSpell({ name: "Override", targetPolicy: "highest_health" })).map((unit) => unit.name)).toEqual(["Sorcerer"]);
+    expect(
+      selectTargets(
+        state,
+        caster,
+        createSpell({ name: "Override", targetPolicy: "highest_health" }),
+      ).map((unit) => unit.name),
+    ).toEqual(["Sorcerer"]);
     caster.targetPolicyOverride = null;
     expect(
       selectTargets(
@@ -84,7 +215,14 @@ describe("spell targeting", () => {
     const healSpell = createSpell({
       name: "Heal",
       targetPolicy: "lowest_health",
-      effects: effectSequence(createEffect({ name: "Mend", effectType: "healing", timingType: "instant", directHealing: 10 })),
+      effects: effectSequence(
+        createEffect({
+          name: "Mend",
+          effectType: "healing",
+          timingType: "instant",
+          directHealing: 10,
+        }),
+      ),
     });
     expect(selectTargets(state, healer, healSpell).map((unit) => unit.name)).toEqual(["Cleric"]);
   });
@@ -92,7 +230,13 @@ describe("spell targeting", () => {
   it("supports adjacent targeting around the row primary target", () => {
     const state = initializeBattleState(
       createBattleInput([
-        createScenario("Alpha", { tank: [createUnit("Knight", { stats: createStats({ health: 120, meleeDmg: 25 }) })] }),
+        createScenario("Alpha", {
+          tank: [
+            createUnit("Knight", {
+              stats: createStats({ health: 120, meleeDmg: 25 }),
+            }),
+          ],
+        }),
         createScenario("Bravo", {
           tank: [
             createUnit("Guard", { stats: createStats({ health: 100, meleeDmg: 20 }) }),

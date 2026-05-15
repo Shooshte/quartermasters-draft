@@ -40,4 +40,67 @@ describe("stats and modifiers", () => {
     expect(effective.spellDmg).toBe(0);
     expect(effective.dodge).toBe(0);
   });
+
+  it("combines item bonuses and active effect modifiers additively", () => {
+    const effective = getEffectiveStats(
+      createStats({ meleeDmg: 10, rangedDmg: 4, speed: 5 }),
+      [
+        createItem({ name: "Axe", meleeDmg: 7, rangedDmg: 1 }),
+        createItem({ name: "Boots", dodge: 3 }),
+      ],
+      [
+        { statKey: "meleeDmg", value: 5 },
+        { statKey: "speed", value: 2 },
+        { statKey: "dodge", value: -1 },
+      ],
+    );
+
+    expect(effective.meleeDmg).toBe(22);
+    expect(effective.rangedDmg).toBe(5);
+    expect(effective.speed).toBe(7);
+    expect(effective.dodge).toBe(2);
+  });
+
+  it("returns base stats when items and modifiers are both empty", () => {
+    const base = createStats({ health: 55, meleeDmg: 12, speed: 4 });
+
+    expect(getEffectiveStats(base, [], [])).toEqual(base);
+  });
+
+  it("clamps each stat key individually at zero", () => {
+    const effective = getEffectiveStats(
+      createStats({
+        health: 1,
+        meleeDmg: 2,
+        rangedDmg: 3,
+        manaRegen: 4,
+        spellDmg: 5,
+        speed: 6,
+        dodge: 7,
+        criticalChance: 8,
+      }),
+      [],
+      [
+        { statKey: "health", value: -10 },
+        { statKey: "meleeDmg", value: -10 },
+        { statKey: "rangedDmg", value: -10 },
+        { statKey: "manaRegen", value: -10 },
+        { statKey: "spellDmg", value: -10 },
+        { statKey: "speed", value: -10 },
+        { statKey: "dodge", value: -10 },
+        { statKey: "criticalChance", value: -10 },
+      ],
+    );
+
+    expect(effective).toEqual({
+      health: 0,
+      meleeDmg: 0,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+    });
+  });
 });

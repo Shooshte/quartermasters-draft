@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import type { Context } from "../../trpc";
 
 export const gmCtx: Context = { userId: "gm-1", userRole: "game_master" };
@@ -18,4 +18,14 @@ export function chainable(data: unknown) {
   chain.returning = vi.fn().mockResolvedValue(data);
   chain.then = (resolve: (v: unknown) => void) => resolve(data);
   return chain;
+}
+
+export function describeAuthGuard(callFn: (ctx: Context) => Promise<unknown>) {
+  it("throws UNAUTHORIZED for unauthenticated user", async () => {
+    await expect(callFn(anonCtx)).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("throws FORBIDDEN for player role", async () => {
+    await expect(callFn(playerCtx)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 }

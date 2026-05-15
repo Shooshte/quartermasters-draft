@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
+import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
@@ -25,19 +25,7 @@ describe("effectsRouter", () => {
   });
 
   describe("list", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(caller.effects.list()).rejects.toMatchObject({
-        code: "UNAUTHORIZED",
-      });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(caller.effects.list()).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-    });
+    describeAuthGuard((ctx) => createCaller(ctx).effects.list());
 
     it("returns effects with totalCount and default limit=20", async () => {
       const mockEffects = [
@@ -110,19 +98,9 @@ describe("effectsRouter", () => {
   });
 
   describe("get", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.effects.get({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.effects.get({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).effects.get({ id: "a0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("returns effect when found", async () => {
       const mockEffect = {
@@ -151,19 +129,9 @@ describe("effectsRouter", () => {
   });
 
   describe("delete", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.effects.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.effects.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).effects.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("deletes effect and returns success", async () => {
       mockDeleteFn.mockReturnValue(
@@ -203,19 +171,9 @@ describe("effectsRouter", () => {
   });
 
   describe("create", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.effects.create({ name: "New Effect", timingType: "instant", effectType: "buff" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.effects.create({ name: "New Effect", timingType: "instant", effectType: "buff" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).effects.create({ name: "New Effect", timingType: "instant", effectType: "buff" }),
+    );
 
     it("creates a valid instant effect", async () => {
       mockInsertFn.mockReturnValue(chainable([{ id: "e1", name: "New Effect", timingType: "instant", effectType: "buff", intervalMs: null, triggerCount: null }]));
@@ -267,19 +225,14 @@ describe("effectsRouter", () => {
   });
 
   describe("update", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.effects.update({ id: "a0000000-0000-0000-0000-000000000001", name: "New Effect", timingType: "instant", effectType: "buff" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.effects.update({ id: "a0000000-0000-0000-0000-000000000001", name: "New Effect", timingType: "instant", effectType: "buff" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).effects.update({
+        id: "a0000000-0000-0000-0000-000000000001",
+        name: "New Effect",
+        timingType: "instant",
+        effectType: "buff",
+      }),
+    );
 
     it("updates an existing effect", async () => {
       mockUpdateFn.mockReturnValue(chainable([{ id: "a0000000-0000-0000-0000-000000000001", name: "Updated", timingType: "instant", effectType: "buff" }]));

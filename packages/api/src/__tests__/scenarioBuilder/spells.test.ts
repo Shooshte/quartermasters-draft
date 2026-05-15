@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
+import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
@@ -33,19 +33,7 @@ describe("spellsRouter", () => {
   });
 
   describe("list", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(caller.spells.list()).rejects.toMatchObject({
-        code: "UNAUTHORIZED",
-      });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(caller.spells.list()).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-    });
+    describeAuthGuard((ctx) => createCaller(ctx).spells.list());
 
     it("returns spells with totalCount and default limit=20", async () => {
       const mockSpells = [
@@ -118,19 +106,9 @@ describe("spellsRouter", () => {
   });
 
   describe("get", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.spells.get({ id: "b0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.spells.get({ id: "b0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).spells.get({ id: "b0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("returns spell with effectIds and allowedRowTypes when found", async () => {
       const mockSpell = {
@@ -187,27 +165,13 @@ describe("spellsRouter", () => {
   });
 
   describe("create", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.spells.create({
-          name: "New Spell",
-          targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
-        }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.spells.create({
-          name: "New Spell",
-          targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
-        }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).spells.create({
+        name: "New Spell",
+        targetPolicy: "random",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+      }),
+    );
 
     it("creates a spell with required fields", async () => {
       const created = {
@@ -558,29 +522,14 @@ describe("spellsRouter", () => {
   });
 
   describe("update", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.spells.update({
-          id: "b0000000-0000-0000-0000-000000000001",
-          name: "Updated",
-          targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
-        }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.spells.update({
-          id: "b0000000-0000-0000-0000-000000000001",
-          name: "Updated",
-          targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
-        }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).spells.update({
+        id: "b0000000-0000-0000-0000-000000000001",
+        name: "Updated",
+        targetPolicy: "random",
+        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+      }),
+    );
 
     it("updates spell fields", async () => {
       const updated = {
@@ -865,19 +814,9 @@ describe("spellsRouter", () => {
   });
 
   describe("delete", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.spells.delete({ id: "b0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.spells.delete({ id: "b0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).spells.delete({ id: "b0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("deletes spell and returns success", async () => {
       mockDeleteFn.mockReturnValue(

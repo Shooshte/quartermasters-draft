@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, gmCtx, playerCtx, anonCtx } from "./test-utils";
+import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
@@ -34,19 +34,7 @@ describe("scenariosRouter", () => {
   });
 
   describe("list", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(caller.scenarios.list()).rejects.toMatchObject({
-        code: "UNAUTHORIZED",
-      });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(caller.scenarios.list()).rejects.toMatchObject({
-        code: "FORBIDDEN",
-      });
-    });
+    describeAuthGuard((ctx) => createCaller(ctx).scenarios.list());
 
     it("returns scenarios with totalCount and default limit=20", async () => {
       const mockScenarios = [
@@ -118,19 +106,9 @@ describe("scenariosRouter", () => {
   });
 
   describe("get", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.scenarios.get({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.scenarios.get({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).scenarios.get({ id: "a0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("returns scenario with rows and assignments when found", async () => {
       const mockScenario = {
@@ -208,19 +186,9 @@ describe("scenariosRouter", () => {
   });
 
   describe("delete", () => {
-    it("throws UNAUTHORIZED for unauthenticated user", async () => {
-      const caller = createCaller(anonCtx);
-      await expect(
-        caller.scenarios.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    });
-
-    it("throws FORBIDDEN for player role", async () => {
-      const caller = createCaller(playerCtx);
-      await expect(
-        caller.scenarios.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
+    describeAuthGuard((ctx) =>
+      createCaller(ctx).scenarios.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
+    );
 
     it("deletes scenario and returns success", async () => {
       mockDeleteFn.mockReturnValue(

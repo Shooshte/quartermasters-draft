@@ -1,17 +1,65 @@
 import { describe, expect, it } from "vitest";
 import { initializeBattleState } from "./state";
 import { applySpell, processOngoingEffects } from "./effects";
-import { createBattleInput, createEffect, createScenario, createSpell, createStats, createUnit, effectSequence, statBuff } from "./test-helpers";
+import {
+  createBattleInput,
+  createEffect,
+  createScenario,
+  createSpell,
+  createStats,
+  createUnit,
+  effectSequence,
+  statBuff,
+} from "./test-helpers";
 
 function createEffectState() {
   return initializeBattleState(
     createBattleInput([
       createScenario("alpha", {
-        ranged: [createUnit("mage", { stats: createStats({ health: 200, meleeDmg: 10, rangedDmg: 15, spellDmg: 40, speed: 5, dodge: 10, criticalChance: 5, manaRegen: 3 }) })],
-        support: [createUnit("cleric", { stats: createStats({ health: 150, meleeDmg: 5, rangedDmg: 5, spellDmg: 20, speed: 3, dodge: 8, criticalChance: 2, manaRegen: 5 }) })],
+        ranged: [
+          createUnit("mage", {
+            stats: createStats({
+              health: 200,
+              meleeDmg: 10,
+              rangedDmg: 15,
+              spellDmg: 40,
+              speed: 5,
+              dodge: 10,
+              criticalChance: 5,
+              manaRegen: 3,
+            }),
+          }),
+        ],
+        support: [
+          createUnit("cleric", {
+            stats: createStats({
+              health: 150,
+              meleeDmg: 5,
+              rangedDmg: 5,
+              spellDmg: 20,
+              speed: 3,
+              dodge: 8,
+              criticalChance: 2,
+              manaRegen: 5,
+            }),
+          }),
+        ],
       }),
       createScenario("bravo", {
-        tank: [createUnit("warrior", { stats: createStats({ health: 300, meleeDmg: 30, rangedDmg: 10, spellDmg: 5, speed: 4, dodge: 5, criticalChance: 8, manaRegen: 1 }) })],
+        tank: [
+          createUnit("warrior", {
+            stats: createStats({
+              health: 300,
+              meleeDmg: 30,
+              rangedDmg: 10,
+              spellDmg: 5,
+              speed: 4,
+              dodge: 5,
+              criticalChance: 8,
+              manaRegen: 1,
+            }),
+          }),
+        ],
       }),
     ]),
   );
@@ -27,7 +75,14 @@ describe("effects", () => {
     applySpell(state, mage, createSpell({
       name: "Blast",
       targetPolicy: "highest_health",
-      effects: effectSequence(createEffect({ name: "Arcane Damage", effectType: "damage", timingType: "instant", directSpellDmg: 50 })),
+      effects: effectSequence(
+        createEffect({
+          name: "Arcane Damage",
+          effectType: "damage",
+          timingType: "instant",
+          directSpellDmg: 50,
+        }),
+      ),
     }));
     expect(warrior.currentHealth).toBe(250);
 
@@ -35,7 +90,14 @@ describe("effects", () => {
     applySpell(state, cleric, createSpell({
       name: "Heal",
       targetPolicy: "highest_health",
-      effects: effectSequence(createEffect({ name: "Mend", effectType: "healing", timingType: "instant", directHealing: 30 })),
+      effects: effectSequence(
+        createEffect({
+          name: "Mend",
+          effectType: "healing",
+          timingType: "instant",
+          directHealing: 30,
+        }),
+      ),
     }));
     expect(mage.currentHealth).toBe(200);
   });
@@ -59,6 +121,7 @@ describe("effects", () => {
       })),
     }));
     processOngoingEffects(state, 3000);
+    // interval 20 dmg * 3 triggers, crit=5%, dodge=5% => round(20 * 1.05 * 0.95) = 20 per trigger, so 300 - 60 = 240.
     expect(warrior.currentHealth).toBe(240);
 
     applySpell(state, cleric, createSpell({
@@ -121,10 +184,18 @@ describe("effects", () => {
     const state = initializeBattleState(
       createBattleInput([
         createScenario("alpha", {
-          ranged: [createUnit("mage", { stats: createStats({ health: 200, spellDmg: 40, criticalChance: 50 }) })],
+          ranged: [
+            createUnit("mage", {
+              stats: createStats({ health: 200, spellDmg: 40, criticalChance: 50 }),
+            }),
+          ],
         }),
         createScenario("bravo", {
-          tank: [createUnit("warrior", { stats: createStats({ health: 300, dodge: 20 }) })],
+          tank: [
+            createUnit("warrior", {
+              stats: createStats({ health: 300, dodge: 20 }),
+            }),
+          ],
         }),
       ]),
     );
@@ -134,8 +205,16 @@ describe("effects", () => {
     applySpell(state, mage, createSpell({
       name: "Blast",
       targetPolicy: "highest_health",
-      effects: effectSequence(createEffect({ name: "Arcane Damage", effectType: "damage", timingType: "instant", directSpellDmg: 40 })),
+      effects: effectSequence(
+        createEffect({
+          name: "Arcane Damage",
+          effectType: "damage",
+          timingType: "instant",
+          directSpellDmg: 40,
+        }),
+      ),
     }));
+    // directSpellDmg=40, crit=50%, dodge=20% => round(40 * 1.5 * 0.8) = 48, so 300 - 48 = 252.
     expect(warrior.currentHealth).toBe(252);
 
     applySpell(state, mage, createSpell({
@@ -151,6 +230,7 @@ describe("effects", () => {
       })),
     }));
     processOngoingEffects(state, 2);
+    // interval 20 dmg * 2 triggers with same modifiers => 24 * 2 = 48, then 252 - 48 = 204.
     expect(warrior.currentHealth).toBe(204);
   });
 });

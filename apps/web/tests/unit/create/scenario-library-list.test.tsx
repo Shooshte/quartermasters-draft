@@ -1,12 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { ScenarioLibraryList } from "~/components/create/scenario-library-list";
 
-const now = new Date("2025-06-15T12:00:00Z");
 const items = [
-  { id: "1", name: "Ambush at Dawn", updatedAt: new Date("2025-06-10T00:00:00Z"), createdAt: new Date("2025-04-01T00:00:00Z") },
-  { id: "2", name: "Castle Siege", updatedAt: new Date("2025-06-12T00:00:00Z"), createdAt: new Date("2025-05-01T00:00:00Z") },
+  {
+    id: "1",
+    name: "Ambush at Dawn",
+    updatedAt: new Date("2025-06-10T00:00:00Z"),
+    createdAt: new Date("2025-04-01T00:00:00Z"),
+  },
+  {
+    id: "2",
+    name: "Castle Siege",
+    updatedAt: new Date("2025-06-12T00:00:00Z"),
+    createdAt: new Date("2025-05-01T00:00:00Z"),
+  },
 ];
 
 const defaultProps = {
@@ -67,8 +76,14 @@ describe("ScenarioLibraryList", () => {
 
   it("marks selected item with aria-selected", () => {
     render(<ScenarioLibraryList {...defaultProps} selectedId="1" />);
-    expect(screen.getByRole("row", { name: /Ambush at Dawn/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("row", { name: /Castle Siege/ })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("row", { name: /Ambush at Dawn/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("row", { name: /Castle Siege/ })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
   });
 
   it("keeps selected row styling and removes row hover styling", () => {
@@ -130,14 +145,28 @@ describe("ScenarioLibraryList", () => {
 
   it("clicking active sort column toggles direction", async () => {
     const onSortChange = vi.fn();
-    render(<ScenarioLibraryList {...defaultProps} sortBy="name" sortDir="asc" onSortChange={onSortChange} />);
+    render(
+      <ScenarioLibraryList
+        {...defaultProps}
+        sortBy="name"
+        sortDir="asc"
+        onSortChange={onSortChange}
+      />,
+    );
     await userEvent.click(screen.getByRole("button", { name: /Name/ }));
     expect(onSortChange).toHaveBeenCalledWith("name", "desc");
   });
 
   it("clicking inactive sort column activates it ascending", async () => {
     const onSortChange = vi.fn();
-    render(<ScenarioLibraryList {...defaultProps} sortBy="name" sortDir="asc" onSortChange={onSortChange} />);
+    render(
+      <ScenarioLibraryList
+        {...defaultProps}
+        sortBy="name"
+        sortDir="asc"
+        onSortChange={onSortChange}
+      />,
+    );
     await userEvent.click(screen.getByRole("button", { name: /Last Update/ }));
     expect(onSortChange).toHaveBeenCalledWith("updatedAt", "asc");
   });
@@ -160,14 +189,18 @@ describe("ScenarioLibraryList", () => {
 
   it("calls onPageChange when clicking Next page", async () => {
     const onPageChange = vi.fn();
-    render(<ScenarioLibraryList {...defaultProps} page={1} totalPages={2} onPageChange={onPageChange} />);
+    render(
+      <ScenarioLibraryList {...defaultProps} page={1} totalPages={2} onPageChange={onPageChange} />,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Next page" }));
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
 
   it("calls onPageChange when clicking Previous page", async () => {
     const onPageChange = vi.fn();
-    render(<ScenarioLibraryList {...defaultProps} page={2} totalPages={2} onPageChange={onPageChange} />);
+    render(
+      <ScenarioLibraryList {...defaultProps} page={2} totalPages={2} onPageChange={onPageChange} />,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Previous page" }));
     expect(onPageChange).toHaveBeenCalledWith(1);
   });

@@ -1,5 +1,5 @@
-import { describe, expect, it, expectTypeOf } from "vitest";
-import { UserRole, type User } from "./user";
+import { describe, expect, expectTypeOf, it } from "vitest";
+import { type User, UserRole } from "./user";
 
 describe("UserRole", () => {
   it("has the expected values", () => {

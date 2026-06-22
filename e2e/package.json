@@ -4,13 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --import tsx --test unit-tests/*.test.ts",
     "test:e2e": "./scripts/run-e2e.sh"
   },
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
-    "@types/node": "^24.10.1",
-    "drizzle-orm": "^0.45.1",
-    "postgres": "^3.4.8",
-    "tsx": "^4.20.3"
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^24.12.4",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9",
+    "tsx": "^4.22.0"
   }
 }

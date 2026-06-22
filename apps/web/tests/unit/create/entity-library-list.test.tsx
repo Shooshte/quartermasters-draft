@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { EntityLibraryList } from "~/components/create/entity-library-list";
+import { describe, expect, it, vi } from "vitest";
 import { EffectLibraryList } from "~/components/create/effect-library-list";
+import { EntityLibraryList } from "~/components/create/entity-library-list";
 import { ItemLibraryList } from "~/components/create/item-library-list";
 import { ScenarioLibraryList } from "~/components/create/scenario-library-list";
 import { SpellLibraryList } from "~/components/create/spell-library-list";
@@ -46,7 +46,9 @@ describe("EntityLibraryList", () => {
   };
 
   it("renders loading and empty states", () => {
-    const { rerender } = render(<EntityLibraryList {...defaultProps} isLoading={true} items={[]} />);
+    const { rerender } = render(
+      <EntityLibraryList {...defaultProps} isLoading={true} items={[]} />,
+    );
     expect(screen.getByText("Loading...")).toBeInTheDocument();
 
     rerender(<EntityLibraryList {...defaultProps} items={[]} />);
@@ -77,7 +79,9 @@ describe("EntityLibraryList", () => {
     expect(selectedRow.className).toContain("bg-accent");
     expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Name/ })).toBeInTheDocument();
-    expect(screen.getByRole("table").parentElement?.parentElement).toHaveClass("pointer-events-none");
+    expect(screen.getByRole("table").parentElement?.parentElement).toHaveClass(
+      "pointer-events-none",
+    );
 
     await user.click(screen.getByRole("button", { name: /Name/ }));
     await user.click(screen.getByRole("button", { name: "Next page" }));
@@ -98,7 +102,14 @@ describe("Library list wrappers", () => {
 
     render(
       <ScenarioLibraryList
-        items={[{ id: "s1", name: "Ambush at Dawn", updatedAt: new Date("2025-06-10T00:00:00Z"), createdAt: new Date("2025-05-01T00:00:00Z") }]}
+        items={[
+          {
+            id: "s1",
+            name: "Ambush at Dawn",
+            updatedAt: new Date("2025-06-10T00:00:00Z"),
+            createdAt: new Date("2025-05-01T00:00:00Z"),
+          },
+        ]}
         isLoading={false}
         isFetching={false}
         selectedId={null}
@@ -145,7 +156,14 @@ describe("Library list wrappers", () => {
 
     rerender(
       <SpellLibraryList
-        items={[{ id: "sp1", name: "Battle Cry", targetPolicy: "random", updatedAt: new Date("2025-06-10T00:00:00Z") }]}
+        items={[
+          {
+            id: "sp1",
+            name: "Battle Cry",
+            targetPolicy: "random",
+            updatedAt: new Date("2025-06-10T00:00:00Z"),
+          },
+        ]}
         isLoading={false}
         isFetching={false}
         selectedId={null}

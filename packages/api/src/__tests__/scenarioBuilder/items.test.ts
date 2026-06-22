@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
 import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
@@ -20,13 +20,11 @@ vi.mock("@qd/db", async (importOriginal) => {
   return { ...actual, db: mockDb };
 });
 
-const { itemsRouter } = await import(
-  "../../routers/scenarioBuilder/items"
-);
+const { itemsRouter } = await import("../../routers/scenarioBuilder/items");
 
 const createCaller = createCallerFactory(router({ items: itemsRouter }));
-const SPELL_ID_1 = "00000000-0000-0000-0000-000000000001";
-const SPELL_ID_2 = "00000000-0000-0000-0000-000000000002";
+const SPELL_ID_1 = "00000000-0000-4000-8000-000000000001";
+const SPELL_ID_2 = "00000000-0000-4000-8000-000000000002";
 
 describe("itemsRouter", () => {
   beforeEach(() => {
@@ -65,7 +63,7 @@ describe("itemsRouter", () => {
   describe("get", () => {
     it("returns item with full stats and spellIds sorted by spell name", async () => {
       const mockItem = {
-        id: "d0000000-0000-0000-0000-000000000002",
+        id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff",
         meleeDmg: 0,
         rangedDmg: 0,
@@ -92,7 +90,7 @@ describe("itemsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.get({
-        id: "d0000000-0000-0000-0000-000000000002",
+        id: "d0000000-0000-4000-8000-000000000002",
       });
       expect(result).toEqual({
         ...mockItem,
@@ -105,7 +103,7 @@ describe("itemsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.items.get({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.items.get({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
@@ -128,10 +126,12 @@ describe("itemsRouter", () => {
       mockInsertFn
         .mockReturnValueOnce(chainable([created]))
         .mockReturnValueOnce({ values: insertLinks });
-      mockSelect.mockReturnValueOnce(chainable([
-        { spellId: SPELL_ID_1, spellName: "Fireball" },
-        { spellId: SPELL_ID_2, spellName: "Healing Touch" },
-      ]));
+      mockSelect.mockReturnValueOnce(
+        chainable([
+          { spellId: SPELL_ID_1, spellName: "Fireball" },
+          { spellId: SPELL_ID_2, spellName: "Healing Touch" },
+        ]),
+      );
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.create({
@@ -174,9 +174,7 @@ describe("itemsRouter", () => {
       mockInsertFn
         .mockReturnValueOnce({ values: itemValues })
         .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
-      mockSelect.mockReturnValueOnce(chainable([
-        { spellId: SPELL_ID_1, spellName: "Fireball" },
-      ]));
+      mockSelect.mockReturnValueOnce(chainable([{ spellId: SPELL_ID_1, spellName: "Fireball" }]));
 
       const caller = createCaller(gmCtx);
       await caller.items.create({
@@ -219,7 +217,7 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: -1,
           activationHealthCost: 0,
-          spellIds: ["00000000-0000-0000-0000-000000000001"],
+          spellIds: ["00000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
@@ -277,7 +275,7 @@ describe("itemsRouter", () => {
   describe("update", () => {
     it("updates item fields and replaces linked spell set", async () => {
       const updated = {
-        id: "d0000000-0000-0000-0000-000000000002",
+        id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff Updated",
         meleeDmg: 0,
         rangedDmg: 0,
@@ -293,10 +291,12 @@ describe("itemsRouter", () => {
       mockDeleteFn.mockReturnValueOnce(chainable([]));
       const insertLinks = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: insertLinks });
-      mockSelect.mockReturnValueOnce(chainable([
-        { spellId: SPELL_ID_2, spellName: "Battle Cry" },
-        { spellId: SPELL_ID_1, spellName: "Fireball" },
-      ]));
+      mockSelect.mockReturnValueOnce(
+        chainable([
+          { spellId: SPELL_ID_2, spellName: "Battle Cry" },
+          { spellId: SPELL_ID_1, spellName: "Fireball" },
+        ]),
+      );
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.update({
@@ -340,7 +340,7 @@ describe("itemsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.items.update({
-          id: "00000000-0000-0000-0000-000000000099",
+          id: "00000000-0000-4000-8000-000000000099",
           name: "Missing",
           meleeDmg: 0,
           rangedDmg: 0,
@@ -350,14 +350,14 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: 0,
           activationHealthCost: 0,
-          spellIds: ["00000000-0000-0000-0000-000000000001"],
+          spellIds: ["00000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
     it("updates an item with no linked spells", async () => {
       const updated = {
-        id: "d0000000-0000-0000-0000-000000000002",
+        id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff",
         meleeDmg: 0,
         rangedDmg: 0,
@@ -405,7 +405,7 @@ describe("itemsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.items.update({
-          id: "d0000000-0000-0000-0000-000000000002",
+          id: "d0000000-0000-4000-8000-000000000002",
           name: "Iron Sword",
           meleeDmg: 0,
           rangedDmg: 0,
@@ -415,7 +415,7 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: 0,
           activationHealthCost: 0,
-          spellIds: ["00000000-0000-0000-0000-000000000001"],
+          spellIds: ["00000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
     });
@@ -423,13 +423,11 @@ describe("itemsRouter", () => {
 
   describe("delete", () => {
     it("deletes item and returns success", async () => {
-      mockDeleteFn.mockReturnValue(
-        chainable([{ id: "d0000000-0000-0000-0000-000000000001" }]),
-      );
+      mockDeleteFn.mockReturnValue(chainable([{ id: "d0000000-0000-4000-8000-000000000001" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.delete({
-        id: "d0000000-0000-0000-0000-000000000001",
+        id: "d0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({ success: true });
     });
@@ -439,7 +437,7 @@ describe("itemsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.items.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.items.delete({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });

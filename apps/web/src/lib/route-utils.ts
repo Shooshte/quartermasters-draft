@@ -1,4 +1,4 @@
-import { type UserRole, UserRole as Roles } from "@qd/shared";
+import { UserRole as Roles, type UserRole } from "@qd/shared";
 
 /** Extract the database role string from a Better Auth user object. */
 export function getUserRole(user: Record<string, unknown>): string {

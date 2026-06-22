@@ -1,15 +1,17 @@
+import { db, effects } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, effects } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, listInputSchema } from "./shared";
+import { findDbError, idSchema, listInputSchema } from "./shared";
 
-const effectListInput = listInputSchema.extend({
-  limit: z.number().int().min(1).max(500).default(20),
-  sortBy: z.enum(["name", "timingType", "effectType"]).default("name"),
-  sortDir: z.enum(["asc", "desc"]).default("asc"),
-}).default({});
+const effectListInput = listInputSchema
+  .extend({
+    limit: z.number().int().min(1).max(500).default(20),
+    sortBy: z.enum(["name", "timingType", "effectType"]).default("name"),
+    sortDir: z.enum(["asc", "desc"]).default("asc"),
+  })
+  .prefault({});
 
 const nullableNumber = z.number().nullable().default(null);
 const nullablePositiveInteger = z.number().int().positive().nullable().default(null);
@@ -37,20 +39,37 @@ const effectInputShape = {
 
 const effectInputBaseSchema = z.object(effectInputShape);
 
-const effectInputSchema = effectInputBaseSchema.superRefine((input, ctx) => {
+function validateTimingFields(input: z.infer<typeof effectInputBaseSchema>, ctx: z.RefinementCtx) {
   if (input.timingType === "interval") {
     if (input.intervalMs === null) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["intervalMs"], message: "Interval ms is required for interval timing." });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["intervalMs"],
+        message: "Interval ms is required for interval timing.",
+      });
     }
     if (input.triggerCount === null) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["triggerCount"], message: "Trigger count is required for interval timing." });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["triggerCount"],
+        message: "Trigger count is required for interval timing.",
+      });
     }
   }
 
-  if (input.timingType === "instant" && (input.intervalMs !== null || input.triggerCount !== null)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["timingType"], message: "Instant timing cannot include interval fields." });
+  if (
+    input.timingType === "instant" &&
+    (input.intervalMs !== null || input.triggerCount !== null)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["timingType"],
+      message: "Instant timing cannot include interval fields.",
+    });
   }
-});
+}
+
+const effectInputSchema = effectInputBaseSchema.superRefine(validateTimingFields);
 
 function normalizeEffectInput<T extends z.infer<typeof effectInputSchema>>(input: T): T {
   return {
@@ -94,9 +113,7 @@ export const effectsRouter = router({
     const sortColumn = sortColumnMap[input.sortBy];
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
-      input.sortBy === "name"
-        ? [sortFn(sortColumn)]
-        : [sortFn(sortColumn), asc(effects.name)];
+      input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(effects.name)];
 
     const [items, countResult] = await Promise.all([
       db
@@ -122,56 +139,35 @@ export const effectsRouter = router({
     };
   }),
 
-  get: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const [effect] = await db
-        .select()
-        .from(effects)
-        .where(eq(effects.id, input.id));
+  get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
+    const [effect] = await db.select().from(effects).where(eq(effects.id, input.id));
 
-      if (!effect) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
+    if (!effect) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
+    }
+
+    return effect;
+  }),
+
+  create: gmProcedure.input(effectInputSchema).mutation(async ({ input }) => {
+    try {
+      const [created] = await db.insert(effects).values(normalizeEffectInput(input)).returning();
+      if (!created) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Effect was not created." });
       }
-
-      return effect;
-    }),
-
-  create: gmProcedure
-    .input(effectInputSchema)
-    .mutation(async ({ input }) => {
-      try {
-        const [created] = await db
-          .insert(effects)
-          .values(normalizeEffectInput(input))
-          .returning();
-        if (!created) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Effect was not created." });
-        }
-        return created;
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-        maybeThrowConflict(error);
+      return created;
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
       }
-    }),
+      maybeThrowConflict(error);
+    }
+  }),
 
   update: gmProcedure
-    .input(z.object({ id: z.string().uuid() }).merge(effectInputBaseSchema).superRefine((input, ctx) => {
-      if (input.timingType === "interval") {
-        if (input.intervalMs === null) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["intervalMs"], message: "Interval ms is required for interval timing." });
-        }
-        if (input.triggerCount === null) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["triggerCount"], message: "Trigger count is required for interval timing." });
-        }
-      }
-
-      if (input.timingType === "instant" && (input.intervalMs !== null || input.triggerCount !== null)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["timingType"], message: "Instant timing cannot include interval fields." });
-      }
-    }))
+    .input(
+      z.object({ id: idSchema }).merge(effectInputBaseSchema).superRefine(validateTimingFields),
+    )
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       try {
@@ -194,24 +190,22 @@ export const effectsRouter = router({
       }
     }),
 
-  delete: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      try {
-        const deleted = await db
-          .delete(effects)
-          .where(eq(effects.id, input.id))
-          .returning({ id: effects.id });
-        if (deleted.length === 0) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
-        }
-        return { success: true };
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        maybeThrowDeleteConflict(error);
+  delete: gmProcedure.input(z.object({ id: idSchema })).mutation(async ({ input }) => {
+    try {
+      const deleted = await db
+        .delete(effects)
+        .where(eq(effects.id, input.id))
+        .returning({ id: effects.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
       }
-    }),
+      return { success: true };
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      maybeThrowDeleteConflict(error);
+    }
+  }),
 });

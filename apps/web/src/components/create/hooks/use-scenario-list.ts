@@ -1,13 +1,9 @@
-import { useState, useCallback } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import {
-  type ScenarioSortBy,
-  type ScenarioSortDir,
-  SCENARIOS_PAGE_SIZE,
-} from "../types";
+import { SCENARIOS_PAGE_SIZE, type ScenarioSortBy, type ScenarioSortDir } from "../types";
 
 export function useScenarioList(isActiveTab: boolean, backgroundEnabled: boolean) {
   const [scenarioPage, setScenarioPage] = useState(1);
@@ -15,13 +11,21 @@ export function useScenarioList(isActiveTab: boolean, backgroundEnabled: boolean
   const [scenarioSortDir, setScenarioSortDir] = useState<ScenarioSortDir>("asc");
 
   const scenariosList = useQuery({
-    queryKey: ["scenarioBuilder", "scenarios", "list", scenarioPage, scenarioSortBy, scenarioSortDir],
-    queryFn: () => trpc.scenarioBuilder.scenarios.list.query({
-      page: scenarioPage,
-      limit: SCENARIOS_PAGE_SIZE,
-      sortBy: scenarioSortBy,
-      sortDir: scenarioSortDir,
-    }),
+    queryKey: [
+      "scenarioBuilder",
+      "scenarios",
+      "list",
+      scenarioPage,
+      scenarioSortBy,
+      scenarioSortDir,
+    ],
+    queryFn: () =>
+      trpc.scenarioBuilder.scenarios.list.query({
+        page: scenarioPage,
+        limit: SCENARIOS_PAGE_SIZE,
+        sortBy: scenarioSortBy,
+        sortDir: scenarioSortDir,
+      }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,
   });

@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { SCENARIOS_PAGE_SIZE, createIdleWorkspace } from "../types";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
+import { createIdleWorkspace, SCENARIOS_PAGE_SIZE } from "../types";
 
 interface UseDeleteDialogOptions {
   scenarioWorkspace: WorkspaceState;
@@ -70,7 +70,18 @@ export function useDeleteDialog({
     } catch {
       setDeleteError("Failed to delete scenario. Please try again.");
     }
-  }, [deleteTarget, scenarioWorkspace.entityId, navigate, queryClient, scenarioTotalCount, scenarioPage, setScenarioWorkspace, setPerTabSelection, skipScenarioResetRef, setScenarioPage]);
+  }, [
+    deleteTarget,
+    scenarioWorkspace.entityId,
+    navigate,
+    queryClient,
+    scenarioTotalCount,
+    scenarioPage,
+    setScenarioWorkspace,
+    setPerTabSelection,
+    skipScenarioResetRef,
+    setScenarioPage,
+  ]);
 
   const cancelDeleteScenario = useCallback(() => {
     setDeleteTarget(null);

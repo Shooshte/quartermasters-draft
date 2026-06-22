@@ -17,7 +17,9 @@ test.describe("Unit Workspace", () => {
     await unit.saveCreate();
 
     await expect(gmPage).toHaveURL(/unit_id=/);
-    await expect(gmPage.getByTestId("entity-workspace-header")).toContainText("Unit: Bronze Sentinel");
+    await expect(gmPage.getByTestId("entity-workspace-header")).toContainText(
+      "Unit: Bronze Sentinel",
+    );
   });
 
   test("name is required", async ({ gmPage }) => {

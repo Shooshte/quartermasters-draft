@@ -50,7 +50,9 @@ describe("mana system", () => {
         createScenario("A", {
           melee: [createUnit("High Regen", { stats: createStats({ manaRegen: 100, speed: 1 }) })],
         }),
-        createScenario("B", { tank: [createUnit("Dummy", { stats: createStats({ health: 100, speed: 1 }) })] }),
+        createScenario("B", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 100, speed: 1 }) })],
+        }),
       ]),
       { resolveActionsOnTick: false },
     );
@@ -62,7 +64,9 @@ describe("mana system", () => {
   it("does not regenerate mana for dead units", () => {
     const engine = new BattleEngine(
       createBattleInput([
-        createScenario("A", { melee: [createUnit("Dead", { stats: createStats({ health: 0, manaRegen: 5 }) })] }),
+        createScenario("A", {
+          melee: [createUnit("Dead", { stats: createStats({ health: 0, manaRegen: 5 }) })],
+        }),
         createScenario("B", { tank: [createUnit("Dummy")] }),
       ]),
       { resolveActionsOnTick: false },
@@ -100,7 +104,9 @@ describe("mana system", () => {
             }),
           ],
         }),
-        createScenario("B", { tank: [createUnit("Dummy", { stats: createStats({ health: 200, speed: 1 }) })] }),
+        createScenario("B", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 200, speed: 1 }) })],
+        }),
       ]),
     );
 
@@ -123,9 +129,7 @@ describe("mana system", () => {
                 createItem({
                   name: "Fireball",
                   activationManaCost: 25,
-                  linkedSpells: [
-                    createSpell({ name: "Fireball", targetPolicy: "highest_health" }),
-                  ],
+                  linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })],
                 }),
                 createItem({
                   name: "Ice Shard",
@@ -138,7 +142,9 @@ describe("mana system", () => {
             }),
           ],
         }),
-        createScenario("B", { tank: [createUnit("Dummy", { stats: createStats({ health: 200 }) })] }),
+        createScenario("B", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 200 }) })],
+        }),
       ]),
     );
 

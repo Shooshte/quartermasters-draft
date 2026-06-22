@@ -1,13 +1,13 @@
+import { UserRole } from "@qd/shared";
 import { describe, expect, it } from "vitest";
 import {
-  getDefaultRoute,
   canAccessRoute,
-  isValidNextUrl,
+  getDefaultRoute,
   getRedirectTarget,
   getUserRole,
+  isValidNextUrl,
   mapDbRole,
 } from "../../src/lib/route-utils";
-import { UserRole } from "@qd/shared";
 
 describe("getUserRole", () => {
   it("extracts role from user object with role property", () => {
@@ -115,9 +115,7 @@ describe("getRedirectTarget", () => {
   });
 
   it("rejects external next param with notice", () => {
-    expect(
-      getRedirectTarget(UserRole.GAME_MASTER, "https://example.com"),
-    ).toEqual({
+    expect(getRedirectTarget(UserRole.GAME_MASTER, "https://example.com")).toEqual({
       path: "/create",
       notice: "Invalid return URL",
     });

@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, scenarioSeedData, scenariosRowsSeedData, scenariosRowsUnitsSeedData, spellSeedData, spellsAllowedRowsSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
+import {
+  buildSeedData,
+  effectSeedData,
+  itemSeedData,
+  itemsSpellsSeedData,
+  scenarioSeedData,
+  scenariosRowsSeedData,
+  scenariosRowsUnitsSeedData,
+  spellSeedData,
+  spellsAllowedRowsSeedData,
+  spellsEffectsSeedData,
+  unitSeedData,
+  unitsItemsSeedData,
+} from "./seed-data";
 
 const FAKE_HASH = "$argon2id$v=19$m=65536,t=3,p=4$fakesalt$fakehash";
 
@@ -107,7 +120,9 @@ describe("effectSeedData", () => {
     const damageRecords = effectSeedData.filter((t) => t.effectType === "damage");
     for (const template of damageRecords) {
       expect(
-        template.directSpellDmg !== undefined || template.directMeleeDmg !== undefined || template.directRangedDmg !== undefined,
+        template.directSpellDmg !== undefined ||
+          template.directMeleeDmg !== undefined ||
+          template.directRangedDmg !== undefined,
       ).toBe(true);
     }
   });
@@ -159,7 +174,9 @@ describe("spellSeedData", () => {
   });
 
   it("at least one spell has targetRowCount > 1", () => {
-    expect(spellSeedData.some((s) => s.targetRowCount !== undefined && s.targetRowCount > 1)).toBe(true);
+    expect(spellSeedData.some((s) => s.targetRowCount !== undefined && s.targetRowCount > 1)).toBe(
+      true,
+    );
   });
 
   it("at least one spell has maxTargetsPerRow set to null (whole row)", () => {
@@ -297,7 +314,9 @@ describe("spellsEffectsSeedData", () => {
 
   it("at least one seeded effect remains unlinked from spells", () => {
     const linkedEffectIds = new Set(spellsEffectsSeedData.map((record) => record.effectTemplateId));
-    expect(effectSeedData.some((effect) => effect.id && !linkedEffectIds.has(effect.id))).toBe(true);
+    expect(effectSeedData.some((effect) => effect.id && !linkedEffectIds.has(effect.id))).toBe(
+      true,
+    );
   });
 });
 
@@ -560,9 +579,15 @@ describe("scenariosRowsSeedData", () => {
 
     const scenarioIds = scenarioSeedData.map((s) => s.id);
     for (const scenarioId of scenarioIds) {
+      if (!scenarioId) {
+        throw new Error("scenario seed record should have an id");
+      }
       const rows = rowsByScenario.get(scenarioId);
       expect(rows, `scenario ${scenarioId} should have rows`).toBeDefined();
-      expect(rows!.sort()).toEqual(["melee", "ranged", "support", "tank"]);
+      if (!rows) {
+        throw new Error(`scenario ${scenarioId} should have rows`);
+      }
+      expect(rows.sort()).toEqual(["melee", "ranged", "support", "tank"]);
     }
   });
 });

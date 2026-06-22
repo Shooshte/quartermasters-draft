@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { LibraryPanel } from "~/components/create/library-panel";
 
 function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel>> = {}) {
@@ -30,7 +30,14 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onTabChange: vi.fn(),
     onSelectRecord: vi.fn(),
     onCreateNew: vi.fn(),
-    scenarioListItems: [{ id: "sc-1", name: "Ambush at Dawn", updatedAt: new Date("2025-06-10T00:00:00Z"), createdAt: new Date("2025-05-01T00:00:00Z") }],
+    scenarioListItems: [
+      {
+        id: "sc-1",
+        name: "Ambush at Dawn",
+        updatedAt: new Date("2025-06-10T00:00:00Z"),
+        createdAt: new Date("2025-05-01T00:00:00Z"),
+      },
+    ],
     scenarioPage: 1,
     scenarioTotalPages: 1,
     scenarioSortBy: "name",
@@ -38,7 +45,9 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onScenarioPageChange: vi.fn(),
     onScenarioSortChange: vi.fn(),
     onDeleteScenario: vi.fn(),
-    effectListItems: [{ id: "ef-1", name: "Arcane Damage", timingType: "instant", effectType: "damage" }],
+    effectListItems: [
+      { id: "ef-1", name: "Arcane Damage", timingType: "instant", effectType: "damage" },
+    ],
     effectPage: 1,
     effectTotalPages: 1,
     effectSortBy: "name",
@@ -46,7 +55,14 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onEffectPageChange: vi.fn(),
     onEffectSortChange: vi.fn(),
     onDeleteEffect: vi.fn(),
-    spellListItems: [{ id: "sp-1", name: "Battle Cry", targetPolicy: "random", updatedAt: new Date("2025-06-10T00:00:00Z") }],
+    spellListItems: [
+      {
+        id: "sp-1",
+        name: "Battle Cry",
+        targetPolicy: "random",
+        updatedAt: new Date("2025-06-10T00:00:00Z"),
+      },
+    ],
     spellPage: 1,
     spellTotalPages: 1,
     spellSortBy: "name",
@@ -54,7 +70,9 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onSpellPageChange: vi.fn(),
     onSpellSortChange: vi.fn(),
     onDeleteSpell: vi.fn(),
-    itemListItems: [{ id: "it-1", name: "Iron Sword", updatedAt: new Date("2025-06-10T00:00:00Z") }],
+    itemListItems: [
+      { id: "it-1", name: "Iron Sword", updatedAt: new Date("2025-06-10T00:00:00Z") },
+    ],
     itemPage: 1,
     itemTotalPages: 1,
     itemSortBy: "name",

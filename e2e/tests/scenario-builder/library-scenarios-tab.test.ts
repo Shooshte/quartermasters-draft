@@ -1,17 +1,17 @@
-import { test, expect } from "../db-reset.fixture";
+import { expect, test } from "../db-reset.fixture";
 import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { SCENARIOS_TAB } from "../pages/library-tab-configs";
 
-test.beforeEach(async ({ resetDb }) => { await resetDb(); });
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Display", () => {
-  test("scenarios are displayed with name and last update date", async ({
-    gmPage,
-  }) => {
+  test("scenarios are displayed with name and last update date", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 
@@ -26,9 +26,7 @@ test.describe("Scenarios Library Tab — Display", () => {
     await expect(castle.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
-  test("empty state is shown when no scenarios exist", async ({
-    gmPage,
-  }) => {
+  test("empty state is shown when no scenarios exist", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     const scenarioIds = await listEntityIdsViaApi(gmPage.request, "scenarios");
     for (const id of scenarioIds) {
@@ -86,17 +84,13 @@ test.describe("Scenarios Library Tab — Pagination", () => {
     await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
   });
 
-  test("Previous page control is disabled on the first page", async ({
-    gmPage,
-  }) => {
+  test("Previous page control is disabled on the first page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
     await expect(lib.prevPageButton).toBeDisabled();
   });
 
-  test("Next page control is disabled on the last page", async ({
-    gmPage,
-  }) => {
+  test("Next page control is disabled on the last page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 
@@ -169,24 +163,16 @@ test.describe("Scenarios Library Tab — Sorting", () => {
     await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Ice Cavern");
   });
 
-  test("clicking the active sort column toggles direction", async ({
-    gmPage,
-  }) => {
+  test("clicking the active sort column toggles direction", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 
     // Default: Name ascending — Ambush at Dawn first
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Ambush at Dawn",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Ambush at Dawn");
 
     // Click Name to toggle to descending
     await lib.clickSortColumn("Name");
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Zorath Keep",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zorath Keep");
   });
 });
 
@@ -213,9 +199,7 @@ test.describe("Scenarios Library Tab — Selection", () => {
 // ─── Unsaved Changes ────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Unsaved Changes", () => {
-  test("warn before opening a different scenario with unsaved changes", async ({
-    gmPage,
-  }) => {
+  test("warn before opening a different scenario with unsaved changes", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
     await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
@@ -236,9 +220,7 @@ test.describe("Scenarios Library Tab — Unsaved Changes", () => {
     await expect(lib.nameInput).toHaveValue("Ambush at Dawn Updated");
   });
 
-  test("discard unsaved changes and open a different scenario", async ({
-    gmPage,
-  }) => {
+  test("discard unsaved changes and open a different scenario", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
     await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
@@ -257,9 +239,7 @@ test.describe("Scenarios Library Tab — Unsaved Changes", () => {
 // ─── Deletion ────────────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Deletion", () => {
-  test("delete a scenario that is not currently open", async ({
-    gmPage,
-  }) => {
+  test("delete a scenario that is not currently open", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
     await expect(lib.getRow("Castle Siege")).toBeVisible();
@@ -311,9 +291,7 @@ test.describe("Scenarios Library Tab — Deletion", () => {
     expect(gmPage.url()).not.toContain("scenario_id");
   });
 
-  test("deleting the last scenario on a page returns to the previous page", async ({
-    gmPage,
-  }) => {
+  test("deleting the last scenario on a page returns to the previous page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
     await lib.navigateToTab();
 

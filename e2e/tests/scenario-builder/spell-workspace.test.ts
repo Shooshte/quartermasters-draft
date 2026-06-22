@@ -2,7 +2,7 @@
 // Cross-reference: effect-picker and deletion scenarios for this feature are
 // covered in e2e/tests/scenario-builder/library-spells-tab.test.ts.
 import { expect, test } from "../db-reset.fixture";
-import { FIREBALL_ID, BATTLE_CRY_ID } from "../helpers/seed-constants";
+import { BATTLE_CRY_ID, FIREBALL_ID } from "../helpers/seed-constants";
 import { SpellWorkspacePage } from "../pages/spell-workspace.page";
 
 test.beforeEach(async ({ resetDb }) => {
@@ -226,7 +226,10 @@ test.describe("Spell Workspace — Target Scope", () => {
 
     // No row type restriction pills should be active
     for (const rowType of ["melee", "tank", "ranged", "support"]) {
-      await expect(gmPage.getByTestId(`spell-allowed-row-${rowType}`)).not.toHaveAttribute("aria-pressed", "true");
+      await expect(gmPage.getByTestId(`spell-allowed-row-${rowType}`)).not.toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     }
   });
 
@@ -294,10 +297,22 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("spell-allowed-row-melee")).toHaveAttribute("aria-pressed", "true");
-    await expect(gmPage.getByTestId("spell-allowed-row-tank")).toHaveAttribute("aria-pressed", "true");
-    await expect(gmPage.getByTestId("spell-allowed-row-ranged")).not.toHaveAttribute("aria-pressed", "true");
-    await expect(gmPage.getByTestId("spell-allowed-row-support")).not.toHaveAttribute("aria-pressed", "true");
+    await expect(gmPage.getByTestId("spell-allowed-row-melee")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(gmPage.getByTestId("spell-allowed-row-tank")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(gmPage.getByTestId("spell-allowed-row-ranged")).not.toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(gmPage.getByTestId("spell-allowed-row-support")).not.toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("create a spell targeting multiple rows", async ({ gmPage }) => {

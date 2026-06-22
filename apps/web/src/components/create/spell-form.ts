@@ -37,7 +37,17 @@ interface SpellRecord {
   allowedRowTypes?: RowType[] | null;
 }
 
-export type SpellFieldErrors = Partial<Record<"name" | "targetPolicy" | "effectIds" | "targetRowCount" | "maxTargetsPerRow" | "targetOnlyAdjacent", string>>;
+export type SpellFieldErrors = Partial<
+  Record<
+    | "name"
+    | "targetPolicy"
+    | "effectIds"
+    | "targetRowCount"
+    | "maxTargetsPerRow"
+    | "targetOnlyAdjacent",
+    string
+  >
+>;
 
 export function createDefaultSpellFormValues(): SpellFormValues {
   return {
@@ -77,7 +87,11 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
 
   if (values.targetOnlyAdjacent && values.maxTargetsPerRow === null) {
     errors.targetOnlyAdjacent = "Adjacent targeting requires a limited number of targets per row";
-  } else if (values.targetOnlyAdjacent && values.maxTargetsPerRow !== null && values.maxTargetsPerRow < 2) {
+  } else if (
+    values.targetOnlyAdjacent &&
+    values.maxTargetsPerRow !== null &&
+    values.maxTargetsPerRow < 2
+  ) {
     errors.targetOnlyAdjacent = "Adjacent targeting requires at least 2 targets per row";
   }
 

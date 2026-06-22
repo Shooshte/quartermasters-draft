@@ -111,12 +111,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -271,9 +267,7 @@
         "effects_name_unique": {
           "name": "effects_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -396,9 +390,7 @@
         "items_name_unique": {
           "name": "items_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -466,12 +458,8 @@
           "name": "items_spells_item_id_items_id_fk",
           "tableFrom": "items_spells",
           "tableTo": "items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -479,12 +467,8 @@
           "name": "items_spells_spell_id_spells_id_fk",
           "tableFrom": "items_spells",
           "tableTo": "spells",
-          "columnsFrom": [
-            "spell_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["spell_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -494,10 +478,7 @@
         "items_spells_item_id_spell_id_unique": {
           "name": "items_spells_item_id_spell_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "item_id",
-            "spell_id"
-          ]
+          "columns": ["item_id", "spell_id"]
         }
       },
       "policies": {},
@@ -543,9 +524,7 @@
         "scenarios_name_unique": {
           "name": "scenarios_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -613,12 +592,8 @@
           "name": "scenarios_rows_scenario_id_scenarios_id_fk",
           "tableFrom": "scenarios_rows",
           "tableTo": "scenarios",
-          "columnsFrom": [
-            "scenario_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scenario_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -628,10 +603,7 @@
         "scenarios_rows_scenario_id_row_type_unique": {
           "name": "scenarios_rows_scenario_id_row_type_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "scenario_id",
-            "row_type"
-          ]
+          "columns": ["scenario_id", "row_type"]
         }
       },
       "policies": {},
@@ -719,12 +691,8 @@
           "name": "scenarios_rows_units_row_id_scenarios_rows_id_fk",
           "tableFrom": "scenarios_rows_units",
           "tableTo": "scenarios_rows",
-          "columnsFrom": [
-            "row_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["row_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -732,12 +700,8 @@
           "name": "scenarios_rows_units_unit_id_units_id_fk",
           "tableFrom": "scenarios_rows_units",
           "tableTo": "units",
-          "columnsFrom": [
-            "unit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["unit_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -747,10 +711,7 @@
         "scenarios_rows_units_row_id_slot_unique": {
           "name": "scenarios_rows_units_row_id_slot_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "row_id",
-            "slot"
-          ]
+          "columns": ["row_id", "slot"]
         }
       },
       "policies": {},
@@ -854,12 +815,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -869,9 +826,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -930,9 +885,7 @@
         "spells_name_unique": {
           "name": "spells_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -1006,12 +959,8 @@
           "name": "spells_effects_spell_id_spells_id_fk",
           "tableFrom": "spells_effects",
           "tableTo": "spells",
-          "columnsFrom": [
-            "spell_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["spell_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1019,12 +968,8 @@
           "name": "spells_effects_effect_template_id_effects_id_fk",
           "tableFrom": "spells_effects",
           "tableTo": "effects",
-          "columnsFrom": [
-            "effect_template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["effect_template_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1034,10 +979,7 @@
         "spells_effects_spell_id_sequence_order_unique": {
           "name": "spells_effects_spell_id_sequence_order_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "spell_id",
-            "sequence_order"
-          ]
+          "columns": ["spell_id", "sequence_order"]
         }
       },
       "policies": {},
@@ -1144,9 +1086,7 @@
         "units_name_unique": {
           "name": "units_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -1221,12 +1161,8 @@
           "name": "units_items_item_id_items_id_fk",
           "tableFrom": "units_items",
           "tableTo": "items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1234,12 +1170,8 @@
           "name": "units_items_unit_id_units_id_fk",
           "tableFrom": "units_items",
           "tableTo": "units",
-          "columnsFrom": [
-            "unit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["unit_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1249,10 +1181,7 @@
         "units_items_unit_id_priority_unique": {
           "name": "units_items_unit_id_priority_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "unit_id",
-            "priority"
-          ]
+          "columns": ["unit_id", "priority"]
         }
       },
       "policies": {},
@@ -1345,9 +1274,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1426,48 +1353,27 @@
     "public.effect_type": {
       "name": "effect_type",
       "schema": "public",
-      "values": [
-        "buff",
-        "debuff",
-        "healing",
-        "damage"
-      ]
+      "values": ["buff", "debuff", "healing", "damage"]
     },
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "gm",
-        "player"
-      ]
+      "values": ["gm", "player"]
     },
     "public.row_type": {
       "name": "row_type",
       "schema": "public",
-      "values": [
-        "support",
-        "ranged",
-        "melee",
-        "tank"
-      ]
+      "values": ["support", "ranged", "melee", "tank"]
     },
     "public.target_policy": {
       "name": "target_policy",
       "schema": "public",
-      "values": [
-        "highest_health",
-        "lowest_health",
-        "highest_damage",
-        "random"
-      ]
+      "values": ["highest_health", "lowest_health", "highest_damage", "random"]
     },
     "public.timing_type": {
       "name": "timing_type",
       "schema": "public",
-      "values": [
-        "instant",
-        "interval"
-      ]
+      "values": ["instant", "interval"]
     }
   },
   "schemas": {},

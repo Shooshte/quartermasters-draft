@@ -1,6 +1,6 @@
+import type { AppRouter } from "@qd/api";
 import { createTRPCClient, httpBatchStreamLink } from "@trpc/client";
 import superjson from "superjson";
-import type { AppRouter } from "@qd/api";
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return "";

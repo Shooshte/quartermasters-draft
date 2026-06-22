@@ -1,8 +1,7 @@
-import { test, expect } from "../db-reset.fixture";
-import { test as base } from "../worker-base.fixture";
-
+import { expect, test } from "../db-reset.fixture";
 import { TRPC_BASE } from "../helpers/seed-constants";
 import { parseTrpcResponse } from "../helpers/trpc-api";
+import { test as base } from "../worker-base.fixture";
 
 test.describe("Scenario Builder Read API — GM access", () => {
   test.beforeEach(async ({ resetDb }) => {
@@ -30,7 +29,9 @@ test.describe("Scenario Builder Read API — GM access", () => {
   });
 
   test("GM can get effect by ID (Barbarian Roar)", async ({ gmPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "a0000000-0000-0000-0000-000000000001" } }));
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "a0000000-0000-0000-0000-000000000001" } }),
+    );
     const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
@@ -53,7 +54,9 @@ test.describe("Scenario Builder Read API — GM access", () => {
   });
 
   test("GM can get spell with effectIds (Fireball)", async ({ gmPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "b0000000-0000-0000-0000-000000000001" } }));
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "b0000000-0000-0000-0000-000000000001" } }),
+    );
     const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.spells.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
@@ -79,7 +82,9 @@ test.describe("Scenario Builder Read API — GM access", () => {
   });
 
   test("GM can get item with spellIds (Oak Staff)", async ({ gmPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "d0000000-0000-0000-0000-000000000002" } }));
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "d0000000-0000-0000-0000-000000000002" } }),
+    );
     const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.items.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
@@ -101,7 +106,9 @@ test.describe("Scenario Builder Read API — GM access", () => {
   });
 
   test("GM can get unit with itemIds (Barbarian)", async ({ gmPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "f0000000-0000-0000-0000-000000000001" } }));
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "f0000000-0000-0000-0000-000000000001" } }),
+    );
     const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.units.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
@@ -125,8 +132,12 @@ test.describe("Scenario Builder Read API — GM access", () => {
   });
 
   test("GM can get scenario with rows and assignments", async ({ gmPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "a2000000-0000-0000-0000-000000000001" } }));
-    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`);
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "a2000000-0000-0000-0000-000000000001" } }),
+    );
+    const res = await gmPage.request.get(
+      `${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`,
+    );
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Ambush at Dawn");
@@ -160,7 +171,9 @@ test.describe("Scenario Builder Read API — GM access", () => {
   // ── NOT_FOUND ────────────────────────────────────────────────────
 
   test("Nonexistent UUID returns NOT_FOUND", async ({ gmPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "00000000-0000-0000-0000-000000000099" } }));
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "00000000-0000-0000-0000-000000000099" } }),
+    );
     const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.effects.get?input=${input}`);
     expect(res.ok()).toBe(false);
     const body = await res.json();
@@ -183,8 +196,12 @@ test.describe("Scenario Builder Read API — Player FORBIDDEN", () => {
   });
 
   test("Player gets FORBIDDEN on scenarios.get", async ({ playerPage }) => {
-    const input = encodeURIComponent(JSON.stringify({ json: { id: "a2000000-0000-0000-0000-000000000001" } }));
-    const res = await playerPage.request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`);
+    const input = encodeURIComponent(
+      JSON.stringify({ json: { id: "a2000000-0000-0000-0000-000000000001" } }),
+    );
+    const res = await playerPage.request.get(
+      `${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`,
+    );
     expect(res.ok()).toBe(false);
     const body = await res.json();
     expect(body.error.json.data.code).toBe("FORBIDDEN");

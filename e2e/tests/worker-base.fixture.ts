@@ -19,7 +19,7 @@ export const test = base.extend<
 >({
   // Worker-scoped fixture that computes the per-worker base URL
   workerBaseURL: [
-    async ({}, use, workerInfo) => {
+    async ({ browserName: _browserName }, use, workerInfo) => {
       try {
         await use(`http://localhost:${BASE_PORT + workerInfo.parallelIndex}`);
       } finally {

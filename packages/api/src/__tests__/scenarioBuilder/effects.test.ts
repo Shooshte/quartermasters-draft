@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
 import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
@@ -6,16 +6,19 @@ const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
 const mockInsertFn = vi.fn();
 const mockUpdateFn = vi.fn();
-const mockDb = { select: mockSelect, delete: mockDeleteFn, insert: mockInsertFn, update: mockUpdateFn };
+const mockDb = {
+  select: mockSelect,
+  delete: mockDeleteFn,
+  insert: mockInsertFn,
+  update: mockUpdateFn,
+};
 
 vi.mock("@qd/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@qd/db")>();
   return { ...actual, db: mockDb };
 });
 
-const { effectsRouter } = await import(
-  "../../routers/scenarioBuilder/effects"
-);
+const { effectsRouter } = await import("../../routers/scenarioBuilder/effects");
 
 const createCaller = createCallerFactory(router({ effects: effectsRouter }));
 
@@ -29,8 +32,20 @@ describe("effectsRouter", () => {
 
     it("returns effects with totalCount and default limit=20", async () => {
       const mockEffects = [
-        { id: "1", name: "Alpha", timingType: "instant", effectType: "buff", updatedAt: new Date() },
-        { id: "2", name: "Beta", timingType: "interval", effectType: "damage", updatedAt: new Date() },
+        {
+          id: "1",
+          name: "Alpha",
+          timingType: "instant",
+          effectType: "buff",
+          updatedAt: new Date(),
+        },
+        {
+          id: "2",
+          name: "Beta",
+          timingType: "interval",
+          effectType: "damage",
+          updatedAt: new Date(),
+        },
       ];
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -62,7 +77,13 @@ describe("effectsRouter", () => {
 
     it("respects custom page and limit", async () => {
       const mockEffects = [
-        { id: "3", name: "Gamma", timingType: "instant", effectType: "healing", updatedAt: new Date() },
+        {
+          id: "3",
+          name: "Gamma",
+          timingType: "instant",
+          effectType: "healing",
+          updatedAt: new Date(),
+        },
       ];
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -99,12 +120,12 @@ describe("effectsRouter", () => {
 
   describe("get", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).effects.get({ id: "a0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).effects.get({ id: "a0000000-0000-4000-8000-000000000001" }),
     );
 
     it("returns effect when found", async () => {
       const mockEffect = {
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
         name: "Barbarian Roar",
         effectType: "buff",
         timingType: "instant",
@@ -113,7 +134,7 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.get({
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual(mockEffect);
     });
@@ -123,24 +144,22 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.effects.get({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.effects.get({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
 
   describe("delete", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).effects.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).effects.delete({ id: "a0000000-0000-4000-8000-000000000001" }),
     );
 
     it("deletes effect and returns success", async () => {
-      mockDeleteFn.mockReturnValue(
-        chainable([{ id: "a0000000-0000-0000-0000-000000000001" }]),
-      );
+      mockDeleteFn.mockReturnValue(chainable([{ id: "a0000000-0000-4000-8000-000000000001" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.delete({
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({ success: true });
     });
@@ -153,7 +172,7 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.effects.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
+        caller.effects.delete({ id: "a0000000-0000-4000-8000-000000000001" }),
       ).rejects.toMatchObject({
         code: "CONFLICT",
         message: "Cannot delete effect while it is linked to one or more spells.",
@@ -165,18 +184,33 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.effects.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.effects.delete({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
 
   describe("create", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).effects.create({ name: "New Effect", timingType: "instant", effectType: "buff" }),
+      createCaller(ctx).effects.create({
+        name: "New Effect",
+        timingType: "instant",
+        effectType: "buff",
+      }),
     );
 
     it("creates a valid instant effect", async () => {
-      mockInsertFn.mockReturnValue(chainable([{ id: "e1", name: "New Effect", timingType: "instant", effectType: "buff", intervalMs: null, triggerCount: null }]));
+      mockInsertFn.mockReturnValue(
+        chainable([
+          {
+            id: "e1",
+            name: "New Effect",
+            timingType: "instant",
+            effectType: "buff",
+            intervalMs: null,
+            triggerCount: null,
+          },
+        ]),
+      );
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.create({
@@ -189,7 +223,18 @@ describe("effectsRouter", () => {
     });
 
     it("creates a valid interval effect", async () => {
-      mockInsertFn.mockReturnValue(chainable([{ id: "e2", name: "Rage", timingType: "interval", effectType: "buff", intervalMs: 1000, triggerCount: 3 }]));
+      mockInsertFn.mockReturnValue(
+        chainable([
+          {
+            id: "e2",
+            name: "Rage",
+            timingType: "interval",
+            effectType: "buff",
+            intervalMs: 1000,
+            triggerCount: 3,
+          },
+        ]),
+      );
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.create({
@@ -200,7 +245,12 @@ describe("effectsRouter", () => {
         triggerCount: 3,
       });
 
-      expect(result).toMatchObject({ id: "e2", timingType: "interval", intervalMs: 1000, triggerCount: 3 });
+      expect(result).toMatchObject({
+        id: "e2",
+        timingType: "interval",
+        intervalMs: 1000,
+        triggerCount: 3,
+      });
     });
 
     it("rejects missing interval fields for interval timing", async () => {
@@ -227,7 +277,7 @@ describe("effectsRouter", () => {
   describe("update", () => {
     describeAuthGuard((ctx) =>
       createCaller(ctx).effects.update({
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
         name: "New Effect",
         timingType: "instant",
         effectType: "buff",
@@ -235,11 +285,20 @@ describe("effectsRouter", () => {
     );
 
     it("updates an existing effect", async () => {
-      mockUpdateFn.mockReturnValue(chainable([{ id: "a0000000-0000-0000-0000-000000000001", name: "Updated", timingType: "instant", effectType: "buff" }]));
+      mockUpdateFn.mockReturnValue(
+        chainable([
+          {
+            id: "a0000000-0000-4000-8000-000000000001",
+            name: "Updated",
+            timingType: "instant",
+            effectType: "buff",
+          },
+        ]),
+      );
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.update({
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
         name: "Updated",
         timingType: "instant",
         effectType: "buff",
@@ -254,7 +313,7 @@ describe("effectsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.effects.update({
-          id: "00000000-0000-0000-0000-000000000099",
+          id: "00000000-0000-4000-8000-000000000099",
           name: "Updated",
           timingType: "instant",
           effectType: "buff",
@@ -272,7 +331,7 @@ describe("effectsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.effects.update({
-          id: "a0000000-0000-0000-0000-000000000001",
+          id: "a0000000-0000-4000-8000-000000000001",
           name: "Duplicate",
           timingType: "instant",
           effectType: "buff",

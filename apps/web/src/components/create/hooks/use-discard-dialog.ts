@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { PendingAction } from "../use-create-page-state";
 
 export function useDiscardDialog() {
@@ -10,13 +10,16 @@ export function useDiscardDialog() {
     setIsDialogOpen(true);
   }, []);
 
-  const confirmDiscard = useCallback((onConfirm: (action: PendingAction) => void) => {
-    setIsDialogOpen(false);
-    if (pendingAction) {
-      onConfirm(pendingAction);
-      setPendingAction(null);
-    }
-  }, [pendingAction]);
+  const confirmDiscard = useCallback(
+    (onConfirm: (action: PendingAction) => void) => {
+      setIsDialogOpen(false);
+      if (pendingAction) {
+        onConfirm(pendingAction);
+        setPendingAction(null);
+      }
+    },
+    [pendingAction],
+  );
 
   const cancelDiscard = useCallback(() => {
     setIsDialogOpen(false);

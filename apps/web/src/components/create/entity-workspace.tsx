@@ -2,13 +2,13 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
 import type { EffectFormValues } from "./effect-form";
-import type { SpellFormValues, EffectOption } from "./spell-form";
-import type { ItemFormValues, SpellOption } from "./item-form";
-import type { ItemOption, UnitFormValues } from "./unit-form";
-import type { WorkspaceState } from "./types";
 import { EffectWorkspaceForm } from "./effect-workspace-form";
-import { SpellWorkspaceForm } from "./spell-workspace-form";
+import type { ItemFormValues, SpellOption } from "./item-form";
 import { ItemWorkspaceForm } from "./item-workspace-form";
+import type { EffectOption, SpellFormValues } from "./spell-form";
+import { SpellWorkspaceForm } from "./spell-workspace-form";
+import type { WorkspaceState } from "./types";
+import type { ItemOption, UnitFormValues } from "./unit-form";
 import { UnitWorkspaceForm } from "./unit-workspace-form";
 
 interface EntityWorkspaceProps {
@@ -43,7 +43,9 @@ export function EntityWorkspace({
       >
         {mode === "idle" && "Entity"}
         {mode === "loading" && !workspace.data && "Entity"}
-        {mode === "loading" && workspace.data && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
+        {mode === "loading" &&
+          workspace.data &&
+          `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
         {mode === "not-found" && "Entity"}
         {mode === "create" && `New ${capitalize(entityType ?? "")}`}
         {mode === "edit" && `${capitalize(entityType ?? "")}: ${formValues.name ?? ""}`}
@@ -68,7 +70,10 @@ export function EntityWorkspace({
         )}
 
         {(mode === "create" || mode === "edit" || isTransitioning) && (
-          <div className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`} data-testid="entity-form">
+          <div
+            className={`flex flex-col gap-4 ${isTransitioning ? "opacity-60 pointer-events-none" : ""}`}
+            data-testid="entity-form"
+          >
             {entityType === "effect" ? (
               <EffectWorkspaceForm
                 mode={mode}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { EntityPickerPopover, type EntityPickerOption } from "./entity-picker-popover";
+import { type EntityPickerOption, EntityPickerPopover } from "./entity-picker-popover";
 import type { ScenarioRowType } from "./scenario-form";
 
 const ROW_CONFIG: Record<ScenarioRowType, { label: string; icon: string }> = {
@@ -96,7 +96,9 @@ export function ScenarioRowEditor({
                   type="button"
                   data-testid={`scenario-row-${rowType}-remove-${slot}`}
                   className="sw-slot-btn remove"
-                  onClick={() => onChange(unitIds.filter((_, currentIndex) => currentIndex !== index))}
+                  onClick={() =>
+                    onChange(unitIds.filter((_, currentIndex) => currentIndex !== index))
+                  }
                 >
                   ×
                 </button>

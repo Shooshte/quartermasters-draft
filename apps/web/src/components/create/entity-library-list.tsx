@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Table,
@@ -147,7 +147,9 @@ export function EntityLibraryList<TItem extends { id: string }, TSort extends st
                   key={item.id}
                   aria-label={rowLabel}
                   aria-selected={item.id === selectedId}
-                  className={item.id === selectedId ? "border-l-3 border-primary bg-accent font-medium" : ""}
+                  className={
+                    item.id === selectedId ? "border-l-3 border-primary bg-accent font-medium" : ""
+                  }
                 >
                   {columns.map((column) => (
                     <TableCell key={column.key} className={column.className}>

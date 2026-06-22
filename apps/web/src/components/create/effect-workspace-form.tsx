@@ -1,22 +1,21 @@
-import { Button } from "~/components/ui/button";
 import {
+  COMPACT_LABELS,
+  getEffectColorClass,
+  MODIFIER_GROUPS,
+  TIMING_FIELDS,
+} from "./effect-colors";
+import {
+  type EffectFormValues,
   effectRecordToFormValues,
   hasEffectFormErrors,
   isIntervalFieldDisabled,
   validateEffectForm,
-  type EffectFormValues,
 } from "./effect-form";
-import {
-  getEffectColorClass,
-  COMPACT_LABELS,
-  MODIFIER_GROUPS,
-  TIMING_FIELDS,
-} from "./effect-colors";
-import { WorkspaceNumericField } from "./workspace-numeric-field";
-import { WorkspaceSelectChip } from "./workspace-select-chip";
 import { WorkspaceNameField } from "./workspace-name-field";
+import { WorkspaceNumericField } from "./workspace-numeric-field";
 import { WorkspaceSaveFooter } from "./workspace-save-footer";
 import { WorkspaceSection } from "./workspace-section";
+import { WorkspaceSelectChip } from "./workspace-select-chip";
 
 interface EffectWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
@@ -72,10 +71,7 @@ export function EffectWorkspaceForm({
           selectTestId="effect-timing-type-select"
           className="ws-chip ws-chip-timing"
           value={normalizedFormValues.timingType}
-          options={[
-            { value: "instant" },
-            { value: "interval" },
-          ]}
+          options={[{ value: "instant" }, { value: "interval" }]}
           onChange={(value) => onFieldChange("timingType", value)}
         />
       </div>

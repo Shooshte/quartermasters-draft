@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React from "react";
+import { act, renderHook } from "@testing-library/react";
+import type React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreatePageNavigate } from "~/components/create/types";
 
 const { mockQuery, mockListQuery } = vi.hoisted(() => ({
@@ -36,9 +36,7 @@ function createWrapper() {
     },
   });
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };
 }
 
@@ -53,10 +51,9 @@ describe("URL parameter sync", () => {
   });
 
   it("setActiveTab calls navigate with updated tab", () => {
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Scenarios" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Scenarios" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.setActiveTab("Spells");
@@ -76,10 +73,9 @@ describe("URL parameter sync", () => {
   it("selectRecord for entity calls navigate with entity_id", async () => {
     mockQuery.mockResolvedValueOnce({ id: "e1", name: "Test Effect" });
 
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Effects" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Effects" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.selectRecord("Effects", "e1");
@@ -98,10 +94,9 @@ describe("URL parameter sync", () => {
   it("selectRecord for scenario calls navigate with scenario_id", async () => {
     mockQuery.mockResolvedValueOnce({ id: "s1", name: "Test Scenario" });
 
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Scenarios" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Scenarios" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.selectRecord("Scenarios", "s1");
@@ -120,10 +115,9 @@ describe("URL parameter sync", () => {
   it("selectRecord for item calls navigate with item_id", async () => {
     mockQuery.mockResolvedValueOnce({ id: "i1", name: "Test Item" });
 
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Items" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.selectRecord("Items", "i1");
@@ -142,10 +136,9 @@ describe("URL parameter sync", () => {
   it("selectRecord for unit calls navigate with unit_id", async () => {
     mockQuery.mockResolvedValueOnce({ id: "u1", name: "Test Unit" });
 
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Units" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     await act(async () => {
       result.current.selectRecord("Units", "u1");
@@ -162,10 +155,9 @@ describe("URL parameter sync", () => {
   });
 
   it("createNew for item removes item_id from URL", () => {
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Items" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.createNew("Items");
@@ -183,10 +175,9 @@ describe("URL parameter sync", () => {
   });
 
   it("createNew for spell removes spell_id from URL", () => {
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Spells" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.createNew("Spells");
@@ -204,10 +195,9 @@ describe("URL parameter sync", () => {
   });
 
   it("createNew for unit removes unit_id from URL", () => {
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Units" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.createNew("Units");
@@ -225,10 +215,9 @@ describe("URL parameter sync", () => {
   });
 
   it("createNew for scenario removes scenario_id from URL", () => {
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Scenarios" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Scenarios" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.createNew("Scenarios");
@@ -246,10 +235,9 @@ describe("URL parameter sync", () => {
   });
 
   it("tab change preserves existing entity_id and scenario_id", () => {
-    const { result } = renderHook(
-      () => useCreatePageState({ tab: "Scenarios" }, navigate),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ tab: "Scenarios" }, navigate), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.setActiveTab("Items");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateBattleInput } from "./validation";
 import { createBattleInput, createScenario, createStats, createUnit } from "./test-helpers";
+import { validateBattleInput } from "./validation";
 
 describe("battle input validation", () => {
   it("throws when seed is NaN", () => {
@@ -13,17 +13,13 @@ describe("battle input validation", () => {
 
   it("throws when seed is Infinity", () => {
     expect(() =>
-      validateBattleInput(
-        createBattleInput([createScenario("A"), createScenario("B")], Infinity),
-      ),
+      validateBattleInput(createBattleInput([createScenario("A"), createScenario("B")], Infinity)),
     ).toThrow(/finite number/i);
   });
 
   it("throws when seed is -Infinity", () => {
     expect(() =>
-      validateBattleInput(
-        createBattleInput([createScenario("A"), createScenario("B")], -Infinity),
-      ),
+      validateBattleInput(createBattleInput([createScenario("A"), createScenario("B")], -Infinity)),
     ).toThrow(/finite number/i);
   });
 

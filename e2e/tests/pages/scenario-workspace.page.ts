@@ -58,7 +58,9 @@ export class ScenarioWorkspacePage {
     const unitId = UNIT_IDS[unitName];
     await this.page.getByTestId(`scenario-row-${rowType}-picker`).click();
     await this.page.getByTestId(`scenario-row-${rowType}-picker-search`).fill(search);
-    await expect(this.page.getByTestId(`scenario-row-${rowType}-picker-option-${unitId}`)).toBeVisible();
+    await expect(
+      this.page.getByTestId(`scenario-row-${rowType}-picker-option-${unitId}`),
+    ).toBeVisible();
     await this.page.getByTestId(`scenario-row-${rowType}-picker-option-${unitId}`).click();
     await this.page.getByTestId(`scenario-row-${rowType}-picker-add`).click();
   }
@@ -74,24 +76,34 @@ export class ScenarioWorkspacePage {
   // ─── Save ───────────────────────────────────────────────────────────────────
 
   async saveCreate() {
-    await saveEntityAndWait(this.page, "scenarios", "create", { saveButtonTestId: "scenario-save-button" });
+    await saveEntityAndWait(this.page, "scenarios", "create", {
+      saveButtonTestId: "scenario-save-button",
+    });
     await expect(this.page).toHaveURL(/scenario_id=/);
   }
 
   async saveUpdate() {
-    await saveEntityAndWait(this.page, "scenarios", "update", { saveButtonTestId: "scenario-save-button" });
+    await saveEntityAndWait(this.page, "scenarios", "update", {
+      saveButtonTestId: "scenario-save-button",
+    });
   }
 
   // ─── Assertions ─────────────────────────────────────────────────────────────
 
   async expectRowEmpty(rowType: RowType) {
-    await expect(this.page.locator(`[data-testid^="scenario-row-${rowType}-slot-"]`)).toHaveCount(0);
-    await expect(this.page.getByTestId(`scenario-row-${rowType}`)).toContainText("No units assigned");
+    await expect(this.page.locator(`[data-testid^="scenario-row-${rowType}-slot-"]`)).toHaveCount(
+      0,
+    );
+    await expect(this.page.getByTestId(`scenario-row-${rowType}`)).toContainText(
+      "No units assigned",
+    );
   }
 
   async expectRowUnits(rowType: RowType, unitNames: string[]) {
     for (const [index, unitName] of unitNames.entries()) {
-      await expect(this.page.getByTestId(`scenario-row-${rowType}-slot-${index + 1}`)).toContainText(unitName);
+      await expect(
+        this.page.getByTestId(`scenario-row-${rowType}-slot-${index + 1}`),
+      ).toContainText(unitName);
     }
   }
 }

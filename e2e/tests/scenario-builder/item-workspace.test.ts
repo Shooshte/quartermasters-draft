@@ -17,7 +17,9 @@ test.describe("Item Workspace", () => {
     await item.saveCreate();
 
     await expect(gmPage).toHaveURL(/item_id=/);
-    await expect(gmPage.getByTestId("entity-workspace-header")).toContainText("Item: Bronze Buckler");
+    await expect(gmPage.getByTestId("entity-workspace-header")).toContainText(
+      "Item: Bronze Buckler",
+    );
   });
 
   test("name is required", async ({ gmPage }) => {

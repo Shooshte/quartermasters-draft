@@ -1,6 +1,6 @@
-import { test as base, expect } from "../worker-base.fixture";
 import type { Page } from "@playwright/test";
 import { LoginPage } from "../pages/login.page";
+import { test as base, expect } from "../worker-base.fixture";
 
 /** Seed credentials */
 export const GM_EMAIL = "gm@example.com";
@@ -36,10 +36,7 @@ export async function loginAsPlayer(page: Page, options?: { rememberMe?: boolean
 export async function logout(page: Page) {
   const loginUrlPattern = /\/login(?:\?|$)/;
   const button = page.getByRole("button", { name: /Log out|Logging out…/ });
-  await Promise.all([
-    page.waitForURL(loginUrlPattern, { timeout: 15_000 }),
-    button.click(),
-  ]);
+  await Promise.all([page.waitForURL(loginUrlPattern, { timeout: 15_000 }), button.click()]);
 }
 
 /** Assert we're on a given path */
@@ -48,10 +45,7 @@ export async function expectPath(page: Page, path: string) {
 }
 
 /** Assert URL contains specific query params */
-export async function expectQueryParams(
-  page: Page,
-  params: Record<string, string | null>,
-) {
+export async function expectQueryParams(page: Page, params: Record<string, string | null>) {
   const url = new URL(page.url());
   for (const [key, value] of Object.entries(params)) {
     expect(url.searchParams.get(key)).toBe(value);

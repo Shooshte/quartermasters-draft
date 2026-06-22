@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   createDefaultSpellFormValues,
-  validateSpellForm,
   hasSpellFormErrors,
   normalizeSpellFormValues,
   spellRecordToFormValues,
+  validateSpellForm,
 } from "~/components/create/spell-form";
 
 describe("spell-form", () => {
@@ -183,7 +183,9 @@ describe("spell-form", () => {
       maxTargetsPerRow: null,
       targetOnlyAdjacent: true,
     });
-    expect(errors.targetOnlyAdjacent).toBe("Adjacent targeting requires a limited number of targets per row");
+    expect(errors.targetOnlyAdjacent).toBe(
+      "Adjacent targeting requires a limited number of targets per row",
+    );
   });
 
   it("returns error when targetOnlyAdjacent is true and maxTargetsPerRow is 1", () => {
@@ -195,7 +197,9 @@ describe("spell-form", () => {
       maxTargetsPerRow: 1,
       targetOnlyAdjacent: true,
     });
-    expect(errors.targetOnlyAdjacent).toBe("Adjacent targeting requires at least 2 targets per row");
+    expect(errors.targetOnlyAdjacent).toBe(
+      "Adjacent targeting requires at least 2 targets per row",
+    );
   });
 
   it("no error when maxTargetsPerRow is null and targetOnlyAdjacent is false", () => {

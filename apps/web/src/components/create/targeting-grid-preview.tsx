@@ -3,6 +3,7 @@ import { SCENARIO_ROW_TYPES } from "./scenario-form";
 import type { RowType } from "./spell-form";
 
 const SLOTS_PER_ROW = 5;
+const SLOT_IDS = Array.from({ length: SLOTS_PER_ROW }, (_, index) => `slot-${index}`);
 
 const ROW_COLORS: Record<string, string> = {
   ranged: "var(--row-ranged)",
@@ -49,6 +50,7 @@ export function computeTargetedSlots(config: {
 interface TargetingGridPreviewProps {
   targetRowCount: number;
   maxTargetsPerRow: number | null;
+  targetOnlyAdjacent?: boolean;
   allowedRowTypes: RowType[];
 }
 
@@ -66,7 +68,10 @@ export function TargetingGridPreview({
   return (
     <div className="targeting-grid" data-testid="targeting-grid">
       {SCENARIO_ROW_TYPES.map((rowType) => {
-        const info = slots.get(rowType)!;
+        const info = slots.get(rowType);
+        if (!info) {
+          throw new Error(`Missing targeting slot info for row type: ${rowType}`);
+        }
         const color = ROW_COLORS[rowType];
 
         return (
@@ -81,9 +86,9 @@ export function TargetingGridPreview({
               {capitalize(rowType)}
             </div>
             <div className="targeting-grid-slots">
-              {Array.from({ length: SLOTS_PER_ROW }, (_, i) => (
+              {SLOT_IDS.map((slotId, i) => (
                 <div
-                  key={i}
+                  key={slotId}
                   className="targeting-grid-slot"
                   data-testid={`targeting-grid-slot-${rowType}-${i}`}
                   data-targeted={i < info.targetedCount ? "true" : "false"}

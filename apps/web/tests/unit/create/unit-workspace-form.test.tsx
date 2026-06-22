@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { UnitWorkspaceForm } from "~/components/create/unit-workspace-form";
+import { describe, expect, it, vi } from "vitest";
 import type { UnitFormValues } from "~/components/create/unit-form";
+import { UnitWorkspaceForm } from "~/components/create/unit-workspace-form";
 
 const defaultFormValues: UnitFormValues = {
   name: "",
@@ -109,7 +109,10 @@ describe("UnitWorkspaceForm", () => {
 
     const listbox = screen.getByRole("listbox", { name: "Unit item options" });
     expect(within(listbox).getAllByRole("option")).toHaveLength(5);
-    expect(screen.getByTestId("unit-item-picker-search")).toHaveAttribute("placeholder", "Search items...");
+    expect(screen.getByTestId("unit-item-picker-search")).toHaveAttribute(
+      "placeholder",
+      "Search items...",
+    );
     expect(screen.queryByRole("option", { name: "Search items..." })).not.toBeInTheDocument();
   });
 

@@ -1,13 +1,9 @@
-import { useState, useCallback } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import {
-  type ItemSortBy,
-  type ItemSortDir,
-  ITEMS_PAGE_SIZE,
-} from "../types";
+import { ITEMS_PAGE_SIZE, type ItemSortBy, type ItemSortDir } from "../types";
 
 export function useItemList(isActiveTab: boolean, backgroundEnabled: boolean) {
   const [itemPage, setItemPage] = useState(1);
@@ -16,12 +12,13 @@ export function useItemList(isActiveTab: boolean, backgroundEnabled: boolean) {
 
   const itemsList = useQuery({
     queryKey: ["scenarioBuilder", "items", "list", itemPage, itemSortBy, itemSortDir],
-    queryFn: () => trpc.scenarioBuilder.items.list.query({
-      page: itemPage,
-      limit: ITEMS_PAGE_SIZE,
-      sortBy: itemSortBy,
-      sortDir: itemSortDir,
-    }),
+    queryFn: () =>
+      trpc.scenarioBuilder.items.list.query({
+        page: itemPage,
+        limit: ITEMS_PAGE_SIZE,
+        sortBy: itemSortBy,
+        sortDir: itemSortDir,
+      }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,
   });

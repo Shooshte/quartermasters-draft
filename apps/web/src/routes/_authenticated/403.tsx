@@ -1,15 +1,9 @@
+import { UserRole } from "@qd/shared";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "~/components/ui/button";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { authClient } from "~/lib/auth-client";
 import { getDefaultRoute, getUserRole, mapDbRole } from "~/lib/route-utils";
-import { UserRole } from "@qd/shared";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/403")({
   component: ForbiddenPage,
@@ -34,9 +28,7 @@ function ForbiddenPage() {
           <CardTitle>
             <h1 className="text-2xl">Access Denied</h1>
           </CardTitle>
-          <CardDescription>
-            You do not have permission to access this page.
-          </CardDescription>
+          <CardDescription>You do not have permission to access this page.</CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
           <Button asChild>

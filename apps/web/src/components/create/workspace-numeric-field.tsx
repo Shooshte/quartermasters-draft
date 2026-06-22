@@ -27,7 +27,9 @@ export function WorkspaceNumericField({
   const hasValue = stringValue !== "";
 
   return (
-    <div className={`${cellClassName} ${hasValue ? "has-value" : ""} ${disabled ? "disabled" : ""}`}>
+    <div
+      className={`${cellClassName} ${hasValue ? "has-value" : ""} ${disabled ? "disabled" : ""}`}
+    >
       <label htmlFor={id} className="ws-cell-label">
         {label}
       </label>

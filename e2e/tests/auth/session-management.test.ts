@@ -1,21 +1,23 @@
 // Source of truth: e2e/features/authentication/session-management.feature
-import { test, expect } from "../worker-base.fixture";
+
 import type { BrowserContext } from "@playwright/test";
 import {
-  GM_EMAIL,
-  GM_PASSWORD,
-  PLAYER_EMAIL,
-  PLAYER_PASSWORD,
-  login,
-  logout,
-  expectPath,
-  expectQueryParams,
-} from "./auth.fixtures";
-import {
   countSessionsByToken,
+  deleteSessionsForUser,
   expireLatestSessionForUser,
   getLatestSessionForUser,
 } from "../helpers/session-helpers";
+import { expect, test } from "../worker-base.fixture";
+import {
+  expectPath,
+  expectQueryParams,
+  GM_EMAIL,
+  GM_PASSWORD,
+  login,
+  logout,
+  PLAYER_EMAIL,
+  PLAYER_PASSWORD,
+} from "./auth.fixtures";
 
 const GM_USER_ID = "seed-gm-001";
 const PLAYER_USER_ID = "seed-player-001";
@@ -27,6 +29,11 @@ function getAuthCookies(context: BrowserContext) {
 }
 
 test.describe("Session Management", () => {
+  test.beforeEach(async ({}, testInfo) => {
+    await deleteSessionsForUser(GM_USER_ID, testInfo.parallelIndex);
+    await deleteSessionsForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+  });
+
   test("session expires after 1 hour for GM without remember me — redirects to /login with reason=expired @smoke", async ({
     browser,
   }, testInfo) => {
@@ -37,7 +44,9 @@ test.describe("Session Management", () => {
 
     const authCookies = await getAuthCookies(context);
     expect(authCookies.length).toBeGreaterThan(0);
-    authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
+    for (const cookie of authCookies) {
+      expect(cookie.expires).toBeLessThanOrEqual(0);
+    }
 
     const nowEpoch = Math.floor(Date.now() / 1000);
     const session = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
@@ -63,7 +72,9 @@ test.describe("Session Management", () => {
 
     const authCookies = await getAuthCookies(context);
     expect(authCookies.length).toBeGreaterThan(0);
-    authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
+    for (const cookie of authCookies) {
+      expect(cookie.expires).toBeLessThanOrEqual(0);
+    }
 
     const nowEpoch = Math.floor(Date.now() / 1000);
     const session = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
@@ -98,9 +109,7 @@ test.describe("Session Management", () => {
     await context.close();
   });
 
-  test("remember me session expires after 30 days of inactivity", async ({
-    browser,
-  }, testInfo) => {
+  test("remember me session expires after 30 days of inactivity", async ({ browser }, testInfo) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
@@ -119,9 +128,7 @@ test.describe("Session Management", () => {
     await context.close();
   });
 
-  test("session without remember me ends when the browser is closed", async ({
-    browser,
-  }) => {
+  test("session without remember me ends when the browser is closed", async ({ browser }) => {
     // Create a context, login without remember me, close it, then create a new context
     const context1 = await browser.newContext();
     const page1 = await context1.newPage();
@@ -130,7 +137,9 @@ test.describe("Session Management", () => {
 
     const authCookies = await getAuthCookies(context1);
     expect(authCookies.length).toBeGreaterThan(0);
-    authCookies.forEach((cookie) => expect(cookie.expires).toBeLessThanOrEqual(0));
+    for (const cookie of authCookies) {
+      expect(cookie.expires).toBeLessThanOrEqual(0);
+    }
     await context1.close();
 
     const context2 = await browser.newContext();
@@ -143,9 +152,7 @@ test.describe("Session Management", () => {
     await context2.close();
   });
 
-  test("remember me session persists after browser close and reopen", async ({
-    browser,
-  }) => {
+  test("remember me session persists after browser close and reopen", async ({ browser }) => {
     const context1 = await browser.newContext();
     const page1 = await context1.newPage();
     await login(page1, GM_EMAIL, GM_PASSWORD, { rememberMe: true });
@@ -196,7 +203,10 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD);
     await page.waitForURL("**/play");
 
-    const sessionBeforeLogout = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    const sessionBeforeLogout = await getLatestSessionForUser(
+      PLAYER_USER_ID,
+      testInfo.parallelIndex,
+    );
     const cookiesBeforeLogout = await context.cookies();
 
     await logout(page);

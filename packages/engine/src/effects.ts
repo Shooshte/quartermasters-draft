@@ -1,15 +1,6 @@
+import { logEffectApplied, logEffectExpired, logHeal, pushLog } from "./logging";
 import { computeSpellDamageWithModifiers, getUnitEffectiveStats } from "./math";
-import {
-  clampHealth,
-  findUnitById,
-  nextEffectId,
-} from "./state";
-import {
-  logEffectApplied,
-  logEffectExpired,
-  logHeal,
-  pushLog,
-} from "./logging";
+import { clampHealth, findUnitById, nextEffectId } from "./state";
 import { selectTargets } from "./targeting";
 import type {
   ActiveEffectState,
@@ -31,7 +22,9 @@ function normalizeDebuffValue(value: number): number {
   return value > 0 ? -value : value;
 }
 
-function effectStatEntries(effect: EffectTemplateInput): Array<{ statKey: StatKey; value: number }> {
+function effectStatEntries(
+  effect: EffectTemplateInput,
+): Array<{ statKey: StatKey; value: number }> {
   const entries: Array<{ statKey: StatKey; value: number }> = [];
   for (const statKey of [
     "health",
@@ -72,7 +65,11 @@ function logDamage(
 }
 
 function logDeath(state: BattleState, tick: number, unit: BattleUnitState): void {
-  if (state.log.some((entry) => entry.type === "death" && entry.tick === tick && entry.unitId === unit.instanceId)) {
+  if (
+    state.log.some(
+      (entry) => entry.type === "death" && entry.tick === tick && entry.unitId === unit.instanceId,
+    )
+  ) {
     return;
   }
 
@@ -131,9 +128,7 @@ function applyInstantEffect(
         timingType: effect.timingType,
         statKey: modifier.statKey,
         value:
-          effect.effectType === "debuff"
-            ? normalizeDebuffValue(modifier.value)
-            : modifier.value,
+          effect.effectType === "debuff" ? normalizeDebuffValue(modifier.value) : modifier.value,
         expiresAtTick: tick + (effect.durationMs ?? 0),
       };
       target.activeEffects.push(activeEffect);
@@ -244,7 +239,11 @@ export function processCurrentTickEffects(state: BattleState): void {
   for (const unit of state.scenarios.flatMap((scenario) => Object.values(scenario.rows).flat())) {
     const remaining: ActiveEffectState[] = [];
     for (const effect of unit.activeEffects) {
-      if (effect.timingType === "interval" && effect.nextTriggerTick != null && effect.remainingTriggers) {
+      if (
+        effect.timingType === "interval" &&
+        effect.nextTriggerTick != null &&
+        effect.remainingTriggers
+      ) {
         if (effect.nextTriggerTick <= currentTick && unit.currentHealth > 0) {
           const source = findUnitById(state, effect.sourceUnitId);
           if (!source) {
@@ -258,7 +257,11 @@ export function processCurrentTickEffects(state: BattleState): void {
             clampHealth(unit, getUnitEffectiveStats(unit).health);
             logHeal(state, currentTick, source, unit, effect.value);
           } else {
-            const modifiedDamage = computeSpellDamageWithModifiers(effect.value, sourceStats, targetStats);
+            const modifiedDamage = computeSpellDamageWithModifiers(
+              effect.value,
+              sourceStats,
+              targetStats,
+            );
             unit.currentHealth = Math.max(0, unit.currentHealth - modifiedDamage);
             logDamage(state, currentTick, source, unit, modifiedDamage);
             if (unit.currentHealth === 0) {
@@ -277,12 +280,20 @@ export function processCurrentTickEffects(state: BattleState): void {
         continue;
       }
 
-      if (effect.timingType === "instant" && effect.expiresAtTick != null && effect.expiresAtTick > currentTick) {
+      if (
+        effect.timingType === "instant" &&
+        effect.expiresAtTick != null &&
+        effect.expiresAtTick > currentTick
+      ) {
         remaining.push(effect);
         continue;
       }
 
-      if (effect.timingType === "instant" && effect.expiresAtTick != null && effect.expiresAtTick <= currentTick) {
+      if (
+        effect.timingType === "instant" &&
+        effect.expiresAtTick != null &&
+        effect.expiresAtTick <= currentTick
+      ) {
         logEffectExpired(state, currentTick, unit, effect.name);
         clampHealth(unit, getUnitEffectiveStats(unit).health);
       }

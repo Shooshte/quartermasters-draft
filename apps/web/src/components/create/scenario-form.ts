@@ -8,16 +8,20 @@ export interface ScenarioFormRow {
 }
 
 export interface ScenarioFormValues {
+  [key: string]: unknown;
   name: string;
   rows: ScenarioFormRow[];
 }
 
 interface ScenarioAssignmentRecord {
+  assignmentId?: string;
   unitId: string;
+  unitName?: string;
   position: number;
 }
 
 interface ScenarioRowRecord {
+  id?: string;
   rowType: string;
   assignments?: ScenarioAssignmentRecord[] | null;
 }
@@ -58,7 +62,9 @@ export function createDefaultScenarioFormValues(): ScenarioFormValues {
 
 export function scenarioRecordToFormValues(record: ScenarioRecord): ScenarioFormValues {
   const rows = (record.rows ?? [])
-    .filter((row): row is ScenarioRowRecord & { rowType: ScenarioRowType } => isScenarioRowType(row.rowType))
+    .filter((row): row is ScenarioRowRecord & { rowType: ScenarioRowType } =>
+      isScenarioRowType(row.rowType),
+    )
     .map((row) => ({
       rowType: row.rowType,
       unitIds: [...(row.assignments ?? [])]
@@ -96,7 +102,9 @@ export function validateScenarioForm(values: ScenarioFormValues): ScenarioFieldE
     .map((row) => row.rowType);
   const isExactlyFixedRows =
     rowTypes.length === SCENARIO_ROW_TYPES.length &&
-    SCENARIO_ROW_TYPES.every((rowType) => rowTypes.filter((candidate) => candidate === rowType).length === 1);
+    SCENARIO_ROW_TYPES.every(
+      (rowType) => rowTypes.filter((candidate) => candidate === rowType).length === 1,
+    );
 
   if (!isExactlyFixedRows) {
     errors.rows = "Rows must include ranged, support, melee, and tank exactly once";

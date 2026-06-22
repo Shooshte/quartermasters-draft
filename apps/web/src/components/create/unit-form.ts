@@ -14,19 +14,9 @@ export const UNIT_NUMERIC_FIELDS = [
   "criticalChance",
 ] as const;
 
-export const UNIT_COMBAT_FIELDS = [
-  "meleeDmg",
-  "rangedDmg",
-  "spellDmg",
-  "criticalChance",
-] as const;
+export const UNIT_COMBAT_FIELDS = ["meleeDmg", "rangedDmg", "spellDmg", "criticalChance"] as const;
 
-export const UNIT_VITAL_FIELDS = [
-  "health",
-  "speed",
-  "dodge",
-  "manaRegen",
-] as const;
+export const UNIT_VITAL_FIELDS = ["health", "speed", "dodge", "manaRegen"] as const;
 
 export interface UnitFormValues {
   [key: string]: unknown;

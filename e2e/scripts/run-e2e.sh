@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 E2E_DIR="$(dirname "$SCRIPT_DIR")"
 REPO_DIR="$(dirname "$E2E_DIR")"
-WORKERS="${E2E_WORKERS:-6}"
+WORKERS="${E2E_WORKERS:-4}"
 IMAGE="qd-e2e-app:latest"
 IMAGE_STAMP_FILE="$E2E_DIR/.app-image-fingerprint"
 IMAGE_INPUTS=(

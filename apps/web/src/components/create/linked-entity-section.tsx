@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { LinkedEntityPicker, type LinkedEntityOption } from "./linked-entity-picker";
+import { type LinkedEntityOption, LinkedEntityPicker } from "./linked-entity-picker";
 import { WorkspaceSection } from "./workspace-section";
 
 interface LinkedEntitySectionProps {

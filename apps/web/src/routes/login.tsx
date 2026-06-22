@@ -1,17 +1,13 @@
-import { useEffect, useState } from "react";
+import { UserRole } from "@qd/shared";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { authClient } from "~/lib/auth-client";
-import { getRedirectTarget, getUserRole, mapDbRole } from "~/lib/route-utils";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Checkbox } from "~/components/ui/checkbox";
+import { authClient } from "~/lib/auth-client";
+import { getRedirectTarget, getUserRole, mapDbRole } from "~/lib/route-utils";
 
 type LoginSearch = {
   next?: string;
@@ -42,7 +38,7 @@ function LoginPage() {
   useEffect(() => {
     if (sessionLoading || !session?.user) return;
     const dbRole = getUserRole(session.user);
-    const role = mapDbRole(dbRole)!;
+    const role = mapDbRole(dbRole) ?? UserRole.PLAYER;
     const target = getRedirectTarget(role, next);
     if (target.notice) {
       const url = new URL(target.path, window.location.origin);
@@ -81,7 +77,7 @@ function LoginPage() {
       }
 
       const dbRole = getUserRole(sessionResult.data.user);
-      const role = mapDbRole(dbRole)!;
+      const role = mapDbRole(dbRole) ?? UserRole.PLAYER;
       const target = getRedirectTarget(role, next);
 
       if (target.notice) {

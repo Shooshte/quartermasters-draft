@@ -1,5 +1,12 @@
-import { STAT_KEYS, type BattleItemState, type BattleUnitState, type RowType, type StatKey, type UnitStats } from "./types";
 import { ROW_DEPTH } from "./rows";
+import {
+  type BattleItemState,
+  type BattleUnitState,
+  type RowType,
+  STAT_KEYS,
+  type StatKey,
+  type UnitStats,
+} from "./types";
 
 type ModifierLike = { statKey: StatKey; value: number };
 
@@ -9,7 +16,10 @@ function clampAtZero(value: number): number {
 
 export function getEffectiveStats(
   baseStats: UnitStats,
-  items: Pick<BattleItemState, "meleeDmg" | "rangedDmg" | "manaRegen" | "spellDmg" | "dodge" | "criticalChance">[],
+  items: Pick<
+    BattleItemState,
+    "meleeDmg" | "rangedDmg" | "manaRegen" | "spellDmg" | "dodge" | "criticalChance"
+  >[],
   activeModifiers: ModifierLike[],
 ): UnitStats {
   const totals = { ...baseStats };
@@ -49,7 +59,11 @@ export function computeRowDistanceMultiplier(attackerRow: RowType, targetRow: Ro
   return Math.max(0, 1 - 0.25 * (ROW_DEPTH[attackerRow] + ROW_DEPTH[targetRow]));
 }
 
-export function computeBasicAttackDamage(baseDamage: number, attackerRow: RowType, targetRow: RowType): number {
+export function computeBasicAttackDamage(
+  baseDamage: number,
+  attackerRow: RowType,
+  targetRow: RowType,
+): number {
   return Math.round(baseDamage * computeRowDistanceMultiplier(attackerRow, targetRow));
 }
 

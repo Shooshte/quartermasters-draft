@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { FullConfig } from "@playwright/test";
 import { BASE_PORT, DEFAULT_WORKERS } from "./constants";
 
@@ -22,10 +22,10 @@ function dbUrl(dbName: string) {
 }
 
 function appRun(envDb: string, cmd: string) {
-  execSync(
-    `docker run --rm --network ${NETWORK} -e DATABASE_URL="${envDb}" ${IMAGE} ${cmd}`,
-    { stdio: "pipe", timeout: 60_000 },
-  );
+  execSync(`docker run --rm --network ${NETWORK} -e DATABASE_URL="${envDb}" ${IMAGE} ${cmd}`, {
+    stdio: "pipe",
+    timeout: 60_000,
+  });
 }
 
 export default async function globalSetup(_config: FullConfig) {

@@ -1,12 +1,14 @@
 // Source of truth: e2e/features/create/library-effects-tab.feature
 // Also covers effect-workspace.feature deletion scenarios.
-import { test, expect } from "../db-reset.fixture";
+import { expect, test } from "../db-reset.fixture";
 import { BARBARIAN_ROAR_ID, ZODIAC_BURST_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { EFFECTS_TAB } from "../pages/library-tab-configs";
 
-test.beforeEach(async ({ resetDb }) => { await resetDb(); });
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -28,9 +30,7 @@ test.describe("Effects Library Tab — Display", () => {
     await expect(exhaust.getByText("debuff")).toBeVisible();
   });
 
-  test("empty state is shown when no effects exist", async ({
-    gmPage,
-  }) => {
+  test("empty state is shown when no effects exist", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
     for (const id of itemIds) {
@@ -53,9 +53,7 @@ test.describe("Effects Library Tab — Display", () => {
     await lib.navigateToTab();
     await expect(lib.emptyList).toBeVisible();
     await expect(gmPage.getByText("No effect records yet")).toBeVisible();
-    await expect(
-      gmPage.getByRole("button", { name: "Create the first effect" }),
-    ).toBeVisible();
+    await expect(gmPage.getByRole("button", { name: "Create the first effect" })).toBeVisible();
   });
 });
 
@@ -104,17 +102,13 @@ test.describe("Effects Library Tab — Pagination", () => {
     await expect(lib.getRow("Arcane Damage")).toBeVisible();
   });
 
-  test("Previous page control is disabled on the first page", async ({
-    gmPage,
-  }) => {
+  test("Previous page control is disabled on the first page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
     await expect(lib.prevPageButton).toBeDisabled();
   });
 
-  test("Next page control is disabled on the last page", async ({
-    gmPage,
-  }) => {
+  test("Next page control is disabled on the last page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
 
@@ -209,24 +203,16 @@ test.describe("Effects Library Tab — Sorting", () => {
     await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Arcane Damage");
   });
 
-  test("clicking the active sort column toggles direction", async ({
-    gmPage,
-  }) => {
+  test("clicking the active sort column toggles direction", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
 
     // Default: Name ascending — Arcane Damage first
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Arcane Damage",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Arcane Damage");
 
     // Click Name to toggle to descending
     await lib.clickSortColumn("Name");
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Zodiac Burst",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zodiac Burst");
   });
 });
 
@@ -253,9 +239,7 @@ test.describe("Effects Library Tab — Selection", () => {
 // ─── Unsaved Changes ────────────────────────────────────────────────────────
 
 test.describe("Effects Library Tab — Unsaved Changes", () => {
-  test("warn before opening a different effect with unsaved changes", async ({
-    gmPage,
-  }) => {
+  test("warn before opening a different effect with unsaved changes", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ROAR_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian Roar");
@@ -276,9 +260,7 @@ test.describe("Effects Library Tab — Unsaved Changes", () => {
     await expect(lib.nameInput).toHaveValue("Barbarian Roar Updated");
   });
 
-  test("discard unsaved changes and open a different effect", async ({
-    gmPage,
-  }) => {
+  test("discard unsaved changes and open a different effect", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ROAR_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian Roar");
@@ -297,9 +279,7 @@ test.describe("Effects Library Tab — Unsaved Changes", () => {
 // ─── Deletion ────────────────────────────────────────────────────────────────
 
 test.describe("Effects Library Tab — Deletion", () => {
-  test("delete an effect that is not currently open", async ({
-    gmPage,
-  }) => {
+  test("delete an effect that is not currently open", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
     await lib.clickNextPage();
@@ -342,7 +322,9 @@ test.describe("Effects Library Tab — Deletion", () => {
     await lib.confirmDeletion();
 
     await expect(lib.deleteConfirmDialog).toBeVisible();
-    await expect(gmPage.getByText("Cannot delete effect while it is linked to one or more spells.")).toBeVisible();
+    await expect(
+      gmPage.getByText("Cannot delete effect while it is linked to one or more spells."),
+    ).toBeVisible();
     await expect(lib.nameInput).toHaveValue("Barbarian Roar");
     expect(gmPage.url()).toContain(`effect_id=${BARBARIAN_ROAR_ID}`);
 
@@ -368,9 +350,7 @@ test.describe("Effects Library Tab — Deletion", () => {
     expect(gmPage.url()).not.toContain("effect_id");
   });
 
-  test("deleting the last effect on a page returns to the previous page", async ({
-    gmPage,
-  }) => {
+  test("deleting the last effect on a page returns to the previous page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateToTab();
 

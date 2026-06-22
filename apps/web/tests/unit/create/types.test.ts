@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  TABS,
+  createIdleWorkspace,
   DEFAULT_TAB,
   ENTITY_TABS,
-  isValidTab,
   isEntityTab,
-  createIdleWorkspace,
+  isValidTab,
+  TABS,
 } from "~/components/create/types";
 
 describe("create/types", () => {
@@ -28,12 +28,15 @@ describe("create/types", () => {
   });
 
   describe("isValidTab", () => {
-    it.each(["Effects", "Spells", "Items", "Units", "Scenarios"] as const)(
-      'returns true for "%s"',
-      (tab) => {
-        expect(isValidTab(tab)).toBe(true);
-      },
-    );
+    it.each([
+      "Effects",
+      "Spells",
+      "Items",
+      "Units",
+      "Scenarios",
+    ] as const)('returns true for "%s"', (tab) => {
+      expect(isValidTab(tab)).toBe(true);
+    });
 
     it("returns false for an unknown string", () => {
       expect(isValidTab("Unknown")).toBe(false);
@@ -47,12 +50,9 @@ describe("create/types", () => {
   });
 
   describe("isEntityTab", () => {
-    it.each(["Effects", "Spells", "Items", "Units"] as const)(
-      'returns true for "%s"',
-      (tab) => {
-        expect(isEntityTab(tab)).toBe(true);
-      },
-    );
+    it.each(["Effects", "Spells", "Items", "Units"] as const)('returns true for "%s"', (tab) => {
+      expect(isEntityTab(tab)).toBe(true);
+    });
 
     it('returns false for "Scenarios"', () => {
       expect(isEntityTab("Scenarios")).toBe(false);

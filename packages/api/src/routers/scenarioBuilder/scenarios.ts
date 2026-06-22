@@ -1,20 +1,22 @@
+import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, listInputSchema } from "./shared";
+import { findDbError, idSchema, listInputSchema } from "./shared";
 
-const scenarioListInput = listInputSchema.extend({
-  limit: z.number().int().min(1).max(500).default(20),
-  sortBy: z.enum(["name", "updatedAt"]).default("name"),
-  sortDir: z.enum(["asc", "desc"]).default("asc"),
-}).default({});
+const scenarioListInput = listInputSchema
+  .extend({
+    limit: z.number().int().min(1).max(500).default(20),
+    sortBy: z.enum(["name", "updatedAt"]).default("name"),
+    sortDir: z.enum(["asc", "desc"]).default("asc"),
+  })
+  .prefault({});
 
 const SCENARIO_ROW_TYPES = ["ranged", "support", "melee", "tank"] as const;
 const scenarioRowSchema = z.object({
   rowType: z.enum(SCENARIO_ROW_TYPES),
-  unitIds: z.array(z.string().uuid()),
+  unitIds: z.array(idSchema),
 });
 const scenarioInputBaseSchema = z.object({
   name: z.string().trim().min(1),
@@ -48,7 +50,9 @@ function ensureFixedRows(
   const rowTypes = rows.map((row) => row.rowType);
   const isExactlyFixedRows =
     rowTypes.length === SCENARIO_ROW_TYPES.length &&
-    SCENARIO_ROW_TYPES.every((rowType) => rowTypes.filter((candidate) => candidate === rowType).length === 1);
+    SCENARIO_ROW_TYPES.every(
+      (rowType) => rowTypes.filter((candidate) => candidate === rowType).length === 1,
+    );
 
   if (!isExactlyFixedRows) {
     throw new TRPCError({
@@ -59,14 +63,8 @@ function ensureFixedRows(
   }
 }
 
-async function getScenarioById(
-  executor: Pick<ScenarioTransaction, "select">,
-  id: string,
-) {
-  const [scenario] = await executor
-    .select()
-    .from(scenarios)
-    .where(eq(scenarios.id, id));
+async function getScenarioById(executor: Pick<ScenarioTransaction, "select">, id: string) {
+  const [scenario] = await executor.select().from(scenarios).where(eq(scenarios.id, id));
 
   if (!scenario) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
@@ -112,23 +110,21 @@ async function getScenarioById(
     name: scenario.name,
     createdAt: scenario.createdAt,
     updatedAt: scenario.updatedAt,
-    rows: SCENARIO_ROW_TYPES
-      .filter((rowType) => rowsByType.has(rowType))
-      .map((rowType) => {
-        const row = rowsByType.get(rowType)!;
-        return {
-          id: row.id,
-          rowType: row.rowType,
-          assignments: assignmentsWithUnits
-            .filter((a) => a.scenarios_rows_units.rowId === row.id)
-            .map((a) => ({
-              assignmentId: a.scenarios_rows_units.id,
-              unitId: a.scenarios_rows_units.unitId,
-              unitName: a.units.name,
-              position: a.scenarios_rows_units.slot,
-            })),
-        };
-      }),
+    rows: SCENARIO_ROW_TYPES.filter((rowType) => rowsByType.has(rowType)).map((rowType) => {
+      const row = rowsByType.get(rowType)!;
+      return {
+        id: row.id,
+        rowType: row.rowType,
+        assignments: assignmentsWithUnits
+          .filter((a) => a.scenarios_rows_units.rowId === row.id)
+          .map((a) => ({
+            assignmentId: a.scenarios_rows_units.id,
+            unitId: a.scenarios_rows_units.unitId,
+            unitName: a.units.name,
+            position: a.scenarios_rows_units.slot,
+          })),
+      };
+    }),
   };
 }
 
@@ -175,65 +171,60 @@ export const scenariosRouter = router({
   }),
 
   get: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: idSchema }))
     .query(async ({ input }) => getScenarioById(db, input.id)),
 
-  create: gmProcedure
-    .input(scenarioInputBaseSchema)
-    .mutation(async ({ input }) => {
-      const normalized = normalizeScenarioInput(input);
-      ensureFixedRows(normalized.rows);
+  create: gmProcedure.input(scenarioInputBaseSchema).mutation(async ({ input }) => {
+    const normalized = normalizeScenarioInput(input);
+    ensureFixedRows(normalized.rows);
 
-      try {
-        return await db.transaction(async (tx) => {
-          const [created] = await tx
-            .insert(scenarios)
-            .values({ name: normalized.name })
-            .returning();
+    try {
+      return await db.transaction(async (tx) => {
+        const [created] = await tx.insert(scenarios).values({ name: normalized.name }).returning();
 
-          if (!created) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Scenario was not created.",
-            });
-          }
-
-          const createdRows = await tx
-            .insert(scenariosRows)
-            .values(
-              normalized.rows.map((row) => ({
-                scenarioId: created.id,
-                rowType: row.rowType,
-              })),
-            )
-            .returning({ id: scenariosRows.id, rowType: scenariosRows.rowType });
-
-          const rowIdByType = new Map(createdRows.map((row) => [row.rowType, row.id]));
-          const assignmentRows = normalized.rows.flatMap((row) =>
-            row.unitIds.map((unitId, index) => ({
-              rowId: rowIdByType.get(row.rowType)!,
-              unitId,
-              slot: index + 1,
-            })),
-          );
-
-          if (assignmentRows.length > 0) {
-            await tx.insert(scenariosRowsUnits).values(assignmentRows);
-          }
-
-          return getScenarioById(tx, created.id);
-        });
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
+        if (!created) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Scenario was not created.",
+          });
         }
 
-        maybeThrowConflict(error);
+        const createdRows = await tx
+          .insert(scenariosRows)
+          .values(
+            normalized.rows.map((row) => ({
+              scenarioId: created.id,
+              rowType: row.rowType,
+            })),
+          )
+          .returning({ id: scenariosRows.id, rowType: scenariosRows.rowType });
+
+        const rowIdByType = new Map(createdRows.map((row) => [row.rowType, row.id]));
+        const assignmentRows = normalized.rows.flatMap((row) =>
+          row.unitIds.map((unitId, index) => ({
+            rowId: rowIdByType.get(row.rowType)!,
+            unitId,
+            slot: index + 1,
+          })),
+        );
+
+        if (assignmentRows.length > 0) {
+          await tx.insert(scenariosRowsUnits).values(assignmentRows);
+        }
+
+        return getScenarioById(tx, created.id);
+      });
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
       }
-    }),
+
+      maybeThrowConflict(error);
+    }
+  }),
 
   update: gmProcedure
-    .input(z.object({ id: z.string().uuid() }).merge(scenarioInputBaseSchema))
+    .input(z.object({ id: idSchema }).merge(scenarioInputBaseSchema))
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeScenarioInput(rest);
@@ -289,16 +280,14 @@ export const scenariosRouter = router({
       }
     }),
 
-  delete: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const deleted = await db
-        .delete(scenarios)
-        .where(eq(scenarios.id, input.id))
-        .returning({ id: scenarios.id });
-      if (deleted.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
-      }
-      return { success: true };
-    }),
+  delete: gmProcedure.input(z.object({ id: idSchema })).mutation(async ({ input }) => {
+    const deleted = await db
+      .delete(scenarios)
+      .where(eq(scenarios.id, input.id))
+      .returning({ id: scenarios.id });
+    if (deleted.length === 0) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
+    }
+    return { success: true };
+  }),
 });

@@ -1,12 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import {
-  createRouter,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
-  createMemoryHistory,
+  createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth-client before importing the route
 const mockSignIn = vi.fn();
@@ -30,9 +30,9 @@ async function renderLoginRoute(search = "") {
   const loginRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/login",
-    validateSearch: LoginRoute.options.validateSearch as (
-      s: Record<string, unknown>,
-    ) => { next?: string },
+    validateSearch: LoginRoute.options.validateSearch as (s: Record<string, unknown>) => {
+      next?: string;
+    },
     component: LoginRoute.options.component!,
   });
   const createRoute_ = createRoute({
@@ -52,12 +52,7 @@ async function renderLoginRoute(search = "") {
   });
 
   const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      loginRoute,
-      createRoute_,
-      playRoute,
-      forbiddenRoute,
-    ]),
+    routeTree: rootRoute.addChildren([loginRoute, createRoute_, playRoute, forbiddenRoute]),
     history: createMemoryHistory({ initialEntries: [`/login${search}`] }),
   });
 
@@ -83,9 +78,7 @@ describe("Login page", () => {
     });
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(screen.getByText("Remember me")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Sign in" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 
   it("shows 'Invalid credentials' on failed sign-in", async () => {
@@ -106,9 +99,7 @@ describe("Login page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("alert")).toHaveTextContent(
-        "Invalid credentials",
-      );
+      expect(screen.getByRole("alert")).toHaveTextContent("Invalid credentials");
     });
   });
 
@@ -130,9 +121,7 @@ describe("Login page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Signing in…" }),
-      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Signing in…" })).toBeDisabled();
     });
   });
 

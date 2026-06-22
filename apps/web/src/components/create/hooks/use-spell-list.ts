@@ -1,13 +1,9 @@
-import { useState, useCallback } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import {
-  type SpellSortBy,
-  type SpellSortDir,
-  SPELLS_PAGE_SIZE,
-} from "../types";
+import { SPELLS_PAGE_SIZE, type SpellSortBy, type SpellSortDir } from "../types";
 
 export function useSpellList(isActiveTab: boolean, backgroundEnabled: boolean) {
   const [spellPage, setSpellPage] = useState(1);
@@ -16,12 +12,13 @@ export function useSpellList(isActiveTab: boolean, backgroundEnabled: boolean) {
 
   const spellsList = useQuery({
     queryKey: ["scenarioBuilder", "spells", "list", spellPage, spellSortBy, spellSortDir],
-    queryFn: () => trpc.scenarioBuilder.spells.list.query({
-      page: spellPage,
-      limit: SPELLS_PAGE_SIZE,
-      sortBy: spellSortBy,
-      sortDir: spellSortDir,
-    }),
+    queryFn: () =>
+      trpc.scenarioBuilder.spells.list.query({
+        page: spellPage,
+        limit: SPELLS_PAGE_SIZE,
+        sortBy: spellSortBy,
+        sortDir: spellSortDir,
+      }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,
   });

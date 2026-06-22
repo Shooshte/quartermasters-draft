@@ -1,18 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  cleanup,
-} from "@testing-library/react";
-import {
-  createRouter,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
-  createMemoryHistory,
+  createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth-client before importing the component
 const mockSignOut = vi.fn();
@@ -48,9 +42,7 @@ function stubWindowLocation(path: string, assignSpy: ReturnType<typeof vi.fn>) {
 }
 
 async function renderAuthenticatedLayoutAt(path: string) {
-  const { Route: AuthRoute } = await import(
-    "../../src/routes/_authenticated"
-  );
+  const { Route: AuthRoute } = await import("../../src/routes/_authenticated");
 
   const rootRoute = createRootRoute();
   const authenticatedRoute = createRoute({
@@ -112,9 +104,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayout();
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
   });
 
@@ -124,9 +114,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayout();
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
@@ -142,9 +130,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayout();
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
@@ -164,9 +150,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayoutAt("/replay/abc445");
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
@@ -186,9 +170,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayoutAt("/replay/abc445?tab=details");
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
@@ -208,9 +190,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayoutAt("/dashboard?notice=Invalid+return+URL");
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));
@@ -230,9 +210,7 @@ describe("Logout functionality", () => {
     await renderAuthenticatedLayoutAt("/403");
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /log\s*out/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /log\s*out/i }));

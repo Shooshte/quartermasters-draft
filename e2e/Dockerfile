@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=deps /app/packages/engine/node_modules ./packages/engine/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
-RUN pnpm --filter @qd/web build
+RUN pnpm --filter @qd/web... build
 
 FROM base AS production
 COPY --from=deps /app/node_modules ./node_modules

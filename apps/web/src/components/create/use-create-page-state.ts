@@ -1,66 +1,70 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { flushSync } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { trpc } from "~/lib/trpc";
 import {
-  type TabName,
-  type WorkspaceState,
-  type CreatePageNavigate,
-  type CreatePageSearch,
-  type ScenarioSortBy,
-  type ScenarioSortDir,
-  type EffectSortBy,
-  type EffectSortDir,
-  type SpellSortBy,
-  type SpellSortDir,
-  type ItemSortBy,
-  type ItemSortDir,
-  type UnitSortBy,
-  type UnitSortDir,
-  DEFAULT_TAB,
-  isValidTab,
-} from "./types";
-import { useDiscardDialog } from "./hooks/use-discard-dialog";
+  effectRecordToFormValues,
+  normalizeEffectFormValues,
+  validateEffectForm,
+} from "./effect-form";
 import { useDeleteDialog } from "./hooks/use-delete-dialog";
 import { useDeleteEffectDialog } from "./hooks/use-delete-effect-dialog";
-import { useDeleteSpellDialog } from "./hooks/use-delete-spell-dialog";
 import { useDeleteItemDialog } from "./hooks/use-delete-item-dialog";
+import { useDeleteSpellDialog } from "./hooks/use-delete-spell-dialog";
 import { useDeleteUnitDialog } from "./hooks/use-delete-unit-dialog";
-import { useScenarioList } from "./hooks/use-scenario-list";
+import { useDiscardDialog } from "./hooks/use-discard-dialog";
 import { useEffectList } from "./hooks/use-effect-list";
-import { useSpellList } from "./hooks/use-spell-list";
 import { useItemList } from "./hooks/use-item-list";
+import { useScenarioList } from "./hooks/use-scenario-list";
+import { useSpellList } from "./hooks/use-spell-list";
 import { useUnitList } from "./hooks/use-unit-list";
 import { computeIsDirty, useWorkspaceLoader } from "./hooks/use-workspace-loader";
-import { effectRecordToFormValues, normalizeEffectFormValues, validateEffectForm } from "./effect-form";
 import {
-  normalizeSpellFormValues,
-  spellRecordToFormValues,
-  validateSpellForm,
-  type SpellFormValues,
-  type EffectOption,
-} from "./spell-form";
-import {
+  type ItemFormValues,
   itemRecordToFormValues,
   normalizeItemFormValues,
-  validateItemForm,
-  type ItemFormValues,
   type SpellOption,
+  validateItemForm,
 } from "./item-form";
-import {
-  normalizeUnitFormValues,
-  unitRecordToFormValues,
-  validateUnitForm,
-  type ItemOption,
-  type UnitFormValues,
-} from "./unit-form";
 import {
   isScenarioFormDirty,
   normalizeScenarioFormValues,
+  type ScenarioFormValues,
   scenarioRecordToFormValues,
   validateScenarioForm,
-  type ScenarioFormValues,
 } from "./scenario-form";
+import {
+  type EffectOption,
+  normalizeSpellFormValues,
+  type SpellFormValues,
+  spellRecordToFormValues,
+  validateSpellForm,
+} from "./spell-form";
+import {
+  type CreatePageNavigate,
+  type CreatePageSearch,
+  DEFAULT_TAB,
+  type EffectSortBy,
+  type EffectSortDir,
+  type ItemSortBy,
+  type ItemSortDir,
+  isValidTab,
+  type ScenarioSortBy,
+  type ScenarioSortDir,
+  type SpellSortBy,
+  type SpellSortDir,
+  type TabName,
+  type UnitSortBy,
+  type UnitSortDir,
+  type WorkspaceState,
+} from "./types";
+import {
+  type ItemOption,
+  normalizeUnitFormValues,
+  type UnitFormValues,
+  unitRecordToFormValues,
+  validateUnitForm,
+} from "./unit-form";
 
 export interface PendingAction {
   type: "selectRecord" | "createNew";
@@ -93,7 +97,13 @@ export interface CreatePageState {
   setScenarioSort: (sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => void;
   setScenarioPage: (page: number) => void;
   // Effect list specific
-  effectListItems: { id: string; name: string; timingType: string; effectType: string; updatedAt: Date }[];
+  effectListItems: {
+    id: string;
+    name: string;
+    timingType: string;
+    effectType: string;
+    updatedAt: Date;
+  }[];
   effectPage: number;
   effectTotalPages: number;
   effectSortBy: EffectSortBy;
@@ -193,10 +203,7 @@ async function loadAllWorkspaceOptions<TItem>(
     sortDir: "asc",
   });
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(firstPage.totalCount / WORKSPACE_OPTION_PAGE_SIZE),
-  );
+  const totalPages = Math.max(1, Math.ceil(firstPage.totalCount / WORKSPACE_OPTION_PAGE_SIZE));
 
   if (totalPages === 1) {
     return firstPage.items;
@@ -229,10 +236,13 @@ export function useCreatePageState(
   const [isScenarioSaving, setIsScenarioSaving] = useState(false);
   const [scenarioSaveError, setScenarioSaveError] = useState<string | null>(null);
 
-  const setActiveTab = useCallback((tab: TabName) => {
-    setActiveTabState(tab);
-    navigate?.({ search: (prev: Record<string, unknown>) => ({ ...prev, tab }), replace: true });
-  }, [navigate]);
+  const setActiveTab = useCallback(
+    (tab: TabName) => {
+      setActiveTabState(tab);
+      navigate?.({ search: (prev: Record<string, unknown>) => ({ ...prev, tab }), replace: true });
+    },
+    [navigate],
+  );
 
   // Workspace loading (entity + scenario + perTabSelection)
   const {
@@ -247,7 +257,7 @@ export function useCreatePageState(
     loadEntity,
     loadScenario,
     executePendingAction,
-  } = useWorkspaceLoader({ search, activeTab, setActiveTabState, navigate });
+  } = useWorkspaceLoader({ search, setActiveTabState, navigate });
 
   const entityWorkspaceRef = useRef(entityWorkspace);
   entityWorkspaceRef.current = entityWorkspace;
@@ -255,37 +265,43 @@ export function useCreatePageState(
   const scenarioWorkspaceRef = useRef(scenarioWorkspace);
   scenarioWorkspaceRef.current = scenarioWorkspace;
 
-  const updateEntityField = useCallback((field: string, value: unknown) => {
-    flushSync(() => {
-      setEntityWorkspace((prev) => {
-        const newFormValues = { ...prev.formValues, [field]: value };
-        return {
-          ...prev,
-          formValues: newFormValues,
-          isDirty: computeIsDirty(newFormValues, prev.data, prev.entityType),
-        };
+  const updateEntityField = useCallback(
+    (field: string, value: unknown) => {
+      flushSync(() => {
+        setEntityWorkspace((prev) => {
+          const newFormValues = { ...prev.formValues, [field]: value };
+          return {
+            ...prev,
+            formValues: newFormValues,
+            isDirty: computeIsDirty(newFormValues, prev.data, prev.entityType),
+          };
+        });
       });
-    });
-  }, [setEntityWorkspace]);
+    },
+    [setEntityWorkspace],
+  );
 
-  const updateScenarioField = useCallback((field: string, value: unknown) => {
-    flushSync(() => {
-      setScenarioWorkspace((prev) => {
-        const newFormValues = { ...prev.formValues, [field]: value };
-        return {
-          ...prev,
-          formValues: newFormValues,
-          isDirty:
-            prev.entityType === "scenario"
-              ? isScenarioFormDirty(
-                  newFormValues as ScenarioFormValues,
-                  prev.data as Record<string, unknown> | null,
-                )
-              : prev.isDirty,
-        };
+  const updateScenarioField = useCallback(
+    (field: string, value: unknown) => {
+      flushSync(() => {
+        setScenarioWorkspace((prev) => {
+          const newFormValues = { ...prev.formValues, [field]: value };
+          return {
+            ...prev,
+            formValues: newFormValues,
+            isDirty:
+              prev.entityType === "scenario"
+                ? isScenarioFormDirty(
+                    newFormValues as ScenarioFormValues,
+                    prev.data as Record<string, unknown> | null,
+                  )
+                : prev.isDirty,
+          };
+        });
       });
-    });
-  }, [setScenarioWorkspace]);
+    },
+    [setScenarioWorkspace],
+  );
 
   // Scenario list (pagination, sorting, query)
   const scenarioList = useScenarioList(activeTab === "Scenarios", backgroundEnabled);
@@ -305,13 +321,15 @@ export function useCreatePageState(
   // Effect options for spell effect picker
   const effectOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "effects", "all-options"],
-    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.effects.list.query(input)),
+    queryFn: () =>
+      loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.effects.list.query(input)),
     enabled: entityWorkspace.entityType === "spell",
   });
 
   const spellOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "spells", "all-options"],
-    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.spells.list.query(input)),
+    queryFn: () =>
+      loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.spells.list.query(input)),
     enabled: entityWorkspace.entityType === "item",
   });
 
@@ -475,7 +493,10 @@ export function useCreatePageState(
       if (currentScenarioWorkspace.mode === "create") {
         const created = await trpc.scenarioBuilder.scenarios.create.mutate(normalized);
         const createdData = created as { id: string; name: string; [key: string]: unknown };
-        queryClient.setQueryData(["scenarioBuilder", "scenarios", "get", createdData.id], createdData);
+        queryClient.setQueryData(
+          ["scenarioBuilder", "scenarios", "get", createdData.id],
+          createdData,
+        );
         const nextWorkspace: WorkspaceState = {
           mode: "edit",
           entityType: "scenario",
@@ -501,7 +522,10 @@ export function useCreatePageState(
           ...normalized,
         });
         const updatedData = updated as { id: string; name: string; [key: string]: unknown };
-        queryClient.setQueryData(["scenarioBuilder", "scenarios", "get", updatedData.id], updatedData);
+        queryClient.setQueryData(
+          ["scenarioBuilder", "scenarios", "get", updatedData.id],
+          updatedData,
+        );
         const nextWorkspace: WorkspaceState = {
           mode: "edit",
           entityType: "scenario",
@@ -516,7 +540,8 @@ export function useCreatePageState(
 
       await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios"] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save scenario. Please try again.";
+      const message =
+        error instanceof Error ? error.message : "Failed to save scenario. Please try again.";
       if (message.includes("already exists")) {
         setScenarioSaveError("A scenario with this name already exists");
       } else {
@@ -525,13 +550,7 @@ export function useCreatePageState(
     } finally {
       setIsScenarioSaving(false);
     }
-  }, [
-    navigate,
-    queryClient,
-    setPerTabSelection,
-    setScenarioWorkspace,
-    skipScenarioResetRef,
-  ]);
+  }, [navigate, queryClient, setPerTabSelection, setScenarioWorkspace, skipScenarioResetRef]);
 
   const saveEntity = useCallback(async () => {
     const currentEntityWorkspace = entityWorkspaceRef.current;
@@ -590,7 +609,9 @@ export function useCreatePageState(
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects"] });
       } catch (error) {
-        setEntitySaveError(error instanceof Error ? error.message : "Failed to save effect. Please try again.");
+        setEntitySaveError(
+          error instanceof Error ? error.message : "Failed to save effect. Please try again.",
+        );
       } finally {
         setIsEntitySaving(false);
       }
@@ -606,7 +627,10 @@ export function useCreatePageState(
         if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.spells.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(["scenarioBuilder", "spells", "get", createdData.id], createdData);
+          queryClient.setQueryData(
+            ["scenarioBuilder", "spells", "get", createdData.id],
+            createdData,
+          );
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "spell",
@@ -635,7 +659,10 @@ export function useCreatePageState(
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(["scenarioBuilder", "spells", "get", updatedData.id], updatedData);
+          queryClient.setQueryData(
+            ["scenarioBuilder", "spells", "get", updatedData.id],
+            updatedData,
+          );
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "spell",
@@ -650,7 +677,8 @@ export function useCreatePageState(
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells"] });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to save spell. Please try again.";
+        const message =
+          error instanceof Error ? error.message : "Failed to save spell. Please try again.";
         if (message.includes("already exists")) {
           setEntitySaveError("A spell with this name already exists");
         } else {
@@ -671,7 +699,10 @@ export function useCreatePageState(
         if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.items.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(["scenarioBuilder", "items", "get", createdData.id], createdData);
+          queryClient.setQueryData(
+            ["scenarioBuilder", "items", "get", createdData.id],
+            createdData,
+          );
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "item",
@@ -700,7 +731,10 @@ export function useCreatePageState(
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(["scenarioBuilder", "items", "get", updatedData.id], updatedData);
+          queryClient.setQueryData(
+            ["scenarioBuilder", "items", "get", updatedData.id],
+            updatedData,
+          );
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "item",
@@ -715,7 +749,8 @@ export function useCreatePageState(
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to save item. Please try again.";
+        const message =
+          error instanceof Error ? error.message : "Failed to save item. Please try again.";
         if (message.includes("already exists")) {
           setEntitySaveError("An item with this name already exists");
         } else {
@@ -736,7 +771,10 @@ export function useCreatePageState(
         if (currentEntityWorkspace.mode === "create") {
           const created = await trpc.scenarioBuilder.units.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(["scenarioBuilder", "units", "get", createdData.id], createdData);
+          queryClient.setQueryData(
+            ["scenarioBuilder", "units", "get", createdData.id],
+            createdData,
+          );
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "unit",
@@ -765,7 +803,10 @@ export function useCreatePageState(
             ...normalized,
           });
           const updatedData = updated as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(["scenarioBuilder", "units", "get", updatedData.id], updatedData);
+          queryClient.setQueryData(
+            ["scenarioBuilder", "units", "get", updatedData.id],
+            updatedData,
+          );
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
             entityType: "unit",
@@ -780,7 +821,8 @@ export function useCreatePageState(
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units"] });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to save unit. Please try again.";
+        const message =
+          error instanceof Error ? error.message : "Failed to save unit. Please try again.";
         if (message.includes("already exists")) {
           setEntitySaveError("A unit with this name already exists");
         } else {
@@ -809,10 +851,12 @@ export function useCreatePageState(
     saveScenario,
     isScenarioSaving,
     scenarioSaveError,
-    scenarioUnitOptions: (scenarioUnitOptionsQuery.data ?? []).map((unit: { id: string; name: string }) => ({
-      id: unit.id,
-      name: unit.name,
-    })),
+    scenarioUnitOptions: (scenarioUnitOptionsQuery.data ?? []).map(
+      (unit: { id: string; name: string }) => ({
+        id: unit.id,
+        name: unit.name,
+      }),
+    ),
     saveEntity,
     isEntitySaving,
     entitySaveError,

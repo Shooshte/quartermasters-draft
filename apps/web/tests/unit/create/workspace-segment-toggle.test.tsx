@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { WorkspaceSegmentToggle } from "~/components/create/workspace-segment-toggle";
 
 const defaultOptions = [
@@ -10,13 +10,7 @@ const defaultOptions = [
 
 describe("WorkspaceSegmentToggle", () => {
   it("renders all option labels", () => {
-    render(
-      <WorkspaceSegmentToggle
-        options={defaultOptions}
-        value="all"
-        onChange={() => {}}
-      />
-    );
+    render(<WorkspaceSegmentToggle options={defaultOptions} value="all" onChange={() => {}} />);
     expect(screen.getByText("All")).toBeInTheDocument();
     expect(screen.getByText("Limit")).toBeInTheDocument();
   });
@@ -28,7 +22,7 @@ describe("WorkspaceSegmentToggle", () => {
         value="limit"
         onChange={() => {}}
         testId="toggle"
-      />
+      />,
     );
     expect(screen.getByTestId("toggle-all")).toHaveAttribute("data-active", "false");
     expect(screen.getByTestId("toggle-limit")).toHaveAttribute("data-active", "true");
@@ -42,7 +36,7 @@ describe("WorkspaceSegmentToggle", () => {
         value="all"
         onChange={onChange}
         testId="toggle"
-      />
+      />,
     );
     await userEvent.click(screen.getByTestId("toggle-limit"));
     expect(onChange).toHaveBeenCalledWith("limit");
@@ -56,7 +50,7 @@ describe("WorkspaceSegmentToggle", () => {
         value="all"
         onChange={onChange}
         testId="toggle"
-      />
+      />,
     );
     await userEvent.click(screen.getByTestId("toggle-all"));
     expect(onChange).not.toHaveBeenCalled();
@@ -69,7 +63,7 @@ describe("WorkspaceSegmentToggle", () => {
         value="all"
         onChange={() => {}}
         testId="my-toggle"
-      />
+      />,
     );
     expect(screen.getByTestId("my-toggle")).toBeInTheDocument();
   });

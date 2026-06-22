@@ -22,10 +22,20 @@ function getUnitByName(engine: BattleEngine, scenarioId: string, name: string) {
 describe("battle setup", () => {
   it("initializes battle state with fixed row order, zero action bar, zero mana, and base health", () => {
     const alpha = createScenario("Alpha", {
-      tank: [createUnit("Templar", { stats: createStats({ health: 150, meleeDmg: 20, dodge: 5 }) })],
-      melee: [createUnit("Barbarian", { stats: createStats({ health: 120, meleeDmg: 28, criticalChance: 15 }) })],
-      ranged: [createUnit("Archer", { stats: createStats({ health: 80, rangedDmg: 25, speed: 12 }) })],
-      support: [createUnit("Cleric", { stats: createStats({ health: 70, manaRegen: 6, spellDmg: 15 }) })],
+      tank: [
+        createUnit("Templar", { stats: createStats({ health: 150, meleeDmg: 20, dodge: 5 }) }),
+      ],
+      melee: [
+        createUnit("Barbarian", {
+          stats: createStats({ health: 120, meleeDmg: 28, criticalChance: 15 }),
+        }),
+      ],
+      ranged: [
+        createUnit("Archer", { stats: createStats({ health: 80, rangedDmg: 25, speed: 12 }) }),
+      ],
+      support: [
+        createUnit("Cleric", { stats: createStats({ health: 70, manaRegen: 6, spellDmg: 15 }) }),
+      ],
     });
     const bravo = createScenario("Bravo", {
       melee: [createUnit("Barbarian", { stats: createStats({ health: 120, meleeDmg: 28 }) })],
@@ -77,7 +87,12 @@ describe("battle setup", () => {
   it("applies additive item bonuses independently per unit instance", () => {
     const sword = createItem({ name: "Iron Sword", meleeDmg: 10, criticalChance: 5 });
     const shield = createItem({ name: "Oak Shield", dodge: 8 });
-    const staff = createItem({ name: "Crystal Staff", spellDmg: 12, manaRegen: 3, criticalChance: 2 });
+    const staff = createItem({
+      name: "Crystal Staff",
+      spellDmg: 12,
+      manaRegen: 3,
+      criticalChance: 2,
+    });
     const templar = createUnit("Templar", {
       stats: createStats({ health: 150, meleeDmg: 20, dodge: 5, criticalChance: 10 }),
       items: [sword, shield],
@@ -90,7 +105,9 @@ describe("battle setup", () => {
     const engine = new BattleEngine(
       createBattleInput([
         createScenario("Alpha", { tank: [templar], support: [mage] }),
-        createScenario("Bravo", { support: [createUnit("Mage", { stats: mage.stats, items: [staff] })] }),
+        createScenario("Bravo", {
+          support: [createUnit("Mage", { stats: mage.stats, items: [staff] })],
+        }),
       ]),
     );
 
@@ -98,7 +115,11 @@ describe("battle setup", () => {
     const mageA = getUnitByName(engine, "Alpha", "Mage");
     const mageB = getUnitByName(engine, "Bravo", "Mage");
 
-    expect(templarState.itemBonusStats).toMatchObject({ meleeDmg: 10, dodge: 8, criticalChance: 5 });
+    expect(templarState.itemBonusStats).toMatchObject({
+      meleeDmg: 10,
+      dodge: 8,
+      criticalChance: 5,
+    });
     expect(mageA.itemBonusStats).toMatchObject({ spellDmg: 12, manaRegen: 3, criticalChance: 2 });
     expect(mageB.itemBonusStats).toMatchObject({ spellDmg: 12, manaRegen: 3, criticalChance: 2 });
   });
@@ -119,7 +140,9 @@ describe("battle setup", () => {
 
     const engine = new BattleEngine(input);
     expect(getUnitByName(engine, "Alpha", "Archer").targetPolicyOverride).toBe("highest_health");
-    expect(getUnitByName(engine, "Alpha", "Archer Two").targetPolicyOverride).toBe("highest_damage");
+    expect(getUnitByName(engine, "Alpha", "Archer Two").targetPolicyOverride).toBe(
+      "highest_damage",
+    );
     expect(getUnitByName(engine, "Bravo", "Barbarian").targetPolicyOverride).toBe("random");
   });
 
@@ -133,9 +156,7 @@ describe("battle setup", () => {
 
     expect(
       () =>
-        new BattleEngine(
-          createBattleInput([createScenario("Alpha"), createScenario("Bravo")], 1),
-        ),
+        new BattleEngine(createBattleInput([createScenario("Alpha"), createScenario("Bravo")], 1)),
     ).toThrow(/at least one living unit/i);
   });
 });

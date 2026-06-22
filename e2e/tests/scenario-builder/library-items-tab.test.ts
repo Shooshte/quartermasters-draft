@@ -1,10 +1,12 @@
-import { test, expect } from "../db-reset.fixture";
+import { expect, test } from "../db-reset.fixture";
 import { IRON_SWORD_ID, LEATHER_SHIELD_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { ITEMS_TAB } from "../pages/library-tab-configs";
 
-test.beforeEach(async ({ resetDb }) => { await resetDb(); });
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -24,9 +26,7 @@ test.describe("Items Library Tab — Display", () => {
     await expect(oakStaff.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
-  test("empty state is shown when no items exist", async ({
-    gmPage,
-  }) => {
+  test("empty state is shown when no items exist", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
     for (const id of itemIds) {
@@ -42,9 +42,7 @@ test.describe("Items Library Tab — Display", () => {
 // ─── Pagination ─────────────────────────────────────────────────────────────
 
 test.describe("Items Library Tab — Pagination", () => {
-  test("items are displayed one page at a time with pagination controls", async ({
-    gmPage,
-  }) => {
+  test("items are displayed one page at a time with pagination controls", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
 
@@ -75,9 +73,7 @@ test.describe("Items Library Tab — Pagination", () => {
     await expect(lib.getRow("Iron Sword")).toBeVisible();
   });
 
-  test("Previous page control is disabled on the first page", async ({
-    gmPage,
-  }) => {
+  test("Previous page control is disabled on the first page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
     await expect(lib.prevPageButton).toBeDisabled();
@@ -146,9 +142,7 @@ test.describe("Items Library Tab — Sorting", () => {
     await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Venom Blade");
   });
 
-  test("clicking the active sort column toggles direction", async ({
-    gmPage,
-  }) => {
+  test("clicking the active sort column toggles direction", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
 
@@ -177,9 +171,7 @@ test.describe("Items Library Tab — Selection", () => {
 // ─── Unsaved Changes ────────────────────────────────────────────────────────
 
 test.describe("Items Library Tab — Unsaved Changes", () => {
-  test("warn before opening a different item with unsaved changes", async ({
-    gmPage,
-  }) => {
+  test("warn before opening a different item with unsaved changes", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateWithEntity(IRON_SWORD_ID);
     await expect(lib.nameInput).toHaveValue("Iron Sword");
@@ -196,9 +188,7 @@ test.describe("Items Library Tab — Unsaved Changes", () => {
     await expect(lib.nameInput).toHaveValue("Iron Sword Updated");
   });
 
-  test("discard unsaved changes and open a different item", async ({
-    gmPage,
-  }) => {
+  test("discard unsaved changes and open a different item", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateWithEntity(IRON_SWORD_ID);
     await expect(lib.nameInput).toHaveValue("Iron Sword");
@@ -217,9 +207,7 @@ test.describe("Items Library Tab — Unsaved Changes", () => {
 // ─── Deletion ────────────────────────────────────────────────────────────────
 
 test.describe("Items Library Tab — Deletion", () => {
-  test("delete an item that is not currently open", async ({
-    gmPage,
-  }) => {
+  test("delete an item that is not currently open", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
     await expect(lib.getRow("Leather Shield")).toBeVisible();
@@ -259,9 +247,7 @@ test.describe("Items Library Tab — Deletion", () => {
     expect(gmPage.url()).not.toContain("item_id");
   });
 
-  test("deleting the last item on a page returns to the previous page", async ({
-    gmPage,
-  }) => {
+  test("deleting the last item on a page returns to the previous page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
     await lib.navigateToTab();
 

@@ -1,6 +1,6 @@
+import type { UserRole } from "@qd/shared";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import type { UserRole } from "@qd/shared";
 
 export type Context = {
   userId: string | null;
@@ -20,7 +20,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
-  return next({ ctx: { userId: ctx.userId, userRole: ctx.userRole! } });
+  return next({ ctx: { userId: ctx.userId, userRole: ctx.userRole } });
 });
 
 export const gmProcedure = protectedProcedure.use(({ ctx, next }) => {

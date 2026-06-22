@@ -1,3 +1,5 @@
+import { applySpell } from "./effects";
+import { pushLog } from "./logging";
 import {
   computeBasicAttackDamage,
   computeBasicDamageWithModifiers,
@@ -5,9 +7,7 @@ import {
 } from "./math";
 import { compareUnitOrder } from "./rows";
 import { findScenario } from "./state";
-import { pushLog } from "./logging";
 import { selectTargets } from "./targeting";
-import { applySpell } from "./effects";
 import type { BattleState, BattleUnitState, SpellInput } from "./types";
 
 export type ActionOutcome = {
@@ -43,8 +43,16 @@ export function performBasicAttack(
     attacker.rowType === "tank" || attacker.rowType === "melee"
       ? attackerStats.meleeDmg
       : attackerStats.rangedDmg;
-  const distanceAdjustedDamage = computeBasicAttackDamage(baseStat, attacker.rowType, target.rowType);
-  const damage = computeBasicDamageWithModifiers(distanceAdjustedDamage, attackerStats, targetStats);
+  const distanceAdjustedDamage = computeBasicAttackDamage(
+    baseStat,
+    attacker.rowType,
+    target.rowType,
+  );
+  const damage = computeBasicDamageWithModifiers(
+    distanceAdjustedDamage,
+    attackerStats,
+    targetStats,
+  );
 
   target.currentHealth = Math.max(0, target.currentHealth - damage);
   pushLog(state, {
@@ -100,16 +108,24 @@ export function resolveUnitAction(
     unit.mana -= item.activationManaCost;
     unit.currentHealth -= item.activationHealthCost;
 
-    for (const spell of [...castableSpells].sort((left, right) => left.name.localeCompare(right.name))) {
+    for (const spell of [...castableSpells].sort((left, right) =>
+      left.name.localeCompare(right.name),
+    )) {
       const startingHealthByTarget = new Map(
-        selectTargets(state, unit, spell).map((target) => [target.instanceId, target.currentHealth]),
+        selectTargets(state, unit, spell).map((target) => [
+          target.instanceId,
+          target.currentHealth,
+        ]),
       );
       const result = applySpell(state, unit, spell, tick);
       castSpellNames.push(spell.name);
       totalDamage += result.targets.reduce((sum, target) => {
         const scenario = findScenario(state, target.scenarioId)!;
-        const updated = scenario.rows[target.rowType].find((candidate) => candidate.instanceId === target.instanceId)!;
-        const startingHealth = startingHealthByTarget.get(target.instanceId) ?? updated.currentHealth;
+        const updated = scenario.rows[target.rowType].find(
+          (candidate) => candidate.instanceId === target.instanceId,
+        )!;
+        const startingHealth =
+          startingHealthByTarget.get(target.instanceId) ?? updated.currentHealth;
         return sum + Math.max(0, startingHealth - updated.currentHealth);
       }, 0);
     }
@@ -142,8 +158,10 @@ export function buildReadyQueue(state: BattleState): BattleUnitState[] {
       const speedDiff = getUnitEffectiveStats(right).speed - getUnitEffectiveStats(left).speed;
       if (speedDiff !== 0) return speedDiff;
       if (left.scenarioId !== right.scenarioId) {
-        return state.scenarios.findIndex((scenario) => scenario.id === left.scenarioId) -
-          state.scenarios.findIndex((scenario) => scenario.id === right.scenarioId);
+        return (
+          state.scenarios.findIndex((scenario) => scenario.id === left.scenarioId) -
+          state.scenarios.findIndex((scenario) => scenario.id === right.scenarioId)
+        );
       }
       return compareUnitOrder(left, right);
     });

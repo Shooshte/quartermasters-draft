@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeBasicDamageWithModifiers, computeSpellDamageWithModifiers, getEffectiveStats } from "./math";
+import {
+  computeBasicDamageWithModifiers,
+  computeSpellDamageWithModifiers,
+  getEffectiveStats,
+} from "./math";
 import { createItem, createStats } from "./test-helpers";
 
 describe("stats and modifiers", () => {
@@ -35,7 +39,10 @@ describe("stats and modifiers", () => {
     const effective = getEffectiveStats(
       createStats({ spellDmg: 2, dodge: 1 }),
       [],
-      [{ statKey: "spellDmg", value: -10 }, { statKey: "dodge", value: -5 }],
+      [
+        { statKey: "spellDmg", value: -10 },
+        { statKey: "dodge", value: -5 },
+      ],
     );
     expect(effective.spellDmg).toBe(0);
     expect(effective.dodge).toBe(0);

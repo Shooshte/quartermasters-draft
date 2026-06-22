@@ -1,13 +1,9 @@
-import { useState, useCallback } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import {
-  type EffectSortBy,
-  type EffectSortDir,
-  EFFECTS_PAGE_SIZE,
-} from "../types";
+import { EFFECTS_PAGE_SIZE, type EffectSortBy, type EffectSortDir } from "../types";
 
 export function useEffectList(isActiveTab: boolean, backgroundEnabled: boolean) {
   const [effectPage, setEffectPage] = useState(1);
@@ -16,12 +12,13 @@ export function useEffectList(isActiveTab: boolean, backgroundEnabled: boolean) 
 
   const effectsList = useQuery({
     queryKey: ["scenarioBuilder", "effects", "list", effectPage, effectSortBy, effectSortDir],
-    queryFn: () => trpc.scenarioBuilder.effects.list.query({
-      page: effectPage,
-      limit: EFFECTS_PAGE_SIZE,
-      sortBy: effectSortBy,
-      sortDir: effectSortDir,
-    }),
+    queryFn: () =>
+      trpc.scenarioBuilder.effects.list.query({
+        page: effectPage,
+        limit: EFFECTS_PAGE_SIZE,
+        sortBy: effectSortBy,
+        sortDir: effectSortDir,
+      }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,
   });

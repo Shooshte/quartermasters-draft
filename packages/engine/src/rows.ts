@@ -14,9 +14,5 @@ export function compareRowOrder(a: RowType, b: RowType): number {
 }
 
 export function compareUnitOrder(a: BattleUnitState, b: BattleUnitState): number {
-  return (
-    compareRowOrder(a.rowType, b.rowType) ||
-    a.slot - b.slot ||
-    a.name.localeCompare(b.name)
-  );
+  return compareRowOrder(a.rowType, b.rowType) || a.slot - b.slot || a.name.localeCompare(b.name);
 }

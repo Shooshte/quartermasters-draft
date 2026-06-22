@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { EntityWorkspace } from "~/components/create/entity-workspace";
 import type { WorkspaceState } from "~/components/create/types";
 
@@ -31,23 +31,13 @@ describe("EntityWorkspace", () => {
   });
 
   it("shows loading state", () => {
-    render(
-      <EntityWorkspace
-        workspace={makeWorkspace({ mode: "loading" })}
-        {...defaultProps}
-      />,
-    );
+    render(<EntityWorkspace workspace={makeWorkspace({ mode: "loading" })} {...defaultProps} />);
     expect(screen.getByTestId("entity-loading")).toBeInTheDocument();
     expect(screen.getByText("Loading…")).toBeInTheDocument();
   });
 
   it("shows not-found state", () => {
-    render(
-      <EntityWorkspace
-        workspace={makeWorkspace({ mode: "not-found" })}
-        {...defaultProps}
-      />,
-    );
+    render(<EntityWorkspace workspace={makeWorkspace({ mode: "not-found" })} {...defaultProps} />);
     expect(screen.getByTestId("entity-not-found")).toBeInTheDocument();
     expect(screen.getByText("Entity not found")).toBeInTheDocument();
   });

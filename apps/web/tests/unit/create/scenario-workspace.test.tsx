@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { ScenarioWorkspace } from "~/components/create/scenario-workspace";
 import type { WorkspaceState } from "~/components/create/types";
 
@@ -118,7 +118,9 @@ describe("ScenarioWorkspace", () => {
               {
                 id: "r2",
                 rowType: "melee",
-                assignments: [{ assignmentId: "a1", unitId: "u-1", unitName: "Barbarian", position: 1 }],
+                assignments: [
+                  { assignmentId: "a1", unitId: "u-1", unitName: "Barbarian", position: 1 },
+                ],
               },
               {
                 id: "r3",
@@ -128,7 +130,9 @@ describe("ScenarioWorkspace", () => {
               {
                 id: "r4",
                 rowType: "support",
-                assignments: [{ assignmentId: "a3", unitId: "u-3", unitName: "Ranger", position: 1 }],
+                assignments: [
+                  { assignmentId: "a3", unitId: "u-3", unitName: "Ranger", position: 1 },
+                ],
               },
             ],
           },

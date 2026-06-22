@@ -1,6 +1,9 @@
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { computeTargetedSlots, TargetingGridPreview } from "~/components/create/targeting-grid-preview";
+import { describe, expect, it } from "vitest";
+import {
+  computeTargetedSlots,
+  TargetingGridPreview,
+} from "~/components/create/targeting-grid-preview";
 
 describe("computeTargetedSlots", () => {
   it("defaults: 1 row, 1 target, all types → 1 slot in ranged", () => {
@@ -98,7 +101,7 @@ describe("TargetingGridPreview", () => {
         maxTargetsPerRow={1}
         targetOnlyAdjacent={false}
         allowedRowTypes={[]}
-      />
+      />,
     );
     const grid = screen.getByTestId("targeting-grid");
     expect(grid).toBeInTheDocument();
@@ -123,7 +126,7 @@ describe("TargetingGridPreview", () => {
         maxTargetsPerRow={1}
         targetOnlyAdjacent={false}
         allowedRowTypes={[]}
-      />
+      />,
     );
     for (let i = 0; i < 5; i++) {
       expect(screen.getByTestId(`targeting-grid-slot-ranged-${i}`)).toBeInTheDocument();
@@ -137,14 +140,29 @@ describe("TargetingGridPreview", () => {
         maxTargetsPerRow={3}
         targetOnlyAdjacent={false}
         allowedRowTypes={[]}
-      />
+      />,
     );
     // First 3 slots in ranged should be targeted
-    expect(screen.getByTestId("targeting-grid-slot-ranged-0")).toHaveAttribute("data-targeted", "true");
-    expect(screen.getByTestId("targeting-grid-slot-ranged-1")).toHaveAttribute("data-targeted", "true");
-    expect(screen.getByTestId("targeting-grid-slot-ranged-2")).toHaveAttribute("data-targeted", "true");
-    expect(screen.getByTestId("targeting-grid-slot-ranged-3")).toHaveAttribute("data-targeted", "false");
-    expect(screen.getByTestId("targeting-grid-slot-ranged-4")).toHaveAttribute("data-targeted", "false");
+    expect(screen.getByTestId("targeting-grid-slot-ranged-0")).toHaveAttribute(
+      "data-targeted",
+      "true",
+    );
+    expect(screen.getByTestId("targeting-grid-slot-ranged-1")).toHaveAttribute(
+      "data-targeted",
+      "true",
+    );
+    expect(screen.getByTestId("targeting-grid-slot-ranged-2")).toHaveAttribute(
+      "data-targeted",
+      "true",
+    );
+    expect(screen.getByTestId("targeting-grid-slot-ranged-3")).toHaveAttribute(
+      "data-targeted",
+      "false",
+    );
+    expect(screen.getByTestId("targeting-grid-slot-ranged-4")).toHaveAttribute(
+      "data-targeted",
+      "false",
+    );
   });
 
   it("marks disabled rows with data-enabled false", () => {
@@ -154,10 +172,16 @@ describe("TargetingGridPreview", () => {
         maxTargetsPerRow={1}
         targetOnlyAdjacent={false}
         allowedRowTypes={["melee", "tank"]}
-      />
+      />,
     );
-    expect(screen.getByTestId("targeting-grid-row-ranged")).toHaveAttribute("data-enabled", "false");
-    expect(screen.getByTestId("targeting-grid-row-support")).toHaveAttribute("data-enabled", "false");
+    expect(screen.getByTestId("targeting-grid-row-ranged")).toHaveAttribute(
+      "data-enabled",
+      "false",
+    );
+    expect(screen.getByTestId("targeting-grid-row-support")).toHaveAttribute(
+      "data-enabled",
+      "false",
+    );
     expect(screen.getByTestId("targeting-grid-row-melee")).toHaveAttribute("data-enabled", "true");
     expect(screen.getByTestId("targeting-grid-row-tank")).toHaveAttribute("data-enabled", "true");
   });
@@ -169,7 +193,7 @@ describe("TargetingGridPreview", () => {
         maxTargetsPerRow={1}
         targetOnlyAdjacent={false}
         allowedRowTypes={[]}
-      />
+      />,
     );
     expect(screen.getByText("Ranged")).toBeInTheDocument();
     expect(screen.getByText("Support")).toBeInTheDocument();

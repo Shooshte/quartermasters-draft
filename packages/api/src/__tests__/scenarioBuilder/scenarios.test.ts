@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
 import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
@@ -20,13 +20,9 @@ vi.mock("@qd/db", async (importOriginal) => {
   return { ...actual, db: mockDb };
 });
 
-const { scenariosRouter } = await import(
-  "../../routers/scenarioBuilder/scenarios"
-);
+const { scenariosRouter } = await import("../../routers/scenarioBuilder/scenarios");
 
-const createCaller = createCallerFactory(
-  router({ scenarios: scenariosRouter }),
-);
+const createCaller = createCallerFactory(router({ scenarios: scenariosRouter }));
 
 describe("scenariosRouter", () => {
   beforeEach(() => {
@@ -107,32 +103,32 @@ describe("scenariosRouter", () => {
 
   describe("get", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).scenarios.get({ id: "a0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).scenarios.get({ id: "a0000000-0000-4000-8000-000000000001" }),
     );
 
     it("returns scenario with rows and assignments when found", async () => {
       const mockScenario = {
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
         name: "Ambush at Dawn",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       const mockRows = [
         {
-          id: "b0000000-0000-0000-0000-000000000002",
+          id: "b0000000-0000-4000-8000-000000000002",
           rowType: "melee",
         },
         {
-          id: "b0000000-0000-0000-0000-000000000001",
+          id: "b0000000-0000-4000-8000-000000000001",
           rowType: "tank",
         },
       ];
       const mockAssignmentsWithUnits = [
         {
           scenarios_rows_units: {
-            id: "c0000000-0000-0000-0000-000000000001",
-            rowId: "b0000000-0000-0000-0000-000000000002",
-            unitId: "f0000000-0000-0000-0000-000000000001",
+            id: "c0000000-0000-4000-8000-000000000001",
+            rowId: "b0000000-0000-4000-8000-000000000002",
+            unitId: "f0000000-0000-4000-8000-000000000001",
             slot: 1,
           },
           units: { name: "Barbarian" },
@@ -153,10 +149,10 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.scenarios.get({
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
       });
 
-      expect(result.id).toBe("a0000000-0000-0000-0000-000000000001");
+      expect(result.id).toBe("a0000000-0000-4000-8000-000000000001");
       expect(result.name).toBe("Ambush at Dawn");
       expect(result.rows).toHaveLength(2);
 
@@ -165,8 +161,8 @@ describe("scenariosRouter", () => {
 
       expect(result.rows[0].assignments).toEqual([
         {
-          assignmentId: "c0000000-0000-0000-0000-000000000001",
-          unitId: "f0000000-0000-0000-0000-000000000001",
+          assignmentId: "c0000000-0000-4000-8000-000000000001",
+          unitId: "f0000000-0000-4000-8000-000000000001",
           unitName: "Barbarian",
           position: 1,
         },
@@ -180,24 +176,22 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.scenarios.get({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.scenarios.get({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
 
   describe("delete", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).scenarios.delete({ id: "a0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).scenarios.delete({ id: "a0000000-0000-4000-8000-000000000001" }),
     );
 
     it("deletes scenario and returns success", async () => {
-      mockDeleteFn.mockReturnValue(
-        chainable([{ id: "a0000000-0000-0000-0000-000000000001" }]),
-      );
+      mockDeleteFn.mockReturnValue(chainable([{ id: "a0000000-0000-4000-8000-000000000001" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.scenarios.delete({
-        id: "a0000000-0000-0000-0000-000000000001",
+        id: "a0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({ success: true });
     });
@@ -207,7 +201,7 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.scenarios.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.scenarios.delete({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
@@ -215,7 +209,7 @@ describe("scenariosRouter", () => {
   describe("create", () => {
     it("creates a scenario with four empty rows", async () => {
       const createdScenario = {
-        id: "a2000000-0000-0000-0000-000000000099",
+        id: "a2000000-0000-4000-8000-000000000099",
         name: "Frontier Watch",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -230,12 +224,14 @@ describe("scenariosRouter", () => {
 
       tx.insert
         .mockReturnValueOnce(chainable([createdScenario]))
-        .mockReturnValueOnce(chainable([
-          { id: "r1", scenarioId: createdScenario.id, rowType: "tank" },
-          { id: "r2", scenarioId: createdScenario.id, rowType: "melee" },
-          { id: "r3", scenarioId: createdScenario.id, rowType: "ranged" },
-          { id: "r4", scenarioId: createdScenario.id, rowType: "support" },
-        ]))
+        .mockReturnValueOnce(
+          chainable([
+            { id: "r1", scenarioId: createdScenario.id, rowType: "tank" },
+            { id: "r2", scenarioId: createdScenario.id, rowType: "melee" },
+            { id: "r3", scenarioId: createdScenario.id, rowType: "ranged" },
+            { id: "r4", scenarioId: createdScenario.id, rowType: "support" },
+          ]),
+        )
         .mockReturnValueOnce(chainable([]));
 
       let selectCallCount = 0;
@@ -275,7 +271,7 @@ describe("scenariosRouter", () => {
 
     it("creates a scenario with assignments across rows", async () => {
       const createdScenario = {
-        id: "a2000000-0000-0000-0000-000000000100",
+        id: "a2000000-0000-4000-8000-000000000100",
         name: "Siege Breakers",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -290,12 +286,14 @@ describe("scenariosRouter", () => {
 
       tx.insert
         .mockReturnValueOnce(chainable([createdScenario]))
-        .mockReturnValueOnce(chainable([
-          { id: "r1", scenarioId: createdScenario.id, rowType: "tank" },
-          { id: "r2", scenarioId: createdScenario.id, rowType: "melee" },
-          { id: "r3", scenarioId: createdScenario.id, rowType: "ranged" },
-          { id: "r4", scenarioId: createdScenario.id, rowType: "support" },
-        ]))
+        .mockReturnValueOnce(
+          chainable([
+            { id: "r1", scenarioId: createdScenario.id, rowType: "tank" },
+            { id: "r2", scenarioId: createdScenario.id, rowType: "melee" },
+            { id: "r3", scenarioId: createdScenario.id, rowType: "ranged" },
+            { id: "r4", scenarioId: createdScenario.id, rowType: "support" },
+          ]),
+        )
         .mockReturnValueOnce(chainable([]));
 
       let selectCallCount = 0;
@@ -350,15 +348,21 @@ describe("scenariosRouter", () => {
         name: "Siege Breakers",
         rows: [
           { rowType: "tank", unitIds: [] },
-          { rowType: "melee", unitIds: ["f0000000-0000-0000-0000-000000000001"] },
-          { rowType: "ranged", unitIds: ["f0000000-0000-0000-0000-000000000002"] },
-          { rowType: "support", unitIds: ["f0000000-0000-0000-0000-000000000003"] },
+          { rowType: "melee", unitIds: ["f0000000-0000-4000-8000-000000000001"] },
+          { rowType: "ranged", unitIds: ["f0000000-0000-4000-8000-000000000002"] },
+          { rowType: "support", unitIds: ["f0000000-0000-4000-8000-000000000003"] },
         ],
       });
 
-      expect(result.rows.find((row) => row.rowType === "melee")?.assignments[0]?.unitName).toBe("Barbarian");
-      expect(result.rows.find((row) => row.rowType === "ranged")?.assignments[0]?.unitName).toBe("Mage");
-      expect(result.rows.find((row) => row.rowType === "support")?.assignments[0]?.unitName).toBe("Ranger");
+      expect(result.rows.find((row) => row.rowType === "melee")?.assignments[0]?.unitName).toBe(
+        "Barbarian",
+      );
+      expect(result.rows.find((row) => row.rowType === "ranged")?.assignments[0]?.unitName).toBe(
+        "Mage",
+      );
+      expect(result.rows.find((row) => row.rowType === "support")?.assignments[0]?.unitName).toBe(
+        "Ranger",
+      );
     });
 
     it("throws CONFLICT for duplicate scenario names", async () => {
@@ -387,7 +391,7 @@ describe("scenariosRouter", () => {
   describe("update", () => {
     it("updates only the scenario name", async () => {
       const updatedScenario = {
-        id: "a2000000-0000-0000-0000-000000000001",
+        id: "a2000000-0000-4000-8000-000000000001",
         name: "Ambush at Dusk",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -429,13 +433,13 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.scenarios.update({
-        id: "a2000000-0000-0000-0000-000000000001",
+        id: "a2000000-0000-4000-8000-000000000001",
         name: "Ambush at Dusk",
         rows: [
           { rowType: "tank", unitIds: [] },
-          { rowType: "melee", unitIds: ["f0000000-0000-0000-0000-000000000001"] },
-          { rowType: "ranged", unitIds: ["f0000000-0000-0000-0000-000000000002"] },
-          { rowType: "support", unitIds: ["f0000000-0000-0000-0000-000000000003"] },
+          { rowType: "melee", unitIds: ["f0000000-0000-4000-8000-000000000001"] },
+          { rowType: "ranged", unitIds: ["f0000000-0000-4000-8000-000000000002"] },
+          { rowType: "support", unitIds: ["f0000000-0000-4000-8000-000000000003"] },
         ],
       });
 
@@ -444,7 +448,7 @@ describe("scenariosRouter", () => {
 
     it("updates assignments and preserves slot order", async () => {
       const updatedScenario = {
-        id: "a2000000-0000-0000-0000-000000000002",
+        id: "a2000000-0000-4000-8000-000000000002",
         name: "Castle Siege",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -495,15 +499,15 @@ describe("scenariosRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.scenarios.update({
-        id: "a2000000-0000-0000-0000-000000000002",
+        id: "a2000000-0000-4000-8000-000000000002",
         name: "Castle Siege",
         rows: [
           { rowType: "tank", unitIds: [] },
           {
             rowType: "melee",
             unitIds: [
-              "f0000000-0000-0000-0000-000000000002",
-              "f0000000-0000-0000-0000-000000000001",
+              "f0000000-0000-4000-8000-000000000002",
+              "f0000000-0000-4000-8000-000000000001",
             ],
           },
           { rowType: "ranged", unitIds: [] },
@@ -519,7 +523,7 @@ describe("scenariosRouter", () => {
 
     it("throws INTERNAL_SERVER_ERROR when persisted scenario rows are invalid", async () => {
       const updatedScenario = {
-        id: "a2000000-0000-0000-0000-000000000003",
+        id: "a2000000-0000-4000-8000-000000000003",
         name: "Broken Scenario",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -573,7 +577,7 @@ describe("scenariosRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.scenarios.update({
-          id: "00000000-0000-0000-0000-000000000099",
+          id: "00000000-0000-4000-8000-000000000099",
           name: "Missing",
           rows: [
             { rowType: "tank", unitIds: [] },

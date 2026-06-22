@@ -1,28 +1,25 @@
+import { db, spells, spellsAllowedRows, spellsEffects } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, spells, spellsEffects, spellsAllowedRows } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, listInputSchema } from "./shared";
+import { findDbError, idSchema, listInputSchema } from "./shared";
 
-const spellListInput = listInputSchema.extend({
-  limit: z.number().int().min(1).max(500).default(20),
-  sortBy: z.enum(["name", "targetPolicy", "updatedAt"]).default("name"),
-  sortDir: z.enum(["asc", "desc"]).default("asc"),
-}).default({});
+const spellListInput = listInputSchema
+  .extend({
+    limit: z.number().int().min(1).max(500).default(20),
+    sortBy: z.enum(["name", "targetPolicy", "updatedAt"]).default("name"),
+    sortDir: z.enum(["asc", "desc"]).default("asc"),
+  })
+  .prefault({});
 
 const allowedRowTypeEnum = z.enum(["support", "ranged", "melee", "tank"]);
 
 const spellInputFields = z.object({
   name: z.string().trim().min(1),
   description: z.string().nullable().optional().default(null),
-  targetPolicy: z.enum([
-    "highest_health",
-    "lowest_health",
-    "highest_damage",
-    "random",
-  ]),
-  effectIds: z.array(z.string().uuid()).min(1, "At least one linked effect is required"),
+  targetPolicy: z.enum(["highest_health", "lowest_health", "highest_damage", "random"]),
+  effectIds: z.array(idSchema).min(1, "At least one linked effect is required"),
   targetRowCount: z.number().int().min(1).max(4).default(1),
   maxTargetsPerRow: z.number().int().min(1).nullable().default(1),
   targetOnlyAdjacent: z.boolean().default(false),
@@ -133,9 +130,7 @@ export const spellsRouter = router({
     const sortColumn = sortColumnMap[input.sortBy];
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
-      input.sortBy === "name"
-        ? [sortFn(sortColumn)]
-        : [sortFn(sortColumn), asc(spells.name)];
+      input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(spells.name)];
 
     const [items, countResult] = await Promise.all([
       db
@@ -164,82 +159,75 @@ export const spellsRouter = router({
     };
   }),
 
-  get: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const [spell] = await db
-        .select()
-        .from(spells)
-        .where(eq(spells.id, input.id));
+  get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
+    const [spell] = await db.select().from(spells).where(eq(spells.id, input.id));
 
-      if (!spell) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Spell not found" });
-      }
+    if (!spell) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Spell not found" });
+    }
 
-      const effectLinks = await db
-        .select({ effectTemplateId: spellsEffects.effectTemplateId })
-        .from(spellsEffects)
-        .where(eq(spellsEffects.spellId, input.id))
-        .orderBy(asc(spellsEffects.sequenceOrder));
+    const effectLinks = await db
+      .select({ effectTemplateId: spellsEffects.effectTemplateId })
+      .from(spellsEffects)
+      .where(eq(spellsEffects.spellId, input.id))
+      .orderBy(asc(spellsEffects.sequenceOrder));
 
-      const allowedRows = await db
-        .select({ rowType: spellsAllowedRows.rowType })
-        .from(spellsAllowedRows)
-        .where(eq(spellsAllowedRows.spellId, input.id));
+    const allowedRows = await db
+      .select({ rowType: spellsAllowedRows.rowType })
+      .from(spellsAllowedRows)
+      .where(eq(spellsAllowedRows.spellId, input.id));
 
-      return {
-        ...spell,
-        effectIds: effectLinks.map((e) => e.effectTemplateId),
-        allowedRowTypes: allowedRows.map((r) => r.rowType),
-      };
-    }),
+    return {
+      ...spell,
+      effectIds: effectLinks.map((e) => e.effectTemplateId),
+      allowedRowTypes: allowedRows.map((r) => r.rowType),
+    };
+  }),
 
-  create: gmProcedure
-    .input(spellInputBaseSchema)
-    .mutation(async ({ input }) => {
-      const normalized = normalizeSpellInput(input);
+  create: gmProcedure.input(spellInputBaseSchema).mutation(async ({ input }) => {
+    const normalized = normalizeSpellInput(input);
 
-      try {
-        return await db.transaction(async (tx) => {
-          const [created] = await tx
-            .insert(spells)
-            .values({
-              name: normalized.name,
-              description: normalized.description,
-              targetPolicy: normalized.targetPolicy,
-              targetRowCount: normalized.targetRowCount,
-              maxTargetsPerRow: normalized.maxTargetsPerRow,
-              targetOnlyAdjacent: normalized.targetOnlyAdjacent,
-            })
-            .returning();
+    try {
+      return await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(spells)
+          .values({
+            name: normalized.name,
+            description: normalized.description,
+            targetPolicy: normalized.targetPolicy,
+            targetRowCount: normalized.targetRowCount,
+            maxTargetsPerRow: normalized.maxTargetsPerRow,
+            targetOnlyAdjacent: normalized.targetOnlyAdjacent,
+          })
+          .returning();
 
-          if (!created) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Spell was not created.",
-            });
-          }
-
-          await insertSpellEffects(tx, created.id, normalized.effectIds);
-          await insertSpellAllowedRows(tx, created.id, normalized.allowedRowTypes);
-
-          return {
-            ...created,
-            effectIds: normalized.effectIds,
-            allowedRowTypes: normalized.allowedRowTypes,
-          };
-        });
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
+        if (!created) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Spell was not created.",
+          });
         }
 
-        maybeThrowConflict(error);
+        await insertSpellEffects(tx, created.id, normalized.effectIds);
+        await insertSpellAllowedRows(tx, created.id, normalized.allowedRowTypes);
+
+        return {
+          ...created,
+          effectIds: normalized.effectIds,
+          allowedRowTypes: normalized.allowedRowTypes,
+        };
+      });
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
       }
-    }),
+
+      maybeThrowConflict(error);
+    }
+  }),
 
   update: gmProcedure
-    .input(addTargetingRefinements(z.object({ id: z.string().uuid() }).merge(spellInputFields)))
+    .input(addTargetingRefinements(z.object({ id: idSchema }).merge(spellInputFields)))
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeSpellInput(rest);
@@ -284,24 +272,22 @@ export const spellsRouter = router({
       }
     }),
 
-  delete: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      try {
-        const deleted = await db
-          .delete(spells)
-          .where(eq(spells.id, input.id))
-          .returning({ id: spells.id });
-        if (deleted.length === 0) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Spell not found" });
-        }
-        return { success: true };
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        maybeThrowDeleteConflict(error);
+  delete: gmProcedure.input(z.object({ id: idSchema })).mutation(async ({ input }) => {
+    try {
+      const deleted = await db
+        .delete(spells)
+        .where(eq(spells.id, input.id))
+        .returning({ id: spells.id });
+      if (deleted.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Spell not found" });
       }
-    }),
+      return { success: true };
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      maybeThrowDeleteConflict(error);
+    }
+  }),
 });

@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { SPELLS_PAGE_SIZE, createIdleWorkspace } from "../types";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
+import { createIdleWorkspace, SPELLS_PAGE_SIZE } from "../types";
 
 interface UseDeleteSpellDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -27,7 +27,9 @@ export function useDeleteSpellDialog({
 }: UseDeleteSpellDialogOptions) {
   const queryClient = useQueryClient();
   const [isDeleteSpellDialogOpen, setIsDeleteSpellDialogOpen] = useState(false);
-  const [deleteSpellTarget, setDeleteSpellTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteSpellTarget, setDeleteSpellTarget] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   const [deleteSpellError, setDeleteSpellError] = useState<string | null>(null);
 
   const requestDeleteSpell = useCallback((id: string, name: string) => {
@@ -35,8 +37,11 @@ export function useDeleteSpellDialog({
     setIsDeleteSpellDialogOpen(true);
   }, []);
 
-  const isLinkedItemConflict = (error: unknown) => {
-    if (error instanceof Error && error.message.includes("Cannot delete spell while it is linked")) {
+  const isLinkedItemConflict = useCallback((error: unknown) => {
+    if (
+      error instanceof Error &&
+      error.message.includes("Cannot delete spell while it is linked")
+    ) {
       return true;
     }
 
@@ -54,7 +59,7 @@ export function useDeleteSpellDialog({
       maybeTrpcError.shape?.data?.code === "CONFLICT" ||
       maybeTrpcError.shape?.message?.includes("Cannot delete spell while it is linked") === true
     );
-  };
+  }, []);
 
   const confirmDeleteSpell = useCallback(async () => {
     if (!deleteSpellTarget) return;
@@ -95,7 +100,19 @@ export function useDeleteSpellDialog({
         setDeleteSpellError("Failed to delete spell. Please try again.");
       }
     }
-  }, [deleteSpellTarget, entityWorkspace.entityId, navigate, queryClient, spellTotalCount, spellPage, setEntityWorkspace, setPerTabSelection, skipEntityResetRef, setSpellPage]);
+  }, [
+    deleteSpellTarget,
+    entityWorkspace.entityId,
+    navigate,
+    queryClient,
+    spellTotalCount,
+    spellPage,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    setSpellPage,
+    isLinkedItemConflict,
+  ]);
 
   const cancelDeleteSpell = useCallback(() => {
     setDeleteSpellTarget(null);

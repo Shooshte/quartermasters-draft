@@ -1,6 +1,5 @@
 import { createSeededRandom } from "./rng";
 import { ROW_ORDER } from "./rows";
-import { validateBattleInput } from "./validation";
 import type {
   BattleInput,
   BattleItemState,
@@ -15,6 +14,7 @@ import type {
   UnitInput,
   UnitStats,
 } from "./types";
+import { validateBattleInput } from "./validation";
 
 type InternalBattleState = BattleState & {
   __rng: () => number;
@@ -116,17 +116,25 @@ function createScenarioState(scenario: ScenarioInput): BattleScenarioState {
   };
 }
 
-function applyTargetingOverrides(state: InternalBattleState, overrides: BattleInput["targetingOverrides"]) {
+function applyTargetingOverrides(
+  state: InternalBattleState,
+  overrides: BattleInput["targetingOverrides"],
+) {
   for (const override of overrides ?? []) {
     const scenario = state.scenarios.find((candidate) => candidate.id === override.scenarioId);
-    const unit = scenario?.rows[override.rowType].find((candidate) => candidate.slot === override.slot);
+    const unit = scenario?.rows[override.rowType].find(
+      (candidate) => candidate.slot === override.slot,
+    );
     if (unit) {
       unit.targetPolicyOverride = override.policy;
     }
   }
 }
 
-export function initializeBattleState(input: BattleInput, options: BattleOptions = {}): BattleState {
+export function initializeBattleState(
+  input: BattleInput,
+  options: BattleOptions = {},
+): BattleState {
   validateBattleInput(input);
 
   const state: InternalBattleState = {
@@ -166,7 +174,9 @@ export function nextEffectId(state: BattleState): string {
 }
 
 export function allUnits(state: BattleState): BattleUnitState[] {
-  return state.scenarios.flatMap((scenario) => ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]));
+  return state.scenarios.flatMap((scenario) =>
+    ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]),
+  );
 }
 
 export function findScenario(state: BattleState, scenarioId: string) {

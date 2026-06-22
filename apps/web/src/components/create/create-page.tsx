@@ -1,11 +1,11 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useCreatePageState } from "./use-create-page-state";
-import { EntityWorkspace } from "./entity-workspace";
-import { ScenarioWorkspace } from "./scenario-workspace";
-import { LibraryPanel } from "./library-panel";
-import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
+import { EntityWorkspace } from "./entity-workspace";
+import { LibraryPanel } from "./library-panel";
+import { ScenarioWorkspace } from "./scenario-workspace";
 import type { CreatePageNavigate } from "./types";
+import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
+import { useCreatePageState } from "./use-create-page-state";
 
 interface CreatePageProps {
   search: {
@@ -21,7 +21,8 @@ interface CreatePageProps {
 
 export function CreatePage({ search }: CreatePageProps) {
   const navigate = useNavigate();
-  const navigateWithSearchUpdate: CreatePageNavigate = (opts) => navigate(opts as Parameters<typeof navigate>[0]);
+  const navigateWithSearchUpdate: CreatePageNavigate = (opts) =>
+    navigate(opts as Parameters<typeof navigate>[0]);
   const state = useCreatePageState(search, navigateWithSearchUpdate);
   const deleteDialogs = [
     {
@@ -128,10 +129,7 @@ export function CreatePage({ search }: CreatePageProps) {
           saveError={state.scenarioSaveError}
           unitOptions={state.scenarioUnitOptions}
         />
-        <div
-          data-testid="workspace-divider"
-          className="border-t border-border"
-        />
+        <div data-testid="workspace-divider" className="border-t border-border" />
         <EntityWorkspace
           workspace={state.entityWorkspace}
           onFieldChange={state.updateEntityField}

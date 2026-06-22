@@ -7,7 +7,7 @@ import { resetWorkerDbByIndex } from "./helpers/worker-db";
  * out through docker compose and psql for every test.
  */
 export const test = authTest.extend<{ resetDb: () => Promise<void> }>({
-  resetDb: async ({}, use, testInfo) => {
+  resetDb: async ({ browserName: _browserName }, use, testInfo) => {
     const reset = async () => {
       await resetWorkerDbByIndex(testInfo.parallelIndex);
     };

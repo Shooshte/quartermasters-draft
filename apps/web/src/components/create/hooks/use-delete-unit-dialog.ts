@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { UNITS_PAGE_SIZE, createIdleWorkspace } from "../types";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
+import { createIdleWorkspace, UNITS_PAGE_SIZE } from "../types";
 
 interface UseDeleteUnitDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -27,7 +27,9 @@ export function useDeleteUnitDialog({
 }: UseDeleteUnitDialogOptions) {
   const queryClient = useQueryClient();
   const [isDeleteUnitDialogOpen, setIsDeleteUnitDialogOpen] = useState(false);
-  const [deleteUnitTarget, setDeleteUnitTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteUnitTarget, setDeleteUnitTarget] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   const [deleteUnitError, setDeleteUnitError] = useState<string | null>(null);
 
   const requestDeleteUnit = useCallback((id: string, name: string) => {
@@ -70,7 +72,18 @@ export function useDeleteUnitDialog({
     } catch {
       setDeleteUnitError("Failed to delete unit. Please try again.");
     }
-  }, [deleteUnitTarget, entityWorkspace.entityId, navigate, queryClient, unitTotalCount, unitPage, setEntityWorkspace, setPerTabSelection, skipEntityResetRef, setUnitPage]);
+  }, [
+    deleteUnitTarget,
+    entityWorkspace.entityId,
+    navigate,
+    queryClient,
+    unitTotalCount,
+    unitPage,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    setUnitPage,
+  ]);
 
   const cancelDeleteUnit = useCallback(() => {
     setDeleteUnitTarget(null);

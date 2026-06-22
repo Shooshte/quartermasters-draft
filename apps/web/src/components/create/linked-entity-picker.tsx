@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Button } from "~/components/ui/button";
-import { EntityPickerPopover, type EntityPickerOption } from "./entity-picker-popover";
+import { type EntityPickerOption, EntityPickerPopover } from "./entity-picker-popover";
 
 export interface LinkedEntityOption extends EntityPickerOption {}
 
@@ -55,6 +55,20 @@ function removeLinkedEntityId(linkedIds: string[], index: number) {
   return linkedIds.filter((_, currentIndex) => currentIndex !== index);
 }
 
+function buildLinkedEntityRows(linkedIds: string[]) {
+  const seen = new Map<string, number>();
+
+  return linkedIds.map((linkedId) => {
+    const occurrence = (seen.get(linkedId) ?? 0) + 1;
+    seen.set(linkedId, occurrence);
+
+    return {
+      linkedId,
+      key: `${linkedId}-${occurrence}`,
+    };
+  });
+}
+
 export function LinkedEntityPicker({
   pickerTestId,
   searchTestId,
@@ -83,10 +97,8 @@ export function LinkedEntityPicker({
     return getAvailableLinkedEntityOptions(options, linkedIds, allowDuplicates);
   }, [allowDuplicates, linkedIds, options]);
 
-  const optionMap = useMemo(
-    () => new Map(options.map((option) => [option.id, option])),
-    [options],
-  );
+  const optionMap = useMemo(() => new Map(options.map((option) => [option.id, option])), [options]);
+  const linkedRows = useMemo(() => buildLinkedEntityRows(linkedIds), [linkedIds]);
 
   const handleAdd = () => {
     if (!selectedId) {
@@ -132,25 +144,20 @@ export function LinkedEntityPicker({
           triggerClassName="ws-linked-picker-trigger"
           popoverClassName="ws-linked-picker-popover"
         />
-        <Button
-          variant="outline"
-          size="sm"
-          data-testid={addButtonTestId}
-          onClick={handleAdd}
-        >
+        <Button variant="outline" size="sm" data-testid={addButtonTestId} onClick={handleAdd}>
           {addButtonLabel}
         </Button>
       </div>
 
       <div className="flex flex-col gap-1">
-        {linkedIds.map((linkedId, index) => {
+        {linkedRows.map(({ linkedId, key }, index) => {
           const option = optionMap.get(linkedId);
           const isFirst = index === 0;
-          const isLast = index === linkedIds.length - 1;
+          const isLast = index === linkedRows.length - 1;
 
           return (
             <div
-              key={`${linkedId}-${index}`}
+              key={key}
               className="flex items-center gap-2"
               style={{
                 background: "rgba(255,255,255,0.03)",
@@ -201,6 +208,7 @@ export function LinkedEntityPicker({
                 {allowReorder ? (
                   <>
                     <button
+                      type="button"
                       data-testid={`${moveUpTestIdPrefix}-${index}`}
                       className="inline-flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
                       style={{ width: 24, height: 24, fontSize: 12, opacity: isFirst ? 0.2 : 1 }}
@@ -210,6 +218,7 @@ export function LinkedEntityPicker({
                       ↑
                     </button>
                     <button
+                      type="button"
                       data-testid={`${moveDownTestIdPrefix}-${index}`}
                       className="inline-flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
                       style={{ width: 24, height: 24, fontSize: 12, opacity: isLast ? 0.2 : 1 }}
@@ -221,6 +230,7 @@ export function LinkedEntityPicker({
                   </>
                 ) : null}
                 <button
+                  type="button"
                   data-testid={`${removeTestIdPrefix}-${index}`}
                   className="inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive"
                   style={{ width: 24, height: 24, fontSize: 12 }}

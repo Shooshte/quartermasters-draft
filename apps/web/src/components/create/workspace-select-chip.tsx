@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type MouseEvent, type RefObject } from "react";
+import { type CSSProperties, type MouseEvent, type RefObject, useRef } from "react";
 import { cn } from "~/lib/utils";
 
 export interface WorkspaceSelectOption {
@@ -18,9 +18,7 @@ interface WorkspaceSelectChipProps {
   includeEmptyOption?: boolean;
 }
 
-function createChipMouseDownHandler(
-  selectRef: RefObject<HTMLSelectElement | null>,
-) {
+function createChipMouseDownHandler(selectRef: RefObject<HTMLSelectElement | null>) {
   return (event: MouseEvent<HTMLLabelElement>) => {
     if (event.target instanceof HTMLSelectElement) {
       return;

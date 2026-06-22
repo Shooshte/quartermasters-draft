@@ -1,8 +1,8 @@
 // Source of truth: e2e/features/create/library-spells-tab.feature
 // Also covers spell-workspace.feature scenarios for effect-picker behavior and
 // deletion flows.
-import { test, expect } from "../db-reset.fixture";
-import { FIREBALL_ID, BATTLE_CRY_ID, ZENITH_BLOOM_ID } from "../helpers/seed-constants";
+import { expect, test } from "../db-reset.fixture";
+import { BATTLE_CRY_ID, FIREBALL_ID, ZENITH_BLOOM_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { SPELLS_TAB } from "../pages/library-tab-configs";
@@ -34,9 +34,7 @@ test.describe("Spells Library Tab — Display", () => {
     await expect(healingTouch.locator("td").nth(2)).not.toBeEmpty();
   });
 
-  test("empty state is shown when no spells exist", async ({
-    gmPage,
-  }) => {
+  test("empty state is shown when no spells exist", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
 
     const itemIds = await listEntityIdsViaApi(gmPage.request, "items");
@@ -54,18 +52,14 @@ test.describe("Spells Library Tab — Display", () => {
     await lib.navigateToTab();
     await expect(lib.emptyList).toBeVisible();
     await expect(gmPage.getByText("No spell records yet")).toBeVisible();
-    await expect(
-      gmPage.getByRole("button", { name: "Create the first spell" }),
-    ).toBeVisible();
+    await expect(gmPage.getByRole("button", { name: "Create the first spell" })).toBeVisible();
   });
 });
 
 // ─── Pagination ─────────────────────────────────────────────────────────────
 
 test.describe("Spells Library Tab — Pagination", () => {
-  test("spells are displayed one page at a time with pagination controls", async ({
-    gmPage,
-  }) => {
+  test("spells are displayed one page at a time with pagination controls", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 
@@ -105,17 +99,13 @@ test.describe("Spells Library Tab — Pagination", () => {
     await expect(lib.getRow("Arcane Shield")).toBeVisible();
   });
 
-  test("Previous page control is disabled on the first page", async ({
-    gmPage,
-  }) => {
+  test("Previous page control is disabled on the first page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
     await expect(lib.prevPageButton).toBeDisabled();
   });
 
-  test("Next page control is disabled on the last page", async ({
-    gmPage,
-  }) => {
+  test("Next page control is disabled on the last page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 
@@ -215,24 +205,16 @@ test.describe("Spells Library Tab — Sorting", () => {
     await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Holy Light");
   });
 
-  test("clicking the active sort column toggles direction", async ({
-    gmPage,
-  }) => {
+  test("clicking the active sort column toggles direction", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 
     // Default: Name ascending — Arcane Shield first
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Arcane Shield",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Arcane Shield");
 
     // Click Name to toggle to descending
     await lib.clickSortColumn("Name");
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Zenith Bloom",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zenith Bloom");
   });
 });
 
@@ -281,10 +263,7 @@ test.describe("Spell Workspace — Effect Picker", () => {
 
     await spell.effectPicker.click();
 
-    await expect(spell.effectPickerSearch).toHaveAttribute(
-      "placeholder",
-      "Search effects...",
-    );
+    await expect(spell.effectPickerSearch).toHaveAttribute("placeholder", "Search effects...");
     await expect(spell.effectPickerOptions).toHaveCount(5);
     await expect(spell.effectPickerOptions.filter({ hasText: "Search effects..." })).toHaveCount(0);
   });
@@ -344,9 +323,7 @@ test.describe("Spell Workspace — Effect Picker", () => {
 // ─── Unsaved Changes ────────────────────────────────────────────────────────
 
 test.describe("Spells Library Tab — Unsaved Changes", () => {
-  test("warn before opening a different spell with unsaved changes", async ({
-    gmPage,
-  }) => {
+  test("warn before opening a different spell with unsaved changes", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateWithEntity(FIREBALL_ID);
     await expect(lib.nameInput).toHaveValue("Fireball");
@@ -367,9 +344,7 @@ test.describe("Spells Library Tab — Unsaved Changes", () => {
     await expect(lib.nameInput).toHaveValue("Fireball Updated");
   });
 
-  test("discard unsaved changes and open a different spell", async ({
-    gmPage,
-  }) => {
+  test("discard unsaved changes and open a different spell", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateWithEntity(FIREBALL_ID);
     await expect(lib.nameInput).toHaveValue("Fireball");
@@ -388,9 +363,7 @@ test.describe("Spells Library Tab — Unsaved Changes", () => {
 // ─── Deletion ────────────────────────────────────────────────────────────────
 
 test.describe("Spells Library Tab — Deletion", () => {
-  test("delete a spell that is not currently open", async ({
-    gmPage,
-  }) => {
+  test("delete a spell that is not currently open", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
     await lib.clickNextPage();
@@ -433,7 +406,9 @@ test.describe("Spells Library Tab — Deletion", () => {
     await lib.confirmDeletion();
 
     await expect(lib.deleteConfirmDialog).toBeVisible();
-    await expect(gmPage.getByText("Cannot delete spell while it is linked to one or more items.")).toBeVisible();
+    await expect(
+      gmPage.getByText("Cannot delete spell while it is linked to one or more items."),
+    ).toBeVisible();
     await expect(lib.nameInput).toHaveValue("Fireball");
     expect(gmPage.url()).toContain(`spell_id=${FIREBALL_ID}`);
 
@@ -459,9 +434,7 @@ test.describe("Spells Library Tab — Deletion", () => {
     expect(gmPage.url()).not.toContain("spell_id");
   });
 
-  test("deleting the last spell on a page returns to the previous page", async ({
-    gmPage,
-  }) => {
+  test("deleting the last spell on a page returns to the previous page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
     await lib.navigateToTab();
 

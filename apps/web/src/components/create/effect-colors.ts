@@ -41,7 +41,11 @@ export const MODIFIER_GROUPS = [
   { label: "Combat Buff", fields: ["meleeDmg", "rangedDmg", "spellDmg"] as const, cols: 3 },
   { label: "Defense Buff", fields: ["health", "dodge", "criticalChance"] as const, cols: 3 },
   { label: "Utility Buff", fields: ["speed", "manaRegen"] as const, cols: 2 },
-  { label: "One Time Effect", fields: ["directHealing", "directMeleeDmg", "directRangedDmg", "directSpellDmg"] as const, cols: 4 },
+  {
+    label: "One Time Effect",
+    fields: ["directHealing", "directMeleeDmg", "directRangedDmg", "directSpellDmg"] as const,
+    cols: 4,
+  },
 ] as const;
 
 /** Timing fields rendered together in the Timing section. */

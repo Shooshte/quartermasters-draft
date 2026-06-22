@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
 import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
@@ -20,9 +20,7 @@ vi.mock("@qd/db", async (importOriginal) => {
   return { ...actual, db: mockDb };
 });
 
-const { unitsRouter } = await import(
-  "../../routers/scenarioBuilder/units"
-);
+const { unitsRouter } = await import("../../routers/scenarioBuilder/units");
 
 const createCaller = createCallerFactory(router({ units: unitsRouter }));
 
@@ -36,8 +34,8 @@ describe("unitsRouter", () => {
     mockTransaction.mockImplementation(async (callback) => callback(mockDb));
   });
 
-  const ITEM_ID_1 = "d0000000-0000-0000-0000-000000000001";
-  const ITEM_ID_2 = "d0000000-0000-0000-0000-000000000002";
+  const ITEM_ID_1 = "d0000000-0000-4000-8000-000000000001";
+  const ITEM_ID_2 = "d0000000-0000-4000-8000-000000000002";
 
   describe("list", () => {
     describeAuthGuard((ctx) => createCaller(ctx).units.list());
@@ -76,9 +74,7 @@ describe("unitsRouter", () => {
     });
 
     it("respects custom page and limit", async () => {
-      const mockUnits = [
-        { id: "3", name: "Gamma", updatedAt: new Date() },
-      ];
+      const mockUnits = [{ id: "3", name: "Gamma", updatedAt: new Date() }];
       let callCount = 0;
       mockSelect.mockImplementation(() => {
         callCount++;
@@ -114,17 +110,15 @@ describe("unitsRouter", () => {
 
   describe("get", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).units.get({ id: "f0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).units.get({ id: "f0000000-0000-4000-8000-000000000001" }),
     );
 
     it("returns unit with itemIds when found", async () => {
       const mockUnit = {
-        id: "f0000000-0000-0000-0000-000000000001",
+        id: "f0000000-0000-4000-8000-000000000001",
         name: "Barbarian",
       };
-      const mockItemLinks = [
-        { itemId: "d0000000-0000-0000-0000-000000000001" },
-      ];
+      const mockItemLinks = [{ itemId: "d0000000-0000-4000-8000-000000000001" }];
 
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -137,11 +131,11 @@ describe("unitsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.units.get({
-        id: "f0000000-0000-0000-0000-000000000001",
+        id: "f0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({
         ...mockUnit,
-        itemIds: ["d0000000-0000-0000-0000-000000000001"],
+        itemIds: ["d0000000-0000-4000-8000-000000000001"],
       });
     });
 
@@ -150,24 +144,22 @@ describe("unitsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.units.get({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.units.get({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
 
   describe("delete", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).units.delete({ id: "f0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).units.delete({ id: "f0000000-0000-4000-8000-000000000001" }),
     );
 
     it("deletes unit and returns success", async () => {
-      mockDeleteFn.mockReturnValue(
-        chainable([{ id: "f0000000-0000-0000-0000-000000000001" }]),
-      );
+      mockDeleteFn.mockReturnValue(chainable([{ id: "f0000000-0000-4000-8000-000000000001" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.units.delete({
-        id: "f0000000-0000-0000-0000-000000000001",
+        id: "f0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({ success: true });
     });
@@ -177,7 +169,7 @@ describe("unitsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.units.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.units.delete({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
@@ -254,11 +246,9 @@ describe("unitsRouter", () => {
       mockInsertFn
         .mockReturnValueOnce({ values: unitValues })
         .mockReturnValueOnce({ values: insertLinks });
-      mockSelect.mockReturnValueOnce(chainable([
-        { itemId: ITEM_ID_1 },
-        { itemId: ITEM_ID_1 },
-        { itemId: ITEM_ID_2 },
-      ]));
+      mockSelect.mockReturnValueOnce(
+        chainable([{ itemId: ITEM_ID_1 }, { itemId: ITEM_ID_1 }, { itemId: ITEM_ID_2 }]),
+      );
 
       const caller = createCaller(gmCtx);
       const result = await caller.units.create({
@@ -300,7 +290,7 @@ describe("unitsRouter", () => {
   describe("update", () => {
     describeAuthGuard((ctx) =>
       createCaller(ctx).units.update({
-        id: "f0000000-0000-0000-0000-000000000001",
+        id: "f0000000-0000-4000-8000-000000000001",
         name: "Barbarian Updated",
         meleeDmg: 20,
         health: 120,
@@ -316,7 +306,7 @@ describe("unitsRouter", () => {
 
     it("updates unit fields and replaces linked item order", async () => {
       const updated = {
-        id: "f0000000-0000-0000-0000-000000000001",
+        id: "f0000000-0000-4000-8000-000000000001",
         name: "Barbarian Updated",
         meleeDmg: 20,
         health: 120,
@@ -332,10 +322,7 @@ describe("unitsRouter", () => {
       mockDeleteFn.mockReturnValueOnce(chainable([]));
       const insertLinks = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn.mockReturnValueOnce({ values: insertLinks });
-      mockSelect.mockReturnValueOnce(chainable([
-        { itemId: ITEM_ID_2 },
-        { itemId: ITEM_ID_1 },
-      ]));
+      mockSelect.mockReturnValueOnce(chainable([{ itemId: ITEM_ID_2 }, { itemId: ITEM_ID_1 }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.units.update({
@@ -380,7 +367,7 @@ describe("unitsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.units.update({
-          id: "00000000-0000-0000-0000-000000000099",
+          id: "00000000-0000-4000-8000-000000000099",
           name: "Missing Unit",
           meleeDmg: 0,
           health: 0,

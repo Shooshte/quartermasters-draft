@@ -23,11 +23,7 @@ export class LoginPage {
     await this.page.goto(search ? `/login?${search}` : "/login");
   }
 
-  async signIn(
-    email: string,
-    password: string,
-    options?: { rememberMe?: boolean },
-  ) {
+  async signIn(email: string, password: string, options?: { rememberMe?: boolean }) {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
 

@@ -25,9 +25,7 @@ describe("seeded random", () => {
     const first = createSeededRandom(1);
     const second = createSeededRandom(2);
 
-    const diverged = Array.from({ length: 10 }, () => first()).some(
-      (value) => value !== second(),
-    );
+    const diverged = Array.from({ length: 10 }, () => first()).some((value) => value !== second());
     expect(diverged).toBe(true);
   });
 

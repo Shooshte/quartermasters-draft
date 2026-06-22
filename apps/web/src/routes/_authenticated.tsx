@@ -1,33 +1,40 @@
+import { UserRole } from "@qd/shared";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
+import { Button } from "~/components/ui/button";
 import { auth } from "~/lib/auth";
 import { authClient } from "~/lib/auth-client";
+import { getProtectedRouteSessionOptions } from "~/lib/auth-session";
 import { getUserRole, mapDbRole } from "~/lib/route-utils";
-import { Button } from "~/components/ui/button";
+
+type RequestHeadersLike = Headers | Record<string, string | string[] | undefined>;
+
+function getCookieHeader(headers: RequestHeadersLike): string {
+  if (headers instanceof Headers) {
+    return headers.get("cookie") ?? "";
+  }
+
+  const cookie = headers.cookie;
+  return Array.isArray(cookie) ? cookie.join("; ") : (cookie ?? "");
+}
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
-  const session = await auth.api.getSession({
-    headers: headers as unknown as Headers,
-  });
+  const session = await auth.api.getSession(getProtectedRouteSessionOptions(new Headers(headers)));
   if (!session) {
-    // Detect if a session cookie was present (expired session vs never logged in)
-    const h = headers as unknown as Record<string, unknown>;
-    const cookieHeader = String(
-      typeof (h as any).get === "function"
-        ? (h as any).get("cookie") ?? ""
-        : h.cookie ?? "",
-    );
-    const hadSession = cookieHeader.split(";").some(c => c.trim().startsWith("better-auth."));
+    const cookieHeader = getCookieHeader(headers);
+    const hadSession = cookieHeader
+      .split(";")
+      .some((cookie) => cookie.trim().startsWith("better-auth."));
     return { authenticated: false as const, hadSession };
   }
   const dbRole = getUserRole(session.user);
   return {
     authenticated: true as const,
     userId: session.user.id,
-    userRole: mapDbRole(dbRole)!,
+    userRole: mapDbRole(dbRole) ?? UserRole.PLAYER,
   };
 });
 
@@ -93,12 +100,7 @@ function AuthenticatedLayout() {
         </p>
       )}
       <header className="flex items-center justify-end p-4 border-b border-border/50">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          disabled={loggingOut}
-        >
+        <Button variant="ghost" size="sm" onClick={handleLogout} disabled={loggingOut}>
           {loggingOut ? "Logging out…" : "Log out"}
         </Button>
       </header>

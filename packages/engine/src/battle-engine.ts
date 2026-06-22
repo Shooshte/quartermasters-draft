@@ -10,10 +10,18 @@ import {
   isUnitAlive,
   livingUnitsForScenario,
 } from "./state";
-import type { BattleInput, BattleOptions, BattleResult, BattleState, BattleUnitState } from "./types";
+import type {
+  BattleInput,
+  BattleOptions,
+  BattleResult,
+  BattleState,
+  BattleUnitState,
+} from "./types";
 
 function determineWinner(state: BattleState): string | null | undefined {
-  const livingCounts = state.scenarios.map((scenario) => livingUnitsForScenario(state, scenario.id).length);
+  const livingCounts = state.scenarios.map(
+    (scenario) => livingUnitsForScenario(state, scenario.id).length,
+  );
   if (livingCounts[0] === 0 && livingCounts[1] === 0) return null;
   if (livingCounts[0] === 0) return state.scenarios[1]!.id;
   if (livingCounts[1] === 0) return state.scenarios[0]!.id;
@@ -29,6 +37,10 @@ function maybeFinishBattle(state: BattleState): void {
       logBattleEnd(state, state.tick, winner);
     }
   }
+}
+
+function isBattleFinished(state: BattleState): boolean {
+  return state.status === "finished";
 }
 
 function applyFatigue(state: BattleState): void {
@@ -60,8 +72,46 @@ function incrementManaAndBars(state: BattleState): void {
 
 const DEFAULT_INPUT: BattleInput = {
   scenarios: [
-    { id: "A", rows: { tank: [{ name: "Default A", stats: { health: 100, meleeDmg: 10, rangedDmg: 0, manaRegen: 0, spellDmg: 0, speed: 10, dodge: 0, criticalChance: 0 } }] } },
-    { id: "B", rows: { tank: [{ name: "Default B", stats: { health: 100, meleeDmg: 10, rangedDmg: 0, manaRegen: 0, spellDmg: 0, speed: 10, dodge: 0, criticalChance: 0 } }] } },
+    {
+      id: "A",
+      rows: {
+        tank: [
+          {
+            name: "Default A",
+            stats: {
+              health: 100,
+              meleeDmg: 10,
+              rangedDmg: 0,
+              manaRegen: 0,
+              spellDmg: 0,
+              speed: 10,
+              dodge: 0,
+              criticalChance: 0,
+            },
+          },
+        ],
+      },
+    },
+    {
+      id: "B",
+      rows: {
+        tank: [
+          {
+            name: "Default B",
+            stats: {
+              health: 100,
+              meleeDmg: 10,
+              rangedDmg: 0,
+              manaRegen: 0,
+              spellDmg: 0,
+              speed: 10,
+              dodge: 0,
+              criticalChance: 0,
+            },
+          },
+        ],
+      },
+    },
   ],
   seed: 0,
 };
@@ -89,13 +139,15 @@ export class BattleEngine {
       if (getResolveActionsOnTick(this.state)) {
         const queue = buildReadyQueue(this.state);
         for (const unit of queue) {
-          const liveUnit = allUnits(this.state).find((candidate) => candidate.instanceId === unit.instanceId);
+          const liveUnit = allUnits(this.state).find(
+            (candidate) => candidate.instanceId === unit.instanceId,
+          );
           if (!liveUnit || !isUnitAlive(liveUnit) || liveUnit.actionBar < 100) continue;
           resolveUnitAction(this.state, liveUnit, this.state.tick);
           liveUnit.actedCount += 1;
           liveUnit.actionBar = 0;
           maybeFinishBattle(this.state);
-          if (this.state.status === "finished") break;
+          if (isBattleFinished(this.state)) break;
         }
       }
 

@@ -1,16 +1,16 @@
 import type { LinkedEntityOption } from "./linked-entity-picker";
+import { LinkedEntitySection } from "./linked-entity-section";
 import {
   getUnitFieldLabel,
   hasUnitFormErrors,
+  type ItemOption,
   UNIT_COMBAT_FIELDS,
   UNIT_VITAL_FIELDS,
-  validateUnitForm,
-  type ItemOption,
   type UnitFormValues,
+  validateUnitForm,
 } from "./unit-form";
-import { WorkspaceNumericField } from "./workspace-numeric-field";
-import { LinkedEntitySection } from "./linked-entity-section";
 import { WorkspaceNameField } from "./workspace-name-field";
+import { WorkspaceNumericField } from "./workspace-numeric-field";
 import { WorkspaceSaveFooter } from "./workspace-save-footer";
 import { WorkspaceSection } from "./workspace-section";
 

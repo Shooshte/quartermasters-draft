@@ -1,4 +1,4 @@
-import { test, expect } from "./auth.fixtures";
+import { expect, test } from "./auth.fixtures";
 
 test.describe("Role-Based Access Control", () => {
   test("default page for game master is /create", async ({ gmPage: page }) => {
@@ -47,9 +47,7 @@ test.describe("Role-Based Access Control", () => {
     });
   });
 
-  test("player is shown a 403 page when accessing /create", async ({
-    playerPage: page,
-  }) => {
+  test("player is shown a 403 page when accessing /create", async ({ playerPage: page }) => {
     await page.goto("/create");
     await page.waitForURL("**/403");
     expect(page.url()).toContain("/403");

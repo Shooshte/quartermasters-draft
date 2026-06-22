@@ -4,7 +4,9 @@ import { findScenario, getScenarioOrderIndex, nextRandom } from "./state";
 import type { BattleState, BattleUnitState, RowType, SpellInput } from "./types";
 
 function spellTargetsAllies(spell: SpellInput): boolean {
-  const firstEffect = spell.effects?.slice().sort((left, right) => left.sequenceOrder - right.sequenceOrder)[0]?.effect;
+  const firstEffect = spell.effects
+    ?.slice()
+    .sort((left, right) => left.sequenceOrder - right.sequenceOrder)[0]?.effect;
   return firstEffect?.effectType === "healing" || firstEffect?.effectType === "buff";
 }
 
@@ -15,7 +17,9 @@ function candidateUnits(
 ): BattleUnitState[] {
   const scenario = findScenario(
     state,
-    spellTargetsAllies(spell) ? caster.scenarioId : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId)!.id,
+    spellTargetsAllies(spell)
+      ? caster.scenarioId
+      : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId)!.id,
   )!;
   const allowedRows = spell.allowedRowTypes ?? [];
   return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter((unit) => {
@@ -25,7 +29,10 @@ function candidateUnits(
   });
 }
 
-function policyValue(unit: BattleUnitState, policy: NonNullable<BattleUnitState["targetPolicy"] | SpellInput["targetPolicy"]>) {
+function policyValue(
+  unit: BattleUnitState,
+  policy: NonNullable<BattleUnitState["targetPolicy"] | SpellInput["targetPolicy"]>,
+) {
   const stats = getUnitEffectiveStats(unit);
   switch (policy) {
     case "highest_health":
@@ -53,10 +60,7 @@ function sortCandidates(
   return [...units].sort((left, right) => {
     const leftValue = policyValue(left, policy);
     const rightValue = policyValue(right, policy);
-    const primary =
-      policy === "lowest_health"
-        ? leftValue - rightValue
-        : rightValue - leftValue;
+    const primary = policy === "lowest_health" ? leftValue - rightValue : rightValue - leftValue;
     return (
       primary ||
       compareRowOrder(left.rowType, right.rowType) ||
@@ -70,7 +74,11 @@ function frontmostOccupiedRows(units: BattleUnitState[]): RowType[] {
   return ROW_ORDER.filter((rowType) => units.some((unit) => unit.rowType === rowType));
 }
 
-function selectAdjacent(rowUnits: BattleUnitState[], primary: BattleUnitState, maxTargets: number): BattleUnitState[] {
+function selectAdjacent(
+  rowUnits: BattleUnitState[],
+  primary: BattleUnitState,
+  maxTargets: number,
+): BattleUnitState[] {
   const sorted = [...rowUnits].sort((left, right) => left.slot - right.slot);
   const primaryIndex = sorted.findIndex((unit) => unit.instanceId === primary.instanceId);
   if (primaryIndex === -1 || maxTargets >= sorted.length) {
@@ -89,7 +97,8 @@ export function selectTargets(
   caster: BattleUnitState,
   spell: SpellInput,
 ): BattleUnitState[] {
-  const policy = caster.targetPolicyOverride ?? spell.targetPolicy ?? caster.targetPolicy ?? "highest_health";
+  const policy =
+    caster.targetPolicyOverride ?? spell.targetPolicy ?? caster.targetPolicy ?? "highest_health";
   const candidates = candidateUnits(state, caster, spell);
   if (candidates.length === 0) {
     return [];

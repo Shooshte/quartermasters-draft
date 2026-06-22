@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { ITEMS_PAGE_SIZE, createIdleWorkspace } from "../types";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
+import { createIdleWorkspace, ITEMS_PAGE_SIZE } from "../types";
 
 interface UseDeleteItemDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -27,7 +27,9 @@ export function useDeleteItemDialog({
 }: UseDeleteItemDialogOptions) {
   const queryClient = useQueryClient();
   const [isDeleteItemDialogOpen, setIsDeleteItemDialogOpen] = useState(false);
-  const [deleteItemTarget, setDeleteItemTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteItemTarget, setDeleteItemTarget] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   const [deleteItemError, setDeleteItemError] = useState<string | null>(null);
 
   const requestDeleteItem = useCallback((id: string, name: string) => {
@@ -70,7 +72,18 @@ export function useDeleteItemDialog({
     } catch {
       setDeleteItemError("Failed to delete item. Please try again.");
     }
-  }, [deleteItemTarget, entityWorkspace.entityId, navigate, queryClient, itemTotalCount, itemPage, setEntityWorkspace, setPerTabSelection, skipEntityResetRef, setItemPage]);
+  }, [
+    deleteItemTarget,
+    entityWorkspace.entityId,
+    navigate,
+    queryClient,
+    itemTotalCount,
+    itemPage,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    setItemPage,
+  ]);
 
   const cancelDeleteItem = useCallback(() => {
     setDeleteItemTarget(null);

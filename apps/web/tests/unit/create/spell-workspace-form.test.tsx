@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SpellWorkspaceForm } from "~/components/create/spell-workspace-form";
+import { describe, expect, it, vi } from "vitest";
 import type { SpellFormValues } from "~/components/create/spell-form";
+import { SpellWorkspaceForm } from "~/components/create/spell-workspace-form";
 
 const defaultFormValues: SpellFormValues = {
   name: "",
@@ -353,7 +353,9 @@ describe("SpellWorkspaceForm", () => {
       await userEvent.click(screen.getByTestId("spell-effect-picker"));
       await userEvent.type(screen.getByTestId("spell-effect-picker-search"), "zzzzz");
 
-      expect(screen.getByTestId("spell-effect-picker-empty")).toHaveTextContent("No effects found.");
+      expect(screen.getByTestId("spell-effect-picker-empty")).toHaveTextContent(
+        "No effects found.",
+      );
       expect(screen.getByRole("listbox").querySelectorAll('[role="option"]')).toHaveLength(0);
     });
 
@@ -394,10 +396,7 @@ describe("SpellWorkspaceForm", () => {
 
       await userEvent.click(screen.getByTestId("spell-add-effect-button"));
 
-      expect(onFieldChange).not.toHaveBeenCalledWith(
-        "effectIds",
-        expect.anything(),
-      );
+      expect(onFieldChange).not.toHaveBeenCalledWith("effectIds", expect.anything());
     });
   });
 
@@ -684,9 +683,18 @@ describe("SpellWorkspaceForm", () => {
     it("grid preview shows correct targeted slots for default state", () => {
       renderForm();
 
-      expect(screen.getByTestId("targeting-grid-slot-ranged-0")).toHaveAttribute("data-targeted", "true");
-      expect(screen.getByTestId("targeting-grid-slot-ranged-1")).toHaveAttribute("data-targeted", "false");
-      expect(screen.getByTestId("targeting-grid-slot-support-0")).toHaveAttribute("data-targeted", "false");
+      expect(screen.getByTestId("targeting-grid-slot-ranged-0")).toHaveAttribute(
+        "data-targeted",
+        "true",
+      );
+      expect(screen.getByTestId("targeting-grid-slot-ranged-1")).toHaveAttribute(
+        "data-targeted",
+        "false",
+      );
+      expect(screen.getByTestId("targeting-grid-slot-support-0")).toHaveAttribute(
+        "data-targeted",
+        "false",
+      );
     });
 
     it("save button is disabled when targeting validation fails", () => {

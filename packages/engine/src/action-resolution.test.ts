@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { initializeBattleState } from "./state";
 import { resolveUnitAction } from "./resolution";
+import { initializeBattleState } from "./state";
 import {
   createBattleInput,
   createEffect,
@@ -12,7 +12,10 @@ import {
   effectSequence,
 } from "./test-helpers";
 
-function makeStateWithWarrior(row: "tank" | "melee" | "ranged" | "support", items = [] as ReturnType<typeof createItem>[]) {
+function makeStateWithWarrior(
+  row: "tank" | "melee" | "ranged" | "support",
+  items = [] as ReturnType<typeof createItem>[],
+) {
   return initializeBattleState(
     createBattleInput([
       createScenario("Alpha", {
@@ -65,7 +68,9 @@ describe("action resolution", () => {
     const critState = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
-          tank: [createUnit("Critter", { stats: createStats({ meleeDmg: 20, criticalChance: 50 }) })],
+          tank: [
+            createUnit("Critter", { stats: createStats({ meleeDmg: 20, criticalChance: 50 }) }),
+          ],
         }),
         createScenario("Bravo", {
           tank: [createUnit("Dodger", { stats: createStats({ health: 200, dodge: 20 }) })],

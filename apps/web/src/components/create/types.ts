@@ -63,7 +63,7 @@ export interface WorkspaceState {
   mode: WorkspaceMode;
   entityType: EntityType | "scenario" | null;
   entityId: string | null;
-  data: { name: string; [key: string]: unknown } | null;
+  data: { name?: string | null; [key: string]: unknown } | null;
   formValues: { name?: string; [key: string]: unknown };
   isDirty: boolean;
 }

@@ -75,7 +75,5 @@ export function generateEntityIds(
   count: number,
 ): string[] {
   const prefix = ENTITY_PREFIXES[entityType];
-  return Array.from({ length: count }, (_, i) =>
-    `${prefix}${String(i + 1).padStart(12, "0")}`,
-  );
+  return Array.from({ length: count }, (_, i) => `${prefix}${String(i + 1).padStart(12, "0")}`);
 }

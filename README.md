@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v22+
+- [Node.js](https://nodejs.org/) v24+
 - [pnpm](https://pnpm.io/) v10+
 - [Docker](https://www.docker.com/) (for local PostgreSQL)
 
@@ -65,7 +65,10 @@ docker stop quartermasters-pg && docker rm quartermasters-pg
 ```bash
 pnpm dev          # Start all apps in dev mode
 pnpm build        # Build all packages
-pnpm lint         # Lint all packages
+pnpm lint         # Run Biome and TypeScript checks
+pnpm typecheck    # Run TypeScript checks
+pnpm format       # Format with Biome
+pnpm check        # Run lint, unit tests, and build
 pnpm test         # Run unit tests
 pnpm test:e2e     # Run e2e tests (requires Docker)
 pnpm db:push      # Push schema to database

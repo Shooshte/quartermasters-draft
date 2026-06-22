@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
 import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
@@ -20,9 +20,7 @@ vi.mock("@qd/db", async (importOriginal) => {
   return { ...actual, db: mockDb };
 });
 
-const { spellsRouter } = await import(
-  "../../routers/scenarioBuilder/spells"
-);
+const { spellsRouter } = await import("../../routers/scenarioBuilder/spells");
 
 const createCaller = createCallerFactory(router({ spells: spellsRouter }));
 
@@ -37,8 +35,20 @@ describe("spellsRouter", () => {
 
     it("returns spells with totalCount and default limit=20", async () => {
       const mockSpells = [
-        { id: "1", name: "Alpha", description: "Desc A", targetPolicy: "random", updatedAt: new Date() },
-        { id: "2", name: "Beta", description: "Desc B", targetPolicy: "highest_health", updatedAt: new Date() },
+        {
+          id: "1",
+          name: "Alpha",
+          description: "Desc A",
+          targetPolicy: "random",
+          updatedAt: new Date(),
+        },
+        {
+          id: "2",
+          name: "Beta",
+          description: "Desc B",
+          targetPolicy: "highest_health",
+          updatedAt: new Date(),
+        },
       ];
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -70,7 +80,13 @@ describe("spellsRouter", () => {
 
     it("respects custom page and limit", async () => {
       const mockSpells = [
-        { id: "3", name: "Gamma", description: null, targetPolicy: "lowest_health", updatedAt: new Date() },
+        {
+          id: "3",
+          name: "Gamma",
+          description: null,
+          targetPolicy: "lowest_health",
+          updatedAt: new Date(),
+        },
       ];
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -107,12 +123,12 @@ describe("spellsRouter", () => {
 
   describe("get", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).spells.get({ id: "b0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).spells.get({ id: "b0000000-0000-4000-8000-000000000001" }),
     );
 
     it("returns spell with effectIds and allowedRowTypes when found", async () => {
       const mockSpell = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Fireball",
         targetPolicy: "highest_health",
         targetRowCount: 1,
@@ -120,13 +136,10 @@ describe("spellsRouter", () => {
         targetOnlyAdjacent: false,
       };
       const mockEffectLinks = [
-        { effectTemplateId: "a0000000-0000-0000-0000-000000000006" },
-        { effectTemplateId: "a0000000-0000-0000-0000-000000000007" },
+        { effectTemplateId: "a0000000-0000-4000-8000-000000000006" },
+        { effectTemplateId: "a0000000-0000-4000-8000-000000000007" },
       ];
-      const mockAllowedRows = [
-        { rowType: "melee" },
-        { rowType: "tank" },
-      ];
+      const mockAllowedRows = [{ rowType: "melee" }, { rowType: "tank" }];
 
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -142,14 +155,11 @@ describe("spellsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.get({
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({
         ...mockSpell,
-        effectIds: [
-          "a0000000-0000-0000-0000-000000000006",
-          "a0000000-0000-0000-0000-000000000007",
-        ],
+        effectIds: ["a0000000-0000-4000-8000-000000000006", "a0000000-0000-4000-8000-000000000007"],
         allowedRowTypes: ["melee", "tank"],
       });
     });
@@ -159,7 +169,7 @@ describe("spellsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.spells.get({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.spells.get({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });
@@ -169,13 +179,13 @@ describe("spellsRouter", () => {
       createCaller(ctx).spells.create({
         name: "New Spell",
         targetPolicy: "random",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
       }),
     );
 
     it("creates a spell with required fields", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000010",
+        id: "b0000000-0000-4000-8000-000000000010",
         name: "Arcane Volley",
         description: null,
         targetPolicy: "highest_damage",
@@ -190,12 +200,12 @@ describe("spellsRouter", () => {
       const result = await caller.spells.create({
         name: " Arcane Volley ",
         targetPolicy: "highest_damage",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
       });
 
       expect(result).toEqual({
         ...created,
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
         allowedRowTypes: [],
       });
       expect(mockInsertFn).toHaveBeenCalledTimes(2);
@@ -203,7 +213,7 @@ describe("spellsRouter", () => {
 
     it("creates a spell with description normalized to null when blank", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000011",
+        id: "b0000000-0000-4000-8000-000000000011",
         name: "Silent Strike",
         description: null,
         targetPolicy: "random",
@@ -220,7 +230,7 @@ describe("spellsRouter", () => {
         name: "Silent Strike",
         description: "   ",
         targetPolicy: "random",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
       });
 
       expect(result.description).toBeNull();
@@ -236,7 +246,7 @@ describe("spellsRouter", () => {
 
     it("creates ordered linked effects", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000012",
+        id: "b0000000-0000-4000-8000-000000000012",
         name: "Combo Strike",
         description: null,
         targetPolicy: "random",
@@ -244,37 +254,34 @@ describe("spellsRouter", () => {
         updatedAt: new Date(),
       };
       const spellInsert = chainable([created]);
-      const linksValues = vi.fn().mockReturnValue(chainable([
-        { effectTemplateId: "a0000000-0000-0000-0000-000000000001", sequenceOrder: 1 },
-        { effectTemplateId: "a0000000-0000-0000-0000-000000000003", sequenceOrder: 2 },
-      ]));
-      mockInsertFn
-        .mockReturnValueOnce(spellInsert)
-        .mockReturnValueOnce({ values: linksValues });
+      const linksValues = vi.fn().mockReturnValue(
+        chainable([
+          { effectTemplateId: "a0000000-0000-4000-8000-000000000001", sequenceOrder: 1 },
+          { effectTemplateId: "a0000000-0000-4000-8000-000000000003", sequenceOrder: 2 },
+        ]),
+      );
+      mockInsertFn.mockReturnValueOnce(spellInsert).mockReturnValueOnce({ values: linksValues });
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.create({
         name: "Combo Strike",
         targetPolicy: "random",
-        effectIds: [
-          "a0000000-0000-0000-0000-000000000001",
-          "a0000000-0000-0000-0000-000000000003",
-        ],
+        effectIds: ["a0000000-0000-4000-8000-000000000001", "a0000000-0000-4000-8000-000000000003"],
       });
 
       expect(result.effectIds).toEqual([
-        "a0000000-0000-0000-0000-000000000001",
-        "a0000000-0000-0000-0000-000000000003",
+        "a0000000-0000-4000-8000-000000000001",
+        "a0000000-0000-4000-8000-000000000003",
       ]);
       expect(linksValues).toHaveBeenCalledWith([
         {
           spellId: created.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000001",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000001",
           sequenceOrder: 1,
         },
         {
           spellId: created.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000003",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000003",
           sequenceOrder: 2,
         },
       ]);
@@ -282,7 +289,7 @@ describe("spellsRouter", () => {
 
     it("allows duplicate effectIds", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000013",
+        id: "b0000000-0000-4000-8000-000000000013",
         name: "Echo Blast",
         description: null,
         targetPolicy: "random",
@@ -298,25 +305,22 @@ describe("spellsRouter", () => {
       const result = await caller.spells.create({
         name: "Echo Blast",
         targetPolicy: "random",
-        effectIds: [
-          "a0000000-0000-0000-0000-000000000001",
-          "a0000000-0000-0000-0000-000000000001",
-        ],
+        effectIds: ["a0000000-0000-4000-8000-000000000001", "a0000000-0000-4000-8000-000000000001"],
       });
 
       expect(result.effectIds).toEqual([
-        "a0000000-0000-0000-0000-000000000001",
-        "a0000000-0000-0000-0000-000000000001",
+        "a0000000-0000-4000-8000-000000000001",
+        "a0000000-0000-4000-8000-000000000001",
       ]);
       expect(linksValues).toHaveBeenCalledWith([
         {
           spellId: created.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000001",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000001",
           sequenceOrder: 1,
         },
         {
           spellId: created.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000001",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000001",
           sequenceOrder: 2,
         },
       ]);
@@ -333,7 +337,7 @@ describe("spellsRouter", () => {
         caller.spells.create({
           name: "Duplicate",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
     });
@@ -354,7 +358,7 @@ describe("spellsRouter", () => {
 
     it("creates a spell with explicit targeting fields", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000030",
+        id: "b0000000-0000-4000-8000-000000000030",
         name: "Chain Lightning",
         description: null,
         targetPolicy: "highest_damage",
@@ -372,7 +376,7 @@ describe("spellsRouter", () => {
       const result = await caller.spells.create({
         name: "Chain Lightning",
         targetPolicy: "highest_damage",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
         targetRowCount: 1,
         maxTargetsPerRow: 3,
         targetOnlyAdjacent: true,
@@ -386,7 +390,7 @@ describe("spellsRouter", () => {
 
     it("creates a spell with maxTargetsPerRow null (whole row)", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000031",
+        id: "b0000000-0000-4000-8000-000000000031",
         name: "Earthquake",
         description: null,
         targetPolicy: "random",
@@ -404,7 +408,7 @@ describe("spellsRouter", () => {
       const result = await caller.spells.create({
         name: "Earthquake",
         targetPolicy: "random",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
         targetRowCount: 2,
         maxTargetsPerRow: null,
       });
@@ -415,7 +419,7 @@ describe("spellsRouter", () => {
 
     it("creates a spell with allowedRowTypes", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000032",
+        id: "b0000000-0000-4000-8000-000000000032",
         name: "Tank Buster",
         description: null,
         targetPolicy: "highest_health",
@@ -434,7 +438,7 @@ describe("spellsRouter", () => {
       const result = await caller.spells.create({
         name: "Tank Buster",
         targetPolicy: "highest_health",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
         allowedRowTypes: ["melee", "tank"],
       });
 
@@ -443,7 +447,7 @@ describe("spellsRouter", () => {
 
     it("applies targeting defaults when new fields omitted", async () => {
       const created = {
-        id: "b0000000-0000-0000-0000-000000000033",
+        id: "b0000000-0000-4000-8000-000000000033",
         name: "Simple Spell",
         description: null,
         targetPolicy: "random",
@@ -461,7 +465,7 @@ describe("spellsRouter", () => {
       const result = await caller.spells.create({
         name: "Simple Spell",
         targetPolicy: "random",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
       });
 
       expect(result.targetRowCount).toBe(1);
@@ -476,7 +480,7 @@ describe("spellsRouter", () => {
         caller.spells.create({
           name: "Bad Spell",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
           targetRowCount: 0,
         }),
       ).rejects.toThrow();
@@ -488,7 +492,7 @@ describe("spellsRouter", () => {
         caller.spells.create({
           name: "Bad Spell",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
           maxTargetsPerRow: 0,
         }),
       ).rejects.toThrow();
@@ -500,7 +504,7 @@ describe("spellsRouter", () => {
         caller.spells.create({
           name: "Bad Spell",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
           maxTargetsPerRow: null,
           targetOnlyAdjacent: true,
         }),
@@ -513,7 +517,7 @@ describe("spellsRouter", () => {
         caller.spells.create({
           name: "Bad Spell",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
           maxTargetsPerRow: 1,
           targetOnlyAdjacent: true,
         }),
@@ -524,16 +528,16 @@ describe("spellsRouter", () => {
   describe("update", () => {
     describeAuthGuard((ctx) =>
       createCaller(ctx).spells.update({
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Updated",
         targetPolicy: "random",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
       }),
     );
 
     it("updates spell fields", async () => {
       const updated = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Fireball Updated",
         description: "Updated desc",
         targetPolicy: "highest_damage",
@@ -552,12 +556,12 @@ describe("spellsRouter", () => {
         name: " Fireball Updated ",
         description: " Updated desc ",
         targetPolicy: "highest_damage",
-        effectIds: ["a0000000-0000-0000-0000-000000000006"],
+        effectIds: ["a0000000-0000-4000-8000-000000000006"],
       });
 
       expect(result).toEqual({
         ...updated,
-        effectIds: ["a0000000-0000-0000-0000-000000000006"],
+        effectIds: ["a0000000-0000-4000-8000-000000000006"],
         allowedRowTypes: [],
       });
       expect(updateSet).toHaveBeenCalledWith({
@@ -572,7 +576,7 @@ describe("spellsRouter", () => {
 
     it("clears description to null", async () => {
       const updated = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Silent Spell",
         description: null,
         targetPolicy: "random",
@@ -590,7 +594,7 @@ describe("spellsRouter", () => {
         name: "Silent Spell",
         description: "   ",
         targetPolicy: "random",
-        effectIds: ["a0000000-0000-0000-0000-000000000001"],
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
       });
 
       expect(result.description).toBeNull();
@@ -606,7 +610,7 @@ describe("spellsRouter", () => {
 
     it("replaces linked effects in the submitted order", async () => {
       const updated = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Fireball",
         description: null,
         targetPolicy: "highest_health" as const,
@@ -623,25 +627,22 @@ describe("spellsRouter", () => {
         id: updated.id,
         name: updated.name,
         targetPolicy: updated.targetPolicy,
-        effectIds: [
-          "a0000000-0000-0000-0000-000000000007",
-          "a0000000-0000-0000-0000-000000000006",
-        ],
+        effectIds: ["a0000000-0000-4000-8000-000000000007", "a0000000-0000-4000-8000-000000000006"],
       });
 
       expect(result.effectIds).toEqual([
-        "a0000000-0000-0000-0000-000000000007",
-        "a0000000-0000-0000-0000-000000000006",
+        "a0000000-0000-4000-8000-000000000007",
+        "a0000000-0000-4000-8000-000000000006",
       ]);
       expect(linksValues).toHaveBeenCalledWith([
         {
           spellId: updated.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000007",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000007",
           sequenceOrder: 1,
         },
         {
           spellId: updated.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000006",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000006",
           sequenceOrder: 2,
         },
       ]);
@@ -649,7 +650,7 @@ describe("spellsRouter", () => {
 
     it("removes linked effects when fewer ids are submitted", async () => {
       const updated = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Fireball",
         description: null,
         targetPolicy: "highest_health" as const,
@@ -666,16 +667,14 @@ describe("spellsRouter", () => {
         id: updated.id,
         name: updated.name,
         targetPolicy: updated.targetPolicy,
-        effectIds: ["a0000000-0000-0000-0000-000000000006"],
+        effectIds: ["a0000000-0000-4000-8000-000000000006"],
       });
 
-      expect(result.effectIds).toEqual([
-        "a0000000-0000-0000-0000-000000000006",
-      ]);
+      expect(result.effectIds).toEqual(["a0000000-0000-4000-8000-000000000006"]);
       expect(linksValues).toHaveBeenCalledWith([
         {
           spellId: updated.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000006",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000006",
           sequenceOrder: 1,
         },
       ]);
@@ -683,7 +682,7 @@ describe("spellsRouter", () => {
 
     it("allows duplicate effectIds on update", async () => {
       const updated = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Echo Blast",
         description: null,
         targetPolicy: "random" as const,
@@ -700,25 +699,22 @@ describe("spellsRouter", () => {
         id: updated.id,
         name: updated.name,
         targetPolicy: updated.targetPolicy,
-        effectIds: [
-          "a0000000-0000-0000-0000-000000000001",
-          "a0000000-0000-0000-0000-000000000001",
-        ],
+        effectIds: ["a0000000-0000-4000-8000-000000000001", "a0000000-0000-4000-8000-000000000001"],
       });
 
       expect(result.effectIds).toEqual([
-        "a0000000-0000-0000-0000-000000000001",
-        "a0000000-0000-0000-0000-000000000001",
+        "a0000000-0000-4000-8000-000000000001",
+        "a0000000-0000-4000-8000-000000000001",
       ]);
       expect(linksValues).toHaveBeenCalledWith([
         {
           spellId: updated.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000001",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000001",
           sequenceOrder: 1,
         },
         {
           spellId: updated.id,
-          effectTemplateId: "a0000000-0000-0000-0000-000000000001",
+          effectTemplateId: "a0000000-0000-4000-8000-000000000001",
           sequenceOrder: 2,
         },
       ]);
@@ -730,10 +726,10 @@ describe("spellsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.spells.update({
-          id: "00000000-0000-0000-0000-000000000099",
+          id: "00000000-0000-4000-8000-000000000099",
           name: "Updated",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
@@ -748,10 +744,10 @@ describe("spellsRouter", () => {
       const caller = createCaller(gmCtx);
       await expect(
         caller.spells.update({
-          id: "b0000000-0000-0000-0000-000000000001",
+          id: "b0000000-0000-4000-8000-000000000001",
           name: "Battle Cry",
           targetPolicy: "random",
-          effectIds: ["a0000000-0000-0000-0000-000000000001"],
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
     });
@@ -761,7 +757,7 @@ describe("spellsRouter", () => {
 
       await expect(
         caller.spells.update({
-          id: "b0000000-0000-0000-0000-000000000001",
+          id: "b0000000-0000-4000-8000-000000000001",
           name: "Fireball",
           targetPolicy: "random",
           effectIds: [],
@@ -774,7 +770,7 @@ describe("spellsRouter", () => {
 
     it("updates targeting fields and replaces allowedRowTypes", async () => {
       const updated = {
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
         name: "Fireball",
         description: null,
         targetPolicy: "highest_health" as const,
@@ -800,7 +796,7 @@ describe("spellsRouter", () => {
         id: updated.id,
         name: updated.name,
         targetPolicy: updated.targetPolicy,
-        effectIds: ["a0000000-0000-0000-0000-000000000006"],
+        effectIds: ["a0000000-0000-4000-8000-000000000006"],
         targetRowCount: 2,
         maxTargetsPerRow: null,
         targetOnlyAdjacent: false,
@@ -815,17 +811,15 @@ describe("spellsRouter", () => {
 
   describe("delete", () => {
     describeAuthGuard((ctx) =>
-      createCaller(ctx).spells.delete({ id: "b0000000-0000-0000-0000-000000000001" }),
+      createCaller(ctx).spells.delete({ id: "b0000000-0000-4000-8000-000000000001" }),
     );
 
     it("deletes spell and returns success", async () => {
-      mockDeleteFn.mockReturnValue(
-        chainable([{ id: "b0000000-0000-0000-0000-000000000001" }]),
-      );
+      mockDeleteFn.mockReturnValue(chainable([{ id: "b0000000-0000-4000-8000-000000000001" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.spells.delete({
-        id: "b0000000-0000-0000-0000-000000000001",
+        id: "b0000000-0000-4000-8000-000000000001",
       });
       expect(result).toEqual({ success: true });
     });
@@ -838,7 +832,7 @@ describe("spellsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.spells.delete({ id: "b0000000-0000-0000-0000-000000000001" }),
+        caller.spells.delete({ id: "b0000000-0000-4000-8000-000000000001" }),
       ).rejects.toMatchObject({
         code: "CONFLICT",
         message: "Cannot delete spell while it is linked to one or more items.",
@@ -850,7 +844,7 @@ describe("spellsRouter", () => {
 
       const caller = createCaller(gmCtx);
       await expect(
-        caller.spells.delete({ id: "00000000-0000-0000-0000-000000000099" }),
+        caller.spells.delete({ id: "00000000-0000-4000-8000-000000000099" }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
   });

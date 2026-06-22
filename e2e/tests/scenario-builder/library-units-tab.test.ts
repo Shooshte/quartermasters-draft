@@ -1,10 +1,12 @@
-import { test, expect } from "../db-reset.fixture";
+import { expect, test } from "../db-reset.fixture";
 import { BARBARIAN_ID, RANGER_ID, ZEPHYR_MONK_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { UNITS_TAB } from "../pages/library-tab-configs";
 
-test.beforeEach(async ({ resetDb }) => { await resetDb(); });
+test.beforeEach(async ({ resetDb }) => {
+  await resetDb();
+});
 
 // ─── Display ────────────────────────────────────────────────────────────────
 
@@ -26,9 +28,7 @@ test.describe("Units Library Tab — Display", () => {
     await expect(ranger.getByText(/\w{3}\s+\d{1,2},\s+\d{4}/)).toBeVisible();
   });
 
-  test("empty state is shown when no units exist", async ({
-    gmPage,
-  }) => {
+  test("empty state is shown when no units exist", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     const unitIds = await listEntityIdsViaApi(gmPage.request, "units");
     for (const id of unitIds) {
@@ -44,9 +44,7 @@ test.describe("Units Library Tab — Display", () => {
 // ─── Pagination ─────────────────────────────────────────────────────────────
 
 test.describe("Units Library Tab — Pagination", () => {
-  test("units are displayed one page at a time with pagination controls", async ({
-    gmPage,
-  }) => {
+  test("units are displayed one page at a time with pagination controls", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
 
@@ -86,9 +84,7 @@ test.describe("Units Library Tab — Pagination", () => {
     await expect(lib.getRow("Barbarian")).toBeVisible();
   });
 
-  test("Previous page control is disabled on the first page", async ({
-    gmPage,
-  }) => {
+  test("Previous page control is disabled on the first page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
     await expect(lib.prevPageButton).toBeDisabled();
@@ -167,24 +163,16 @@ test.describe("Units Library Tab — Sorting", () => {
     await expect(lib.rows.nth(1)).toHaveAttribute("aria-label", "Yeti Rider");
   });
 
-  test("clicking the active sort column toggles direction", async ({
-    gmPage,
-  }) => {
+  test("clicking the active sort column toggles direction", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
 
     // Default: Name ascending — Barbarian first
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Barbarian",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Barbarian");
 
     // Click Name to toggle to descending
     await lib.clickSortColumn("Name");
-    await expect(lib.rows.nth(0)).toHaveAttribute(
-      "aria-label",
-      "Zircon Juggernaut",
-    );
+    await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Zircon Juggernaut");
   });
 });
 
@@ -211,9 +199,7 @@ test.describe("Units Library Tab — Selection", () => {
 // ─── Unsaved Changes ────────────────────────────────────────────────────────
 
 test.describe("Units Library Tab — Unsaved Changes", () => {
-  test("warn before opening a different unit with unsaved changes", async ({
-    gmPage,
-  }) => {
+  test("warn before opening a different unit with unsaved changes", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian");
@@ -234,9 +220,7 @@ test.describe("Units Library Tab — Unsaved Changes", () => {
     await expect(lib.nameInput).toHaveValue("Barbarian Updated");
   });
 
-  test("discard unsaved changes and open a different unit", async ({
-    gmPage,
-  }) => {
+  test("discard unsaved changes and open a different unit", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian");
@@ -255,9 +239,7 @@ test.describe("Units Library Tab — Unsaved Changes", () => {
 // ─── Deletion ────────────────────────────────────────────────────────────────
 
 test.describe("Units Library Tab — Deletion", () => {
-  test("delete a unit that is not currently open", async ({
-    gmPage,
-  }) => {
+  test("delete a unit that is not currently open", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
     await expect(lib.getRow("Ranger")).toBeVisible();
@@ -309,9 +291,7 @@ test.describe("Units Library Tab — Deletion", () => {
     expect(gmPage.url()).not.toContain("unit_id");
   });
 
-  test("deleting the last unit on a page returns to the previous page", async ({
-    gmPage,
-  }) => {
+  test("deleting the last unit on a page returns to the previous page", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, UNITS_TAB);
     await lib.navigateToTab();
 

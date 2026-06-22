@@ -15,18 +15,10 @@ export const ITEM_NUMERIC_FIELDS = [
   "activationHealthCost",
 ] as const;
 
-export const ITEM_COMBAT_FIELDS = [
-  "meleeDmg",
-  "rangedDmg",
-  "spellDmg",
-  "criticalChance",
-] as const;
+export const ITEM_COMBAT_FIELDS = ["meleeDmg", "rangedDmg", "spellDmg", "criticalChance"] as const;
 
 export const ITEM_UTILITY_FIELDS = ["manaRegen", "dodge"] as const;
-export const ITEM_ACTIVATION_FIELDS = [
-  "activationManaCost",
-  "activationHealthCost",
-] as const;
+export const ITEM_ACTIVATION_FIELDS = ["activationManaCost", "activationHealthCost"] as const;
 
 export interface ItemFormValues {
   [key: string]: unknown;
@@ -160,17 +152,11 @@ export function validateItemForm(values: ItemFormValues): ItemFieldErrors {
     }
   }
 
-  if (
-    !Number.isNaN(normalized.activationManaCost) &&
-    normalized.activationManaCost < 0
-  ) {
+  if (!Number.isNaN(normalized.activationManaCost) && normalized.activationManaCost < 0) {
     errors.activationManaCost = "Must be zero or greater";
   }
 
-  if (
-    !Number.isNaN(normalized.activationHealthCost) &&
-    normalized.activationHealthCost < 0
-  ) {
+  if (!Number.isNaN(normalized.activationHealthCost) && normalized.activationHealthCost < 0) {
     errors.activationHealthCost = "Must be zero or greater";
   }
 

@@ -64,7 +64,11 @@ export const EFFECT_NUMERIC_FIELDS = [
   "directSpellDmg",
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
-const POSITIVE_INTEGER_FIELDS = ["intervalMs", "triggerCount", "durationMs"] as const satisfies readonly (keyof EffectFormValues)[];
+const POSITIVE_INTEGER_FIELDS = [
+  "intervalMs",
+  "triggerCount",
+  "durationMs",
+] as const satisfies readonly (keyof EffectFormValues)[];
 
 export function createDefaultEffectFormValues(): EffectFormValues {
   return {

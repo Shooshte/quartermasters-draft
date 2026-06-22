@@ -18,7 +18,14 @@ interface DeleteConfirmDialogProps {
   onConfirm: () => void;
 }
 
-export function DeleteConfirmDialog({ open, entityName, entityLabel = "record", errorMessage, onCancel, onConfirm }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({
+  open,
+  entityName,
+  entityLabel = "record",
+  errorMessage,
+  onCancel,
+  onConfirm,
+}: DeleteConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <AlertDialogContent data-testid="delete-confirm-dialog">

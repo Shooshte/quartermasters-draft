@@ -1,11 +1,24 @@
 import type { ReactNode } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import { ScenarioLibraryList } from "./scenario-library-list";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { EffectLibraryList } from "./effect-library-list";
-import { SpellLibraryList } from "./spell-library-list";
 import { ItemLibraryList } from "./item-library-list";
+import { ScenarioLibraryList } from "./scenario-library-list";
+import { SpellLibraryList } from "./spell-library-list";
+import {
+  type EffectSortBy,
+  type EffectSortDir,
+  type ItemSortBy,
+  type ItemSortDir,
+  type ScenarioSortBy,
+  type ScenarioSortDir,
+  type SpellSortBy,
+  type SpellSortDir,
+  TABS,
+  type TabName,
+  type UnitSortBy,
+  type UnitSortDir,
+} from "./types";
 import { UnitLibraryList } from "./unit-library-list";
-import { TABS, type TabName, type ScenarioSortBy, type ScenarioSortDir, type EffectSortBy, type EffectSortDir, type SpellSortBy, type SpellSortDir, type ItemSortBy, type ItemSortDir, type UnitSortBy, type UnitSortDir } from "./types";
 
 interface LibraryPanelProps {
   activeTab: TabName;
@@ -206,18 +219,18 @@ export function LibraryPanel({
         onValueChange={(val) => onTabChange(val as TabName)}
         className="flex flex-1 flex-col min-h-0"
       >
-          <TabsList variant="banner" data-testid="library-tabs-header">
-            {TABS.map((tab) => (
-              <TabsTrigger key={tab} value={tab}>
-                {tab}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <TabsList variant="banner" data-testid="library-tabs-header">
           {TABS.map((tab) => (
-            <TabsContent key={tab} value={tab} className="flex-1 min-h-0 overflow-auto p-4">
-              {tabContentByName[tab]}
-            </TabsContent>
+            <TabsTrigger key={tab} value={tab}>
+              {tab}
+            </TabsTrigger>
           ))}
+        </TabsList>
+        {TABS.map((tab) => (
+          <TabsContent key={tab} value={tab} className="flex-1 min-h-0 overflow-auto p-4">
+            {tabContentByName[tab]}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );

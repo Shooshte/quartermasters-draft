@@ -1,13 +1,13 @@
 import type { LinkedEntityOption } from "./linked-entity-picker";
+import { LinkedEntitySection } from "./linked-entity-section";
 import {
+  type EffectOption,
   hasSpellFormErrors,
+  type SpellFormValues,
   spellRecordToFormValues,
   validateSpellForm,
-  type SpellFormValues,
-  type EffectOption,
 } from "./spell-form";
 import { TargetingCard } from "./targeting-card";
-import { LinkedEntitySection } from "./linked-entity-section";
 import { WorkspaceNameField } from "./workspace-name-field";
 import { WorkspaceSaveFooter } from "./workspace-save-footer";
 
@@ -66,9 +66,7 @@ export function SpellWorkspaceForm({
       <div className="ws-cell-neutral">
         <label htmlFor="spell-description" className="ws-cell-label">
           Description{" "}
-          <span style={{ opacity: 0.5, textTransform: "none", letterSpacing: 0 }}>
-            (optional)
-          </span>
+          <span style={{ opacity: 0.5, textTransform: "none", letterSpacing: 0 }}>(optional)</span>
         </label>
         <textarea
           id="spell-description"

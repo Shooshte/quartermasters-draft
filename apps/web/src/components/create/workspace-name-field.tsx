@@ -4,11 +4,7 @@ interface WorkspaceNameFieldProps {
   onChange: (value: string) => void;
 }
 
-export function WorkspaceNameField({
-  value,
-  error,
-  onChange,
-}: WorkspaceNameFieldProps) {
+export function WorkspaceNameField({ value, error, onChange }: WorkspaceNameFieldProps) {
   return (
     <div className="ws-cell-neutral">
       <label htmlFor="entity-name" className="ws-cell-label">

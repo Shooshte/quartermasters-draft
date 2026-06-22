@@ -1,15 +1,17 @@
+import { db, items, itemsSpells, spells } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, items, itemsSpells, spells } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, listInputSchema } from "./shared";
+import { findDbError, idSchema, listInputSchema } from "./shared";
 
-const itemListInput = listInputSchema.extend({
-  limit: z.number().int().min(1).max(500).default(20),
-  sortBy: z.enum(["name", "updatedAt"]).default("name"),
-  sortDir: z.enum(["asc", "desc"]).default("asc"),
-}).default({});
+const itemListInput = listInputSchema
+  .extend({
+    limit: z.number().int().min(1).max(500).default(20),
+    sortBy: z.enum(["name", "updatedAt"]).default("name"),
+    sortDir: z.enum(["asc", "desc"]).default("asc"),
+  })
+  .prefault({});
 
 const itemInputBaseSchema = z.object({
   name: z.string().trim().min(1),
@@ -21,7 +23,7 @@ const itemInputBaseSchema = z.object({
   criticalChance: z.number(),
   activationManaCost: z.number().min(0),
   activationHealthCost: z.number().min(0),
-  spellIds: z.array(z.string().uuid()),
+  spellIds: z.array(idSchema),
 });
 
 type NormalizedItemInput = z.infer<typeof itemInputBaseSchema>;
@@ -42,11 +44,7 @@ function buildItemSpellRows(itemId: string, spellIds: string[]) {
   }));
 }
 
-async function insertItemSpells(
-  tx: ItemTransaction,
-  itemId: string,
-  spellIds: string[],
-) {
+async function insertItemSpells(tx: ItemTransaction, itemId: string, spellIds: string[]) {
   if (spellIds.length === 0) {
     return;
   }
@@ -54,10 +52,7 @@ async function insertItemSpells(
   await tx.insert(itemsSpells).values(buildItemSpellRows(itemId, spellIds));
 }
 
-async function getSortedSpellIdsForItem(
-  executor: Pick<ItemTransaction, "select">,
-  itemId: string,
-) {
+async function getSortedSpellIdsForItem(executor: Pick<ItemTransaction, "select">, itemId: string) {
   const spellLinks = await executor
     .select({ spellId: itemsSpells.spellId, spellName: spells.name })
     .from(itemsSpells)
@@ -91,9 +86,7 @@ export const itemsRouter = router({
     const sortColumn = sortColumnMap[input.sortBy];
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
-      input.sortBy === "name"
-        ? [sortFn(sortColumn)]
-        : [sortFn(sortColumn), asc(items.name)];
+      input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(items.name)];
 
     const [rows, countResult] = await Promise.all([
       db
@@ -117,73 +110,66 @@ export const itemsRouter = router({
     };
   }),
 
-  get: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const [item] = await db
-        .select()
-        .from(items)
-        .where(eq(items.id, input.id));
+  get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
+    const [item] = await db.select().from(items).where(eq(items.id, input.id));
 
-      if (!item) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
-      }
+    if (!item) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+    }
 
-      const spellIds = await getSortedSpellIdsForItem(db, input.id);
+    const spellIds = await getSortedSpellIdsForItem(db, input.id);
 
-      return {
-        ...item,
-        spellIds,
-      };
-    }),
+    return {
+      ...item,
+      spellIds,
+    };
+  }),
 
-  create: gmProcedure
-    .input(itemInputBaseSchema)
-    .mutation(async ({ input }) => {
-      const normalized = normalizeItemInput(input);
+  create: gmProcedure.input(itemInputBaseSchema).mutation(async ({ input }) => {
+    const normalized = normalizeItemInput(input);
 
-      try {
-        return await db.transaction(async (tx) => {
-          const [created] = await tx
-            .insert(items)
-            .values({
-              name: normalized.name,
-              meleeDmg: normalized.meleeDmg,
-              rangedDmg: normalized.rangedDmg,
-              manaRegen: normalized.manaRegen,
-              spellDmg: normalized.spellDmg,
-              dodge: normalized.dodge,
-              criticalChance: normalized.criticalChance,
-              activationManaCost: normalized.activationManaCost,
-              activationHealthCost: normalized.activationHealthCost,
-            })
-            .returning();
+    try {
+      return await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(items)
+          .values({
+            name: normalized.name,
+            meleeDmg: normalized.meleeDmg,
+            rangedDmg: normalized.rangedDmg,
+            manaRegen: normalized.manaRegen,
+            spellDmg: normalized.spellDmg,
+            dodge: normalized.dodge,
+            criticalChance: normalized.criticalChance,
+            activationManaCost: normalized.activationManaCost,
+            activationHealthCost: normalized.activationHealthCost,
+          })
+          .returning();
 
-          if (!created) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Item was not created.",
-            });
-          }
-
-          await insertItemSpells(tx, created.id, normalized.spellIds);
-
-          return {
-            ...created,
-            spellIds: await getSortedSpellIdsForItem(tx, created.id),
-          };
-        });
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
+        if (!created) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Item was not created.",
+          });
         }
 
-        maybeThrowConflict(error);
+        await insertItemSpells(tx, created.id, normalized.spellIds);
+
+        return {
+          ...created,
+          spellIds: await getSortedSpellIdsForItem(tx, created.id),
+        };
+      });
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
       }
-    }),
+
+      maybeThrowConflict(error);
+    }
+  }),
 
   update: gmProcedure
-    .input(z.object({ id: z.string().uuid() }).merge(itemInputBaseSchema))
+    .input(z.object({ id: idSchema }).merge(itemInputBaseSchema))
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeItemInput(rest);
@@ -227,16 +213,14 @@ export const itemsRouter = router({
       }
     }),
 
-  delete: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const deleted = await db
-        .delete(items)
-        .where(eq(items.id, input.id))
-        .returning({ id: items.id });
-      if (deleted.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
-      }
-      return { success: true };
-    }),
+  delete: gmProcedure.input(z.object({ id: idSchema })).mutation(async ({ input }) => {
+    const deleted = await db
+      .delete(items)
+      .where(eq(items.id, input.id))
+      .returning({ id: items.id });
+    if (deleted.length === 0) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+    }
+    return { success: true };
+  }),
 });

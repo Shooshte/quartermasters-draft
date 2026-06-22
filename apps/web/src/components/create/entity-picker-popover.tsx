@@ -1,5 +1,5 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
 export interface EntityPickerOption {
@@ -32,9 +32,7 @@ function filterEntityPickerOptions(options: EntityPickerOption[], search: string
     return options.slice(0, 5);
   }
 
-  return options
-    .filter((option) => option.name.toLowerCase().includes(searchTerm))
-    .slice(0, 5);
+  return options.filter((option) => option.name.toLowerCase().includes(searchTerm)).slice(0, 5);
 }
 
 export function EntityPickerPopover({
@@ -66,7 +64,10 @@ export function EntityPickerPopover({
     searchInputRef.current?.focus();
   }, [isOpen]);
 
-  const filteredOptions = useMemo(() => filterEntityPickerOptions(options, search), [options, search]);
+  const filteredOptions = useMemo(
+    () => filterEntityPickerOptions(options, search),
+    [options, search],
+  );
 
   const selectedOption = options.find((option) => option.id === selectedId);
 

@@ -1,15 +1,17 @@
+import { db, units, unitsItems } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db, units, unitsItems } from "@qd/db";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, listInputSchema } from "./shared";
+import { findDbError, idSchema, listInputSchema } from "./shared";
 
-const unitListInput = listInputSchema.extend({
-  limit: z.number().int().min(1).max(500).default(20),
-  sortBy: z.enum(["name", "updatedAt"]).default("name"),
-  sortDir: z.enum(["asc", "desc"]).default("asc"),
-}).default({});
+const unitListInput = listInputSchema
+  .extend({
+    limit: z.number().int().min(1).max(500).default(20),
+    sortBy: z.enum(["name", "updatedAt"]).default("name"),
+    sortDir: z.enum(["asc", "desc"]).default("asc"),
+  })
+  .prefault({});
 
 const unitInputBaseSchema = z.object({
   name: z.string().trim().min(1),
@@ -21,7 +23,7 @@ const unitInputBaseSchema = z.object({
   speed: z.number(),
   dodge: z.number(),
   criticalChance: z.number(),
-  itemIds: z.array(z.string().uuid()),
+  itemIds: z.array(idSchema),
 });
 
 type NormalizedUnitInput = z.infer<typeof unitInputBaseSchema>;
@@ -43,11 +45,7 @@ function buildUnitItemRows(unitId: string, itemIds: string[]) {
   }));
 }
 
-async function insertUnitItems(
-  tx: UnitTransaction,
-  unitId: string,
-  itemIds: string[],
-) {
+async function insertUnitItems(tx: UnitTransaction, unitId: string, itemIds: string[]) {
   if (itemIds.length === 0) {
     return;
   }
@@ -55,10 +53,7 @@ async function insertUnitItems(
   await tx.insert(unitsItems).values(buildUnitItemRows(unitId, itemIds));
 }
 
-async function getOrderedItemIdsForUnit(
-  executor: Pick<UnitTransaction, "select">,
-  unitId: string,
-) {
+async function getOrderedItemIdsForUnit(executor: Pick<UnitTransaction, "select">, unitId: string) {
   const itemLinks = await executor
     .select({ itemId: unitsItems.itemId })
     .from(unitsItems)
@@ -91,9 +86,7 @@ export const unitsRouter = router({
     const sortColumn = sortColumnMap[input.sortBy];
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
-      input.sortBy === "name"
-        ? [sortFn(sortColumn)]
-        : [sortFn(sortColumn), asc(units.name)];
+      input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(units.name)];
 
     const [rows, countResult] = await Promise.all([
       db
@@ -117,77 +110,70 @@ export const unitsRouter = router({
     };
   }),
 
-  get: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
-      const [unit] = await db
-        .select()
-        .from(units)
-        .where(eq(units.id, input.id));
+  get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
+    const [unit] = await db.select().from(units).where(eq(units.id, input.id));
 
-      if (!unit) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Unit not found" });
-      }
+    if (!unit) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Unit not found" });
+    }
 
-      const itemLinks = await db
-        .select({ itemId: unitsItems.itemId })
-        .from(unitsItems)
-        .where(eq(unitsItems.unitId, input.id))
-        .orderBy(asc(unitsItems.priority));
+    const itemLinks = await db
+      .select({ itemId: unitsItems.itemId })
+      .from(unitsItems)
+      .where(eq(unitsItems.unitId, input.id))
+      .orderBy(asc(unitsItems.priority));
 
-      return {
-        ...unit,
-        itemIds: itemLinks.map((i) => i.itemId),
-      };
-    }),
+    return {
+      ...unit,
+      itemIds: itemLinks.map((i) => i.itemId),
+    };
+  }),
 
-  create: gmProcedure
-    .input(unitInputBaseSchema)
-    .mutation(async ({ input }) => {
-      const normalized = normalizeUnitInput(input);
+  create: gmProcedure.input(unitInputBaseSchema).mutation(async ({ input }) => {
+    const normalized = normalizeUnitInput(input);
 
-      try {
-        return await db.transaction(async (tx) => {
-          const [created] = await tx
-            .insert(units)
-            .values({
-              name: normalized.name,
-              meleeDmg: normalized.meleeDmg,
-              health: normalized.health,
-              rangedDmg: normalized.rangedDmg,
-              manaRegen: normalized.manaRegen,
-              spellDmg: normalized.spellDmg,
-              speed: normalized.speed,
-              dodge: normalized.dodge,
-              criticalChance: normalized.criticalChance,
-            })
-            .returning();
+    try {
+      return await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(units)
+          .values({
+            name: normalized.name,
+            meleeDmg: normalized.meleeDmg,
+            health: normalized.health,
+            rangedDmg: normalized.rangedDmg,
+            manaRegen: normalized.manaRegen,
+            spellDmg: normalized.spellDmg,
+            speed: normalized.speed,
+            dodge: normalized.dodge,
+            criticalChance: normalized.criticalChance,
+          })
+          .returning();
 
-          if (!created) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Unit was not created.",
-            });
-          }
-
-          await insertUnitItems(tx, created.id, normalized.itemIds);
-
-          return {
-            ...created,
-            itemIds: await getOrderedItemIdsForUnit(tx, created.id),
-          };
-        });
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
+        if (!created) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Unit was not created.",
+          });
         }
 
-        maybeThrowConflict(error);
+        await insertUnitItems(tx, created.id, normalized.itemIds);
+
+        return {
+          ...created,
+          itemIds: await getOrderedItemIdsForUnit(tx, created.id),
+        };
+      });
+    } catch (error) {
+      if (error instanceof TRPCError) {
+        throw error;
       }
-    }),
+
+      maybeThrowConflict(error);
+    }
+  }),
 
   update: gmProcedure
-    .input(z.object({ id: z.string().uuid() }).merge(unitInputBaseSchema))
+    .input(z.object({ id: idSchema }).merge(unitInputBaseSchema))
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeUnitInput(rest);
@@ -231,16 +217,14 @@ export const unitsRouter = router({
       }
     }),
 
-  delete: gmProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      const deleted = await db
-        .delete(units)
-        .where(eq(units.id, input.id))
-        .returning({ id: units.id });
-      if (deleted.length === 0) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Unit not found" });
-      }
-      return { success: true };
-    }),
+  delete: gmProcedure.input(z.object({ id: idSchema })).mutation(async ({ input }) => {
+    const deleted = await db
+      .delete(units)
+      .where(eq(units.id, input.id))
+      .returning({ id: units.id });
+    if (deleted.length === 0) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Unit not found" });
+    }
+    return { success: true };
+  }),
 });

@@ -38,11 +38,11 @@ test.describe("Scenario Workspace", () => {
     await scenario.openNew();
 
     await scenario.fillName("Ambush at Dawn");
-    await saveEntityAndWait(gmPage, "scenarios", "create", { saveButtonTestId: "scenario-save-button" });
+    await saveEntityAndWait(gmPage, "scenarios", "create", {
+      saveButtonTestId: "scenario-save-button",
+    });
 
-    await expect(scenario.saveError).toHaveText(
-      "A scenario with this name already exists",
-    );
+    await expect(scenario.saveError).toHaveText("A scenario with this name already exists");
   });
 
   test("a new scenario starts with four fixed empty rows", async ({ gmPage }) => {
@@ -198,10 +198,7 @@ test.describe("Scenario Workspace", () => {
     await scenario.openNew();
 
     await gmPage.getByTestId("scenario-row-melee-picker").click();
-    await expect(scenario.pickerSearch("melee")).toHaveAttribute(
-      "placeholder",
-      "Search units...",
-    );
+    await expect(scenario.pickerSearch("melee")).toHaveAttribute("placeholder", "Search units...");
     await expect(scenario.pickerOptions).toHaveCount(5, {
       timeout: 15_000,
     });

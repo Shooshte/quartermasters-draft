@@ -1,12 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import {
-  createRouter,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
-  createMemoryHistory,
+  createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockUseSession = vi.fn();
 
@@ -17,9 +17,7 @@ vi.mock("~/lib/auth-client", () => ({
 }));
 
 async function renderForbiddenRoute() {
-  const { Route: ForbiddenRoute } = await import(
-    "../../src/routes/_authenticated/403"
-  );
+  const { Route: ForbiddenRoute } = await import("../../src/routes/_authenticated/403");
 
   const rootRoute = createRootRoute();
   const forbiddenRoute = createRoute({
@@ -65,9 +63,7 @@ describe("403 Forbidden page", () => {
     await renderForbiddenRoute();
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /access denied/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /access denied/i })).toBeInTheDocument();
     });
   });
 
@@ -80,9 +76,7 @@ describe("403 Forbidden page", () => {
     await renderForbiddenRoute();
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/you do not have permission/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/you do not have permission/i)).toBeInTheDocument();
     });
   });
 

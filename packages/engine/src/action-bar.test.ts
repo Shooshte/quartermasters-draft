@@ -92,7 +92,9 @@ function makeBarBattle() {
 
 function actionBar(engine: BattleEngine, scenarioId: string, name: string) {
   const scenario = engine.getState().scenarios.find((candidate) => candidate.id === scenarioId)!;
-  const unit = Object.values(scenario.rows).flat().find((candidate) => candidate.name === name)!;
+  const unit = Object.values(scenario.rows)
+    .flat()
+    .find((candidate) => candidate.name === name)!;
   return unit.actionBar;
 }
 
@@ -121,10 +123,16 @@ describe("action bar", () => {
     const engine = new BattleEngine(
       createBattleInput([
         createScenario("A", {
-          melee: [createUnit("Overcharger", { stats: createStats({ health: 80, meleeDmg: 20, speed: 60 }) })],
+          melee: [
+            createUnit("Overcharger", {
+              stats: createStats({ health: 80, meleeDmg: 20, speed: 60 }),
+            }),
+          ],
         }),
         createScenario("B", {
-          tank: [createUnit("Dummy", { stats: createStats({ health: 200, meleeDmg: 0, speed: 10 }) })],
+          tank: [
+            createUnit("Dummy", { stats: createStats({ health: 200, meleeDmg: 0, speed: 10 }) }),
+          ],
         }),
       ]),
     );
@@ -180,10 +188,16 @@ describe("action bar", () => {
 
     engine.tick(2);
 
-    const attackNames = engine
-      .getState()
-      .log.filter((entry) => entry.tick === 2 && (entry.type === "attack" || entry.type === "spell-cast"))
-      .map((entry) => ("attacker" in entry ? entry.attacker : entry.caster));
+    const attackNames: string[] = [];
+    for (const entry of engine.getState().log) {
+      if (entry.tick !== 2) continue;
+      if (entry.type === "attack") {
+        attackNames.push(entry.attacker);
+      }
+      if (entry.type === "spell-cast") {
+        attackNames.push(entry.caster);
+      }
+    }
 
     expect(attackNames).toEqual([
       "B Support 1",

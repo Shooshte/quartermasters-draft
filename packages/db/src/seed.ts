@@ -1,12 +1,26 @@
 import "dotenv/config";
+import { hashPassword } from "better-auth/crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { hashPassword } from "better-auth/crypto";
 
+import { getRequiredEnv } from "./env";
 import * as schema from "./schema";
-import { buildSeedData, effectSeedData, itemSeedData, itemsSpellsSeedData, scenarioSeedData, scenariosRowsSeedData, scenariosRowsUnitsSeedData, spellSeedData, spellsAllowedRowsSeedData, spellsEffectsSeedData, unitSeedData, unitsItemsSeedData } from "./seed-data";
+import {
+  buildSeedData,
+  effectSeedData,
+  itemSeedData,
+  itemsSpellsSeedData,
+  scenarioSeedData,
+  scenariosRowsSeedData,
+  scenariosRowsUnitsSeedData,
+  spellSeedData,
+  spellsAllowedRowsSeedData,
+  spellsEffectsSeedData,
+  unitSeedData,
+  unitsItemsSeedData,
+} from "./seed-data";
 
-const client = postgres(process.env.DATABASE_URL!);
+const client = postgres(getRequiredEnv("DATABASE_URL"));
 const db = drizzle({ client, schema });
 
 try {
@@ -29,9 +43,14 @@ try {
   await db.insert(schema.unitsItems).values(unitsItemsSeedData).onConflictDoNothing();
   await db.insert(schema.scenarios).values(scenarioSeedData).onConflictDoNothing();
   await db.insert(schema.scenariosRows).values(scenariosRowsSeedData).onConflictDoNothing();
-  await db.insert(schema.scenariosRowsUnits).values(scenariosRowsUnitsSeedData).onConflictDoNothing();
+  await db
+    .insert(schema.scenariosRowsUnits)
+    .values(scenariosRowsUnitsSeedData)
+    .onConflictDoNothing();
 
-  console.log("Seeded users, accounts, effects, spells, spells_effects, spells_allowed_rows, items, items_spells, units, units_items, scenarios, scenarios_rows, and scenarios_rows_units");
+  console.log(
+    "Seeded users, accounts, effects, spells, spells_effects, spells_allowed_rows, items, items_spells, units, units_items, scenarios, scenarios_rows, and scenarios_rows_units",
+  );
   await client.end();
   process.exit(0);
 } catch (error) {

@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { EFFECTS_PAGE_SIZE, createIdleWorkspace } from "../types";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
+import { createIdleWorkspace, EFFECTS_PAGE_SIZE } from "../types";
 
 interface UseDeleteEffectDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -27,7 +27,9 @@ export function useDeleteEffectDialog({
 }: UseDeleteEffectDialogOptions) {
   const queryClient = useQueryClient();
   const [isDeleteEffectDialogOpen, setIsDeleteEffectDialogOpen] = useState(false);
-  const [deleteEffectTarget, setDeleteEffectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteEffectTarget, setDeleteEffectTarget] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   const [deleteEffectError, setDeleteEffectError] = useState<string | null>(null);
 
   const requestDeleteEffect = useCallback((id: string, name: string) => {
@@ -35,8 +37,11 @@ export function useDeleteEffectDialog({
     setIsDeleteEffectDialogOpen(true);
   }, []);
 
-  const isLinkedSpellConflict = (error: unknown) => {
-    if (error instanceof Error && error.message.includes("Cannot delete effect while it is linked")) {
+  const isLinkedSpellConflict = useCallback((error: unknown) => {
+    if (
+      error instanceof Error &&
+      error.message.includes("Cannot delete effect while it is linked")
+    ) {
       return true;
     }
 
@@ -54,7 +59,7 @@ export function useDeleteEffectDialog({
       maybeTrpcError.shape?.data?.code === "CONFLICT" ||
       maybeTrpcError.shape?.message?.includes("Cannot delete effect while it is linked") === true
     );
-  };
+  }, []);
 
   const confirmDeleteEffect = useCallback(async () => {
     if (!deleteEffectTarget) return;
@@ -95,7 +100,19 @@ export function useDeleteEffectDialog({
         setDeleteEffectError("Failed to delete effect. Please try again.");
       }
     }
-  }, [deleteEffectTarget, entityWorkspace.entityId, navigate, queryClient, effectTotalCount, effectPage, setEntityWorkspace, setPerTabSelection, skipEntityResetRef, setEffectPage]);
+  }, [
+    deleteEffectTarget,
+    entityWorkspace.entityId,
+    navigate,
+    queryClient,
+    effectTotalCount,
+    effectPage,
+    setEntityWorkspace,
+    setPerTabSelection,
+    skipEntityResetRef,
+    setEffectPage,
+    isLinkedSpellConflict,
+  ]);
 
   const cancelDeleteEffect = useCallback(() => {
     setDeleteEffectTarget(null);

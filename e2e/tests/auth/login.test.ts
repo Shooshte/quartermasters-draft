@@ -1,32 +1,26 @@
-import { test, expect } from "../worker-base.fixture";
+import { expect, test } from "../worker-base.fixture";
 import {
+  expectPath,
   GM_EMAIL,
   GM_PASSWORD,
-  PLAYER_EMAIL,
-  PLAYER_PASSWORD,
   login,
   loginAsGM,
   loginAsPlayer,
-  expectPath,
+  PLAYER_EMAIL,
+  PLAYER_PASSWORD,
 } from "./auth.fixtures";
 
 test.describe("Login", () => {
   test.describe("Unauthenticated visitor", () => {
-    test("sees the login form with email, password, remember me, and submit", async ({
-      page,
-    }) => {
+    test("sees the login form with email, password, remember me, and submit", async ({ page }) => {
       await page.goto("/login");
       await expect(page.getByLabel("Email")).toBeVisible();
       await expect(page.getByLabel("Password")).toBeVisible();
       await expect(page.getByLabel("Remember me")).toBeVisible();
-      await expect(
-        page.getByRole("button", { name: "Sign in" }),
-      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
     });
 
-    test("game master is redirected to /create after login @smoke", async ({
-      page,
-    }) => {
+    test("game master is redirected to /create after login @smoke", async ({ page }) => {
       await login(page, GM_EMAIL, GM_PASSWORD);
       await page.waitForURL("**/create");
       await expectPath(page, "/create");
@@ -38,9 +32,7 @@ test.describe("Login", () => {
       await expectPath(page, "/play");
     });
 
-    test("return path is honoured after login when allowed", async ({
-      page,
-    }) => {
+    test("return path is honoured after login when allowed", async ({ page }) => {
       await page.goto("/login?next=/play");
       await page.getByLabel("Email").fill(GM_EMAIL);
       await page.getByLabel("Password").fill(GM_PASSWORD);
@@ -55,15 +47,11 @@ test.describe("Login", () => {
       await page.getByLabel("Password").fill("wrongpassword");
       await page.getByRole("button", { name: "Sign in" }).click();
 
-      await expect(page.getByRole("alert")).toContainText(
-        "Invalid credentials",
-      );
+      await expect(page.getByRole("alert")).toContainText("Invalid credentials");
       await expectPath(page, "/login");
     });
 
-    test("submit button is disabled while login request is in flight", async ({
-      page,
-    }) => {
+    test("submit button is disabled while login request is in flight", async ({ page }) => {
       await page.goto("/login");
       await page.getByLabel("Email").fill(GM_EMAIL);
       await page.getByLabel("Password").fill(GM_PASSWORD);
@@ -75,9 +63,7 @@ test.describe("Login", () => {
       await expect(submitButton).toBeDisabled();
     });
 
-    test("player logging in with next to a forbidden route sees 403", async ({
-      page,
-    }) => {
+    test("player logging in with next to a forbidden route sees 403", async ({ page }) => {
       await page.goto("/login?next=/create");
       await page.getByLabel("Email").fill(PLAYER_EMAIL);
       await page.getByLabel("Password").fill(PLAYER_PASSWORD);
@@ -100,9 +86,7 @@ test.describe("Login", () => {
 
       await page.waitForURL("**/create?**");
       await expectPath(page, "/create");
-      await expect(page.getByRole("status")).toContainText(
-        "Invalid return URL",
-      );
+      await expect(page.getByRole("status")).toContainText("Invalid return URL");
     });
   });
 
@@ -120,9 +104,7 @@ test.describe("Login", () => {
       await context.close();
     });
 
-    test("player visiting /login without next is redirected to /play", async ({
-      browser,
-    }) => {
+    test("player visiting /login without next is redirected to /play", async ({ browser }) => {
       const context = await browser.newContext();
       const page = await context.newPage();
       await loginAsPlayer(page);

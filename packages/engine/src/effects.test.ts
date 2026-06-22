@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { initializeBattleState } from "./state";
 import { applySpell, processOngoingEffects } from "./effects";
+import { initializeBattleState } from "./state";
 import {
   createBattleInput,
   createEffect,
@@ -72,33 +72,41 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(state, mage, createSpell({
-      name: "Blast",
-      targetPolicy: "highest_health",
-      effects: effectSequence(
-        createEffect({
-          name: "Arcane Damage",
-          effectType: "damage",
-          timingType: "instant",
-          directSpellDmg: 50,
-        }),
-      ),
-    }));
+    applySpell(
+      state,
+      mage,
+      createSpell({
+        name: "Blast",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Arcane Damage",
+            effectType: "damage",
+            timingType: "instant",
+            directSpellDmg: 50,
+          }),
+        ),
+      }),
+    );
     expect(warrior.currentHealth).toBe(250);
 
     mage.currentHealth = 190;
-    applySpell(state, cleric, createSpell({
-      name: "Heal",
-      targetPolicy: "highest_health",
-      effects: effectSequence(
-        createEffect({
-          name: "Mend",
-          effectType: "healing",
-          timingType: "instant",
-          directHealing: 30,
-        }),
-      ),
-    }));
+    applySpell(
+      state,
+      cleric,
+      createSpell({
+        name: "Heal",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Mend",
+            effectType: "healing",
+            timingType: "instant",
+            directHealing: 30,
+          }),
+        ),
+      }),
+    );
     expect(mage.currentHealth).toBe(200);
   });
 
@@ -108,27 +116,37 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(state, mage, createSpell({
-      name: "Burn",
-      targetPolicy: "highest_health",
-      effects: effectSequence(createEffect({
-        name: "Burning",
-        effectType: "damage",
-        timingType: "interval",
-        directSpellDmg: 20,
-        intervalMs: 1000,
-        triggerCount: 3,
-      })),
-    }));
+    applySpell(
+      state,
+      mage,
+      createSpell({
+        name: "Burn",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            intervalMs: 1000,
+            triggerCount: 3,
+          }),
+        ),
+      }),
+    );
     processOngoingEffects(state, 3000);
     // interval 20 dmg * 3 triggers, crit=5%, dodge=5% => round(20 * 1.05 * 0.95) = 20 per trigger, so 300 - 60 = 240.
     expect(warrior.currentHealth).toBe(240);
 
-    applySpell(state, cleric, createSpell({
-      name: "Haste",
-      targetPolicy: "highest_health",
-      effects: effectSequence(statBuff("speed", 3, 2000)),
-    }));
+    applySpell(
+      state,
+      cleric,
+      createSpell({
+        name: "Haste",
+        targetPolicy: "highest_health",
+        effects: effectSequence(statBuff("speed", 3, 2000)),
+      }),
+    );
     expect(mage.activeEffects).toHaveLength(1);
     processOngoingEffects(state, 2000);
     expect(mage.activeEffects).toHaveLength(0);
@@ -139,24 +157,32 @@ describe("effects", () => {
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(state, mage, createSpell({
-      name: "Burn",
-      targetPolicy: "highest_health",
-      effects: effectSequence(createEffect({
-        name: "Burning",
-        effectType: "damage",
-        timingType: "interval",
-        directSpellDmg: 20,
-        intervalMs: 1,
-        triggerCount: 2,
-      })),
-    }));
+    applySpell(
+      state,
+      mage,
+      createSpell({
+        name: "Burn",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            intervalMs: 1,
+            triggerCount: 2,
+          }),
+        ),
+      }),
+    );
 
     state.scenarios[0].rows.ranged = [];
     processOngoingEffects(state, 1);
 
     expect(warrior.activeEffects).toHaveLength(0);
-    expect(state.log.some((entry) => entry.type === "effect-expire" && entry.effect === "Burning")).toBe(true);
+    expect(
+      state.log.some((entry) => entry.type === "effect-expire" && entry.effect === "Burning"),
+    ).toBe(true);
   });
 
   it("supports buff and debuff stat modifiers across supported stats and stops dead-target sequences", () => {
@@ -169,9 +195,24 @@ describe("effects", () => {
       name: "Combo",
       targetPolicy: "highest_health",
       effects: effectSequence(
-        createEffect({ name: "One", effectType: "damage", timingType: "instant", directSpellDmg: 30 }),
-        createEffect({ name: "Two", effectType: "damage", timingType: "instant", directSpellDmg: 25 }),
-        createEffect({ name: "Three", effectType: "damage", timingType: "instant", directSpellDmg: 20 }),
+        createEffect({
+          name: "One",
+          effectType: "damage",
+          timingType: "instant",
+          directSpellDmg: 30,
+        }),
+        createEffect({
+          name: "Two",
+          effectType: "damage",
+          timingType: "instant",
+          directSpellDmg: 25,
+        }),
+        createEffect({
+          name: "Three",
+          effectType: "damage",
+          timingType: "instant",
+          directSpellDmg: 20,
+        }),
       ),
     });
 
@@ -202,33 +243,43 @@ describe("effects", () => {
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(state, mage, createSpell({
-      name: "Blast",
-      targetPolicy: "highest_health",
-      effects: effectSequence(
-        createEffect({
-          name: "Arcane Damage",
-          effectType: "damage",
-          timingType: "instant",
-          directSpellDmg: 40,
-        }),
-      ),
-    }));
+    applySpell(
+      state,
+      mage,
+      createSpell({
+        name: "Blast",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Arcane Damage",
+            effectType: "damage",
+            timingType: "instant",
+            directSpellDmg: 40,
+          }),
+        ),
+      }),
+    );
     // directSpellDmg=40, crit=50%, dodge=20% => round(40 * 1.5 * 0.8) = 48, so 300 - 48 = 252.
     expect(warrior.currentHealth).toBe(252);
 
-    applySpell(state, mage, createSpell({
-      name: "Burn",
-      targetPolicy: "highest_health",
-      effects: effectSequence(createEffect({
-        name: "Burning",
-        effectType: "damage",
-        timingType: "interval",
-        directSpellDmg: 20,
-        intervalMs: 1,
-        triggerCount: 2,
-      })),
-    }));
+    applySpell(
+      state,
+      mage,
+      createSpell({
+        name: "Burn",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            intervalMs: 1,
+            triggerCount: 2,
+          }),
+        ),
+      }),
+    );
     processOngoingEffects(state, 2);
     // interval 20 dmg * 2 triggers with same modifiers => 24 * 2 = 48, then 252 - 48 = 204.
     expect(warrior.currentHealth).toBe(204);

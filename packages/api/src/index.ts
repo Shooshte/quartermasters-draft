@@ -1,3 +1,3 @@
-export { appRouter, type AppRouter, createCaller } from "./root";
+export { type AppRouter, appRouter, createCaller } from "./root";
 export type { Context } from "./trpc";
-export { publicProcedure, protectedProcedure, gmProcedure, router } from "./trpc";
+export { gmProcedure, protectedProcedure, publicProcedure, router } from "./trpc";

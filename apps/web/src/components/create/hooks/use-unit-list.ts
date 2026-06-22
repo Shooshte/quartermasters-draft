@@ -1,13 +1,9 @@
-import { useState, useCallback } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@qd/api";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
+import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import {
-  type UnitSortBy,
-  type UnitSortDir,
-  UNITS_PAGE_SIZE,
-} from "../types";
+import { UNITS_PAGE_SIZE, type UnitSortBy, type UnitSortDir } from "../types";
 
 export function useUnitList(isActiveTab: boolean, backgroundEnabled: boolean) {
   const [unitPage, setUnitPage] = useState(1);
@@ -16,12 +12,13 @@ export function useUnitList(isActiveTab: boolean, backgroundEnabled: boolean) {
 
   const unitsList = useQuery({
     queryKey: ["scenarioBuilder", "units", "list", unitPage, unitSortBy, unitSortDir],
-    queryFn: () => trpc.scenarioBuilder.units.list.query({
-      page: unitPage,
-      limit: UNITS_PAGE_SIZE,
-      sortBy: unitSortBy,
-      sortDir: unitSortDir,
-    }),
+    queryFn: () =>
+      trpc.scenarioBuilder.units.list.query({
+        page: unitPage,
+        limit: UNITS_PAGE_SIZE,
+        sortBy: unitSortBy,
+        sortDir: unitSortDir,
+      }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,
   });

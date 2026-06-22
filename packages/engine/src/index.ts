@@ -1,5 +1,6 @@
-export { BattleEngine } from "./battle-engine";
 export type { BattleResult } from "./battle-engine";
+export { BattleEngine } from "./battle-engine";
+export type { BattleLogEntry } from "./log";
 export type {
   BattleInput,
   BattleOptions,
@@ -16,4 +17,3 @@ export type {
   UnitInput,
   UnitStats,
 } from "./types";
-export type { BattleLogEntry } from "./log";

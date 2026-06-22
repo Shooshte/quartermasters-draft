@@ -6,9 +6,7 @@ test.describe("Route Protection", () => {
   const protectedRoutes = ["/", "/create", "/play", "/replay/abc123"];
 
   for (const route of protectedRoutes) {
-    test(`unauthenticated user is redirected to /login from ${route} @smoke`, async ({
-      page,
-    }) => {
+    test(`unauthenticated user is redirected to /login from ${route} @smoke`, async ({ page }) => {
       await page.goto(route);
       await page.waitForURL("**/login**");
       await expectPath(page, "/login");
@@ -16,9 +14,7 @@ test.describe("Route Protection", () => {
     });
   }
 
-  test("unauthenticated user is redirected to /login from /403 without next", async ({
-    page,
-  }) => {
+  test("unauthenticated user is redirected to /login from /403 without next", async ({ page }) => {
     await page.goto("/403");
     await page.waitForURL("**/login**");
     await expectPath(page, "/login");

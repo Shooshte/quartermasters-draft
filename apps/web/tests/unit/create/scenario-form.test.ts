@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  SCENARIO_ROW_TYPES,
   createDefaultScenarioFormValues,
   hasScenarioFormErrors,
   isScenarioFormDirty,
   normalizeScenarioFormValues,
+  SCENARIO_ROW_TYPES,
   scenarioRecordToFormValues,
   validateScenarioForm,
 } from "~/components/create/scenario-form";
@@ -126,12 +126,7 @@ describe("scenario-form", () => {
     const matching = scenarioRecordToFormValues(original);
     expect(isScenarioFormDirty(matching, original)).toBe(false);
 
-    expect(
-      isScenarioFormDirty(
-        { ...matching, name: "Castle Siege Updated" },
-        original,
-      ),
-    ).toBe(true);
+    expect(isScenarioFormDirty({ ...matching, name: "Castle Siege Updated" }, original)).toBe(true);
 
     expect(
       isScenarioFormDirty(

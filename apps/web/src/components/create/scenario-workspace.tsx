@@ -1,11 +1,11 @@
 import { Input } from "~/components/ui/input";
-import { ScenarioRowEditor } from "./scenario-row-editor";
 import {
-  SCENARIO_ROW_TYPES,
   hasScenarioFormErrors,
+  SCENARIO_ROW_TYPES,
   type ScenarioFormValues,
   type ScenarioRowType,
 } from "./scenario-form";
+import { ScenarioRowEditor } from "./scenario-row-editor";
 import type { WorkspaceState } from "./types";
 
 interface ScenarioWorkspaceProps {
@@ -35,9 +35,7 @@ function getWorkspaceTitle(workspace: WorkspaceState) {
 
 function getScenarioRows(formValues: WorkspaceState["formValues"]) {
   const scenarioValues = formValues as ScenarioFormValues;
-  const rowMap = new Map(
-    (scenarioValues.rows ?? []).map((row) => [row.rowType, row.unitIds]),
-  );
+  const rowMap = new Map((scenarioValues.rows ?? []).map((row) => [row.rowType, row.unitIds]));
 
   return SCENARIO_ROW_TYPES.map((rowType) => ({
     rowType,

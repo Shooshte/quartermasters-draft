@@ -1,4 +1,16 @@
-import { effects, items, itemsSpells, scenarios, scenariosRows, scenariosRowsUnits, spells, spellsAllowedRows, spellsEffects, units, unitsItems } from "./schema";
+import type {
+  effects,
+  items,
+  itemsSpells,
+  scenarios,
+  scenariosRows,
+  scenariosRowsUnits,
+  spells,
+  spellsAllowedRows,
+  spellsEffects,
+  units,
+  unitsItems,
+} from "./schema";
 
 const now = new Date();
 
@@ -44,7 +56,7 @@ export const effectSeedData: (typeof effects.$inferInsert)[] = [
     effectType: "buff" as const,
     timingType: "instant" as const,
     durationMs: 5000,
-    meleeDmg: 20.5
+    meleeDmg: 20.5,
   },
   {
     id: "a0000000-0000-0000-0000-000000000002",
@@ -55,7 +67,7 @@ export const effectSeedData: (typeof effects.$inferInsert)[] = [
     triggerCount: 5,
     meleeDmg: 10.0,
     rangedDmg: 10.0,
-    speed: 0.5
+    speed: 0.5,
   },
   {
     id: "a0000000-0000-0000-0000-000000000003",
@@ -74,7 +86,7 @@ export const effectSeedData: (typeof effects.$inferInsert)[] = [
     name: "Mend",
     effectType: "healing" as const,
     timingType: "instant" as const,
-    directHealing: 10.25
+    directHealing: 10.25,
   },
   {
     id: "a0000000-0000-0000-0000-000000000005",
@@ -221,7 +233,8 @@ export const spellSeedData: (typeof spells.$inferInsert)[] = [
   {
     id: "b0000000-0000-0000-0000-000000000001",
     name: "Fireball",
-    description: "Hurls a ball of fire at the target, dealing instant arcane damage followed by burning.",
+    description:
+      "Hurls a ball of fire at the target, dealing instant arcane damage followed by burning.",
     targetPolicy: "highest_health" as const,
     updatedAt: new Date("2025-01-01T00:00:00Z"),
   },

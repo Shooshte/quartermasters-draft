@@ -1,5 +1,6 @@
 import type {
   BattleInput,
+  BattleItemState,
   EffectTemplateInput,
   ItemInput,
   RowType,
@@ -65,7 +66,9 @@ export function createSpell(
   };
 }
 
-export function createItem(overrides: Partial<ItemInput> & Pick<ItemInput, "name">): ItemInput {
+export function createItem(
+  overrides: Partial<ItemInput> & Pick<ItemInput, "name">,
+): BattleItemState {
   return {
     id: overrides.id ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
     meleeDmg: 0,
@@ -81,10 +84,7 @@ export function createItem(overrides: Partial<ItemInput> & Pick<ItemInput, "name
   };
 }
 
-export function createUnit(
-  name: string,
-  overrides: Partial<UnitInput> = {},
-): UnitInput {
+export function createUnit(name: string, overrides: Partial<UnitInput> = {}): UnitInput {
   return {
     id: overrides.id ?? name.toLowerCase().replace(/\s+/g, "-"),
     name,
@@ -118,9 +118,7 @@ export function createBattleInput(
   };
 }
 
-export function effectSequence(
-  ...effects: EffectTemplateInput[]
-): SpellInput["effects"] {
+export function effectSequence(...effects: EffectTemplateInput[]): SpellInput["effects"] {
   return effects.map((effect, index) => ({
     sequenceOrder: index + 1,
     effect,

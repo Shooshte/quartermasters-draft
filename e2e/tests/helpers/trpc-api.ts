@@ -11,9 +11,7 @@ export type EntityType = "effects" | "spells" | "items" | "units" | "scenarios";
 // ─── Response Parsing ────────────────────────────────────────────────────────
 
 /** Parse a superjson-encoded tRPC response body */
-export async function parseTrpcResponse(
-  response: APIResponse,
-) {
+export async function parseTrpcResponse(response: APIResponse) {
   const body = await response.json();
   return body.result.data.json;
 }
@@ -26,13 +24,10 @@ export async function deleteEntityViaApi(
   entityType: EntityType,
   id: string,
 ): Promise<APIResponse> {
-  return request.post(
-    `${TRPC_BASE}/scenarioBuilder.${entityType}.delete`,
-    {
-      data: { json: { id } },
-      headers: { "Content-Type": "application/json" },
-    },
-  );
+  return request.post(`${TRPC_BASE}/scenarioBuilder.${entityType}.delete`, {
+    data: { json: { id } },
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /** Delete multiple entities by ID, asserting each succeeds */

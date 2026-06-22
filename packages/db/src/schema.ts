@@ -1,10 +1,27 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgEnum, pgTable, real, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["gm", "player"]);
 export const timingTypeEnum = pgEnum("timing_type", ["instant", "interval"]);
 export const effectTypeEnum = pgEnum("effect_type", ["buff", "debuff", "healing", "damage"]);
-export const targetPolicyEnum = pgEnum("target_policy", ["highest_health", "lowest_health", "highest_damage", "random"]);
+export const targetPolicyEnum = pgEnum("target_policy", [
+  "highest_health",
+  "lowest_health",
+  "highest_damage",
+  "random",
+]);
 export const rowTypeEnum = pgEnum("row_type", ["support", "ranged", "melee", "tank"]);
 
 export const user = pgTable(
@@ -97,7 +114,10 @@ export const effects = pgTable(
     intervalMs: integer("interval_ms"),
     triggerCount: integer("trigger_count"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     meleeDmg: real("melee_dmg"),
     health: real("health"),
     rangedDmg: real("ranged_dmg"),
@@ -115,10 +135,19 @@ export const effects = pgTable(
   },
   (table) => [
     check("interval_ms_positive", sql`${table.intervalMs} IS NULL OR ${table.intervalMs} > 0`),
-    check("trigger_count_positive", sql`${table.triggerCount} IS NULL OR ${table.triggerCount} > 0`),
+    check(
+      "trigger_count_positive",
+      sql`${table.triggerCount} IS NULL OR ${table.triggerCount} > 0`,
+    ),
     check("duration_ms_positive", sql`${table.durationMs} IS NULL OR ${table.durationMs} > 0`),
-    check("interval_fields_required", sql`${table.timingType} != 'interval' OR (${table.intervalMs} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`),
-    check("instant_fields_forbidden", sql`${table.timingType} != 'instant' OR (${table.intervalMs} IS NULL AND ${table.triggerCount} IS NULL)`),
+    check(
+      "interval_fields_required",
+      sql`${table.timingType} != 'interval' OR (${table.intervalMs} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`,
+    ),
+    check(
+      "instant_fields_forbidden",
+      sql`${table.timingType} != 'instant' OR (${table.intervalMs} IS NULL AND ${table.triggerCount} IS NULL)`,
+    ),
   ],
 );
 
@@ -133,13 +162,28 @@ export const spells = pgTable(
     maxTargetsPerRow: integer("max_targets_per_row").default(1),
     targetOnlyAdjacent: boolean("target_only_adjacent").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => [
-    check("target_row_count_range", sql`${table.targetRowCount} >= 1 AND ${table.targetRowCount} <= 4`),
-    check("max_targets_per_row_positive", sql`${table.maxTargetsPerRow} IS NULL OR ${table.maxTargetsPerRow} >= 1`),
-    check("target_only_adjacent_whole_row", sql`${table.maxTargetsPerRow} IS NOT NULL OR ${table.targetOnlyAdjacent} = false`),
-    check("target_only_adjacent_min_targets", sql`${table.targetOnlyAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`),
+    check(
+      "target_row_count_range",
+      sql`${table.targetRowCount} >= 1 AND ${table.targetRowCount} <= 4`,
+    ),
+    check(
+      "max_targets_per_row_positive",
+      sql`${table.maxTargetsPerRow} IS NULL OR ${table.maxTargetsPerRow} >= 1`,
+    ),
+    check(
+      "target_only_adjacent_whole_row",
+      sql`${table.maxTargetsPerRow} IS NOT NULL OR ${table.targetOnlyAdjacent} = false`,
+    ),
+    check(
+      "target_only_adjacent_min_targets",
+      sql`${table.targetOnlyAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`,
+    ),
   ],
 );
 
@@ -147,8 +191,12 @@ export const spellsEffects = pgTable(
   "spells_effects",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
-    effectTemplateId: uuid("effect_template_id").notNull().references(() => effects.id),
+    spellId: uuid("spell_id")
+      .notNull()
+      .references(() => spells.id, { onDelete: "cascade" }),
+    effectTemplateId: uuid("effect_template_id")
+      .notNull()
+      .references(() => effects.id),
     sequenceOrder: integer("sequence_order").notNull(),
   },
   (table) => [
@@ -164,7 +212,9 @@ export const spellsAllowedRows = pgTable(
   "spells_allowed_rows",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    spellId: uuid("spell_id").notNull().references(() => spells.id, { onDelete: "cascade" }),
+    spellId: uuid("spell_id")
+      .notNull()
+      .references(() => spells.id, { onDelete: "cascade" }),
     rowType: rowTypeEnum("row_type").notNull(),
   },
   (table) => [
@@ -173,30 +223,41 @@ export const spellsAllowedRows = pgTable(
   ],
 );
 
-export const items = pgTable("items", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull().unique(),
-  meleeDmg: real("melee_dmg").notNull().default(0),
-  rangedDmg: real("ranged_dmg").notNull().default(0),
-  manaRegen: real("mana_regen").notNull().default(0),
-  spellDmg: real("spell_dmg").notNull().default(0),
-  dodge: real("dodge").notNull().default(0),
-  criticalChance: real("critical_chance").notNull().default(0),
-  activationManaCost: real("activation_mana_cost").notNull().default(0),
-  activationHealthCost: real("activation_health_cost").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-}, (table) => [
-  check("items_activation_mana_cost_nonnegative", sql`${table.activationManaCost} >= 0`),
-  check("items_activation_health_cost_nonnegative", sql`${table.activationHealthCost} >= 0`),
-]);
+export const items = pgTable(
+  "items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    meleeDmg: real("melee_dmg").notNull().default(0),
+    rangedDmg: real("ranged_dmg").notNull().default(0),
+    manaRegen: real("mana_regen").notNull().default(0),
+    spellDmg: real("spell_dmg").notNull().default(0),
+    dodge: real("dodge").notNull().default(0),
+    criticalChance: real("critical_chance").notNull().default(0),
+    activationManaCost: real("activation_mana_cost").notNull().default(0),
+    activationHealthCost: real("activation_health_cost").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    check("items_activation_mana_cost_nonnegative", sql`${table.activationManaCost} >= 0`),
+    check("items_activation_health_cost_nonnegative", sql`${table.activationHealthCost} >= 0`),
+  ],
+);
 
 export const itemsSpells = pgTable(
   "items_spells",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    itemId: uuid("item_id").notNull().references(() => items.id, { onDelete: "cascade" }),
-    spellId: uuid("spell_id").notNull().references(() => spells.id),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id, { onDelete: "cascade" }),
+    spellId: uuid("spell_id")
+      .notNull()
+      .references(() => spells.id),
   },
   (table) => [
     index("items_spells_item_id_idx").on(table.itemId),
@@ -218,7 +279,10 @@ export const units = pgTable("units", {
   dodge: real("dodge").notNull().default(0),
   criticalChance: real("critical_chance").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 // Unique on (unitId, priority) — not (unitId, itemId) — so the same item
@@ -227,8 +291,12 @@ export const unitsItems = pgTable(
   "units_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    itemId: uuid("item_id").notNull().references(() => items.id, { onDelete: "cascade" }),
-    unitId: uuid("unit_id").notNull().references(() => units.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id, { onDelete: "cascade" }),
+    unitId: uuid("unit_id")
+      .notNull()
+      .references(() => units.id, { onDelete: "cascade" }),
     priority: integer("priority").notNull().default(1),
   },
   (table) => [
@@ -243,17 +311,25 @@ export const scenarios = pgTable("scenarios", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const scenariosRows = pgTable(
   "scenarios_rows",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    scenarioId: uuid("scenario_id").notNull().references(() => scenarios.id, { onDelete: "cascade" }),
+    scenarioId: uuid("scenario_id")
+      .notNull()
+      .references(() => scenarios.id, { onDelete: "cascade" }),
     rowType: rowTypeEnum("row_type").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => [
     index("scenarios_rows_scenario_id_idx").on(table.scenarioId),
@@ -268,11 +344,18 @@ export const scenariosRowsUnits = pgTable(
   "scenarios_rows_units",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    rowId: uuid("row_id").notNull().references(() => scenariosRows.id, { onDelete: "cascade" }),
-    unitId: uuid("unit_id").notNull().references(() => units.id, { onDelete: "cascade" }),
+    rowId: uuid("row_id")
+      .notNull()
+      .references(() => scenariosRows.id, { onDelete: "cascade" }),
+    unitId: uuid("unit_id")
+      .notNull()
+      .references(() => units.id, { onDelete: "cascade" }),
     slot: integer("slot").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => [
     index("scenarios_rows_units_row_id_idx").on(table.rowId),

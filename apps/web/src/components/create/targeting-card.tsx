@@ -1,9 +1,9 @@
-import { WorkspaceSelectChip } from "./workspace-select-chip";
-import { WorkspaceSegmentToggle } from "./workspace-segment-toggle";
-import { WorkspaceRowTypePill } from "./workspace-row-type-pill";
-import { TargetingGridPreview } from "./targeting-grid-preview";
 import { SCENARIO_ROW_TYPES } from "./scenario-form";
-import type { SpellFormValues, SpellFieldErrors, RowType } from "./spell-form";
+import type { RowType, SpellFieldErrors, SpellFormValues } from "./spell-form";
+import { TargetingGridPreview } from "./targeting-grid-preview";
+import { WorkspaceRowTypePill } from "./workspace-row-type-pill";
+import { WorkspaceSegmentToggle } from "./workspace-segment-toggle";
+import { WorkspaceSelectChip } from "./workspace-select-chip";
 
 interface TargetingCardProps {
   formValues: SpellFormValues;
@@ -11,14 +11,9 @@ interface TargetingCardProps {
   onFieldChange: (field: string, value: unknown) => void;
 }
 
-export function TargetingCard({
-  formValues,
-  errors,
-  onFieldChange,
-}: TargetingCardProps) {
+export function TargetingCard({ formValues, errors, onFieldChange }: TargetingCardProps) {
   const perRowMode = formValues.maxTargetsPerRow === null ? "all" : "limit";
-  const adjacentDisabled =
-    formValues.maxTargetsPerRow === null || formValues.maxTargetsPerRow < 2;
+  const adjacentDisabled = formValues.maxTargetsPerRow === null || formValues.maxTargetsPerRow < 2;
 
   return (
     <div>
@@ -48,7 +43,9 @@ export function TargetingCard({
           />
         </div>
         {errors.targetPolicy ? (
-          <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>{errors.targetPolicy}</p>
+          <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
+            {errors.targetPolicy}
+          </p>
         ) : null}
 
         {/* Body: grid + controls */}
@@ -77,7 +74,7 @@ export function TargetingCard({
                 value={formValues.targetRowCount}
                 onChange={(event) => {
                   const val = parseInt(event.target.value, 10);
-                  if (!isNaN(val)) onFieldChange("targetRowCount", val);
+                  if (!Number.isNaN(val)) onFieldChange("targetRowCount", val);
                 }}
               />
             </div>
@@ -116,7 +113,7 @@ export function TargetingCard({
                   value={formValues.maxTargetsPerRow ?? 1}
                   onChange={(event) => {
                     const val = parseInt(event.target.value, 10);
-                    if (!isNaN(val)) onFieldChange("maxTargetsPerRow", val);
+                    if (!Number.isNaN(val)) onFieldChange("maxTargetsPerRow", val);
                   }}
                 />
               ) : null}

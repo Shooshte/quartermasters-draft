@@ -5,7 +5,9 @@ export const listInputSchema = z.object({
   limit: z.number().int().min(1).max(500).default(100),
 });
 
-export const listInput = listInputSchema.default({});
+export const listInput = listInputSchema.prefault({});
+
+export const idSchema = z.guid();
 
 type DbErrorLike = {
   code?: string;

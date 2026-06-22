@@ -1,11 +1,5 @@
-import { test, expect } from "../worker-base.fixture";
-import {
-  loginAsGM,
-  loginAsPlayer,
-  logout,
-  expectPath,
-  expectQueryParams,
-} from "./auth.fixtures";
+import { expect, test } from "../worker-base.fixture";
+import { expectPath, expectQueryParams, loginAsGM, loginAsPlayer, logout } from "./auth.fixtures";
 
 test.describe("Logout", () => {
   test("game master can log out @smoke", async ({ browser }) => {
@@ -38,9 +32,7 @@ test.describe("Logout", () => {
     await context.close();
   });
 
-  test("logged out user cannot access protected routes", async ({
-    browser,
-  }) => {
+  test("logged out user cannot access protected routes", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await loginAsGM(page);
@@ -108,9 +100,7 @@ test.describe("Logout", () => {
     await context.close();
   });
 
-  test("player logout from /403 redirects to /login without next param", async ({
-    browser,
-  }) => {
+  test("player logout from /403 redirects to /login without next param", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await loginAsPlayer(page);

@@ -183,7 +183,12 @@ describe("spell targeting", () => {
       selectTargets(
         state,
         caster,
-        createSpell({ name: "Rows", targetPolicy: "highest_health", targetRowCount: 2, maxTargetsPerRow: 1 }),
+        createSpell({
+          name: "Rows",
+          targetPolicy: "highest_health",
+          targetRowCount: 2,
+          maxTargetsPerRow: 1,
+        }),
       ).map((unit) => unit.name),
     ).toEqual(["Warrior", "Ranger"]);
   });
@@ -197,7 +202,12 @@ describe("spell targeting", () => {
       selectTargets(
         state,
         caster,
-        createSpell({ name: "All Tank", targetPolicy: "highest_health", targetRowCount: 1, maxTargetsPerRow: null }),
+        createSpell({
+          name: "All Tank",
+          targetPolicy: "highest_health",
+          targetRowCount: 1,
+          maxTargetsPerRow: null,
+        }),
       ).map((unit) => unit.name),
     ).toEqual(["Paladin"]);
 
@@ -205,7 +215,12 @@ describe("spell targeting", () => {
       selectTargets(
         state,
         caster,
-        createSpell({ name: "Front Rows", targetPolicy: "highest_health", targetRowCount: 2, maxTargetsPerRow: null }),
+        createSpell({
+          name: "Front Rows",
+          targetPolicy: "highest_health",
+          targetRowCount: 2,
+          maxTargetsPerRow: null,
+        }),
       ).map((unit) => unit.name),
     ).toEqual(["Paladin", "Ranger"]);
 

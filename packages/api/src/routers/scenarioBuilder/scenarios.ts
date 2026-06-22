@@ -1,15 +1,22 @@
 import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq, inArray } from "drizzle-orm";
+import { asc, count, desc, eq, exists, inArray, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, idSchema, listInputSchema } from "./shared";
+import {
+  findDbError,
+  idSchema,
+  listInputSchema,
+  type ScenarioListLinkageFilter,
+  scenarioListLinkageFilterSchema,
+} from "./shared";
 
 const scenarioListInput = listInputSchema
   .extend({
     limit: z.number().int().min(1).max(500).default(20),
     sortBy: z.enum(["name", "updatedAt"]).default("name"),
     sortDir: z.enum(["asc", "desc"]).default("asc"),
+    linkageFilter: scenarioListLinkageFilterSchema,
   })
   .prefault({});
 
@@ -141,25 +148,44 @@ function maybeThrowConflict(error: unknown): never {
   throw error;
 }
 
+function buildScenarioLinkageCondition(filter: ScenarioListLinkageFilter): SQL | undefined {
+  if (filter.mode === "all") {
+    return undefined;
+  }
+
+  const linkedScenarioSubquery = db
+    .select({ id: scenariosRowsUnits.id })
+    .from(scenariosRowsUnits)
+    .innerJoin(scenariosRows, eq(scenariosRowsUnits.rowId, scenariosRows.id))
+    .where(eq(scenariosRows.scenarioId, scenarios.id));
+
+  return filter.mode === "linked"
+    ? exists(linkedScenarioSubquery)
+    : notExists(linkedScenarioSubquery);
+}
+
 export const scenariosRouter = router({
   list: gmProcedure.input(scenarioListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
     const sortColumn = input.sortBy === "updatedAt" ? scenarios.updatedAt : scenarios.name;
     const sortFn = input.sortDir === "desc" ? desc : asc;
+    const linkageCondition = buildScenarioLinkageCondition(input.linkageFilter);
+    const rowsQuery = db
+      .select({
+        id: scenarios.id,
+        name: scenarios.name,
+        updatedAt: scenarios.updatedAt,
+        createdAt: scenarios.createdAt,
+      })
+      .from(scenarios);
+    const countQuery = db.select({ count: count() }).from(scenarios);
 
     const [items, countResult] = await Promise.all([
-      db
-        .select({
-          id: scenarios.id,
-          name: scenarios.name,
-          updatedAt: scenarios.updatedAt,
-          createdAt: scenarios.createdAt,
-        })
-        .from(scenarios)
+      (linkageCondition ? rowsQuery.where(linkageCondition) : rowsQuery)
         .orderBy(sortFn(sortColumn), asc(scenarios.id))
         .limit(input.limit)
         .offset(offset),
-      db.select({ count: count() }).from(scenarios),
+      linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
     return {

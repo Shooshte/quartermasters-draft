@@ -49,6 +49,8 @@ import {
   type ItemSortBy,
   type ItemSortDir,
   isValidTab,
+  type LibraryLinkageFilter,
+  type ScenarioLibraryLinkageFilter,
   type ScenarioSortBy,
   type ScenarioSortDir,
   type SpellSortBy,
@@ -74,12 +76,15 @@ export interface PendingAction {
 
 export interface CreatePageState {
   activeTab: TabName;
+  linkageFilter: LibraryLinkageFilter;
+  scenarioFilterOptions: { id: string; name: string }[];
   perTabSelection: Record<TabName, string | null>;
   entityWorkspace: WorkspaceState;
   scenarioWorkspace: WorkspaceState;
   isDialogOpen: boolean;
   pendingAction: PendingAction | null;
   setActiveTab: (tab: TabName) => void;
+  setLinkageFilter: (filter: LibraryLinkageFilter) => void;
   selectRecord: (tab: TabName, id: string) => void;
   createNew: (tab: TabName) => void;
   updateEntityField: (field: string, value: unknown) => void;
@@ -231,6 +236,7 @@ export function useCreatePageState(
   const initialTab = isValidTab(search.tab) ? search.tab : DEFAULT_TAB;
   const [activeTab, setActiveTabState] = useState<TabName>(initialTab);
   const [backgroundEnabled, setBackgroundEnabled] = useState(false);
+  const [linkageFilter, setLinkageFilterState] = useState<LibraryLinkageFilter>({ mode: "all" });
   const [isEntitySaving, setIsEntitySaving] = useState(false);
   const [entitySaveError, setEntitySaveError] = useState<string | null>(null);
   const [isScenarioSaving, setIsScenarioSaving] = useState(false);
@@ -303,20 +309,39 @@ export function useCreatePageState(
     [setScenarioWorkspace],
   );
 
+  const scenarioLinkageFilter: ScenarioLibraryLinkageFilter =
+    linkageFilter.mode === "scenario" ? { mode: "all" } : linkageFilter;
+
   // Scenario list (pagination, sorting, query)
-  const scenarioList = useScenarioList(activeTab === "Scenarios", backgroundEnabled);
+  const scenarioList = useScenarioList(
+    activeTab === "Scenarios",
+    backgroundEnabled,
+    scenarioLinkageFilter,
+  );
 
   // Effect list (pagination, sorting, query)
-  const effectList = useEffectList(activeTab === "Effects", backgroundEnabled);
+  const effectList = useEffectList(activeTab === "Effects", backgroundEnabled, linkageFilter);
 
   // Spell list (pagination, sorting, query)
-  const spellList = useSpellList(activeTab === "Spells", backgroundEnabled);
+  const spellList = useSpellList(activeTab === "Spells", backgroundEnabled, linkageFilter);
 
   // Item list (pagination, sorting, query)
-  const itemList = useItemList(activeTab === "Items", backgroundEnabled);
+  const itemList = useItemList(activeTab === "Items", backgroundEnabled, linkageFilter);
 
   // Unit list (pagination, sorting, query)
-  const unitList = useUnitList(activeTab === "Units", backgroundEnabled);
+  const unitList = useUnitList(activeTab === "Units", backgroundEnabled, linkageFilter);
+
+  const setLinkageFilter = useCallback(
+    (filter: LibraryLinkageFilter) => {
+      setLinkageFilterState(filter);
+      scenarioList.setScenarioPage(1);
+      effectList.setEffectPage(1);
+      spellList.setSpellPage(1);
+      itemList.setItemPage(1);
+      unitList.setUnitPage(1);
+    },
+    [effectList, itemList, scenarioList, spellList, unitList],
+  );
 
   // Effect options for spell effect picker
   const effectOptionsQuery = useQuery({
@@ -347,6 +372,13 @@ export function useCreatePageState(
       (scenarioWorkspace.mode === "create" ||
         scenarioWorkspace.mode === "edit" ||
         (scenarioWorkspace.mode === "loading" && scenarioWorkspace.data !== null)),
+  });
+
+  const scenarioFilterOptionsQuery = useQuery({
+    queryKey: ["scenarioBuilder", "scenarios", "all-options-for-filter"],
+    queryFn: () =>
+      loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.scenarios.list.query(input)),
+    enabled: backgroundEnabled,
   });
 
   // Compute combined loading and enable background after active tab settles
@@ -836,12 +868,15 @@ export function useCreatePageState(
 
   return {
     activeTab,
+    linkageFilter,
+    scenarioFilterOptions: scenarioFilterOptionsQuery.data ?? [],
     perTabSelection,
     entityWorkspace,
     scenarioWorkspace,
     isDialogOpen: discard.isDialogOpen,
     pendingAction: discard.pendingAction,
     setActiveTab,
+    setLinkageFilter,
     selectRecord,
     createNew,
     updateEntityField,

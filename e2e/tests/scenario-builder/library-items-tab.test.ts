@@ -153,6 +153,52 @@ test.describe("Items Library Tab — Sorting", () => {
   });
 });
 
+// ─── Filtering ──────────────────────────────────────────────────────────────
+
+test.describe("Items Library Tab — Filtering", () => {
+  test("show all items when no linkage filter is enabled", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
+
+    await lib.showAllEntities();
+
+    await expect(lib.getRow("Iron Sword")).toBeVisible();
+    await expect(lib.getRow("Wyrm Scale")).toBeVisible();
+  });
+
+  test("show only items linked to a selected scenario through units", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToScenario("Ambush at Dawn");
+
+    await expect(lib.getRow("Iron Sword")).toBeVisible();
+    await expect(lib.getRow("Wyrm Scale")).not.toBeVisible();
+  });
+
+  test("show only items that are not linked anywhere", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Wyrm Scale")).toBeVisible();
+    await expect(lib.getRow("Iron Sword")).not.toBeVisible();
+  });
+
+  test("filtering only affects selectable rows in the entities explorer", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    await lib.navigateWithEntity(IRON_SWORD_ID);
+    await expect(lib.nameInput).toHaveValue("Iron Sword");
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Wyrm Scale")).toBeVisible();
+    await expect(lib.getRow("Iron Sword")).not.toBeVisible();
+    await expect(lib.nameInput).toHaveValue("Iron Sword");
+  });
+});
+
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 test.describe("Items Library Tab — Selection", () => {

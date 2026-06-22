@@ -1218,6 +1218,87 @@ describe("useCreatePageState — scenario list features", () => {
   });
 });
 
+describe("useCreatePageState — library linkage filters", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("changes the shared linkage filter and resets the active tab page to 1", () => {
+    const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.setUnitPage(2);
+    });
+    expect(result.current.unitPage).toBe(2);
+
+    act(() => {
+      result.current.setLinkageFilter({ mode: "unlinked" });
+    });
+
+    expect(result.current.linkageFilter).toEqual({ mode: "unlinked" });
+    expect(result.current.unitPage).toBe(1);
+  });
+
+  it("passes the shared linkage filter to list queries", async () => {
+    const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.setLinkageFilter({
+        mode: "scenario",
+        scenarioId: "a2000000-0000-4000-8000-000000000001",
+      });
+    });
+
+    await waitFor(() => {
+      expect(mockUnitsList).toHaveBeenCalledWith(
+        expect.objectContaining({
+          linkageFilter: {
+            mode: "scenario",
+            scenarioId: "a2000000-0000-4000-8000-000000000001",
+          },
+        }),
+      );
+    });
+  });
+
+  it("does not clear a loaded workspace when the library filter changes", async () => {
+    mockUnitsGet.mockResolvedValueOnce({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 0,
+      health: 120,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+      itemIds: [],
+    });
+
+    const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      result.current.selectRecord("Units", "u1");
+    });
+
+    expect(result.current.entityWorkspace.entityId).toBe("u1");
+
+    act(() => {
+      result.current.setLinkageFilter({ mode: "unlinked" });
+    });
+
+    expect(result.current.entityWorkspace.entityId).toBe("u1");
+    expect(result.current.entityWorkspace.formValues.name).toBe("Barbarian");
+  });
+});
+
 describe("useCreatePageState — effect save flows", () => {
   beforeEach(() => {
     resetMocks();

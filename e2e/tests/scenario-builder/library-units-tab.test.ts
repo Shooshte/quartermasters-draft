@@ -176,6 +176,52 @@ test.describe("Units Library Tab — Sorting", () => {
   });
 });
 
+// ─── Filtering ──────────────────────────────────────────────────────────────
+
+test.describe("Units Library Tab — Filtering", () => {
+  test("show all units when no linkage filter is enabled", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, UNITS_TAB);
+    await lib.navigateToTab();
+
+    await lib.showAllEntities();
+
+    await expect(lib.getRow("Barbarian")).toBeVisible();
+    await expect(lib.getRow("Samurai")).toBeVisible();
+  });
+
+  test("show only units linked to a selected scenario", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, UNITS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToScenario("Ambush at Dawn");
+
+    await expect(lib.getRow("Barbarian")).toBeVisible();
+    await expect(lib.getRow("Samurai")).not.toBeVisible();
+  });
+
+  test("show only units that are not linked anywhere", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, UNITS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Samurai")).toBeVisible();
+    await expect(lib.getRow("Barbarian")).not.toBeVisible();
+  });
+
+  test("filtering only affects selectable rows in the entities explorer", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, UNITS_TAB);
+    await lib.navigateWithEntity(BARBARIAN_ID);
+    await expect(lib.nameInput).toHaveValue("Barbarian");
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Samurai")).toBeVisible();
+    await expect(lib.getRow("Barbarian")).not.toBeVisible();
+    await expect(lib.nameInput).toHaveValue("Barbarian");
+  });
+});
+
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 test.describe("Units Library Tab — Selection", () => {

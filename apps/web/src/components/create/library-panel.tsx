@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Button } from "~/components/ui/button";
+import { Select } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { EffectLibraryList } from "./effect-library-list";
 import { ItemLibraryList } from "./item-library-list";
@@ -9,6 +11,7 @@ import {
   type EffectSortDir,
   type ItemSortBy,
   type ItemSortDir,
+  type LibraryLinkageFilter,
   type ScenarioSortBy,
   type ScenarioSortDir,
   type SpellSortBy,
@@ -22,10 +25,13 @@ import { UnitLibraryList } from "./unit-library-list";
 
 interface LibraryPanelProps {
   activeTab: TabName;
+  linkageFilter: LibraryLinkageFilter;
+  scenarioFilterOptions: { id: string; name: string }[];
   perTabSelection: Record<TabName, string | null>;
   listLoading: Record<TabName, boolean>;
   listFetching: Record<TabName, boolean>;
   onTabChange: (tab: TabName) => void;
+  onLinkageFilterChange: (filter: LibraryLinkageFilter) => void;
   onSelectRecord: (tab: TabName, id: string) => void;
   onCreateNew: (tab: TabName) => void;
   // Scenario-specific props
@@ -75,12 +81,75 @@ interface LibraryPanelProps {
   onDeleteUnit: (id: string, name: string) => void;
 }
 
+function LibraryLinkageToolbar({
+  activeTab,
+  linkageFilter,
+  scenarioFilterOptions,
+  onLinkageFilterChange,
+}: {
+  activeTab: TabName;
+  linkageFilter: LibraryLinkageFilter;
+  scenarioFilterOptions: { id: string; name: string }[];
+  onLinkageFilterChange: (filter: LibraryLinkageFilter) => void;
+}) {
+  const effectiveMode =
+    activeTab === "Scenarios" && linkageFilter.mode === "scenario" ? "all" : linkageFilter.mode;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-border/50 px-4 py-3">
+      <div className="inline-flex overflow-hidden rounded-md border border-input">
+        {(
+          [
+            ["all", "All"],
+            ["linked", "Linked"],
+            ["unlinked", "Unlinked"],
+          ] as const
+        ).map(([mode, label]) => (
+          <Button
+            key={mode}
+            type="button"
+            variant={effectiveMode === mode ? "default" : "ghost"}
+            size="sm"
+            className="h-8 rounded-none border-0 px-3 shadow-none"
+            onClick={() => onLinkageFilterChange({ mode })}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+      {activeTab !== "Scenarios" && (
+        <Select
+          aria-label="Filter by scenario"
+          className="h-8 w-[190px]"
+          value={linkageFilter.mode === "scenario" ? linkageFilter.scenarioId : ""}
+          onChange={(event) => {
+            const scenarioId = event.currentTarget.value;
+            if (scenarioId) {
+              onLinkageFilterChange({ mode: "scenario", scenarioId });
+            }
+          }}
+        >
+          <option value="">Scenario...</option>
+          {scenarioFilterOptions.map((scenario) => (
+            <option key={scenario.id} value={scenario.id}>
+              {scenario.name}
+            </option>
+          ))}
+        </Select>
+      )}
+    </div>
+  );
+}
+
 export function LibraryPanel({
   activeTab,
+  linkageFilter,
+  scenarioFilterOptions,
   perTabSelection,
   listLoading,
   listFetching,
   onTabChange,
+  onLinkageFilterChange,
   onSelectRecord,
   onCreateNew,
   scenarioListItems,
@@ -226,6 +295,12 @@ export function LibraryPanel({
             </TabsTrigger>
           ))}
         </TabsList>
+        <LibraryLinkageToolbar
+          activeTab={activeTab}
+          linkageFilter={linkageFilter}
+          scenarioFilterOptions={scenarioFilterOptions}
+          onLinkageFilterChange={onLinkageFilterChange}
+        />
         {TABS.map((tab) => (
           <TabsContent key={tab} value={tab} className="flex-1 min-h-0 overflow-auto p-4">
             {tabContentByName[tab]}

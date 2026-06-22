@@ -30,6 +30,12 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onTabChange: vi.fn(),
     onSelectRecord: vi.fn(),
     onCreateNew: vi.fn(),
+    linkageFilter: { mode: "all" },
+    scenarioFilterOptions: [
+      { id: "sc-1", name: "Ambush at Dawn" },
+      { id: "sc-2", name: "Castle Siege" },
+    ],
+    onLinkageFilterChange: vi.fn(),
     scenarioListItems: [
       {
         id: "sc-1",
@@ -123,5 +129,27 @@ describe("LibraryPanel", () => {
     expect(onCreateNew).toHaveBeenCalledWith("Scenarios");
     expect(onSelectRecord).toHaveBeenCalledWith("Scenarios", "sc-1");
     expect(onDeleteScenario).toHaveBeenCalledWith("sc-1", "Ambush at Dawn");
+  });
+
+  it("renders linkage filter controls and forwards mode and scenario changes", async () => {
+    const user = userEvent.setup();
+    const onLinkageFilterChange = vi.fn();
+
+    renderPanel({ activeTab: "Units", onLinkageFilterChange });
+
+    await user.click(screen.getByRole("button", { name: "Unlinked" }));
+    expect(onLinkageFilterChange).toHaveBeenCalledWith({ mode: "unlinked" });
+
+    await user.selectOptions(screen.getByLabelText("Filter by scenario"), "sc-1");
+    expect(onLinkageFilterChange).toHaveBeenCalledWith({
+      mode: "scenario",
+      scenarioId: "sc-1",
+    });
+  });
+
+  it("does not render the scenario filter selector on the scenarios tab", () => {
+    renderPanel({ activeTab: "Scenarios" });
+
+    expect(screen.queryByLabelText("Filter by scenario")).not.toBeInTheDocument();
   });
 });

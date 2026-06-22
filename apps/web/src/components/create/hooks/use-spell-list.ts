@@ -3,21 +3,39 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { SPELLS_PAGE_SIZE, type SpellSortBy, type SpellSortDir } from "../types";
+import {
+  SPELLS_PAGE_SIZE,
+  type LibraryLinkageFilter,
+  type SpellSortBy,
+  type SpellSortDir,
+} from "../types";
 
-export function useSpellList(isActiveTab: boolean, backgroundEnabled: boolean) {
+export function useSpellList(
+  isActiveTab: boolean,
+  backgroundEnabled: boolean,
+  linkageFilter: LibraryLinkageFilter,
+) {
   const [spellPage, setSpellPage] = useState(1);
   const [spellSortBy, setSpellSortBy] = useState<SpellSortBy>("name");
   const [spellSortDir, setSpellSortDir] = useState<SpellSortDir>("asc");
 
   const spellsList = useQuery({
-    queryKey: ["scenarioBuilder", "spells", "list", spellPage, spellSortBy, spellSortDir],
+    queryKey: [
+      "scenarioBuilder",
+      "spells",
+      "list",
+      spellPage,
+      spellSortBy,
+      spellSortDir,
+      linkageFilter,
+    ],
     queryFn: () =>
       trpc.scenarioBuilder.spells.list.query({
         page: spellPage,
         limit: SPELLS_PAGE_SIZE,
         sortBy: spellSortBy,
         sortDir: spellSortDir,
+        linkageFilter,
       }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,

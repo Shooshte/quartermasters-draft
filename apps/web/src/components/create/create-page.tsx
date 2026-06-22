@@ -72,10 +72,13 @@ export function CreatePage({ search }: CreatePageProps) {
       <div className="flex w-[42%] min-w-0 flex-col border-r border-border/50">
         <LibraryPanel
           activeTab={state.activeTab}
+          linkageFilter={state.linkageFilter}
+          scenarioFilterOptions={state.scenarioFilterOptions}
           perTabSelection={state.perTabSelection}
           listLoading={state.listLoading}
           listFetching={state.listFetching}
           onTabChange={state.setActiveTab}
+          onLinkageFilterChange={state.setLinkageFilter}
           onSelectRecord={state.selectRecord}
           onCreateNew={state.createNew}
           scenarioListItems={state.scenarioListItems}

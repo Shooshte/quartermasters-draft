@@ -1,15 +1,31 @@
-import { db, spells, spellsAllowedRows, spellsEffects } from "@qd/db";
+import {
+  db,
+  itemsSpells,
+  scenariosRows,
+  scenariosRowsUnits,
+  spells,
+  spellsAllowedRows,
+  spellsEffects,
+  unitsItems,
+} from "@qd/db";
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, idSchema, listInputSchema } from "./shared";
+import {
+  entityListLinkageFilterSchema,
+  type EntityListLinkageFilter,
+  findDbError,
+  idSchema,
+  listInputSchema,
+} from "./shared";
 
 const spellListInput = listInputSchema
   .extend({
     limit: z.number().int().min(1).max(500).default(20),
     sortBy: z.enum(["name", "targetPolicy", "updatedAt"]).default("name"),
     sortDir: z.enum(["asc", "desc"]).default("asc"),
+    linkageFilter: entityListLinkageFilterSchema,
   })
   .prefault({});
 
@@ -119,6 +135,33 @@ function maybeThrowDeleteConflict(error: unknown): never {
   throw error;
 }
 
+function buildSpellLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
+  if (filter.mode === "all") {
+    return undefined;
+  }
+
+  if (filter.mode === "scenario") {
+    return exists(
+      db
+        .select({ id: itemsSpells.id })
+        .from(itemsSpells)
+        .innerJoin(unitsItems, eq(unitsItems.itemId, itemsSpells.itemId))
+        .innerJoin(scenariosRowsUnits, eq(scenariosRowsUnits.unitId, unitsItems.unitId))
+        .innerJoin(scenariosRows, eq(scenariosRowsUnits.rowId, scenariosRows.id))
+        .where(
+          and(eq(itemsSpells.spellId, spells.id), eq(scenariosRows.scenarioId, filter.scenarioId)),
+        ),
+    );
+  }
+
+  const linkedSpellSubquery = db
+    .select({ id: itemsSpells.id })
+    .from(itemsSpells)
+    .where(eq(itemsSpells.spellId, spells.id));
+
+  return filter.mode === "linked" ? exists(linkedSpellSubquery) : notExists(linkedSpellSubquery);
+}
+
 export const spellsRouter = router({
   list: gmProcedure.input(spellListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
@@ -131,24 +174,27 @@ export const spellsRouter = router({
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
       input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(spells.name)];
+    const linkageCondition = buildSpellLinkageCondition(input.linkageFilter);
+    const rowsQuery = db
+      .select({
+        id: spells.id,
+        name: spells.name,
+        description: spells.description,
+        targetPolicy: spells.targetPolicy,
+        targetRowCount: spells.targetRowCount,
+        maxTargetsPerRow: spells.maxTargetsPerRow,
+        targetOnlyAdjacent: spells.targetOnlyAdjacent,
+        updatedAt: spells.updatedAt,
+      })
+      .from(spells);
+    const countQuery = db.select({ count: count() }).from(spells);
 
     const [items, countResult] = await Promise.all([
-      db
-        .select({
-          id: spells.id,
-          name: spells.name,
-          description: spells.description,
-          targetPolicy: spells.targetPolicy,
-          targetRowCount: spells.targetRowCount,
-          maxTargetsPerRow: spells.maxTargetsPerRow,
-          targetOnlyAdjacent: spells.targetOnlyAdjacent,
-          updatedAt: spells.updatedAt,
-        })
-        .from(spells)
+      (linkageCondition ? rowsQuery.where(linkageCondition) : rowsQuery)
         .orderBy(...orderClauses)
         .limit(input.limit)
         .offset(offset),
-      db.select({ count: count() }).from(spells),
+      linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
     return {

@@ -216,6 +216,55 @@ test.describe("Effects Library Tab — Sorting", () => {
   });
 });
 
+// ─── Filtering ──────────────────────────────────────────────────────────────
+
+test.describe("Effects Library Tab — Filtering", () => {
+  test("show all effects when no linkage filter is enabled", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
+    await lib.navigateToTab();
+
+    await lib.showAllEntities();
+
+    await expect(lib.getRow("Barbarian Roar")).toBeVisible();
+    await lib.clickNextPage();
+    await expect(lib.getRow("Zodiac Burst")).toBeVisible();
+  });
+
+  test("show only effects linked to a selected scenario through the full chain", async ({
+    gmPage,
+  }) => {
+    const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToScenario("Ambush at Dawn");
+
+    await expect(lib.getRow("Barbarian Roar")).toBeVisible();
+    await expect(lib.getRow("Zodiac Burst")).not.toBeVisible();
+  });
+
+  test("show only effects that are not linked anywhere", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Zodiac Burst")).toBeVisible();
+    await expect(lib.getRow("Barbarian Roar")).not.toBeVisible();
+  });
+
+  test("filtering only affects selectable rows in the entities explorer", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
+    await lib.navigateWithEntity(BARBARIAN_ROAR_ID);
+    await expect(lib.nameInput).toHaveValue("Barbarian Roar");
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Zodiac Burst")).toBeVisible();
+    await expect(lib.getRow("Barbarian Roar")).not.toBeVisible();
+    await expect(lib.nameInput).toHaveValue("Barbarian Roar");
+  });
+});
+
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 test.describe("Effects Library Tab — Selection", () => {

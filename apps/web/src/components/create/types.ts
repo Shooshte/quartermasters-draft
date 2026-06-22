@@ -57,6 +57,14 @@ export const UNITS_PAGE_SIZE = 20;
 export type UnitSortBy = "name" | "updatedAt";
 export type UnitSortDir = "asc" | "desc";
 
+export type LibraryLinkageFilter =
+  | { mode: "all" }
+  | { mode: "linked" }
+  | { mode: "unlinked" }
+  | { mode: "scenario"; scenarioId: string };
+
+export type ScenarioLibraryLinkageFilter = Exclude<LibraryLinkageFilter, { mode: "scenario" }>;
+
 export type WorkspaceMode = "idle" | "loading" | "create" | "edit" | "not-found";
 
 export interface WorkspaceState {

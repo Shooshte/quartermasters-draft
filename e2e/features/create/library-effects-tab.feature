@@ -148,6 +148,46 @@ Feature: Scenario builder effects library tab
       Then the list should be sorted by name in descending order
 
   # ─────────────────────────────────────────────
+  # Rule: The game master can filter effects by scenario linkage
+  # ─────────────────────────────────────────────
+
+  Rule: The game master can filter effects by scenario linkage
+
+    Scenario: Show all effects when no linkage filter is enabled
+      Given the seed effects exist:
+        | id                                   | name           | timing_type | effect_type |
+        | a0000000-0000-0000-0000-000000000001 | Barbarian Roar | instant     | buff        |
+        | a0000000-0000-0000-0000-000000000021 | Zodiac Burst   | instant     | damage      |
+      When I show all entities in the entities explorer
+      Then I should see the effect "Barbarian Roar"
+      And I should see the effect "Zodiac Burst"
+
+    Scenario: Show only effects linked to a selected scenario through the full chain
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And unit "Barbarian" links item "Oak Staff"
+      And item "Oak Staff" links spell "Fireball"
+      And spell "Fireball" links effect "Barbarian Roar"
+      And effect "Zodiac Burst" is not linked to any spell
+      When I filter the entities explorer to scenario "Ambush at Dawn"
+      Then I should see the effect "Barbarian Roar"
+      And I should not see the effect "Zodiac Burst"
+
+    Scenario: Show only effects that are not linked anywhere
+      Given spell "Fireball" links effect "Barbarian Roar"
+      And effect "Zodiac Burst" is not linked to any spell
+      When I filter the entities explorer to unlinked entities
+      Then I should see the effect "Zodiac Burst"
+      And I should not see the effect "Barbarian Roar"
+
+    Scenario: Filtering only affects selectable rows in the entities explorer
+      Given I have loaded the effect "Barbarian Roar" in the effect workspace
+      And effect "Zodiac Burst" is not linked to any spell
+      When I filter the entities explorer to unlinked entities
+      Then I should see the effect "Zodiac Burst"
+      And I should not see the effect "Barbarian Roar"
+      And the effect workspace should remain loaded with "Barbarian Roar"
+
+  # ─────────────────────────────────────────────
   # Rule: Selecting an effect opens it in the effect workspace
   # ─────────────────────────────────────────────
 

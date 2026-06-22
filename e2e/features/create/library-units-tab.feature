@@ -123,6 +123,43 @@ Feature: Scenario builder units library tab
       Then the list should be sorted by name in descending order
 
   # ─────────────────────────────────────────────
+  # Rule: The game master can filter units by scenario linkage
+  # ─────────────────────────────────────────────
+
+  Rule: The game master can filter units by scenario linkage
+
+    Scenario: Show all units when no linkage filter is enabled
+      Given the seed units exist:
+        | id                                   | name      |
+        | f0000000-0000-0000-0000-000000000001 | Barbarian |
+        | f0000000-0000-0000-0000-000000000004 | Samurai   |
+      When I show all entities in the entities explorer
+      Then I should see the unit "Barbarian"
+      And I should see the unit "Samurai"
+
+    Scenario: Show only units linked to a selected scenario
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And unit "Samurai" is not assigned to any scenario
+      When I filter the entities explorer to scenario "Ambush at Dawn"
+      Then I should see the unit "Barbarian"
+      And I should not see the unit "Samurai"
+
+    Scenario: Show only units that are not linked anywhere
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And unit "Samurai" is not assigned to any scenario
+      When I filter the entities explorer to unlinked entities
+      Then I should see the unit "Samurai"
+      And I should not see the unit "Barbarian"
+
+    Scenario: Filtering only affects selectable rows in the entities explorer
+      Given I have loaded the unit "Barbarian" in the unit workspace
+      And unit "Samurai" is not assigned to any scenario
+      When I filter the entities explorer to unlinked entities
+      Then I should see the unit "Samurai"
+      And I should not see the unit "Barbarian"
+      And the unit workspace should remain loaded with "Barbarian"
+
+  # ─────────────────────────────────────────────
   # Rule: Selecting a unit opens it in the unit workspace
   # ─────────────────────────────────────────────
 

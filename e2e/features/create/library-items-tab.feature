@@ -113,6 +113,40 @@ Feature: Scenario builder items library tab
       When I click the "Name" sort control
       Then the list should be sorted by name in descending order
 
+  Rule: The game master can filter items by scenario linkage
+
+    Scenario: Show all items when no linkage filter is enabled
+      Given the seed items exist:
+        | id                                   | name           |
+        | d0000000-0000-0000-0000-000000000001 | Iron Sword     |
+        | d0000000-0000-0000-0000-000000000003 | Leather Shield |
+      When I show all entities in the entities explorer
+      Then I should see the item "Iron Sword"
+      And I should see the item "Leather Shield"
+
+    Scenario: Show only items linked to a selected scenario through units
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And unit "Barbarian" links item "Iron Sword"
+      And item "Leather Shield" is not linked to any unit
+      When I filter the entities explorer to scenario "Ambush at Dawn"
+      Then I should see the item "Iron Sword"
+      And I should not see the item "Leather Shield"
+
+    Scenario: Show only items that are not linked anywhere
+      Given unit "Barbarian" links item "Iron Sword"
+      And item "Leather Shield" is not linked to any unit
+      When I filter the entities explorer to unlinked entities
+      Then I should see the item "Leather Shield"
+      And I should not see the item "Iron Sword"
+
+    Scenario: Filtering only affects selectable rows in the entities explorer
+      Given I have loaded the item "Iron Sword" in the item workspace
+      And item "Leather Shield" is not linked to any unit
+      When I filter the entities explorer to unlinked entities
+      Then I should see the item "Leather Shield"
+      And I should not see the item "Iron Sword"
+      And the item workspace should remain loaded with "Iron Sword"
+
   Rule: Selecting an item opens it in the item workspace
 
     Scenario: Select an item from the list

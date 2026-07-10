@@ -2,6 +2,7 @@ import { getUnitEffectiveStats } from "./math";
 import { compareRowOrder, compareUnitOrder, ROW_ORDER } from "./rows";
 import { findScenario, getScenarioOrderIndex, nextRandom } from "./state";
 import type { BattleState, BattleUnitState, RowType, SpellInput } from "./types";
+import { InvalidBattleStateError } from "./validation";
 
 function spellTargetsAllies(spell: SpellInput): boolean {
   const firstEffect = spell.effects
@@ -15,14 +16,23 @@ function candidateUnits(
   caster: BattleUnitState,
   spell: SpellInput,
 ): BattleUnitState[] {
-  // biome-ignore lint/style/noNonNullAssertion: target-state validation is introduced in the follow-up engine PR.
-  const scenario = findScenario(
-    state,
-    spellTargetsAllies(spell)
-      ? caster.scenarioId
-      : // biome-ignore lint/style/noNonNullAssertion: target-state validation follows in the engine PR.
-        state.scenarios.find((candidate) => candidate.id !== caster.scenarioId)!.id,
-  )!;
+  const casterScenario = findScenario(state, caster.scenarioId);
+  if (!casterScenario) {
+    throw new InvalidBattleStateError(
+      "CASTER_SCENARIO_NOT_FOUND",
+      `Caster scenario ${caster.scenarioId} was not found in battle state.`,
+    );
+  }
+
+  const scenario = spellTargetsAllies(spell)
+    ? casterScenario
+    : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId);
+  if (!scenario) {
+    throw new InvalidBattleStateError(
+      "OPPOSING_SCENARIO_NOT_FOUND",
+      `No opposing scenario was found for caster scenario ${caster.scenarioId}.`,
+    );
+  }
   const allowedRows = spell.allowedRowTypes ?? [];
   return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter((unit) => {
     if (unit.currentHealth <= 0) return false;
@@ -134,8 +144,9 @@ export function selectTargets(
 
     const ordered = sortCandidates(state, rowCandidates, policy);
     if (spell.targetOnlyAdjacent) {
-      // biome-ignore lint/style/noNonNullAssertion: rowCandidates is non-empty for every eligible row.
-      selected.push(...selectAdjacent(rowCandidates, ordered[0]!, maxTargetsPerRow));
+      const primary = ordered[0];
+      if (!primary) continue;
+      selected.push(...selectAdjacent(rowCandidates, primary, maxTargetsPerRow));
     } else {
       selected.push(...ordered.slice(0, maxTargetsPerRow));
     }

@@ -17,3 +17,5 @@ export type {
   UnitInput,
   UnitStats,
 } from "./types";
+export type { InvalidBattleStateCode } from "./validation";
+export { InvalidBattleStateError } from "./validation";

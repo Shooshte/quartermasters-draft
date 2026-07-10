@@ -83,4 +83,37 @@ describe("useDeleteEntityDialog", () => {
     expect(result.current.error).toBe("Entity is linked.");
     expect(result.current.isOpen).toBe(true);
   });
+
+  it("ignores repeated confirmations while deletion is pending", async () => {
+    let resolveDelete!: () => void;
+    const pendingDelete = new Promise<void>((resolve) => {
+      resolveDelete = resolve;
+    });
+    const deleteEntity = vi.fn().mockReturnValue(pendingDelete);
+    const { result } = renderHook(
+      () =>
+        useDeleteEntityDialog({
+          deleteEntity,
+          invalidate: vi.fn().mockResolvedValue(undefined),
+          onDeleted: vi.fn(),
+          fallbackError: "Delete failed.",
+        }),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => result.current.request("one", "One"));
+    let firstConfirmation!: Promise<void>;
+    let secondConfirmation!: Promise<void>;
+    act(() => {
+      firstConfirmation = result.current.confirm();
+      secondConfirmation = result.current.confirm();
+    });
+
+    expect(deleteEntity).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      resolveDelete();
+      await Promise.all([firstConfirmation, secondConfirmation]);
+    });
+  });
 });

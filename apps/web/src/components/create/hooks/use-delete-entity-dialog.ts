@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface DeleteTarget {
   id: string;
@@ -24,6 +24,7 @@ export function useDeleteEntityDialog(options: {
   const [isOpen, setIsOpen] = useState(false);
   const [target, setTarget] = useState<DeleteTarget | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isConfirmingRef = useRef(false);
 
   const request = useCallback((id: string, name: string) => {
     setTarget({ id, name });
@@ -32,7 +33,8 @@ export function useDeleteEntityDialog(options: {
   }, []);
 
   const confirm = useCallback(async () => {
-    if (!target) return;
+    if (!target || isConfirmingRef.current) return;
+    isConfirmingRef.current = true;
     try {
       setError(null);
       await options.deleteEntity(target.id);
@@ -42,6 +44,8 @@ export function useDeleteEntityDialog(options: {
       setIsOpen(false);
     } catch (caught) {
       setError(options.mapError?.(caught) ?? options.fallbackError);
+    } finally {
+      isConfirmingRef.current = false;
     }
   }, [options, target]);
 

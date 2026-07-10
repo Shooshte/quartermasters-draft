@@ -19,7 +19,7 @@ describe("useEntityList", () => {
       .mockResolvedValue({ items: [{ id: "one" }], totalCount: 45, limit: 20 });
     const { result } = renderHook(
       () =>
-        useEntityList({
+        useEntityList<{ id: string }, "name" | "updatedAt">({
           enabled: true,
           initialSortBy: "name" as const,
           pageSize: 20,

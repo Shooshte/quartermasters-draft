@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { trpc } from "~/lib/trpc";
+import type { GroupedCreatePageState } from "./create-page-state-types";
 import {
   effectRecordToFormValues,
   normalizeEffectFormValues,
@@ -231,7 +232,7 @@ async function loadAllWorkspaceOptions<TItem>(
 export function useCreatePageState(
   search: CreatePageSearch,
   navigate?: CreatePageNavigate,
-): CreatePageState {
+): CreatePageState & GroupedCreatePageState {
   const queryClient = useQueryClient();
   const initialTab = isValidTab(search.tab) ? search.tab : DEFAULT_TAB;
   const [activeTab, setActiveTabState] = useState<TabName>(initialTab);
@@ -867,6 +868,145 @@ export function useCreatePageState(
   }, [navigate, queryClient, setEntityWorkspace, setPerTabSelection, skipEntityResetRef]);
 
   return {
+    workspaces: {
+      entity: entityWorkspace,
+      scenario: scenarioWorkspace,
+      updateEntityField,
+      updateScenarioField,
+    },
+    domains: {
+      effects: {
+        list: {
+          items: effectList.effectListItems,
+          page: effectList.effectPage,
+          totalPages: effectList.effectTotalPages,
+          sortBy: effectList.effectSortBy,
+          sortDir: effectList.effectSortDir,
+          setPage: effectList.setEffectPage,
+          setSort: effectList.setEffectSort,
+        },
+        deletion: {
+          isOpen: deleteEffectDialog.isDeleteEffectDialogOpen,
+          target: deleteEffectDialog.deleteEffectTarget,
+          error: deleteEffectDialog.deleteEffectError,
+          request: deleteEffectDialog.requestDeleteEffect,
+          confirm: deleteEffectDialog.confirmDeleteEffect,
+          cancel: deleteEffectDialog.cancelDeleteEffect,
+        },
+      },
+      spells: {
+        list: {
+          items: spellList.spellListItems,
+          page: spellList.spellPage,
+          totalPages: spellList.spellTotalPages,
+          sortBy: spellList.spellSortBy,
+          sortDir: spellList.spellSortDir,
+          setPage: spellList.setSpellPage,
+          setSort: spellList.setSpellSort,
+        },
+        deletion: {
+          isOpen: deleteSpellDialog.isDeleteSpellDialogOpen,
+          target: deleteSpellDialog.deleteSpellTarget,
+          error: deleteSpellDialog.deleteSpellError,
+          request: deleteSpellDialog.requestDeleteSpell,
+          confirm: deleteSpellDialog.confirmDeleteSpell,
+          cancel: deleteSpellDialog.cancelDeleteSpell,
+        },
+      },
+      items: {
+        list: {
+          items: itemList.itemListItems,
+          page: itemList.itemPage,
+          totalPages: itemList.itemTotalPages,
+          sortBy: itemList.itemSortBy,
+          sortDir: itemList.itemSortDir,
+          setPage: itemList.setItemPage,
+          setSort: itemList.setItemSort,
+        },
+        deletion: {
+          isOpen: deleteItemDialog.isDeleteItemDialogOpen,
+          target: deleteItemDialog.deleteItemTarget,
+          error: deleteItemDialog.deleteItemError,
+          request: deleteItemDialog.requestDeleteItem,
+          confirm: deleteItemDialog.confirmDeleteItem,
+          cancel: deleteItemDialog.cancelDeleteItem,
+        },
+      },
+      units: {
+        list: {
+          items: unitList.unitListItems,
+          page: unitList.unitPage,
+          totalPages: unitList.unitTotalPages,
+          sortBy: unitList.unitSortBy,
+          sortDir: unitList.unitSortDir,
+          setPage: unitList.setUnitPage,
+          setSort: unitList.setUnitSort,
+        },
+        deletion: {
+          isOpen: deleteUnitDialog.isDeleteUnitDialogOpen,
+          target: deleteUnitDialog.deleteUnitTarget,
+          error: deleteUnitDialog.deleteUnitError,
+          request: deleteUnitDialog.requestDeleteUnit,
+          confirm: deleteUnitDialog.confirmDeleteUnit,
+          cancel: deleteUnitDialog.cancelDeleteUnit,
+        },
+      },
+      scenarios: {
+        list: {
+          items: scenarioList.scenarioListItems,
+          page: scenarioList.scenarioPage,
+          totalPages: scenarioList.scenarioTotalPages,
+          sortBy: scenarioList.scenarioSortBy,
+          sortDir: scenarioList.scenarioSortDir,
+          setPage: scenarioList.setScenarioPage,
+          setSort: scenarioList.setScenarioSort,
+        },
+        deletion: {
+          isOpen: deleteDialog.isDeleteDialogOpen,
+          target: deleteDialog.deleteTarget,
+          error: deleteDialog.deleteError,
+          request: deleteDialog.requestDeleteScenario,
+          confirm: deleteDialog.confirmDeleteScenario,
+          cancel: deleteDialog.cancelDeleteScenario,
+        },
+      },
+    },
+    navigation: {
+      perTabSelection,
+      selectRecord,
+      createNew,
+      discard: {
+        isOpen: discard.isDialogOpen,
+        confirm: confirmDiscard,
+        cancel: discard.cancelDiscard,
+      },
+    },
+    entitySave: { save: saveEntity, isSaving: isEntitySaving, error: entitySaveError },
+    scenarioSave: {
+      save: saveScenario,
+      isSaving: isScenarioSaving,
+      error: scenarioSaveError,
+    },
+    options: {
+      effects: (effectOptionsQuery.data ?? []).map((effect: EffectOption) => ({
+        id: effect.id,
+        name: effect.name,
+        effectType: effect.effectType,
+      })),
+      spells: (spellOptionsQuery.data ?? []).map((spell: SpellOption) => ({
+        id: spell.id,
+        name: spell.name,
+        targetPolicy: spell.targetPolicy,
+      })),
+      items: (itemOptionsQuery.data ?? []).map((item: ItemOption) => ({
+        id: item.id,
+        name: item.name,
+      })),
+      scenarioUnits: (scenarioUnitOptionsQuery.data ?? []).map(
+        (unit: { id: string; name: string }) => ({ id: unit.id, name: unit.name }),
+      ),
+      scenarioFilters: scenarioFilterOptionsQuery.data ?? [],
+    },
     activeTab,
     linkageFilter,
     scenarioFilterOptions: scenarioFilterOptionsQuery.data ?? [],

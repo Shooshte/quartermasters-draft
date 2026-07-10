@@ -12,7 +12,8 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "typecheck": "turbo run typecheck",
-    "check": "pnpm run lint && pnpm run test && pnpm run build",
+    "check": "pnpm run lint && pnpm run deps:check && pnpm run test && pnpm run build",
+    "deps:check": "DATABASE_URL=postgres://postgres:password@localhost:5432/quartermasters_draft knip",
     "test": "turbo run test",
     "test:e2e": "pnpm --filter @qd/e2e test:e2e",
     "db:generate": "turbo run db:generate",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
+    "knip": "^6.25.0",
     "turbo": "^2.9.14",
     "typescript": "^6.0.3"
   },

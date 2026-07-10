@@ -1,7 +1,5 @@
 import type { AppRouter } from "@qd/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import {
   SCENARIOS_PAGE_SIZE,
@@ -9,63 +7,39 @@ import {
   type ScenarioSortBy,
   type ScenarioSortDir,
 } from "../types";
+import { useEntityList } from "./use-entity-list";
 
 export function useScenarioList(
   isActiveTab: boolean,
   backgroundEnabled: boolean,
   linkageFilter: ScenarioLibraryLinkageFilter,
 ) {
-  const [scenarioPage, setScenarioPage] = useState(1);
-  const [scenarioSortBy, setScenarioSortBy] = useState<ScenarioSortBy>("name");
-  const [scenarioSortDir, setScenarioSortDir] = useState<ScenarioSortDir>("asc");
-
-  const scenariosList = useQuery({
-    queryKey: [
-      "scenarioBuilder",
-      "scenarios",
-      "list",
-      scenarioPage,
-      scenarioSortBy,
-      scenarioSortDir,
-      linkageFilter,
-    ],
-    queryFn: () =>
+  type ScenarioListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["scenarios"]["list"];
+  const list = useEntityList<ScenarioListOutput["items"][number], ScenarioSortBy>({
+    enabled: isActiveTab || backgroundEnabled,
+    initialSortBy: "name",
+    pageSize: SCENARIOS_PAGE_SIZE,
+    queryKey: ["scenarioBuilder", "scenarios", "list", linkageFilter],
+    queryPage: ({ page, sortBy, sortDir }) =>
       trpc.scenarioBuilder.scenarios.list.query({
-        page: scenarioPage,
+        page,
         limit: SCENARIOS_PAGE_SIZE,
-        sortBy: scenarioSortBy,
-        sortDir: scenarioSortDir,
+        sortBy,
+        sortDir,
         linkageFilter,
       }),
-    enabled: isActiveTab || backgroundEnabled,
-    placeholderData: keepPreviousData,
   });
 
-  type ScenarioListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["scenarios"]["list"];
-  const scenarioListItems: ScenarioListOutput["items"] = scenariosList.data?.items ?? [];
-  const scenarioTotalCount: ScenarioListOutput["totalCount"] = scenariosList.data?.totalCount ?? 0;
-  const scenarioTotalPages = Math.max(1, Math.ceil(scenarioTotalCount / SCENARIOS_PAGE_SIZE));
-
-  const setScenarioSort = useCallback((sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => {
-    setScenarioSortBy(sortBy);
-    setScenarioSortDir(sortDir);
-    setScenarioPage(1);
-  }, []);
-
-  const setScenarioPageAction = useCallback((page: number) => {
-    setScenarioPage(page);
-  }, []);
-
   return {
-    scenariosList,
-    scenarioListItems,
-    scenarioPage,
-    scenarioTotalPages,
-    scenarioTotalCount,
-    scenarioSortBy,
-    scenarioSortDir,
-    setScenarioSort,
-    setScenarioPage: setScenarioPageAction,
-    scenarioIsFetching: scenariosList.isFetching,
+    scenariosList: list.query,
+    scenarioListItems: list.items,
+    scenarioPage: list.page,
+    scenarioTotalPages: list.totalPages,
+    scenarioTotalCount: list.totalCount,
+    scenarioSortBy: list.sortBy,
+    scenarioSortDir: list.sortDir as ScenarioSortDir,
+    setScenarioSort: list.setSort,
+    setScenarioPage: list.setPage,
+    scenarioIsFetching: list.isFetching,
   };
 }

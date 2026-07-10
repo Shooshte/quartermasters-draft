@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
 import { createIdleWorkspace, SCENARIOS_PAGE_SIZE } from "../types";
+import { useDeleteEntityDialog } from "./use-delete-entity-dialog";
 
 interface UseDeleteDialogOptions {
   scenarioWorkspace: WorkspaceState;
@@ -26,22 +26,11 @@ export function useDeleteDialog({
   setScenarioPage,
 }: UseDeleteDialogOptions) {
   const queryClient = useQueryClient();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const requestDeleteScenario = useCallback((id: string, name: string) => {
-    setDeleteTarget({ id, name });
-    setIsDeleteDialogOpen(true);
-  }, []);
-
-  const confirmDeleteScenario = useCallback(async () => {
-    if (!deleteTarget) return;
-    try {
-      setDeleteError(null);
-      await trpc.scenarioBuilder.scenarios.delete.mutate({ id: deleteTarget.id });
-
-      if (scenarioWorkspace.entityId === deleteTarget.id) {
+  const dialog = useDeleteEntityDialog({
+    deleteEntity: (id) => trpc.scenarioBuilder.scenarios.delete.mutate({ id }),
+    invalidate: () => queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "scenarios"] }),
+    onDeleted: (id) => {
+      if (scenarioWorkspace.entityId === id) {
         setScenarioWorkspace(createIdleWorkspace());
         setPerTabSelection((prev) => ({ ...prev, Scenarios: null }));
         skipScenarioResetRef.current = true;
@@ -54,47 +43,19 @@ export function useDeleteDialog({
           replace: true,
         });
       }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "scenarios"],
-      });
-
       const newTotalCount = scenarioTotalCount - 1;
       const newTotalPages = Math.max(1, Math.ceil(newTotalCount / SCENARIOS_PAGE_SIZE));
-      if (scenarioPage > newTotalPages) {
-        setScenarioPage(newTotalPages);
-      }
-
-      setDeleteTarget(null);
-      setIsDeleteDialogOpen(false);
-    } catch {
-      setDeleteError("Failed to delete scenario. Please try again.");
-    }
-  }, [
-    deleteTarget,
-    scenarioWorkspace.entityId,
-    navigate,
-    queryClient,
-    scenarioTotalCount,
-    scenarioPage,
-    setScenarioWorkspace,
-    setPerTabSelection,
-    skipScenarioResetRef,
-    setScenarioPage,
-  ]);
-
-  const cancelDeleteScenario = useCallback(() => {
-    setDeleteTarget(null);
-    setIsDeleteDialogOpen(false);
-    setDeleteError(null);
-  }, []);
+      if (scenarioPage > newTotalPages) setScenarioPage(newTotalPages);
+    },
+    fallbackError: "Failed to delete scenario. Please try again.",
+  });
 
   return {
-    isDeleteDialogOpen,
-    deleteTarget,
-    deleteError,
-    requestDeleteScenario,
-    confirmDeleteScenario,
-    cancelDeleteScenario,
+    isDeleteDialogOpen: dialog.isOpen,
+    deleteTarget: dialog.target,
+    deleteError: dialog.error,
+    requestDeleteScenario: dialog.request,
+    confirmDeleteScenario: dialog.confirm,
+    cancelDeleteScenario: dialog.cancel,
   };
 }

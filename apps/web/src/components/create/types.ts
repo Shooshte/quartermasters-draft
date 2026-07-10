@@ -1,3 +1,11 @@
+import type { DeleteEntityController } from "./hooks/use-delete-entity-dialog";
+import type { EntityListController } from "./hooks/use-entity-list";
+
+export interface EntityDomainController<TItem, TSortBy extends string> {
+  list: EntityListController<TItem, TSortBy>;
+  deletion: DeleteEntityController;
+}
+
 export const TABS = ["Effects", "Spells", "Items", "Units", "Scenarios"] as const;
 export type TabName = (typeof TABS)[number];
 export const DEFAULT_TAB: TabName = "Scenarios";

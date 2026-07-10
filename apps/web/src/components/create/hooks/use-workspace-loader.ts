@@ -157,6 +157,7 @@ export function useWorkspaceLoader({
   useEffect(() => {
     if (search.entity_id !== prevEntityIdRef.current) {
       prevEntityIdRef.current = search.entity_id;
+      if (hasDirectEntityId) return;
       if (skipEntityResetRef.current) {
         skipEntityResetRef.current = false;
         return;
@@ -164,7 +165,7 @@ export function useWorkspaceLoader({
       entityInitRef.current = false;
       setEntityWorkspace(createIdleWorkspace());
     }
-  }, [search.entity_id]);
+  }, [search.entity_id, hasDirectEntityId]);
 
   const entityDetectEffects = useQuery({
     queryKey: ["scenarioBuilder", "effects", "get", search.entity_id],

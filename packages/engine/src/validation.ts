@@ -1,5 +1,17 @@
 import type { BattleInput } from "./types";
 
+export type InvalidBattleStateCode = "CASTER_SCENARIO_NOT_FOUND" | "OPPOSING_SCENARIO_NOT_FOUND";
+
+export class InvalidBattleStateError extends Error {
+  readonly code: InvalidBattleStateCode;
+
+  constructor(code: InvalidBattleStateCode, message: string) {
+    super(message);
+    this.name = "InvalidBattleStateError";
+    this.code = code;
+  }
+}
+
 export function validateBattleInput(input: BattleInput): void {
   if (!Number.isFinite(input.seed)) {
     throw new Error("Battle seed must be a finite number.");

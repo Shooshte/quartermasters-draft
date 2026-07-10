@@ -10,6 +10,7 @@ import {
   createUnit,
   effectSequence,
 } from "./test-helpers";
+import type { InvalidBattleStateError } from "./validation";
 
 function setupBattle() {
   return initializeBattleState(
@@ -118,6 +119,48 @@ function setupBattle() {
 }
 
 describe("spell targeting", () => {
+  it("reports a missing caster scenario with a domain error", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+    state.scenarios = [state.scenarios[1], state.scenarios[1]];
+
+    expect(() =>
+      selectTargets(state, caster, createSpell({ name: "Attack", targetPolicy: "highest_health" })),
+    ).toThrowError(
+      expect.objectContaining<Partial<InvalidBattleStateError>>({
+        code: "CASTER_SCENARIO_NOT_FOUND",
+        message: expect.stringContaining(caster.scenarioId),
+      }),
+    );
+  });
+
+  it("reports a missing opposing scenario with a domain error", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+    state.scenarios = [state.scenarios[0], state.scenarios[0]];
+
+    expect(() =>
+      selectTargets(state, caster, createSpell({ name: "Attack", targetPolicy: "highest_health" })),
+    ).toThrowError(
+      expect.objectContaining<Partial<InvalidBattleStateError>>({
+        code: "OPPOSING_SCENARIO_NOT_FOUND",
+        message: expect.stringContaining(caster.scenarioId),
+      }),
+    );
+  });
+
+  it("returns no targets when the opposing scenario has no living units", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+    for (const unit of Object.values(state.scenarios[1].rows).flat()) {
+      unit.currentHealth = 0;
+    }
+
+    expect(
+      selectTargets(state, caster, createSpell({ name: "Attack", targetPolicy: "highest_health" })),
+    ).toEqual([]);
+  });
+
   it("selects the enemy with highest current health", () => {
     const state = setupBattle();
     const caster = state.scenarios[0].rows.tank[0]!;

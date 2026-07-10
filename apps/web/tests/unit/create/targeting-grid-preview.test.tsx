@@ -76,10 +76,10 @@ describe("computeTargetedSlots", () => {
 
       allowedRowTypes: [],
     });
-    expect(result.get("ranged")!.enabled).toBe(true);
-    expect(result.get("support")!.enabled).toBe(true);
-    expect(result.get("melee")!.enabled).toBe(true);
-    expect(result.get("tank")!.enabled).toBe(true);
+    expect(result.get("ranged")?.enabled).toBe(true);
+    expect(result.get("support")?.enabled).toBe(true);
+    expect(result.get("melee")?.enabled).toBe(true);
+    expect(result.get("tank")?.enabled).toBe(true);
   });
 
   it("maxTargetsPerRow exceeding 5 is capped at 5", () => {
@@ -89,7 +89,7 @@ describe("computeTargetedSlots", () => {
 
       allowedRowTypes: [],
     });
-    expect(result.get("ranged")!.targetedCount).toBe(5);
+    expect(result.get("ranged")?.targetedCount).toBe(5);
   });
 });
 

@@ -21,18 +21,18 @@ describe("seed data", () => {
     const { users } = buildSeedData(FAKE_HASH);
     const gm = users.find((u) => u.email === "gm@example.com");
     expect(gm).toBeDefined();
-    expect(gm!.role).toBe("gm");
-    expect(gm!.name).toBe("Test GM");
-    expect(gm!.id).toBe("seed-gm-001");
+    expect(gm?.role).toBe("gm");
+    expect(gm?.name).toBe("Test GM");
+    expect(gm?.id).toBe("seed-gm-001");
   });
 
   it("creates Player user with correct email and role", () => {
     const { users } = buildSeedData(FAKE_HASH);
     const player = users.find((u) => u.email === "player@example.com");
     expect(player).toBeDefined();
-    expect(player!.role).toBe("player");
-    expect(player!.name).toBe("Test Player");
-    expect(player!.id).toBe("seed-player-001");
+    expect(player?.role).toBe("player");
+    expect(player?.name).toBe("Test Player");
+    expect(player?.id).toBe("seed-player-001");
   });
 
   it("creates account records for each user", () => {

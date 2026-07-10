@@ -1,5 +1,5 @@
 import { expect, test } from "../db-reset.fixture";
-import { IRON_SWORD_ID, LEATHER_SHIELD_ID } from "../helpers/seed-constants";
+import { IRON_SWORD_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { ITEMS_TAB } from "../pages/library-tab-configs";

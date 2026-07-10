@@ -120,7 +120,9 @@ export function resolveUnitAction(
       const result = applySpell(state, unit, spell, tick);
       castSpellNames.push(spell.name);
       totalDamage += result.targets.reduce((sum, target) => {
+        // biome-ignore lint/style/noNonNullAssertion: applySpell only returns targets from battle state.
         const scenario = findScenario(state, target.scenarioId)!;
+        // biome-ignore lint/style/noNonNullAssertion: applySpell preserves returned targets in their row.
         const updated = scenario.rows[target.rowType].find(
           (candidate) => candidate.instanceId === target.instanceId,
         )!;

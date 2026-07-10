@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, type ChainableQuery, describeAuthGuard, gmCtx } from "./test-utils";
+import { type ChainableQuery, chainable, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();

@@ -1,5 +1,5 @@
 import { expect, test } from "../db-reset.fixture";
-import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID } from "../helpers/seed-constants";
+import { AMBUSH_AT_DAWN_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { SCENARIOS_TAB } from "../pages/library-tab-configs";

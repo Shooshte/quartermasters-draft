@@ -15,11 +15,13 @@ function candidateUnits(
   caster: BattleUnitState,
   spell: SpellInput,
 ): BattleUnitState[] {
+  // biome-ignore lint/style/noNonNullAssertion: target-state validation is introduced in the follow-up engine PR.
   const scenario = findScenario(
     state,
     spellTargetsAllies(spell)
       ? caster.scenarioId
-      : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId)!.id,
+      : // biome-ignore lint/style/noNonNullAssertion: target-state validation follows in the engine PR.
+        state.scenarios.find((candidate) => candidate.id !== caster.scenarioId)!.id,
   )!;
   const allowedRows = spell.allowedRowTypes ?? [];
   return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter((unit) => {
@@ -132,6 +134,7 @@ export function selectTargets(
 
     const ordered = sortCandidates(state, rowCandidates, policy);
     if (spell.targetOnlyAdjacent) {
+      // biome-ignore lint/style/noNonNullAssertion: rowCandidates is non-empty for every eligible row.
       selected.push(...selectAdjacent(rowCandidates, ordered[0]!, maxTargetsPerRow));
     } else {
       selected.push(...ordered.slice(0, maxTargetsPerRow));

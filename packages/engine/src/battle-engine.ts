@@ -10,20 +10,16 @@ import {
   isUnitAlive,
   livingUnitsForScenario,
 } from "./state";
-import type {
-  BattleInput,
-  BattleOptions,
-  BattleResult,
-  BattleState,
-  BattleUnitState,
-} from "./types";
+import type { BattleInput, BattleOptions, BattleResult, BattleState } from "./types";
 
 function determineWinner(state: BattleState): string | null | undefined {
   const livingCounts = state.scenarios.map(
     (scenario) => livingUnitsForScenario(state, scenario.id).length,
   );
   if (livingCounts[0] === 0 && livingCounts[1] === 0) return null;
+  // biome-ignore lint/style/noNonNullAssertion: battle validation guarantees two scenarios.
   if (livingCounts[0] === 0) return state.scenarios[1]!.id;
+  // biome-ignore lint/style/noNonNullAssertion: battle validation guarantees two scenarios.
   if (livingCounts[1] === 0) return state.scenarios[0]!.id;
   return undefined;
 }

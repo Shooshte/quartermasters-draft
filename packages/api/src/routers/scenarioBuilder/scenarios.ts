@@ -118,6 +118,7 @@ async function getScenarioById(executor: Pick<ScenarioTransaction, "select">, id
     createdAt: scenario.createdAt,
     updatedAt: scenario.updatedAt,
     rows: SCENARIO_ROW_TYPES.filter((rowType) => rowsByType.has(rowType)).map((rowType) => {
+      // biome-ignore lint/style/noNonNullAssertion: rowType is filtered through Map.has above.
       const row = rowsByType.get(rowType)!;
       return {
         id: row.id,
@@ -228,6 +229,7 @@ export const scenariosRouter = router({
         const rowIdByType = new Map(createdRows.map((row) => [row.rowType, row.id]));
         const assignmentRows = normalized.rows.flatMap((row) =>
           row.unitIds.map((unitId, index) => ({
+            // biome-ignore lint/style/noNonNullAssertion: createdRows contains every validated fixed row.
             rowId: rowIdByType.get(row.rowType)!,
             unitId,
             slot: index + 1,
@@ -285,6 +287,7 @@ export const scenariosRouter = router({
 
           const assignmentRows = normalized.rows.flatMap((row) =>
             row.unitIds.map((unitId, index) => ({
+              // biome-ignore lint/style/noNonNullAssertion: ensureFixedRows validates every row key.
               rowId: rowIdByType.get(row.rowType)!,
               unitId,
               slot: index + 1,

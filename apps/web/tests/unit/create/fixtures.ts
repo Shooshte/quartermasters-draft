@@ -141,140 +141,138 @@ export function createMockPageState(overrides: Partial<CreatePageState> = {}): C
     ...overrides,
   };
 
-  return Object.assign(
-    state,
-    {
-      workspaces: {
-        entity: state.entityWorkspace,
-        scenario: state.scenarioWorkspace,
-        updateEntityField: state.updateEntityField,
-        updateScenarioField: state.updateScenarioField,
-      },
-      domains: {
-        scenarios: {
-          list: {
-            items: state.scenarioListItems,
-            page: state.scenarioPage,
-            totalPages: state.scenarioTotalPages,
-            sortBy: state.scenarioSortBy,
-            sortDir: state.scenarioSortDir,
-            setPage: state.setScenarioPage,
-            setSort: state.setScenarioSort,
-          },
-          deletion: {
-            isOpen: state.isDeleteDialogOpen,
-            target: state.deleteTarget,
-            error: state.deleteError,
-            request: state.requestDeleteScenario,
-            confirm: state.confirmDeleteScenario,
-            cancel: state.cancelDeleteScenario,
-          },
+  Object.assign(state, {
+    workspaces: {
+      entity: state.entityWorkspace,
+      scenario: state.scenarioWorkspace,
+      updateEntityField: state.updateEntityField,
+      updateScenarioField: state.updateScenarioField,
+    },
+    domains: {
+      scenarios: {
+        list: {
+          items: state.scenarioListItems,
+          page: state.scenarioPage,
+          totalPages: state.scenarioTotalPages,
+          sortBy: state.scenarioSortBy,
+          sortDir: state.scenarioSortDir,
+          setPage: state.setScenarioPage,
+          setSort: state.setScenarioSort,
         },
-        effects: {
-          list: {
-            items: state.effectListItems,
-            page: state.effectPage,
-            totalPages: state.effectTotalPages,
-            sortBy: state.effectSortBy,
-            sortDir: state.effectSortDir,
-            setPage: state.setEffectPage,
-            setSort: state.setEffectSort,
-          },
-          deletion: {
-            isOpen: state.isDeleteEffectDialogOpen,
-            target: state.deleteEffectTarget,
-            error: state.deleteEffectError,
-            request: state.requestDeleteEffect,
-            confirm: state.confirmDeleteEffect,
-            cancel: state.cancelDeleteEffect,
-          },
-        },
-        spells: {
-          list: {
-            items: state.spellListItems,
-            page: state.spellPage,
-            totalPages: state.spellTotalPages,
-            sortBy: state.spellSortBy,
-            sortDir: state.spellSortDir,
-            setPage: state.setSpellPage,
-            setSort: state.setSpellSort,
-          },
-          deletion: {
-            isOpen: state.isDeleteSpellDialogOpen,
-            target: state.deleteSpellTarget,
-            error: state.deleteSpellError,
-            request: state.requestDeleteSpell,
-            confirm: state.confirmDeleteSpell,
-            cancel: state.cancelDeleteSpell,
-          },
-        },
-        items: {
-          list: {
-            items: state.itemListItems,
-            page: state.itemPage,
-            totalPages: state.itemTotalPages,
-            sortBy: state.itemSortBy,
-            sortDir: state.itemSortDir,
-            setPage: state.setItemPage,
-            setSort: state.setItemSort,
-          },
-          deletion: {
-            isOpen: state.isDeleteItemDialogOpen,
-            target: state.deleteItemTarget,
-            error: state.deleteItemError,
-            request: state.requestDeleteItem,
-            confirm: state.confirmDeleteItem,
-            cancel: state.cancelDeleteItem,
-          },
-        },
-        units: {
-          list: {
-            items: state.unitListItems,
-            page: state.unitPage,
-            totalPages: state.unitTotalPages,
-            sortBy: state.unitSortBy,
-            sortDir: state.unitSortDir,
-            setPage: state.setUnitPage,
-            setSort: state.setUnitSort,
-          },
-          deletion: {
-            isOpen: state.isDeleteUnitDialogOpen,
-            target: state.deleteUnitTarget,
-            error: state.deleteUnitError,
-            request: state.requestDeleteUnit,
-            confirm: state.confirmDeleteUnit,
-            cancel: state.cancelDeleteUnit,
-          },
+        deletion: {
+          isOpen: state.isDeleteDialogOpen,
+          target: state.deleteTarget,
+          error: state.deleteError,
+          request: state.requestDeleteScenario,
+          confirm: state.confirmDeleteScenario,
+          cancel: state.cancelDeleteScenario,
         },
       },
-      navigation: {
-        perTabSelection: state.perTabSelection,
-        selectRecord: state.selectRecord,
-        createNew: state.createNew,
-        discard: {
-          isOpen: state.isDialogOpen,
-          confirm: state.confirmDiscard,
-          cancel: state.cancelDiscard,
+      effects: {
+        list: {
+          items: state.effectListItems,
+          page: state.effectPage,
+          totalPages: state.effectTotalPages,
+          sortBy: state.effectSortBy,
+          sortDir: state.effectSortDir,
+          setPage: state.setEffectPage,
+          setSort: state.setEffectSort,
+        },
+        deletion: {
+          isOpen: state.isDeleteEffectDialogOpen,
+          target: state.deleteEffectTarget,
+          error: state.deleteEffectError,
+          request: state.requestDeleteEffect,
+          confirm: state.confirmDeleteEffect,
+          cancel: state.cancelDeleteEffect,
         },
       },
-      entitySave: {
-        save: state.saveEntity,
-        isSaving: state.isEntitySaving,
-        error: state.entitySaveError,
+      spells: {
+        list: {
+          items: state.spellListItems,
+          page: state.spellPage,
+          totalPages: state.spellTotalPages,
+          sortBy: state.spellSortBy,
+          sortDir: state.spellSortDir,
+          setPage: state.setSpellPage,
+          setSort: state.setSpellSort,
+        },
+        deletion: {
+          isOpen: state.isDeleteSpellDialogOpen,
+          target: state.deleteSpellTarget,
+          error: state.deleteSpellError,
+          request: state.requestDeleteSpell,
+          confirm: state.confirmDeleteSpell,
+          cancel: state.cancelDeleteSpell,
+        },
       },
-      scenarioSave: {
-        save: state.saveScenario,
-        isSaving: state.isScenarioSaving,
-        error: state.scenarioSaveError,
+      items: {
+        list: {
+          items: state.itemListItems,
+          page: state.itemPage,
+          totalPages: state.itemTotalPages,
+          sortBy: state.itemSortBy,
+          sortDir: state.itemSortDir,
+          setPage: state.setItemPage,
+          setSort: state.setItemSort,
+        },
+        deletion: {
+          isOpen: state.isDeleteItemDialogOpen,
+          target: state.deleteItemTarget,
+          error: state.deleteItemError,
+          request: state.requestDeleteItem,
+          confirm: state.confirmDeleteItem,
+          cancel: state.cancelDeleteItem,
+        },
       },
-      options: {
-        effects: state.effectOptions,
-        spells: state.spellOptions,
-        items: state.itemOptions,
-        scenarioUnits: state.scenarioUnitOptions,
-        scenarioFilters: state.scenarioFilterOptions,
+      units: {
+        list: {
+          items: state.unitListItems,
+          page: state.unitPage,
+          totalPages: state.unitTotalPages,
+          sortBy: state.unitSortBy,
+          sortDir: state.unitSortDir,
+          setPage: state.setUnitPage,
+          setSort: state.setUnitSort,
+        },
+        deletion: {
+          isOpen: state.isDeleteUnitDialogOpen,
+          target: state.deleteUnitTarget,
+          error: state.deleteUnitError,
+          request: state.requestDeleteUnit,
+          confirm: state.confirmDeleteUnit,
+          cancel: state.cancelDeleteUnit,
+        },
       },
     },
-    overrides,
-  );
+    navigation: {
+      perTabSelection: state.perTabSelection,
+      selectRecord: state.selectRecord,
+      createNew: state.createNew,
+      discard: {
+        isOpen: state.isDialogOpen,
+        confirm: state.confirmDiscard,
+        cancel: state.cancelDiscard,
+      },
+    },
+    entitySave: {
+      save: state.saveEntity,
+      isSaving: state.isEntitySaving,
+      error: state.entitySaveError,
+    },
+    scenarioSave: {
+      save: state.saveScenario,
+      isSaving: state.isScenarioSaving,
+      error: state.scenarioSaveError,
+    },
+    options: {
+      effects: state.effectOptions,
+      spells: state.spellOptions,
+      items: state.itemOptions,
+      scenarioUnits: state.scenarioUnitOptions,
+      scenarioFilters: state.scenarioFilterOptions,
+    },
+  });
+
+  return Object.assign(state, overrides);
 }

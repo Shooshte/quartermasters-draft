@@ -11,10 +11,15 @@ export function toPaginatedResult<T>(
   page: number,
   limit: number,
 ): PaginatedResult<T> {
+  const countRow = countResult[0];
+  if (!countRow) {
+    throw new Error("Pagination count query returned no rows.");
+  }
+
   return {
     items,
     page,
     limit,
-    totalCount: countResult[0]?.count ?? 0,
+    totalCount: countRow.count,
   };
 }

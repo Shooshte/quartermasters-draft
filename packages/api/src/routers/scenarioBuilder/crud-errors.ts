@@ -3,7 +3,7 @@ import { findDbError } from "./shared";
 
 export function throwUniqueNameConflict(error: unknown, entityLabel: string): never {
   if (findDbError(error)?.code === "23505") {
-    const article = /^[aeiou]/i.test(entityLabel) ? "An" : "A";
+    const article = entityLabel === "unit" || !/^[aeiou]/i.test(entityLabel) ? "A" : "An";
     throw new TRPCError({
       code: "CONFLICT",
       message: `${article} ${entityLabel} with this name already exists.`,

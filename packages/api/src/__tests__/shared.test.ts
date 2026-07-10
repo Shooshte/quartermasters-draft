@@ -50,6 +50,15 @@ describe("CRUD error translation", () => {
     );
   });
 
+  it("preserves the unit conflict message article", () => {
+    expect(() => throwUniqueNameConflict({ code: "23505" }, "unit")).toThrowError(
+      expect.objectContaining<Partial<TRPCError>>({
+        code: "CONFLICT",
+        message: "A unit with this name already exists.",
+      }),
+    );
+  });
+
   it("translates accepted delete constraint codes", () => {
     expect(() =>
       throwDeleteConflict({ cause: { code: "23514" } }, "Spell is linked.", ["23503", "23514"]),
@@ -70,5 +79,11 @@ describe("toPaginatedResult", () => {
       limit: 3,
       totalCount: 7,
     });
+  });
+
+  it("rejects a missing count aggregate row", () => {
+    expect(() => toPaginatedResult([], [], 1, 20)).toThrowError(
+      "Pagination count query returned no rows.",
+    );
   });
 });

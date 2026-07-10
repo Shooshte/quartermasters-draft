@@ -4,8 +4,8 @@ import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import {
-  SPELLS_PAGE_SIZE,
   type LibraryLinkageFilter,
+  SPELLS_PAGE_SIZE,
   type SpellSortBy,
   type SpellSortDir,
 } from "../types";

@@ -151,7 +151,7 @@ describe("mana system", () => {
     engine.tick(1);
     const spellLogs = engine.getState().log.filter((entry) => entry.type === "spell-cast");
     expect(spellLogs).toHaveLength(1);
-    expect(spellLogs[0]!.message).toContain("Fireball");
-    expect(Object.values(engine.getState().scenarios[0].rows).flat()[0]!.mana).toBe(5);
+    expect(spellLogs[0]?.message).toContain("Fireball");
+    expect(Object.values(engine.getState().scenarios[0].rows).flat()[0]?.mana).toBe(5);
   });
 });

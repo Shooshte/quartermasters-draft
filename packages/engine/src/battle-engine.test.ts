@@ -77,7 +77,7 @@ describe("BattleEngine", () => {
       const nextSnapshot = engine.getState();
 
       expect(nextSnapshot.tick).toBe(0);
-      expect(nextSnapshot.scenarios[0].rows.tank[0]!.currentHealth).toBe(100);
+      expect(nextSnapshot.scenarios[0].rows.tank[0]?.currentHealth).toBe(100);
     });
 
     it("battle is deterministic: identical inputs produce identical results", () => {

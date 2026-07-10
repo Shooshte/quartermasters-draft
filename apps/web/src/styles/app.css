@@ -292,8 +292,24 @@
 .ws-cell.has-value {
   border-color: var(--ws-color, oklch(0.78 0.15 75));
 }
-.ws-cell.has-value .ws-cell-input {
-  color: var(--ws-color, oklch(0.78 0.15 75));
+
+/* Input inside cells — inherits color, left-aligned */
+.ws-cell-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: oklch(0.91 0.02 80);
+  font-family: "Crimson Pro", Georgia, serif;
+  font-size: 14px;
+  text-align: left;
+  outline: none;
+}
+.ws-cell-input::placeholder {
+  color: oklch(0.4 0.01 70);
+  opacity: 0.5;
+}
+.ws-cell-input:disabled {
+  color: oklch(0.4 0.01 70);
 }
 
 /* Healing cell — always green regardless of parent effect type */
@@ -356,23 +372,8 @@
   margin-bottom: 2px;
 }
 
-/* Input inside cells — inherits color, left-aligned */
-.ws-cell-input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: oklch(0.91 0.02 80);
-  font-family: "Crimson Pro", Georgia, serif;
-  font-size: 14px;
-  text-align: left;
-  outline: none;
-}
-.ws-cell-input::placeholder {
-  color: oklch(0.4 0.01 70);
-  opacity: 0.5;
-}
-.ws-cell-input:disabled {
-  color: oklch(0.4 0.01 70);
+.ws-cell.has-value .ws-cell-input {
+  color: var(--ws-color, oklch(0.78 0.15 75));
 }
 
 /* Name input — slightly larger text */
@@ -614,8 +615,7 @@
   opacity: 0.4;
 }
 
-.sw-row.tank .sw-row-icon,
-.sw-row.tank .sw-slot-number {
+.sw-row.tank .sw-row-icon {
   background: oklch(0.58 0.14 240 / 14%);
   color: oklch(0.58 0.14 240);
 }
@@ -624,8 +624,7 @@
   color: oklch(0.58 0.14 240);
 }
 
-.sw-row.melee .sw-row-icon,
-.sw-row.melee .sw-slot-number {
+.sw-row.melee .sw-row-icon {
   background: oklch(0.62 0.2 25 / 14%);
   color: oklch(0.62 0.2 25);
 }
@@ -634,8 +633,7 @@
   color: oklch(0.62 0.2 25);
 }
 
-.sw-row.ranged .sw-row-icon,
-.sw-row.ranged .sw-slot-number {
+.sw-row.ranged .sw-row-icon {
   background: oklch(0.68 0.16 70 / 14%);
   color: oklch(0.68 0.16 70);
 }
@@ -644,8 +642,7 @@
   color: oklch(0.68 0.16 70);
 }
 
-.sw-row.support .sw-row-icon,
-.sw-row.support .sw-slot-number {
+.sw-row.support .sw-row-icon {
   background: oklch(0.6 0.17 145 / 14%);
   color: oklch(0.6 0.17 145);
 }
@@ -674,6 +671,26 @@
   font-size: 11px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.sw-row.tank .sw-slot-number {
+  background: oklch(0.58 0.14 240 / 14%);
+  color: oklch(0.58 0.14 240);
+}
+
+.sw-row.melee .sw-slot-number {
+  background: oklch(0.62 0.2 25 / 14%);
+  color: oklch(0.62 0.2 25);
+}
+
+.sw-row.ranged .sw-slot-number {
+  background: oklch(0.68 0.16 70 / 14%);
+  color: oklch(0.68 0.16 70);
+}
+
+.sw-row.support .sw-slot-number {
+  background: oklch(0.6 0.17 145 / 14%);
+  color: oklch(0.6 0.17 145);
 }
 
 .sw-slot-name {

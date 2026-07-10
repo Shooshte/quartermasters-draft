@@ -6,11 +6,9 @@ import {
   BARBARIAN_ID,
   BARBARIAN_ROAR_ID,
   BATTLE_CRY_ID,
-  CASTLE_SIEGE_ID,
   FIREBALL_ID,
   generateEntityIds,
   IRON_SWORD_ID,
-  TRPC_BASE,
   UNKNOWN_UUID,
 } from "../helpers/seed-constants";
 import { deleteEntityViaApi } from "../helpers/trpc-api";

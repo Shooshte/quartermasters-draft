@@ -1,5 +1,5 @@
 import { expect, test } from "../db-reset.fixture";
-import { BARBARIAN_ID, RANGER_ID, ZEPHYR_MONK_ID } from "../helpers/seed-constants";
+import { BARBARIAN_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { UNITS_TAB } from "../pages/library-tab-configs";

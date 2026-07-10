@@ -12,8 +12,8 @@ import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
 import {
-  entityListLinkageFilterSchema,
   type EntityListLinkageFilter,
+  entityListLinkageFilterSchema,
   findDbError,
   idSchema,
   listInputSchema,

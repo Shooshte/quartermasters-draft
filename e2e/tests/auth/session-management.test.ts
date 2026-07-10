@@ -29,7 +29,7 @@ function getAuthCookies(context: BrowserContext) {
 }
 
 test.describe("Session Management", () => {
-  test.beforeEach(async ({}, testInfo) => {
+  test.beforeEach(async (_fixtures, testInfo) => {
     await deleteSessionsForUser(GM_USER_ID, testInfo.parallelIndex);
     await deleteSessionsForUser(PLAYER_USER_ID, testInfo.parallelIndex);
   });

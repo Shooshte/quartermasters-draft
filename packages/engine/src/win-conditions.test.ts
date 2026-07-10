@@ -119,11 +119,11 @@ describe("win conditions", () => {
 
     engine.tick(100);
     let state = engine.getState();
-    expect(Object.values(state.scenarios[0].rows).flat()[0]!.currentHealth).toBe(9998);
+    expect(Object.values(state.scenarios[0].rows).flat()[0]?.currentHealth).toBe(9998);
 
     engine.tick(3);
     state = engine.getState();
-    expect(Object.values(state.scenarios[0].rows).flat()[0]!.currentHealth).toBe(9989);
+    expect(Object.values(state.scenarios[0].rows).flat()[0]?.currentHealth).toBe(9989);
 
     const finite = new BattleEngine(
       createBattleInput([

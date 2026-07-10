@@ -48,6 +48,7 @@ export function getUnitEffectiveStats(unit: BattleUnitState): UnitStats {
   const modifiers = unit.activeEffects
     .filter((effect) => typeof effect.statKey === "string")
     .map((effect) => ({
+      // biome-ignore lint/style/noNonNullAssertion: the preceding filter narrows runtime values.
       statKey: effect.statKey!,
       value: effect.value,
     }));

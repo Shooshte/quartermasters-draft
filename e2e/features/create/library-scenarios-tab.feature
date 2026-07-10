@@ -128,6 +128,43 @@ Feature: Scenario builder scenarios library tab
       Then the list should be sorted by name in descending order
 
   # ─────────────────────────────────────────────
+  # Rule: The game master can filter scenarios by linkage
+  # ─────────────────────────────────────────────
+
+  Rule: The game master can filter scenarios by linkage
+
+    Scenario: Show all scenarios when no linkage filter is enabled
+      Given the seed scenarios exist:
+        | id                                   | name           |
+        | a2000000-0000-0000-0000-000000000001 | Ambush at Dawn |
+        | a2000000-0000-0000-0000-000000000002 | Castle Siege   |
+      When I show all entities in the entities explorer
+      Then I should see the scenario "Ambush at Dawn"
+      And I should see the scenario "Castle Siege"
+
+    Scenario: Show only scenarios that have linked units
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And scenario "Silent Outpost" has no assigned units
+      When I filter the entities explorer to linked entities
+      Then I should see the scenario "Ambush at Dawn"
+      And I should not see the scenario "Silent Outpost"
+
+    Scenario: Show only scenarios that have no linked units
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And scenario "Silent Outpost" has no assigned units
+      When I filter the entities explorer to unlinked entities
+      Then I should see the scenario "Silent Outpost"
+      And I should not see the scenario "Ambush at Dawn"
+
+    Scenario: Filtering only affects selectable rows in the entities explorer
+      Given I have loaded the scenario "Ambush at Dawn" in the scenario workspace
+      And scenario "Silent Outpost" has no assigned units
+      When I filter the entities explorer to unlinked entities
+      Then I should see the scenario "Silent Outpost"
+      And I should not see the scenario "Ambush at Dawn"
+      And the scenario workspace should remain loaded with "Ambush at Dawn"
+
+  # ─────────────────────────────────────────────
   # Rule: Selecting a scenario opens it in the scenario workspace
   # ─────────────────────────────────────────────
 

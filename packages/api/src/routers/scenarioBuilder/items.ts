@@ -1,15 +1,30 @@
-import { db, items, itemsSpells, spells } from "@qd/db";
+import {
+  db,
+  items,
+  itemsSpells,
+  scenariosRows,
+  scenariosRowsUnits,
+  spells,
+  unitsItems,
+} from "@qd/db";
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, idSchema, listInputSchema } from "./shared";
+import {
+  entityListLinkageFilterSchema,
+  type EntityListLinkageFilter,
+  findDbError,
+  idSchema,
+  listInputSchema,
+} from "./shared";
 
 const itemListInput = listInputSchema
   .extend({
     limit: z.number().int().min(1).max(500).default(20),
     sortBy: z.enum(["name", "updatedAt"]).default("name"),
     sortDir: z.enum(["asc", "desc"]).default("asc"),
+    linkageFilter: entityListLinkageFilterSchema,
   })
   .prefault({});
 
@@ -76,6 +91,32 @@ function maybeThrowConflict(error: unknown): never {
   throw error;
 }
 
+function buildItemLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
+  if (filter.mode === "all") {
+    return undefined;
+  }
+
+  if (filter.mode === "scenario") {
+    return exists(
+      db
+        .select({ id: unitsItems.id })
+        .from(unitsItems)
+        .innerJoin(scenariosRowsUnits, eq(scenariosRowsUnits.unitId, unitsItems.unitId))
+        .innerJoin(scenariosRows, eq(scenariosRowsUnits.rowId, scenariosRows.id))
+        .where(
+          and(eq(unitsItems.itemId, items.id), eq(scenariosRows.scenarioId, filter.scenarioId)),
+        ),
+    );
+  }
+
+  const linkedItemSubquery = db
+    .select({ id: unitsItems.id })
+    .from(unitsItems)
+    .where(eq(unitsItems.itemId, items.id));
+
+  return filter.mode === "linked" ? exists(linkedItemSubquery) : notExists(linkedItemSubquery);
+}
+
 export const itemsRouter = router({
   list: gmProcedure.input(itemListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
@@ -87,19 +128,22 @@ export const itemsRouter = router({
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
       input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(items.name)];
+    const linkageCondition = buildItemLinkageCondition(input.linkageFilter);
+    const rowsQuery = db
+      .select({
+        id: items.id,
+        name: items.name,
+        updatedAt: items.updatedAt,
+      })
+      .from(items);
+    const countQuery = db.select({ count: count() }).from(items);
 
     const [rows, countResult] = await Promise.all([
-      db
-        .select({
-          id: items.id,
-          name: items.name,
-          updatedAt: items.updatedAt,
-        })
-        .from(items)
+      (linkageCondition ? rowsQuery.where(linkageCondition) : rowsQuery)
         .orderBy(...orderClauses)
         .limit(input.limit)
         .offset(offset),
-      db.select({ count: count() }).from(items),
+      linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
     return {

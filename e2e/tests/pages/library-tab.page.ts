@@ -36,6 +36,7 @@ export class LibraryTabPage {
   async navigateToTab(): Promise<void> {
     await this.page.goto("/create");
     await this.page.getByRole("tab", { name: this.config.tabName }).click();
+    await this.waitForActiveTab();
   }
 
   /** Navigate to /create with a specific entity loaded via URL param */
@@ -43,6 +44,31 @@ export class LibraryTabPage {
     await this.page.goto(
       `/create?tab=${this.config.tabName}&${this.config.idParamName}=${entityId}`,
     );
+    await this.waitForActiveTab();
+  }
+
+  /** Wait for the configured tab and its panel to be active */
+  async waitForActiveTab(): Promise<void> {
+    await expect(this.page.getByRole("tab", { name: this.config.tabName })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    const panel = this.page.getByRole("tabpanel", { name: this.config.tabName });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByText("Loading...")).not.toBeVisible({ timeout: 15_000 });
+  }
+
+  /** Run an action that should refetch the active library list and wait for the response */
+  async waitForListRefetch(action: () => Promise<void>): Promise<void> {
+    const procedureName = `scenarioBuilder.${this.config.entityType}.list`;
+    const responsePromise = this.page.waitForResponse(
+      (response) => response.url().includes(procedureName) && response.ok(),
+      { timeout: 15_000 },
+    );
+
+    await action();
+    await responsePromise;
+    await this.waitForActiveTab();
   }
 
   // ─── Row Access ──────────────────────────────────────────────────────────
@@ -89,6 +115,39 @@ export class LibraryTabPage {
   /** Click a sort column header button */
   async clickSortColumn(columnName: string): Promise<void> {
     await this.page.getByRole("button", { name: new RegExp(columnName) }).click();
+  }
+
+  // ─── Linkage Filtering ───────────────────────────────────────────────────
+
+  /** Show all entities in the explorer */
+  async showAllEntities(): Promise<void> {
+    await this.waitForActiveTab();
+    await this.page.getByRole("button", { name: "All", exact: true }).click();
+    await this.waitForActiveTab();
+  }
+
+  /** Show entities linked anywhere in the explorer */
+  async filterToLinkedEntities(): Promise<void> {
+    await this.waitForActiveTab();
+    await this.waitForListRefetch(() =>
+      this.page.getByRole("button", { name: "Linked", exact: true }).click(),
+    );
+  }
+
+  /** Show entities not linked anywhere in the explorer */
+  async filterToUnlinkedEntities(): Promise<void> {
+    await this.waitForActiveTab();
+    await this.waitForListRefetch(() =>
+      this.page.getByRole("button", { name: "Unlinked", exact: true }).click(),
+    );
+  }
+
+  /** Show entities linked to a selected scenario */
+  async filterToScenario(scenarioName: string): Promise<void> {
+    await this.waitForActiveTab();
+    await this.waitForListRefetch(() =>
+      this.page.getByLabel("Filter by scenario").selectOption({ label: scenarioName }),
+    );
   }
 
   // ─── Selection ───────────────────────────────────────────────────────────

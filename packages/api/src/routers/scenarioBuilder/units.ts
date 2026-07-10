@@ -1,15 +1,22 @@
-import { db, units, unitsItems } from "@qd/db";
+import { db, scenariosRows, scenariosRowsUnits, units, unitsItems } from "@qd/db";
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
-import { findDbError, idSchema, listInputSchema } from "./shared";
+import {
+  entityListLinkageFilterSchema,
+  type EntityListLinkageFilter,
+  findDbError,
+  idSchema,
+  listInputSchema,
+} from "./shared";
 
 const unitListInput = listInputSchema
   .extend({
     limit: z.number().int().min(1).max(500).default(20),
     sortBy: z.enum(["name", "updatedAt"]).default("name"),
     sortDir: z.enum(["asc", "desc"]).default("asc"),
+    linkageFilter: entityListLinkageFilterSchema,
   })
   .prefault({});
 
@@ -76,6 +83,34 @@ function maybeThrowConflict(error: unknown): never {
   throw error;
 }
 
+function buildUnitLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
+  if (filter.mode === "all") {
+    return undefined;
+  }
+
+  if (filter.mode === "scenario") {
+    return exists(
+      db
+        .select({ id: scenariosRowsUnits.id })
+        .from(scenariosRowsUnits)
+        .innerJoin(scenariosRows, eq(scenariosRowsUnits.rowId, scenariosRows.id))
+        .where(
+          and(
+            eq(scenariosRowsUnits.unitId, units.id),
+            eq(scenariosRows.scenarioId, filter.scenarioId),
+          ),
+        ),
+    );
+  }
+
+  const linkedUnitSubquery = db
+    .select({ id: scenariosRowsUnits.id })
+    .from(scenariosRowsUnits)
+    .where(eq(scenariosRowsUnits.unitId, units.id));
+
+  return filter.mode === "linked" ? exists(linkedUnitSubquery) : notExists(linkedUnitSubquery);
+}
+
 export const unitsRouter = router({
   list: gmProcedure.input(unitListInput).query(async ({ input }) => {
     const offset = (input.page - 1) * input.limit;
@@ -87,19 +122,22 @@ export const unitsRouter = router({
     const sortFn = input.sortDir === "desc" ? desc : asc;
     const orderClauses =
       input.sortBy === "name" ? [sortFn(sortColumn)] : [sortFn(sortColumn), asc(units.name)];
+    const linkageCondition = buildUnitLinkageCondition(input.linkageFilter);
+    const rowsQuery = db
+      .select({
+        id: units.id,
+        name: units.name,
+        updatedAt: units.updatedAt,
+      })
+      .from(units);
+    const countQuery = db.select({ count: count() }).from(units);
 
     const [rows, countResult] = await Promise.all([
-      db
-        .select({
-          id: units.id,
-          name: units.name,
-          updatedAt: units.updatedAt,
-        })
-        .from(units)
+      (linkageCondition ? rowsQuery.where(linkageCondition) : rowsQuery)
         .orderBy(...orderClauses)
         .limit(input.limit)
         .offset(offset),
-      db.select({ count: count() }).from(units),
+      linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
     return {

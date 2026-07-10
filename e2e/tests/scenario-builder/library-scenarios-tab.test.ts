@@ -176,6 +176,53 @@ test.describe("Scenarios Library Tab — Sorting", () => {
   });
 });
 
+// ─── Filtering ──────────────────────────────────────────────────────────────
+
+test.describe("Scenarios Library Tab — Filtering", () => {
+  test("show all scenarios when no linkage filter is enabled", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
+
+    await lib.showAllEntities();
+
+    await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
+    await expect(lib.getRow("Castle Siege")).toBeVisible();
+    await expect(gmPage.getByLabel("Filter by scenario")).not.toBeVisible();
+  });
+
+  test("show only scenarios that have linked units", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToLinkedEntities();
+
+    await expect(lib.getRow("Ambush at Dawn")).toBeVisible();
+    await expect(lib.getRow("Castle Siege")).not.toBeVisible();
+  });
+
+  test("show only scenarios that have no linked units", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Castle Siege")).toBeVisible();
+    await expect(lib.getRow("Ambush at Dawn")).not.toBeVisible();
+  });
+
+  test("filtering only affects selectable rows in the entities explorer", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SCENARIOS_TAB);
+    await lib.navigateWithEntity(AMBUSH_AT_DAWN_ID);
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Castle Siege")).toBeVisible();
+    await expect(lib.getRow("Ambush at Dawn")).not.toBeVisible();
+    await expect(lib.nameInput).toHaveValue("Ambush at Dawn");
+  });
+});
+
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 test.describe("Scenarios Library Tab — Selection", () => {

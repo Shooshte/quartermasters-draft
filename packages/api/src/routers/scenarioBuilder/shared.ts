@@ -9,6 +9,26 @@ export const listInput = listInputSchema.prefault({});
 
 export const idSchema = z.guid();
 
+export const scenarioListLinkageFilterSchema = z
+  .discriminatedUnion("mode", [
+    z.object({ mode: z.literal("all") }),
+    z.object({ mode: z.literal("linked") }),
+    z.object({ mode: z.literal("unlinked") }),
+  ])
+  .default({ mode: "all" });
+
+export const entityListLinkageFilterSchema = z
+  .discriminatedUnion("mode", [
+    z.object({ mode: z.literal("all") }),
+    z.object({ mode: z.literal("linked") }),
+    z.object({ mode: z.literal("unlinked") }),
+    z.object({ mode: z.literal("scenario"), scenarioId: idSchema }),
+  ])
+  .default({ mode: "all" });
+
+export type ScenarioListLinkageFilter = z.infer<typeof scenarioListLinkageFilterSchema>;
+export type EntityListLinkageFilter = z.infer<typeof entityListLinkageFilterSchema>;
+
 type DbErrorLike = {
   code?: string;
   constraint?: string;

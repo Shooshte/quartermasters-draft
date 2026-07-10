@@ -3,21 +3,39 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
-import { UNITS_PAGE_SIZE, type UnitSortBy, type UnitSortDir } from "../types";
+import {
+  type LibraryLinkageFilter,
+  UNITS_PAGE_SIZE,
+  type UnitSortBy,
+  type UnitSortDir,
+} from "../types";
 
-export function useUnitList(isActiveTab: boolean, backgroundEnabled: boolean) {
+export function useUnitList(
+  isActiveTab: boolean,
+  backgroundEnabled: boolean,
+  linkageFilter: LibraryLinkageFilter,
+) {
   const [unitPage, setUnitPage] = useState(1);
   const [unitSortBy, setUnitSortBy] = useState<UnitSortBy>("name");
   const [unitSortDir, setUnitSortDir] = useState<UnitSortDir>("asc");
 
   const unitsList = useQuery({
-    queryKey: ["scenarioBuilder", "units", "list", unitPage, unitSortBy, unitSortDir],
+    queryKey: [
+      "scenarioBuilder",
+      "units",
+      "list",
+      unitPage,
+      unitSortBy,
+      unitSortDir,
+      linkageFilter,
+    ],
     queryFn: () =>
       trpc.scenarioBuilder.units.list.query({
         page: unitPage,
         limit: UNITS_PAGE_SIZE,
         sortBy: unitSortBy,
         sortDir: unitSortDir,
+        linkageFilter,
       }),
     enabled: isActiveTab || backgroundEnabled,
     placeholderData: keepPreviousData,

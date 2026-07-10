@@ -218,6 +218,55 @@ test.describe("Spells Library Tab — Sorting", () => {
   });
 });
 
+// ─── Filtering ──────────────────────────────────────────────────────────────
+
+test.describe("Spells Library Tab — Filtering", () => {
+  test("show all spells when no linkage filter is enabled", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
+    await lib.navigateToTab();
+
+    await lib.showAllEntities();
+
+    await expect(lib.getRow("Battle Cry")).toBeVisible();
+    await lib.clickNextPage();
+    await expect(lib.getRow("Zenith Bloom")).toBeVisible();
+  });
+
+  test("show only spells linked to a selected scenario through units and items", async ({
+    gmPage,
+  }) => {
+    const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToScenario("Ambush at Dawn");
+
+    await expect(lib.getRow("Battle Cry")).toBeVisible();
+    await expect(lib.getRow("Zenith Bloom")).not.toBeVisible();
+  });
+
+  test("show only spells that are not linked anywhere", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
+    await lib.navigateToTab();
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Zenith Bloom")).toBeVisible();
+    await expect(lib.getRow("Battle Cry")).not.toBeVisible();
+  });
+
+  test("filtering only affects selectable rows in the entities explorer", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, SPELLS_TAB);
+    await lib.navigateWithEntity(FIREBALL_ID);
+    await expect(lib.nameInput).toHaveValue("Fireball");
+
+    await lib.filterToUnlinkedEntities();
+
+    await expect(lib.getRow("Zenith Bloom")).toBeVisible();
+    await expect(lib.getRow("Fireball")).not.toBeVisible();
+    await expect(lib.nameInput).toHaveValue("Fireball");
+  });
+});
+
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 test.describe("Spells Library Tab — Selection", () => {

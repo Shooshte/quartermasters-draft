@@ -21,6 +21,10 @@ export function chainable(data: unknown) {
   return chain;
 }
 
+export type ChainableQuery = ReturnType<typeof chainable> & {
+  where: ReturnType<typeof vi.fn>;
+};
+
 export function describeAuthGuard(callFn: (ctx: Context) => Promise<unknown>) {
   it("throws UNAUTHORIZED for unauthenticated user", async () => {
     await expect(callFn(anonCtx)).rejects.toMatchObject({ code: "UNAUTHORIZED" });

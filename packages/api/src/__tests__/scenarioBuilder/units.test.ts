@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCallerFactory, router } from "../../trpc";
-import { chainable, describeAuthGuard, gmCtx } from "./test-utils";
+import { chainable, type ChainableQuery, describeAuthGuard, gmCtx } from "./test-utils";
 
 const mockSelect = vi.fn();
 const mockDeleteFn = vi.fn();
@@ -105,6 +105,27 @@ describe("unitsRouter", () => {
       });
       expect(result.page).toBe(1);
       expect(result.limit).toBe(20);
+    });
+
+    it("applies scenario linkage filters to both row and count queries", async () => {
+      const rowsQuery = chainable([]) as ChainableQuery;
+      const countQuery = chainable([{ count: 0 }]) as ChainableQuery;
+      mockSelect
+        .mockReturnValueOnce(chainable([]))
+        .mockReturnValueOnce(rowsQuery)
+        .mockReturnValueOnce(countQuery);
+
+      const caller = createCaller(gmCtx);
+      const list = caller.units.list as (input: unknown) => Promise<unknown>;
+      await list({
+        linkageFilter: {
+          mode: "scenario",
+          scenarioId: "a2000000-0000-4000-8000-000000000001",
+        },
+      });
+
+      expect(rowsQuery.where).toHaveBeenCalledTimes(1);
+      expect(countQuery.where).toHaveBeenCalledTimes(1);
     });
   });
 

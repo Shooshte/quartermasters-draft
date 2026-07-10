@@ -4,6 +4,11 @@ import type { CreatePageState } from "~/components/create/use-create-page-state"
 export function createMockPageState(overrides: Partial<CreatePageState> = {}): CreatePageState {
   return {
     activeTab: "Scenarios",
+    linkageFilter: { mode: "all" },
+    scenarioFilterOptions: [
+      { id: "sc-1", name: "Ambush at Dawn" },
+      { id: "sc-2", name: "Castle Siege" },
+    ],
     perTabSelection: {
       Effects: null,
       Spells: null,
@@ -26,6 +31,7 @@ export function createMockPageState(overrides: Partial<CreatePageState> = {}): C
       Scenarios: false,
     },
     setActiveTab: vi.fn(),
+    setLinkageFilter: vi.fn(),
     selectRecord: vi.fn(),
     createNew: vi.fn(),
     scenarioListItems: [

@@ -146,6 +146,45 @@ Feature: Scenario builder spells library tab
       Then the list should be sorted by name in descending order
 
   # ─────────────────────────────────────────────
+  # Rule: The game master can filter spells by scenario linkage
+  # ─────────────────────────────────────────────
+
+  Rule: The game master can filter spells by scenario linkage
+
+    Scenario: Show all spells when no linkage filter is enabled
+      Given the seed spells exist:
+        | id                                   | name          | description                                                                    | target_policy  |
+        | b0000000-0000-0000-0000-000000000001 | Fireball      | Hurls a ball of fire at the target, dealing instant arcane damage followed by burning. | highest_health |
+        | b0000000-0000-0000-0000-000000000021 | Zenith Bloom  | A quiet bloom of unused arcana.                                                | random         |
+      When I show all entities in the entities explorer
+      Then I should see the spell "Fireball"
+      And I should see the spell "Zenith Bloom"
+
+    Scenario: Show only spells linked to a selected scenario through units and items
+      Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
+      And unit "Barbarian" links item "Oak Staff"
+      And item "Oak Staff" links spell "Fireball"
+      And spell "Zenith Bloom" is not linked to any item
+      When I filter the entities explorer to scenario "Ambush at Dawn"
+      Then I should see the spell "Fireball"
+      And I should not see the spell "Zenith Bloom"
+
+    Scenario: Show only spells that are not linked anywhere
+      Given item "Oak Staff" links spell "Fireball"
+      And spell "Zenith Bloom" is not linked to any item
+      When I filter the entities explorer to unlinked entities
+      Then I should see the spell "Zenith Bloom"
+      And I should not see the spell "Fireball"
+
+    Scenario: Filtering only affects selectable rows in the entities explorer
+      Given I have loaded the spell "Fireball" in the spell workspace
+      And spell "Zenith Bloom" is not linked to any item
+      When I filter the entities explorer to unlinked entities
+      Then I should see the spell "Zenith Bloom"
+      And I should not see the spell "Fireball"
+      And the spell workspace should remain loaded with "Fireball"
+
+  # ─────────────────────────────────────────────
   # Rule: Selecting a spell opens it in the spell workspace
   # ─────────────────────────────────────────────
 

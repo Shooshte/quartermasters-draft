@@ -3,22 +3,20 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
+import { throwUniqueNameConflict } from "./crud-errors";
+import { toPaginatedResult } from "./pagination";
 import {
+  createListInputSchema,
   type EntityListLinkageFilter,
   entityListLinkageFilterSchema,
-  findDbError,
   idSchema,
-  listInputSchema,
 } from "./shared";
 
-const unitListInput = listInputSchema
-  .extend({
-    limit: z.number().int().min(1).max(500).default(20),
-    sortBy: z.enum(["name", "updatedAt"]).default("name"),
-    sortDir: z.enum(["asc", "desc"]).default("asc"),
-    linkageFilter: entityListLinkageFilterSchema,
-  })
-  .prefault({});
+const unitListInput = createListInputSchema(
+  ["name", "updatedAt"],
+  { sortBy: "name" },
+  entityListLinkageFilterSchema,
+);
 
 const unitInputBaseSchema = z.object({
   name: z.string().trim().min(1),
@@ -68,19 +66,6 @@ async function getOrderedItemIdsForUnit(executor: Pick<UnitTransaction, "select"
     .orderBy(asc(unitsItems.priority));
 
   return itemLinks.map((link) => link.itemId);
-}
-
-function maybeThrowConflict(error: unknown): never {
-  const dbError = findDbError(error);
-
-  if (dbError?.code === "23505") {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: "A unit with this name already exists.",
-    });
-  }
-
-  throw error;
 }
 
 function buildUnitLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
@@ -140,12 +125,7 @@ export const unitsRouter = router({
       linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
-    return {
-      items: rows,
-      page: input.page,
-      limit: input.limit,
-      totalCount: countResult[0].count,
-    };
+    return toPaginatedResult(rows, countResult, input.page, input.limit);
   }),
 
   get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
@@ -206,7 +186,7 @@ export const unitsRouter = router({
         throw error;
       }
 
-      maybeThrowConflict(error);
+      throwUniqueNameConflict(error, "unit");
     }
   }),
 
@@ -251,7 +231,7 @@ export const unitsRouter = router({
           throw error;
         }
 
-        maybeThrowConflict(error);
+        throwUniqueNameConflict(error, "unit");
       }
     }),
 

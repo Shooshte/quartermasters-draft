@@ -1,7 +1,12 @@
 import { vi } from "vitest";
+import type { GroupedCreatePageState } from "~/components/create/create-page-state-types";
 import type { CreatePageState } from "~/components/create/use-create-page-state";
 
-export function createMockPageState(overrides: Partial<CreatePageState> = {}): CreatePageState {
+type MockCreatePageState = CreatePageState & GroupedCreatePageState;
+
+export function createMockPageState(
+  overrides: Partial<MockCreatePageState> = {},
+): MockCreatePageState {
   const state: CreatePageState = {
     activeTab: "Scenarios",
     linkageFilter: { mode: "all" },
@@ -141,7 +146,7 @@ export function createMockPageState(overrides: Partial<CreatePageState> = {}): C
     ...overrides,
   };
 
-  Object.assign(state, {
+  const groupedState = Object.assign(state, {
     workspaces: {
       entity: state.entityWorkspace,
       scenario: state.scenarioWorkspace,
@@ -274,5 +279,5 @@ export function createMockPageState(overrides: Partial<CreatePageState> = {}): C
     },
   });
 
-  return Object.assign(state, overrides);
+  return Object.assign(groupedState, overrides);
 }

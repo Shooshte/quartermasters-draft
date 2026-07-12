@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -71,14 +71,16 @@ const replayOutput = {
   },
 };
 
-function renderWorkbench(replayId?: string) {
-  const queryClient = new QueryClient({
+function createQueryClient() {
+  return new QueryClient({
     defaultOptions: {
-      queries: { retry: false, gcTime: 0 },
+      queries: { retry: false, gcTime: 0, staleTime: Number.POSITIVE_INFINITY },
       mutations: { retry: false },
     },
   });
+}
 
+function renderWorkbench(replayId?: string, queryClient = createQueryClient()) {
   return render(
     <QueryClientProvider client={queryClient}>
       <BattleWorkbench replayId={replayId} />
@@ -87,10 +89,11 @@ function renderWorkbench(replayId?: string) {
 }
 
 async function configureBattle(user: ReturnType<typeof userEvent.setup>) {
-  const pickers = await screen.findAllByRole("combobox");
-  await user.click(pickers[0]);
+  const scenarioA = await screen.findByRole("combobox", { name: "Scenario A" });
+  const scenarioB = screen.getByRole("combobox", { name: "Scenario B" });
+  await user.click(scenarioA);
   await user.click(screen.getByRole("option", { name: "Ambush at Dawn" }));
-  await user.click(pickers[1]);
+  await user.click(scenarioB);
   await user.click(screen.getByRole("option", { name: "The Iron Line" }));
   await user.type(screen.getByRole("textbox", { name: "Battle seed" }), "  fixed-seed  ");
 }
@@ -129,6 +132,7 @@ describe("BattleWorkbench", () => {
     expect(navigate).toHaveBeenCalledWith({
       to: "/replay/$id",
       params: { id: "replay-1" },
+      search: { notice: undefined },
     });
   });
 
@@ -138,10 +142,69 @@ describe("BattleWorkbench", () => {
     expect(await screen.findByRole("heading", { name: "Ambush at Dawn wins" })).toBeVisible();
     expect(getQuery).toHaveBeenCalledWith({ id: "replay-1" });
     expect(screen.getByText("Results use the latest scenario versions.")).toBeVisible();
-    const pickers = screen.getAllByRole("combobox");
-    expect(pickers[0]).toHaveTextContent("Ambush at Dawn");
-    expect(pickers[1]).toHaveTextContent("The Iron Line");
+    expect(screen.getByRole("combobox", { name: "Scenario A" })).toHaveTextContent(
+      "Ambush at Dawn",
+    );
+    expect(screen.getByRole("combobox", { name: "Scenario B" })).toHaveTextContent("The Iron Line");
     expect(screen.getByRole("textbox", { name: "Battle seed" })).toHaveValue("fixed-seed");
+  });
+
+  it("hides cached replay output while regenerating from latest scenario versions", async () => {
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(["battleLab", "replay", "replay-1"], {
+      ...replayOutput,
+      scenarios: [
+        { id: "scenario-a", name: "Cached Ambush" },
+        { id: "scenario-b", name: "Cached Iron Line" },
+      ],
+    });
+    let resolveRefresh!: (value: typeof replayOutput) => void;
+    getQuery.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRefresh = resolve;
+      }),
+    );
+
+    renderWorkbench("replay-1", queryClient);
+
+    expect(await screen.findByText("Regenerating battle result…")).toBeVisible();
+    expect(getQuery).toHaveBeenCalledWith({ id: "replay-1" });
+    expect(screen.queryByRole("heading", { name: "Cached Ambush wins" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Results use the latest scenario versions.")).not.toBeInTheDocument();
+
+    await act(async () => resolveRefresh(replayOutput));
+    expect(await screen.findByRole("heading", { name: "Ambush at Dawn wins" })).toBeVisible();
+    expect(screen.getByText("Results use the latest scenario versions.")).toBeVisible();
+  });
+
+  it("does not show cached replay output or a freshness claim when regeneration fails", async () => {
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(["battleLab", "replay", "replay-1"], {
+      ...replayOutput,
+      scenarios: [
+        { id: "scenario-a", name: "Cached Ambush" },
+        { id: "scenario-b", name: "Cached Iron Line" },
+      ],
+    });
+    let rejectRefresh!: (reason: Error) => void;
+    getQuery.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectRefresh = reject;
+      }),
+    );
+
+    renderWorkbench("replay-1", queryClient);
+
+    expect(await screen.findByText("Regenerating battle result…")).toBeVisible();
+    await act(async () =>
+      rejectRefresh(new Error("Latest scenario versions could not be loaded.")),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Latest scenario versions could not be loaded.",
+    );
+    expect(screen.queryByRole("heading", { name: "Cached Ambush wins" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Results use the latest scenario versions.")).not.toBeInTheDocument();
   });
 
   it("keeps the selected setup visible when replay creation fails", async () => {
@@ -153,9 +216,10 @@ describe("BattleWorkbench", () => {
     await user.click(screen.getByRole("button", { name: "Run & save battle" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Battle could not be resolved.");
-    const pickers = screen.getAllByRole("combobox");
-    expect(pickers[0]).toHaveTextContent("Ambush at Dawn");
-    expect(pickers[1]).toHaveTextContent("The Iron Line");
+    expect(screen.getByRole("combobox", { name: "Scenario A" })).toHaveTextContent(
+      "Ambush at Dawn",
+    );
+    expect(screen.getByRole("combobox", { name: "Scenario B" })).toHaveTextContent("The Iron Line");
     expect(screen.getByRole("textbox", { name: "Battle seed" })).toHaveValue("  fixed-seed  ");
   });
 
@@ -171,10 +235,14 @@ describe("BattleWorkbench", () => {
     await configureBattle(user);
 
     const submit = screen.getByRole("button", { name: "Run & save battle" });
-    await user.click(submit);
-    await user.click(submit);
+    const form = submit.closest("form");
+    expect(form).not.toBeNull();
+    act(() => {
+      fireEvent.submit(form as HTMLFormElement);
+      fireEvent.submit(form as HTMLFormElement);
+    });
 
-    expect(createMutation).toHaveBeenCalledOnce();
+    await waitFor(() => expect(createMutation).toHaveBeenCalledOnce());
     expect(screen.getByRole("button", { name: "Resolving battle…" })).toBeDisabled();
 
     await act(async () => resolveCreate({ replay: replayOutput.replay }));

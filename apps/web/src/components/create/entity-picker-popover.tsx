@@ -21,6 +21,7 @@ interface EntityPickerPopoverProps {
   triggerPlaceholder: string;
   listboxLabel: string;
   emptyMessage: string;
+  triggerId?: string;
   triggerClassName?: string;
   popoverClassName?: string;
 }
@@ -47,6 +48,7 @@ export function EntityPickerPopover({
   triggerPlaceholder,
   listboxLabel,
   emptyMessage,
+  triggerId,
   triggerClassName,
   popoverClassName,
 }: EntityPickerPopoverProps) {
@@ -75,6 +77,7 @@ export function EntityPickerPopover({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button
+          id={triggerId}
           type="button"
           data-testid={pickerTestId}
           role="combobox"

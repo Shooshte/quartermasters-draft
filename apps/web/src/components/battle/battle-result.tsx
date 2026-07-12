@@ -98,7 +98,7 @@ function FinalStateLedger({
                         unit.currentHealth > 0 ? "text-emerald-300/90" : "text-muted-foreground"
                       }
                     >
-                      {unit.currentHealth > 0 ? "Alive" : "Defeated"}
+                      {unit.currentHealth > 0 ? "Alive" : "Dead"}
                     </span>
                   </TableCell>
                   <TableCell className="tabular-nums">{unit.mana}</TableCell>

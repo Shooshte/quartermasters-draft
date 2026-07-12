@@ -154,6 +154,7 @@ describe("BattleResultView", () => {
     expect(screen.getByText("184 ticks")).toBeVisible();
     expect(screen.getByRole("cell", { name: "82 / 120" })).toBeVisible();
     expect(screen.getByRole("cell", { name: "Alive" })).toBeVisible();
+    expect(screen.getAllByRole("cell", { name: "Dead" })).toHaveLength(2);
     expect(screen.getByText("Burning (2 triggers remaining)")).toBeVisible();
     expect(screen.getByText("Tick 184: Battle ends: Ambush at Dawn wins")).toBeVisible();
 

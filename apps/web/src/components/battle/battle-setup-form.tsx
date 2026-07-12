@@ -55,7 +55,12 @@ export function BattleSetupForm({
       <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3">
-            <Label className="font-display text-xs tracking-[0.16em] uppercase">Scenario A</Label>
+            <Label
+              htmlFor="battle-scenario-a"
+              className="font-display text-xs tracking-[0.16em] uppercase"
+            >
+              Scenario A
+            </Label>
             <span className="text-xs text-muted-foreground">First company</span>
           </div>
           <EntityPickerPopover
@@ -70,6 +75,7 @@ export function BattleSetupForm({
             triggerPlaceholder="Choose Scenario A"
             listboxLabel="Scenario A options"
             emptyMessage="No scenarios found."
+            triggerId="battle-scenario-a"
             triggerClassName={pickerClassName}
             popoverClassName="p-2"
           />
@@ -84,7 +90,12 @@ export function BattleSetupForm({
 
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3">
-            <Label className="font-display text-xs tracking-[0.16em] uppercase">Scenario B</Label>
+            <Label
+              htmlFor="battle-scenario-b"
+              className="font-display text-xs tracking-[0.16em] uppercase"
+            >
+              Scenario B
+            </Label>
             <span className="text-xs text-muted-foreground">Second company</span>
           </div>
           <EntityPickerPopover
@@ -99,6 +110,7 @@ export function BattleSetupForm({
             triggerPlaceholder="Choose Scenario B"
             listboxLabel="Scenario B options"
             emptyMessage="No scenarios found."
+            triggerId="battle-scenario-b"
             triggerClassName={pickerClassName}
             popoverClassName="p-2"
           />

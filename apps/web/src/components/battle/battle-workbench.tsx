@@ -39,6 +39,7 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
       return trpc.battleLab.get.query({ id: replayId });
     },
     enabled: Boolean(replayId),
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
@@ -47,7 +48,12 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
       return;
     }
 
-    if (replayQuery.data && initializedReplayId.current !== replayId) {
+    if (
+      replayQuery.data &&
+      !replayQuery.isFetching &&
+      !replayQuery.isError &&
+      initializedReplayId.current !== replayId
+    ) {
       setSetup({
         scenarioAId: replayQuery.data.replay.scenarioAId,
         scenarioBId: replayQuery.data.replay.scenarioBId,
@@ -55,7 +61,7 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
       });
       initializedReplayId.current = replayId;
     }
-  }, [replayId, replayQuery.data]);
+  }, [replayId, replayQuery.data, replayQuery.isError, replayQuery.isFetching]);
 
   const createReplay = useMutation({
     mutationFn: (input: BattleSetup) => trpc.battleLab.create.mutate(input),
@@ -63,7 +69,8 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
       navigate({
         to: "/replay/$id",
         params: { id: replay.id },
-      } as unknown as Parameters<typeof navigate>[0]);
+        search: { notice: undefined },
+      });
     },
     onSettled: () => {
       createPending.current = false;
@@ -77,7 +84,7 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
     createReplay.mutate(input);
   }
 
-  const loading = optionsQuery.isPending || (Boolean(replayId) && replayQuery.isPending);
+  const replayRefreshing = Boolean(replayId) && replayQuery.isFetching;
 
   return (
     <div className="mx-auto w-full max-w-[96rem] space-y-5 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -93,7 +100,7 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
         </p>
       </header>
 
-      {loading ? (
+      {optionsQuery.isPending ? (
         <Card className="border-dashed">
           <CardContent className="py-4 text-sm text-muted-foreground" aria-live="polite">
             Loading battle lab…
@@ -106,6 +113,12 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
         >
           {errorMessage(optionsQuery.error, "Scenario options could not be loaded.")}
         </p>
+      ) : replayRefreshing ? (
+        <Card className="border-dashed border-primary/25 bg-primary/[0.035]">
+          <CardContent className="py-4 text-sm text-muted-foreground" aria-live="polite">
+            Regenerating battle result…
+          </CardContent>
+        </Card>
       ) : (
         <>
           {replayQuery.isError ? (
@@ -142,7 +155,7 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
             </CardContent>
           </Card>
 
-          {replayQuery.data ? (
+          {replayQuery.data && !replayQuery.isError ? (
             <>
               <p className="border-l-2 border-primary/50 pl-3 text-sm text-muted-foreground">
                 Results use the latest scenario versions.

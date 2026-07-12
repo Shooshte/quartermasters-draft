@@ -54,7 +54,8 @@ describe("BattleSetupForm", () => {
     const onSubmit = vi.fn();
     render(<SetupHarness onSubmit={onSubmit} />);
 
-    const [scenarioA, scenarioB] = screen.getAllByRole("combobox");
+    const scenarioA = screen.getByRole("combobox", { name: "Scenario A" });
+    const scenarioB = screen.getByRole("combobox", { name: "Scenario B" });
     await user.click(scenarioA);
     expect(screen.getByRole("listbox", { name: "Scenario A options" })).toBeVisible();
     await user.click(screen.getByRole("option", { name: "Ambush at Dawn" }));

@@ -364,3 +364,26 @@ export const scenariosRowsUnits = pgTable(
     unique("scenarios_rows_units_row_id_slot_unique").on(table.rowId, table.slot),
   ],
 );
+
+export const battleReplays = pgTable(
+  "battle_replays",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    scenarioAId: uuid("scenario_a_id")
+      .notNull()
+      .references(() => scenarios.id, { onDelete: "cascade" }),
+    scenarioBId: uuid("scenario_b_id")
+      .notNull()
+      .references(() => scenarios.id, { onDelete: "cascade" }),
+    seed: text("seed").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("battle_replays_scenario_a_id_idx").on(table.scenarioAId),
+    index("battle_replays_scenario_b_id_idx").on(table.scenarioBId),
+    check(
+      "battle_replays_distinct_scenarios",
+      sql`${table.scenarioAId} <> ${table.scenarioBId}`,
+    ),
+  ],
+);

@@ -1,7 +1,5 @@
 import type { AppRouter } from "@qd/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import {
   EFFECTS_PAGE_SIZE,
@@ -9,63 +7,39 @@ import {
   type EffectSortDir,
   type LibraryLinkageFilter,
 } from "../types";
+import { useEntityList } from "./use-entity-list";
 
 export function useEffectList(
   isActiveTab: boolean,
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  const [effectPage, setEffectPage] = useState(1);
-  const [effectSortBy, setEffectSortBy] = useState<EffectSortBy>("name");
-  const [effectSortDir, setEffectSortDir] = useState<EffectSortDir>("asc");
-
-  const effectsList = useQuery({
-    queryKey: [
-      "scenarioBuilder",
-      "effects",
-      "list",
-      effectPage,
-      effectSortBy,
-      effectSortDir,
-      linkageFilter,
-    ],
-    queryFn: () =>
+  type EffectListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["effects"]["list"];
+  const list = useEntityList<EffectListOutput["items"][number], EffectSortBy>({
+    enabled: isActiveTab || backgroundEnabled,
+    initialSortBy: "name",
+    pageSize: EFFECTS_PAGE_SIZE,
+    queryKey: ["scenarioBuilder", "effects", "list", linkageFilter],
+    queryPage: ({ page, sortBy, sortDir }) =>
       trpc.scenarioBuilder.effects.list.query({
-        page: effectPage,
+        page,
         limit: EFFECTS_PAGE_SIZE,
-        sortBy: effectSortBy,
-        sortDir: effectSortDir,
+        sortBy,
+        sortDir,
         linkageFilter,
       }),
-    enabled: isActiveTab || backgroundEnabled,
-    placeholderData: keepPreviousData,
   });
 
-  type EffectListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["effects"]["list"];
-  const effectListItems: EffectListOutput["items"] = effectsList.data?.items ?? [];
-  const effectTotalCount: EffectListOutput["totalCount"] = effectsList.data?.totalCount ?? 0;
-  const effectTotalPages = Math.max(1, Math.ceil(effectTotalCount / EFFECTS_PAGE_SIZE));
-
-  const setEffectSort = useCallback((sortBy: EffectSortBy, sortDir: EffectSortDir) => {
-    setEffectSortBy(sortBy);
-    setEffectSortDir(sortDir);
-    setEffectPage(1);
-  }, []);
-
-  const setEffectPageAction = useCallback((page: number) => {
-    setEffectPage(page);
-  }, []);
-
   return {
-    effectsList,
-    effectListItems,
-    effectPage,
-    effectTotalPages,
-    effectTotalCount,
-    effectSortBy,
-    effectSortDir,
-    setEffectSort,
-    setEffectPage: setEffectPageAction,
-    effectIsFetching: effectsList.isFetching,
+    effectsList: list.query,
+    effectListItems: list.items,
+    effectPage: list.page,
+    effectTotalPages: list.totalPages,
+    effectTotalCount: list.totalCount,
+    effectSortBy: list.sortBy,
+    effectSortDir: list.sortDir as EffectSortDir,
+    setEffectSort: list.setSort,
+    setEffectPage: list.setPage,
+    effectIsFetching: list.isFetching,
   };
 }

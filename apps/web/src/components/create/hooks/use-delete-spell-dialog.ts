@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
 import { createIdleWorkspace, SPELLS_PAGE_SIZE } from "../types";
+import { useDeleteEntityDialog } from "./use-delete-entity-dialog";
 
 interface UseDeleteSpellDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -26,18 +26,7 @@ export function useDeleteSpellDialog({
   setSpellPage,
 }: UseDeleteSpellDialogOptions) {
   const queryClient = useQueryClient();
-  const [isDeleteSpellDialogOpen, setIsDeleteSpellDialogOpen] = useState(false);
-  const [deleteSpellTarget, setDeleteSpellTarget] = useState<{ id: string; name: string } | null>(
-    null,
-  );
-  const [deleteSpellError, setDeleteSpellError] = useState<string | null>(null);
-
-  const requestDeleteSpell = useCallback((id: string, name: string) => {
-    setDeleteSpellTarget({ id, name });
-    setIsDeleteSpellDialogOpen(true);
-  }, []);
-
-  const isLinkedItemConflict = useCallback((error: unknown) => {
+  const isLinkedItemConflict = (error: unknown) => {
     if (
       error instanceof Error &&
       error.message.includes("Cannot delete spell while it is linked")
@@ -59,15 +48,12 @@ export function useDeleteSpellDialog({
       maybeTrpcError.shape?.data?.code === "CONFLICT" ||
       maybeTrpcError.shape?.message?.includes("Cannot delete spell while it is linked") === true
     );
-  }, []);
-
-  const confirmDeleteSpell = useCallback(async () => {
-    if (!deleteSpellTarget) return;
-    try {
-      setDeleteSpellError(null);
-      await trpc.scenarioBuilder.spells.delete.mutate({ id: deleteSpellTarget.id });
-
-      if (entityWorkspace.entityId === deleteSpellTarget.id) {
+  };
+  const dialog = useDeleteEntityDialog({
+    deleteEntity: (id) => trpc.scenarioBuilder.spells.delete.mutate({ id }),
+    invalidate: () => queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells"] }),
+    onDeleted: (id) => {
+      if (entityWorkspace.entityId === id) {
         setEntityWorkspace(createIdleWorkspace());
         setPerTabSelection((prev) => ({ ...prev, Spells: null }));
         skipEntityResetRef.current = true;
@@ -80,52 +66,23 @@ export function useDeleteSpellDialog({
           replace: true,
         });
       }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "spells"],
-      });
-
       const newTotalCount = spellTotalCount - 1;
       const newTotalPages = Math.max(1, Math.ceil(newTotalCount / SPELLS_PAGE_SIZE));
-      if (spellPage > newTotalPages) {
-        setSpellPage(newTotalPages);
-      }
-
-      setDeleteSpellTarget(null);
-      setIsDeleteSpellDialogOpen(false);
-    } catch (error) {
-      if (isLinkedItemConflict(error)) {
-        setDeleteSpellError("Cannot delete spell while it is linked to one or more items.");
-      } else {
-        setDeleteSpellError("Failed to delete spell. Please try again.");
-      }
-    }
-  }, [
-    deleteSpellTarget,
-    entityWorkspace.entityId,
-    navigate,
-    queryClient,
-    spellTotalCount,
-    spellPage,
-    setEntityWorkspace,
-    setPerTabSelection,
-    skipEntityResetRef,
-    setSpellPage,
-    isLinkedItemConflict,
-  ]);
-
-  const cancelDeleteSpell = useCallback(() => {
-    setDeleteSpellTarget(null);
-    setIsDeleteSpellDialogOpen(false);
-    setDeleteSpellError(null);
-  }, []);
+      if (spellPage > newTotalPages) setSpellPage(newTotalPages);
+    },
+    fallbackError: "Failed to delete spell. Please try again.",
+    mapError: (error) =>
+      isLinkedItemConflict(error)
+        ? "Cannot delete spell while it is linked to one or more items."
+        : null,
+  });
 
   return {
-    isDeleteSpellDialogOpen,
-    deleteSpellTarget,
-    deleteSpellError,
-    requestDeleteSpell,
-    confirmDeleteSpell,
-    cancelDeleteSpell,
+    isDeleteSpellDialogOpen: dialog.isOpen,
+    deleteSpellTarget: dialog.target,
+    deleteSpellError: dialog.error,
+    requestDeleteSpell: dialog.request,
+    confirmDeleteSpell: dialog.confirm,
+    cancelDeleteSpell: dialog.cancel,
   };
 }

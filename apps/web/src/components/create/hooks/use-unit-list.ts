@@ -1,7 +1,5 @@
 import type { AppRouter } from "@qd/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import {
   type LibraryLinkageFilter,
@@ -9,63 +7,39 @@ import {
   type UnitSortBy,
   type UnitSortDir,
 } from "../types";
+import { useEntityList } from "./use-entity-list";
 
 export function useUnitList(
   isActiveTab: boolean,
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  const [unitPage, setUnitPage] = useState(1);
-  const [unitSortBy, setUnitSortBy] = useState<UnitSortBy>("name");
-  const [unitSortDir, setUnitSortDir] = useState<UnitSortDir>("asc");
-
-  const unitsList = useQuery({
-    queryKey: [
-      "scenarioBuilder",
-      "units",
-      "list",
-      unitPage,
-      unitSortBy,
-      unitSortDir,
-      linkageFilter,
-    ],
-    queryFn: () =>
+  type UnitListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["units"]["list"];
+  const list = useEntityList<UnitListOutput["items"][number], UnitSortBy>({
+    enabled: isActiveTab || backgroundEnabled,
+    initialSortBy: "name",
+    pageSize: UNITS_PAGE_SIZE,
+    queryKey: ["scenarioBuilder", "units", "list", linkageFilter],
+    queryPage: ({ page, sortBy, sortDir }) =>
       trpc.scenarioBuilder.units.list.query({
-        page: unitPage,
+        page,
         limit: UNITS_PAGE_SIZE,
-        sortBy: unitSortBy,
-        sortDir: unitSortDir,
+        sortBy,
+        sortDir,
         linkageFilter,
       }),
-    enabled: isActiveTab || backgroundEnabled,
-    placeholderData: keepPreviousData,
   });
 
-  type UnitListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["units"]["list"];
-  const unitListItems: UnitListOutput["items"] = unitsList.data?.items ?? [];
-  const unitTotalCount: UnitListOutput["totalCount"] = unitsList.data?.totalCount ?? 0;
-  const unitTotalPages = Math.max(1, Math.ceil(unitTotalCount / UNITS_PAGE_SIZE));
-
-  const setUnitSort = useCallback((sortBy: UnitSortBy, sortDir: UnitSortDir) => {
-    setUnitSortBy(sortBy);
-    setUnitSortDir(sortDir);
-    setUnitPage(1);
-  }, []);
-
-  const setUnitPageAction = useCallback((page: number) => {
-    setUnitPage(page);
-  }, []);
-
   return {
-    unitsList,
-    unitListItems,
-    unitPage,
-    unitTotalPages,
-    unitTotalCount,
-    unitSortBy,
-    unitSortDir,
-    setUnitSort,
-    setUnitPage: setUnitPageAction,
-    unitIsFetching: unitsList.isFetching,
+    unitsList: list.query,
+    unitListItems: list.items,
+    unitPage: list.page,
+    unitTotalPages: list.totalPages,
+    unitTotalCount: list.totalCount,
+    unitSortBy: list.sortBy,
+    unitSortDir: list.sortDir as UnitSortDir,
+    setUnitSort: list.setSort,
+    setUnitPage: list.setPage,
+    unitIsFetching: list.isFetching,
   };
 }

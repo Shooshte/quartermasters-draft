@@ -1,7 +1,5 @@
 import type { AppRouter } from "@qd/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import {
   ITEMS_PAGE_SIZE,
@@ -9,63 +7,39 @@ import {
   type ItemSortDir,
   type LibraryLinkageFilter,
 } from "../types";
+import { useEntityList } from "./use-entity-list";
 
 export function useItemList(
   isActiveTab: boolean,
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  const [itemPage, setItemPage] = useState(1);
-  const [itemSortBy, setItemSortBy] = useState<ItemSortBy>("name");
-  const [itemSortDir, setItemSortDir] = useState<ItemSortDir>("asc");
-
-  const itemsList = useQuery({
-    queryKey: [
-      "scenarioBuilder",
-      "items",
-      "list",
-      itemPage,
-      itemSortBy,
-      itemSortDir,
-      linkageFilter,
-    ],
-    queryFn: () =>
+  type ItemListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["items"]["list"];
+  const list = useEntityList<ItemListOutput["items"][number], ItemSortBy>({
+    enabled: isActiveTab || backgroundEnabled,
+    initialSortBy: "name",
+    pageSize: ITEMS_PAGE_SIZE,
+    queryKey: ["scenarioBuilder", "items", "list", linkageFilter],
+    queryPage: ({ page, sortBy, sortDir }) =>
       trpc.scenarioBuilder.items.list.query({
-        page: itemPage,
+        page,
         limit: ITEMS_PAGE_SIZE,
-        sortBy: itemSortBy,
-        sortDir: itemSortDir,
+        sortBy,
+        sortDir,
         linkageFilter,
       }),
-    enabled: isActiveTab || backgroundEnabled,
-    placeholderData: keepPreviousData,
   });
 
-  type ItemListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["items"]["list"];
-  const itemListItems: ItemListOutput["items"] = itemsList.data?.items ?? [];
-  const itemTotalCount: ItemListOutput["totalCount"] = itemsList.data?.totalCount ?? 0;
-  const itemTotalPages = Math.max(1, Math.ceil(itemTotalCount / ITEMS_PAGE_SIZE));
-
-  const setItemSort = useCallback((sortBy: ItemSortBy, sortDir: ItemSortDir) => {
-    setItemSortBy(sortBy);
-    setItemSortDir(sortDir);
-    setItemPage(1);
-  }, []);
-
-  const setItemPageAction = useCallback((page: number) => {
-    setItemPage(page);
-  }, []);
-
   return {
-    itemsList,
-    itemListItems,
-    itemPage,
-    itemTotalPages,
-    itemTotalCount,
-    itemSortBy,
-    itemSortDir,
-    setItemSort,
-    setItemPage: setItemPageAction,
-    itemIsFetching: itemsList.isFetching,
+    itemsList: list.query,
+    itemListItems: list.items,
+    itemPage: list.page,
+    itemTotalPages: list.totalPages,
+    itemTotalCount: list.totalCount,
+    itemSortBy: list.sortBy,
+    itemSortDir: list.sortDir as ItemSortDir,
+    setItemSort: list.setSort,
+    setItemPage: list.setPage,
+    itemIsFetching: list.isFetching,
   };
 }

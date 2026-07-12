@@ -168,6 +168,9 @@ importers:
       '@qd/db':
         specifier: workspace:*
         version: link:../db
+      '@qd/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@qd/shared':
         specifier: workspace:*
         version: link:../shared

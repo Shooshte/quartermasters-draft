@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
 import { createIdleWorkspace, ITEMS_PAGE_SIZE } from "../types";
+import { useDeleteEntityDialog } from "./use-delete-entity-dialog";
 
 interface UseDeleteItemDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -26,24 +26,11 @@ export function useDeleteItemDialog({
   setItemPage,
 }: UseDeleteItemDialogOptions) {
   const queryClient = useQueryClient();
-  const [isDeleteItemDialogOpen, setIsDeleteItemDialogOpen] = useState(false);
-  const [deleteItemTarget, setDeleteItemTarget] = useState<{ id: string; name: string } | null>(
-    null,
-  );
-  const [deleteItemError, setDeleteItemError] = useState<string | null>(null);
-
-  const requestDeleteItem = useCallback((id: string, name: string) => {
-    setDeleteItemTarget({ id, name });
-    setIsDeleteItemDialogOpen(true);
-  }, []);
-
-  const confirmDeleteItem = useCallback(async () => {
-    if (!deleteItemTarget) return;
-    try {
-      setDeleteItemError(null);
-      await trpc.scenarioBuilder.items.delete.mutate({ id: deleteItemTarget.id });
-
-      if (entityWorkspace.entityId === deleteItemTarget.id) {
+  const dialog = useDeleteEntityDialog({
+    deleteEntity: (id) => trpc.scenarioBuilder.items.delete.mutate({ id }),
+    invalidate: () => queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] }),
+    onDeleted: (id) => {
+      if (entityWorkspace.entityId === id) {
         setEntityWorkspace(createIdleWorkspace());
         setPerTabSelection((prev) => ({ ...prev, Items: null }));
         skipEntityResetRef.current = true;
@@ -56,47 +43,19 @@ export function useDeleteItemDialog({
           replace: true,
         });
       }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "items"],
-      });
-
       const newTotalCount = itemTotalCount - 1;
       const newTotalPages = Math.max(1, Math.ceil(newTotalCount / ITEMS_PAGE_SIZE));
-      if (itemPage > newTotalPages) {
-        setItemPage(newTotalPages);
-      }
-
-      setDeleteItemTarget(null);
-      setIsDeleteItemDialogOpen(false);
-    } catch {
-      setDeleteItemError("Failed to delete item. Please try again.");
-    }
-  }, [
-    deleteItemTarget,
-    entityWorkspace.entityId,
-    navigate,
-    queryClient,
-    itemTotalCount,
-    itemPage,
-    setEntityWorkspace,
-    setPerTabSelection,
-    skipEntityResetRef,
-    setItemPage,
-  ]);
-
-  const cancelDeleteItem = useCallback(() => {
-    setDeleteItemTarget(null);
-    setIsDeleteItemDialogOpen(false);
-    setDeleteItemError(null);
-  }, []);
+      if (itemPage > newTotalPages) setItemPage(newTotalPages);
+    },
+    fallbackError: "Failed to delete item. Please try again.",
+  });
 
   return {
-    isDeleteItemDialogOpen,
-    deleteItemTarget,
-    deleteItemError,
-    requestDeleteItem,
-    confirmDeleteItem,
-    cancelDeleteItem,
+    isDeleteItemDialogOpen: dialog.isOpen,
+    deleteItemTarget: dialog.target,
+    deleteItemError: dialog.error,
+    requestDeleteItem: dialog.request,
+    confirmDeleteItem: dialog.confirm,
+    cancelDeleteItem: dialog.cancel,
   };
 }

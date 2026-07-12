@@ -11,22 +11,20 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
+import { throwDeleteConflict, throwUniqueNameConflict } from "./crud-errors";
+import { toPaginatedResult } from "./pagination";
 import {
+  createListInputSchema,
   type EntityListLinkageFilter,
   entityListLinkageFilterSchema,
-  findDbError,
   idSchema,
-  listInputSchema,
 } from "./shared";
 
-const effectListInput = listInputSchema
-  .extend({
-    limit: z.number().int().min(1).max(500).default(20),
-    sortBy: z.enum(["name", "timingType", "effectType"]).default("name"),
-    sortDir: z.enum(["asc", "desc"]).default("asc"),
-    linkageFilter: entityListLinkageFilterSchema,
-  })
-  .prefault({});
+const effectListInput = createListInputSchema(
+  ["name", "timingType", "effectType"],
+  { sortBy: "name" },
+  entityListLinkageFilterSchema,
+);
 
 const nullableNumber = z.number().nullable().default(null);
 const nullablePositiveInteger = z.number().int().positive().nullable().default(null);
@@ -95,28 +93,6 @@ function normalizeEffectInput<T extends z.infer<typeof effectInputSchema>>(input
   };
 }
 
-function maybeThrowConflict(error: unknown): never {
-  const dbError = findDbError(error);
-
-  if (dbError?.code === "23505") {
-    throw new TRPCError({ code: "CONFLICT", message: "An effect with this name already exists." });
-  }
-  throw error;
-}
-
-function maybeThrowDeleteConflict(error: unknown): never {
-  const dbError = findDbError(error);
-
-  if (dbError?.code === "23503") {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: "Cannot delete effect while it is linked to one or more spells.",
-    });
-  }
-
-  throw error;
-}
-
 function buildEffectLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
   if (filter.mode === "all") {
     return undefined;
@@ -180,12 +156,7 @@ export const effectsRouter = router({
       linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
-    return {
-      items,
-      page: input.page,
-      limit: input.limit,
-      totalCount: countResult[0].count,
-    };
+    return toPaginatedResult(items, countResult, input.page, input.limit);
   }),
 
   get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
@@ -209,7 +180,7 @@ export const effectsRouter = router({
       if (error instanceof TRPCError) {
         throw error;
       }
-      maybeThrowConflict(error);
+      throwUniqueNameConflict(error, "effect");
     }
   }),
 
@@ -235,7 +206,7 @@ export const effectsRouter = router({
         if (error instanceof TRPCError) {
           throw error;
         }
-        maybeThrowConflict(error);
+        throwUniqueNameConflict(error, "effect");
       }
     }),
 
@@ -254,7 +225,7 @@ export const effectsRouter = router({
         throw error;
       }
 
-      maybeThrowDeleteConflict(error);
+      throwDeleteConflict(error, "Cannot delete effect while it is linked to one or more spells.");
     }
   }),
 });

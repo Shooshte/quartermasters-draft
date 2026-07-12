@@ -3,22 +3,20 @@ import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq, exists, inArray, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
+import { throwUniqueNameConflict } from "./crud-errors";
+import { toPaginatedResult } from "./pagination";
 import {
-  findDbError,
+  createListInputSchema,
   idSchema,
-  listInputSchema,
   type ScenarioListLinkageFilter,
   scenarioListLinkageFilterSchema,
 } from "./shared";
 
-const scenarioListInput = listInputSchema
-  .extend({
-    limit: z.number().int().min(1).max(500).default(20),
-    sortBy: z.enum(["name", "updatedAt"]).default("name"),
-    sortDir: z.enum(["asc", "desc"]).default("asc"),
-    linkageFilter: scenarioListLinkageFilterSchema,
-  })
-  .prefault({});
+const scenarioListInput = createListInputSchema(
+  ["name", "updatedAt"],
+  { sortBy: "name" },
+  scenarioListLinkageFilterSchema,
+);
 
 const SCENARIO_ROW_TYPES = ["ranged", "support", "melee", "tank"] as const;
 const scenarioRowSchema = z.object({
@@ -136,19 +134,6 @@ async function getScenarioById(executor: Pick<ScenarioTransaction, "select">, id
   };
 }
 
-function maybeThrowConflict(error: unknown): never {
-  const dbError = findDbError(error);
-
-  if (dbError?.code === "23505") {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: "A scenario with this name already exists.",
-    });
-  }
-
-  throw error;
-}
-
 function buildScenarioLinkageCondition(filter: ScenarioListLinkageFilter): SQL | undefined {
   if (filter.mode === "all") {
     return undefined;
@@ -189,12 +174,7 @@ export const scenariosRouter = router({
       linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
-    return {
-      items,
-      page: input.page,
-      limit: input.limit,
-      totalCount: countResult[0].count,
-    };
+    return toPaginatedResult(items, countResult, input.page, input.limit);
   }),
 
   get: gmProcedure
@@ -247,7 +227,7 @@ export const scenariosRouter = router({
         throw error;
       }
 
-      maybeThrowConflict(error);
+      throwUniqueNameConflict(error, "scenario");
     }
   }),
 
@@ -305,7 +285,7 @@ export const scenariosRouter = router({
           throw error;
         }
 
-        maybeThrowConflict(error);
+        throwUniqueNameConflict(error, "scenario");
       }
     }),
 

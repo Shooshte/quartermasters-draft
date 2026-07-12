@@ -12,22 +12,20 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
+import { throwDeleteConflict, throwUniqueNameConflict } from "./crud-errors";
+import { toPaginatedResult } from "./pagination";
 import {
+  createListInputSchema,
   type EntityListLinkageFilter,
   entityListLinkageFilterSchema,
-  findDbError,
   idSchema,
-  listInputSchema,
 } from "./shared";
 
-const spellListInput = listInputSchema
-  .extend({
-    limit: z.number().int().min(1).max(500).default(20),
-    sortBy: z.enum(["name", "targetPolicy", "updatedAt"]).default("name"),
-    sortDir: z.enum(["asc", "desc"]).default("asc"),
-    linkageFilter: entityListLinkageFilterSchema,
-  })
-  .prefault({});
+const spellListInput = createListInputSchema(
+  ["name", "targetPolicy", "updatedAt"],
+  { sortBy: "name" },
+  entityListLinkageFilterSchema,
+);
 
 const allowedRowTypeEnum = z.enum(["support", "ranged", "melee", "tank"]);
 
@@ -109,32 +107,6 @@ async function insertSpellAllowedRows(
   );
 }
 
-function maybeThrowConflict(error: unknown): never {
-  const dbError = findDbError(error);
-
-  if (dbError?.code === "23505") {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: "A spell with this name already exists.",
-    });
-  }
-
-  throw error;
-}
-
-function maybeThrowDeleteConflict(error: unknown): never {
-  const dbError = findDbError(error);
-
-  if (dbError?.code === "23503" || dbError?.code === "23514") {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: "Cannot delete spell while it is linked to one or more items.",
-    });
-  }
-
-  throw error;
-}
-
 function buildSpellLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
   if (filter.mode === "all") {
     return undefined;
@@ -197,12 +169,7 @@ export const spellsRouter = router({
       linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
-    return {
-      items,
-      page: input.page,
-      limit: input.limit,
-      totalCount: countResult[0].count,
-    };
+    return toPaginatedResult(items, countResult, input.page, input.limit);
   }),
 
   get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
@@ -268,7 +235,7 @@ export const spellsRouter = router({
         throw error;
       }
 
-      maybeThrowConflict(error);
+      throwUniqueNameConflict(error, "spell");
     }
   }),
 
@@ -314,7 +281,7 @@ export const spellsRouter = router({
           throw error;
         }
 
-        maybeThrowConflict(error);
+        throwUniqueNameConflict(error, "spell");
       }
     }),
 
@@ -333,7 +300,10 @@ export const spellsRouter = router({
         throw error;
       }
 
-      maybeThrowDeleteConflict(error);
+      throwDeleteConflict(error, "Cannot delete spell while it is linked to one or more items.", [
+        "23503",
+        "23514",
+      ]);
     }
   }),
 });

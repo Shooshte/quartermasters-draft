@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
 import { createIdleWorkspace, UNITS_PAGE_SIZE } from "../types";
+import { useDeleteEntityDialog } from "./use-delete-entity-dialog";
 
 interface UseDeleteUnitDialogOptions {
   entityWorkspace: WorkspaceState;
@@ -26,24 +26,11 @@ export function useDeleteUnitDialog({
   setUnitPage,
 }: UseDeleteUnitDialogOptions) {
   const queryClient = useQueryClient();
-  const [isDeleteUnitDialogOpen, setIsDeleteUnitDialogOpen] = useState(false);
-  const [deleteUnitTarget, setDeleteUnitTarget] = useState<{ id: string; name: string } | null>(
-    null,
-  );
-  const [deleteUnitError, setDeleteUnitError] = useState<string | null>(null);
-
-  const requestDeleteUnit = useCallback((id: string, name: string) => {
-    setDeleteUnitTarget({ id, name });
-    setIsDeleteUnitDialogOpen(true);
-  }, []);
-
-  const confirmDeleteUnit = useCallback(async () => {
-    if (!deleteUnitTarget) return;
-    try {
-      setDeleteUnitError(null);
-      await trpc.scenarioBuilder.units.delete.mutate({ id: deleteUnitTarget.id });
-
-      if (entityWorkspace.entityId === deleteUnitTarget.id) {
+  const dialog = useDeleteEntityDialog({
+    deleteEntity: (id) => trpc.scenarioBuilder.units.delete.mutate({ id }),
+    invalidate: () => queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "units"] }),
+    onDeleted: (id) => {
+      if (entityWorkspace.entityId === id) {
         setEntityWorkspace(createIdleWorkspace());
         setPerTabSelection((prev) => ({ ...prev, Units: null }));
         skipEntityResetRef.current = true;
@@ -56,47 +43,19 @@ export function useDeleteUnitDialog({
           replace: true,
         });
       }
-
-      await queryClient.invalidateQueries({
-        queryKey: ["scenarioBuilder", "units"],
-      });
-
       const newTotalCount = unitTotalCount - 1;
       const newTotalPages = Math.max(1, Math.ceil(newTotalCount / UNITS_PAGE_SIZE));
-      if (unitPage > newTotalPages) {
-        setUnitPage(newTotalPages);
-      }
-
-      setDeleteUnitTarget(null);
-      setIsDeleteUnitDialogOpen(false);
-    } catch {
-      setDeleteUnitError("Failed to delete unit. Please try again.");
-    }
-  }, [
-    deleteUnitTarget,
-    entityWorkspace.entityId,
-    navigate,
-    queryClient,
-    unitTotalCount,
-    unitPage,
-    setEntityWorkspace,
-    setPerTabSelection,
-    skipEntityResetRef,
-    setUnitPage,
-  ]);
-
-  const cancelDeleteUnit = useCallback(() => {
-    setDeleteUnitTarget(null);
-    setIsDeleteUnitDialogOpen(false);
-    setDeleteUnitError(null);
-  }, []);
+      if (unitPage > newTotalPages) setUnitPage(newTotalPages);
+    },
+    fallbackError: "Failed to delete unit. Please try again.",
+  });
 
   return {
-    isDeleteUnitDialogOpen,
-    deleteUnitTarget,
-    deleteUnitError,
-    requestDeleteUnit,
-    confirmDeleteUnit,
-    cancelDeleteUnit,
+    isDeleteUnitDialogOpen: dialog.isOpen,
+    deleteUnitTarget: dialog.target,
+    deleteUnitError: dialog.error,
+    requestDeleteUnit: dialog.request,
+    confirmDeleteUnit: dialog.confirm,
+    cancelDeleteUnit: dialog.cancel,
   };
 }

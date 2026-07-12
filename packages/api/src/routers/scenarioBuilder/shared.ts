@@ -7,6 +7,33 @@ export const listInputSchema = z.object({
 
 export const listInput = listInputSchema.prefault({});
 
+export function createListInputSchema<
+  const TSortValues extends readonly [string, ...string[]],
+  TLinkageSchema extends z.ZodDefault,
+>(
+  sortValues: TSortValues,
+  defaults: {
+    sortBy: TSortValues[number];
+    sortDir?: "asc" | "desc";
+    limit?: number;
+  },
+  linkageSchema: TLinkageSchema,
+) {
+  const schema = listInputSchema.extend({
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(500)
+      .default(defaults.limit ?? 20),
+    sortBy: z.enum(sortValues).default(defaults.sortBy),
+    sortDir: z.enum(["asc", "desc"]).default(defaults.sortDir ?? "asc"),
+    linkageFilter: linkageSchema,
+  });
+
+  return schema.prefault(() => ({}) as z.input<typeof schema>);
+}
+
 export const idSchema = z.guid();
 
 export const scenarioListLinkageFilterSchema = z

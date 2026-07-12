@@ -1,0 +1,47 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "include": ["dependencies", "unlisted", "binaries"],
+  "ignore": ["apps/web/src/routeTree.gen.ts"],
+  "ignoreDependencies": ["shadcn", "tailwindcss", "tw-animate-css", "zod"],
+  "ignoreBinaries": ["read"],
+  "workspaces": {
+    "apps/web": {
+      "entry": [
+        "vite.config.ts",
+        "vitest.config.ts",
+        "src/router.tsx",
+        "src/routes/**/*.ts",
+        "src/routes/**/*.tsx",
+        "tests/setup.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"]
+    },
+    "packages/api": {
+      "entry": ["src/index.ts", "vitest.config.ts", "vitest.setup.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/db": {
+      "entry": ["src/index.ts", "src/seed.ts", "drizzle.config.ts", "vitest.config.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/engine": {
+      "entry": ["src/index.ts", "vitest.config.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/shared": {
+      "entry": ["src/index.ts", "vitest.config.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "e2e": {
+      "entry": [
+        "playwright.config.ts",
+        "global-setup.ts",
+        "global-teardown.ts",
+        "scripts/reset-db.ts",
+        "tests/**/*.test.ts",
+        "unit-tests/*.test.ts"
+      ],
+      "project": ["**/*.ts"]
+    }
+  }
+}

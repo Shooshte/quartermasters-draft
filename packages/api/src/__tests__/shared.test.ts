@@ -1,4 +1,10 @@
+import type { TRPCError } from "@trpc/server";
 import { describe, expect, it } from "vitest";
+import {
+  throwDeleteConflict,
+  throwUniqueNameConflict,
+} from "../routers/scenarioBuilder/crud-errors";
+import { toPaginatedResult } from "../routers/scenarioBuilder/pagination";
 import { findDbError } from "../routers/scenarioBuilder/shared";
 
 describe("findDbError", () => {
@@ -31,5 +37,53 @@ describe("findDbError", () => {
       code: "23505",
       constraint: "items_name_unique",
     });
+  });
+});
+
+describe("CRUD error translation", () => {
+  it("translates wrapped unique violations with the entity label", () => {
+    expect(() => throwUniqueNameConflict({ cause: { code: "23505" } }, "item")).toThrowError(
+      expect.objectContaining<Partial<TRPCError>>({
+        code: "CONFLICT",
+        message: "An item with this name already exists.",
+      }),
+    );
+  });
+
+  it("preserves the unit conflict message article", () => {
+    expect(() => throwUniqueNameConflict({ code: "23505" }, "unit")).toThrowError(
+      expect.objectContaining<Partial<TRPCError>>({
+        code: "CONFLICT",
+        message: "A unit with this name already exists.",
+      }),
+    );
+  });
+
+  it("translates accepted delete constraint codes", () => {
+    expect(() =>
+      throwDeleteConflict({ cause: { code: "23514" } }, "Spell is linked.", ["23503", "23514"]),
+    ).toThrowError(expect.objectContaining({ code: "CONFLICT", message: "Spell is linked." }));
+  });
+
+  it("rethrows unknown errors without changing their identity", () => {
+    const original = new Error("database offline");
+    expect(() => throwUniqueNameConflict(original, "item")).toThrow(original);
+  });
+});
+
+describe("toPaginatedResult", () => {
+  it("builds the stable list response shape", () => {
+    expect(toPaginatedResult([{ id: "one" }], [{ count: 7 }], 2, 3)).toEqual({
+      items: [{ id: "one" }],
+      page: 2,
+      limit: 3,
+      totalCount: 7,
+    });
+  });
+
+  it("rejects a missing count aggregate row", () => {
+    expect(() => toPaginatedResult([], [], 1, 20)).toThrowError(
+      "Pagination count query returned no rows.",
+    );
   });
 });

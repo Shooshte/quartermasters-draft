@@ -1,7 +1,5 @@
 import type { AppRouter } from "@qd/api";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useCallback, useState } from "react";
 import { trpc } from "~/lib/trpc";
 import {
   type LibraryLinkageFilter,
@@ -9,63 +7,39 @@ import {
   type SpellSortBy,
   type SpellSortDir,
 } from "../types";
+import { useEntityList } from "./use-entity-list";
 
 export function useSpellList(
   isActiveTab: boolean,
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  const [spellPage, setSpellPage] = useState(1);
-  const [spellSortBy, setSpellSortBy] = useState<SpellSortBy>("name");
-  const [spellSortDir, setSpellSortDir] = useState<SpellSortDir>("asc");
-
-  const spellsList = useQuery({
-    queryKey: [
-      "scenarioBuilder",
-      "spells",
-      "list",
-      spellPage,
-      spellSortBy,
-      spellSortDir,
-      linkageFilter,
-    ],
-    queryFn: () =>
+  type SpellListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["spells"]["list"];
+  const list = useEntityList<SpellListOutput["items"][number], SpellSortBy>({
+    enabled: isActiveTab || backgroundEnabled,
+    initialSortBy: "name",
+    pageSize: SPELLS_PAGE_SIZE,
+    queryKey: ["scenarioBuilder", "spells", "list", linkageFilter],
+    queryPage: ({ page, sortBy, sortDir }) =>
       trpc.scenarioBuilder.spells.list.query({
-        page: spellPage,
+        page,
         limit: SPELLS_PAGE_SIZE,
-        sortBy: spellSortBy,
-        sortDir: spellSortDir,
+        sortBy,
+        sortDir,
         linkageFilter,
       }),
-    enabled: isActiveTab || backgroundEnabled,
-    placeholderData: keepPreviousData,
   });
 
-  type SpellListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["spells"]["list"];
-  const spellListItems: SpellListOutput["items"] = spellsList.data?.items ?? [];
-  const spellTotalCount: SpellListOutput["totalCount"] = spellsList.data?.totalCount ?? 0;
-  const spellTotalPages = Math.max(1, Math.ceil(spellTotalCount / SPELLS_PAGE_SIZE));
-
-  const setSpellSort = useCallback((sortBy: SpellSortBy, sortDir: SpellSortDir) => {
-    setSpellSortBy(sortBy);
-    setSpellSortDir(sortDir);
-    setSpellPage(1);
-  }, []);
-
-  const setSpellPageAction = useCallback((page: number) => {
-    setSpellPage(page);
-  }, []);
-
   return {
-    spellsList,
-    spellListItems,
-    spellPage,
-    spellTotalPages,
-    spellTotalCount,
-    spellSortBy,
-    spellSortDir,
-    setSpellSort,
-    setSpellPage: setSpellPageAction,
-    spellIsFetching: spellsList.isFetching,
+    spellsList: list.query,
+    spellListItems: list.items,
+    spellPage: list.page,
+    spellTotalPages: list.totalPages,
+    spellTotalCount: list.totalCount,
+    spellSortBy: list.sortBy,
+    spellSortDir: list.sortDir as SpellSortDir,
+    setSpellSort: list.setSort,
+    setSpellPage: list.setPage,
+    spellIsFetching: list.isFetching,
   };
 }

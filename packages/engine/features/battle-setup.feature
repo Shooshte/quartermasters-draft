@@ -406,3 +406,21 @@ Feature: Battle initialization and validation
         | ranged | 1    | Archer |
       When the battle is initialized with seed -Infinity
       Then initialization should fail with an error indicating the seed must be a finite number
+
+    Scenario: A named string seed is accepted
+      Given scenario "Alpha" contains one living unit
+      And scenario "Bravo" contains one living unit
+      When the battle is initialized with string seed "balance-pass-3"
+      Then initialization should succeed
+
+    Scenario: Surrounding whitespace in a string seed is canonicalized
+      Given scenario "Alpha" contains one living unit
+      And scenario "Bravo" contains one living unit
+      When two battles are initialized with string seeds "balance-pass-3" and "  balance-pass-3  "
+      Then both battles should produce identical logs
+
+    Scenario: A blank string seed is rejected
+      Given scenario "Alpha" contains one living unit
+      And scenario "Bravo" contains one living unit
+      When the battle is initialized with string seed "   "
+      Then initialization should fail with an error indicating the seed must not be blank

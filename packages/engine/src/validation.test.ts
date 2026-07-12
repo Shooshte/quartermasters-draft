@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createBattleInput, createScenario, createStats, createUnit } from "./test-helpers";
+import {
+  createBattleInput,
+  createBattleInputWithSeed,
+  createScenario,
+  createStats,
+  createUnit,
+} from "./test-helpers";
 import { validateBattleInput } from "./validation";
 
 describe("battle input validation", () => {
@@ -21,6 +27,14 @@ describe("battle input validation", () => {
     expect(() =>
       validateBattleInput(createBattleInput([createScenario("A"), createScenario("B")], -Infinity)),
     ).toThrow(/finite number/i);
+  });
+
+  it("accepts a non-blank string seed", () => {
+    expect(() => validateBattleInput(createBattleInputWithSeed("balance-pass-3"))).not.toThrow();
+  });
+
+  it("rejects a blank string seed", () => {
+    expect(() => validateBattleInput(createBattleInputWithSeed("   "))).toThrow(/must not be blank/i);
   });
 
   it("throws when all units across both scenarios have zero health", () => {

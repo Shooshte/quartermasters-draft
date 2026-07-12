@@ -4,6 +4,7 @@ export type { BattleLogEntry } from "./log";
 export type {
   BattleInput,
   BattleOptions,
+  BattleSeed,
   BattleScenarioState,
   BattleState,
   BattleUnitState,

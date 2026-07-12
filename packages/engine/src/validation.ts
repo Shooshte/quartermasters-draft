@@ -13,8 +13,11 @@ export class InvalidBattleStateError extends Error {
 }
 
 export function validateBattleInput(input: BattleInput): void {
-  if (!Number.isFinite(input.seed)) {
-    throw new Error("Battle seed must be a finite number.");
+  if (typeof input.seed === "number" && !Number.isFinite(input.seed)) {
+    throw new Error("Battle seed must be a finite number or non-blank string.");
+  }
+  if (typeof input.seed === "string" && input.seed.trim().length === 0) {
+    throw new Error("Battle seed must not be blank.");
   }
 
   const livingUnits = input.scenarios.flatMap((scenario) =>

@@ -104,9 +104,11 @@ export interface TargetingOverrideInput {
   policy: TargetPolicy;
 }
 
+export type BattleSeed = number | string;
+
 export interface BattleInput {
   scenarios: [ScenarioInput, ScenarioInput];
-  seed: number;
+  seed: BattleSeed;
   targetingOverrides?: TargetingOverrideInput[];
 }
 

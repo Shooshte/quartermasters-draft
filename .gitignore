@@ -2,6 +2,7 @@
 .idea/
 .claude/
 .superpowers/
+.worktrees/
 docs/
 
 # dependencies

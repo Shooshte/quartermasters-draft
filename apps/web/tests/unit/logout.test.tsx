@@ -1,3 +1,4 @@
+import { UserRole } from "@qd/shared";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -41,13 +42,17 @@ function stubWindowLocation(path: string, assignSpy: ReturnType<typeof vi.fn>) {
   });
 }
 
-async function renderAuthenticatedLayoutAt(path: string) {
+async function renderAuthenticatedLayoutAt(
+  path: string,
+  userRole: UserRole = UserRole.GAME_MASTER,
+) {
   const { Route: AuthRoute } = await import("../../src/routes/_authenticated");
 
   const rootRoute = createRootRoute();
   const authenticatedRoute = createRoute({
     getParentRoute: () => rootRoute,
     id: "_authenticated",
+    beforeLoad: () => ({ userRole }),
     component: AuthRoute.options.component!,
   });
   const dashboardRoute = createRoute({
@@ -86,6 +91,32 @@ async function renderAuthenticatedLayoutAt(path: string) {
 async function renderAuthenticatedLayout() {
   return renderAuthenticatedLayoutAt("/dashboard");
 }
+
+describe("Authenticated navigation", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows Create and Battle Lab links to game masters", async () => {
+    await renderAuthenticatedLayoutAt("/dashboard", UserRole.GAME_MASTER);
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: "Create" })).toHaveAttribute("href", "/create");
+      expect(screen.getByRole("link", { name: "Battle Lab" })).toHaveAttribute("href", "/battle");
+    });
+  });
+
+  it("does not show game-master links to players", async () => {
+    await renderAuthenticatedLayoutAt("/dashboard", UserRole.PLAYER);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /log\s*out/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("link", { name: "Create" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Battle Lab" })).not.toBeInTheDocument();
+  });
+});
 
 describe("Logout functionality", () => {
   const assignSpy = vi.fn();

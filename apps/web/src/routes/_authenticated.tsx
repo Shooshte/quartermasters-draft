@@ -1,5 +1,5 @@
 import { UserRole } from "@qd/shared";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
@@ -71,6 +71,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { notice } = Route.useSearch();
+  const { userRole } = Route.useRouteContext();
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -99,7 +100,33 @@ function AuthenticatedLayout() {
           {notice}
         </p>
       )}
-      <header className="flex items-center justify-end p-4 border-b border-border/50">
+      <header className="flex items-center justify-end gap-1 border-b border-border/50 p-4">
+        {userRole === UserRole.GAME_MASTER ? (
+          <nav aria-label="Game master" className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm">
+              <Link
+                to="/create"
+                search={{
+                  scenario_id: undefined,
+                  entity_id: undefined,
+                  effect_id: undefined,
+                  spell_id: undefined,
+                  item_id: undefined,
+                  unit_id: undefined,
+                  tab: undefined,
+                  notice: undefined,
+                }}
+              >
+                Create
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/battle" search={{ notice: undefined }}>
+                Battle Lab
+              </Link>
+            </Button>
+          </nav>
+        ) : null}
         <Button variant="ghost" size="sm" onClick={handleLogout} disabled={loggingOut}>
           {loggingOut ? "Logging out…" : "Log out"}
         </Button>

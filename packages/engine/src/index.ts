@@ -4,8 +4,8 @@ export type { BattleLogEntry } from "./log";
 export type {
   BattleInput,
   BattleOptions,
-  BattleSeed,
   BattleScenarioState,
+  BattleSeed,
   BattleState,
   BattleUnitState,
   EffectTemplateInput,
@@ -19,4 +19,4 @@ export type {
   UnitStats,
 } from "./types";
 export type { InvalidBattleStateCode } from "./validation";
-export { InvalidBattleStateError } from "./validation";
+export { InvalidBattleInputError, InvalidBattleStateError } from "./validation";

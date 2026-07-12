@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { BattleInput } from "./types";
 import {
   createBattleInput,
   createBattleInputWithSeed,
@@ -7,9 +6,17 @@ import {
   createStats,
   createUnit,
 } from "./test-helpers";
-import { validateBattleInput } from "./validation";
+import type { BattleInput } from "./types";
+import { InvalidBattleInputError, validateBattleInput } from "./validation";
 
 describe("battle input validation", () => {
+  it("uses a typed error for an invalid scenario graph", () => {
+    expect(InvalidBattleInputError).toBeTypeOf("function");
+    expect(() =>
+      validateBattleInput(createBattleInput([createScenario("A"), createScenario("B")], 1)),
+    ).toThrow(InvalidBattleInputError);
+  });
+
   it("throws when seed is NaN", () => {
     expect(() =>
       validateBattleInput(
@@ -35,7 +42,9 @@ describe("battle input validation", () => {
   });
 
   it("rejects a blank string seed", () => {
-    expect(() => validateBattleInput(createBattleInputWithSeed("   "))).toThrow(/must not be blank/i);
+    expect(() => validateBattleInput(createBattleInputWithSeed("   "))).toThrow(
+      /must not be blank/i,
+    );
   });
 
   it("rejects unsupported runtime seed types", () => {

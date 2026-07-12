@@ -1,4 +1,4 @@
-import type { ScenarioInput } from "@qd/engine";
+import { BattleEngine, type ScenarioInput } from "@qd/engine";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { chainable, describeAuthGuard, gmCtx } from "../scenarioBuilder/test-utils";
 
@@ -101,6 +101,20 @@ describe("battleLabRouter", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
+    it("rejects case-variant identical scenarios before loading them", async () => {
+      await expect(
+        createCaller(gmCtx).battleLab.create({
+          scenarioAId: SCENARIO_A_ID,
+          scenarioBId: SCENARIO_A_ID.toUpperCase(),
+          seed: "mirror",
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringContaining("Choose two different scenarios."),
+      });
+      expect(mockLoadBattleScenario).not.toHaveBeenCalled();
+    });
+
     it("rejects a blank seed", async () => {
       await expect(
         createCaller(gmCtx).battleLab.create({
@@ -168,9 +182,47 @@ describe("battleLabRouter", () => {
       expect(mockInsert).not.toHaveBeenCalled();
     });
 
+    it("sanitizes an unexpected battle engine failure", async () => {
+      mockLoadBattleScenario.mockResolvedValueOnce(scenarioA).mockResolvedValueOnce(scenarioB);
+      vi.spyOn(BattleEngine.prototype, "resolve").mockImplementationOnce(() => {
+        throw new Error("sensitive engine internals");
+      });
+
+      await expect(
+        createCaller(gmCtx).battleLab.create({
+          scenarioAId: SCENARIO_A_ID,
+          scenarioBId: SCENARIO_B_ID,
+          seed: "fixed-seed",
+        }),
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Battle could not be resolved.",
+      });
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
     it("throws INTERNAL_SERVER_ERROR when the replay is not saved", async () => {
       mockLoadBattleScenario.mockResolvedValueOnce(scenarioA).mockResolvedValueOnce(scenarioB);
       mockInsert.mockReturnValue(chainable([]));
+
+      await expect(
+        createCaller(gmCtx).battleLab.create({
+          scenarioAId: SCENARIO_A_ID,
+          scenarioBId: SCENARIO_B_ID,
+          seed: "fixed-seed",
+        }),
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Replay was not saved.",
+      });
+    });
+
+    it("sanitizes a database error while saving the replay", async () => {
+      mockLoadBattleScenario.mockResolvedValueOnce(scenarioA).mockResolvedValueOnce(scenarioB);
+      const returning = vi.fn().mockRejectedValue(new Error("sensitive database details"));
+      mockInsert.mockReturnValue({
+        values: vi.fn().mockReturnValue({ returning }),
+      });
 
       await expect(
         createCaller(gmCtx).battleLab.create({

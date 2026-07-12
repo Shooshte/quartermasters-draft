@@ -1,12 +1,15 @@
 import { battleReplays, db, scenarios } from "@qd/db";
-import { BattleEngine } from "@qd/engine";
+import { BattleEngine, InvalidBattleInputError } from "@qd/engine";
 import { TRPCError } from "@trpc/server";
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
 import { loadBattleScenario } from "./load-scenario";
 
-const idInput = z.string().uuid();
+const idInput = z
+  .string()
+  .uuid()
+  .transform((id) => id.toLowerCase());
 const createInput = z
   .object({
     scenarioAId: idInput,
@@ -40,10 +43,16 @@ async function resolveDefinition(definition: {
       }).resolve(),
     };
   } catch (error) {
+    if (error instanceof InvalidBattleInputError) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: error.message,
+      });
+    }
+
     throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error instanceof Error ? error.message : "Battle could not be resolved.",
-      cause: error,
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Battle could not be resolved.",
     });
   }
 }
@@ -63,7 +72,16 @@ export const battleLabRouter = router({
       seed: input.seed.trim(),
     };
     const resolved = await resolveDefinition(definition);
-    const [replay] = await db.insert(battleReplays).values(definition).returning();
+    let replay: typeof battleReplays.$inferSelect | undefined;
+
+    try {
+      [replay] = await db.insert(battleReplays).values(definition).returning();
+    } catch {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Replay was not saved.",
+      });
+    }
 
     if (!replay) {
       throw new TRPCError({

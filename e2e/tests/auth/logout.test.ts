@@ -63,16 +63,15 @@ test.describe("Logout", () => {
     await context.close();
   });
 
-  test("player logout from /replay/abc445 redirects to /login?next=/replay/abc445", async ({
-    browser,
-  }) => {
+  test("player logout after a forbidden replay omits the next parameter", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await loginAsPlayer(page);
     await page.goto("/replay/abc445");
+    await expectPath(page, "/403");
     await logout(page);
     await expectPath(page, "/login");
-    await expectQueryParams(page, { next: "/replay/abc445" });
+    await expectQueryParams(page, { next: null });
 
     // Verify session is cleared — navigating to a protected route redirects to login
     await page.goto("/play");

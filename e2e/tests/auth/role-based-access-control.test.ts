@@ -29,7 +29,7 @@ test.describe("Role-Based Access Control", () => {
     test("game master can access /replay/abc123", async ({ gmPage: page }) => {
       await page.goto("/replay/abc123");
       await expect(page).toHaveURL(/\/replay\/abc123/);
-      await expect(page.getByRole("heading", { name: "Replay" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Battle lab" })).toBeVisible();
     });
   });
 
@@ -39,22 +39,18 @@ test.describe("Role-Based Access Control", () => {
       await expect(page).toHaveURL(/\/play/);
       await expect(page.getByRole("heading", { name: "Play" })).toBeVisible();
     });
+  });
 
-    test("player can access /replay/abc123", async ({ playerPage: page }) => {
-      await page.goto("/replay/abc123");
-      await expect(page).toHaveURL(/\/replay\/abc123/);
-      await expect(page.getByRole("heading", { name: "Replay" })).toBeVisible();
+  for (const route of ["/create", "/battle", "/replay/abc123"]) {
+    test(`player is shown a 403 page when accessing ${route}`, async ({ playerPage: page }) => {
+      await page.goto(route);
+      await page.waitForURL("**/403");
+      await expect(page).toHaveURL(/\/403$/);
+      await expect(page.getByText("Access Denied")).toBeVisible();
+      await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
+        "href",
+        expect.stringContaining("/play"),
+      );
     });
-  });
-
-  test("player is shown a 403 page when accessing /create", async ({ playerPage: page }) => {
-    await page.goto("/create");
-    await page.waitForURL("**/403");
-    expect(page.url()).toContain("/403");
-    await expect(page.getByText("Access Denied")).toBeVisible();
-    await expect(page.getByRole("link", { name: /go to play/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("/play"),
-    );
-  });
+  }
 });

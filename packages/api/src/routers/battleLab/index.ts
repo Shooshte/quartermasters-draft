@@ -6,10 +6,7 @@ import { z } from "zod";
 import { gmProcedure, router } from "../../trpc";
 import { loadBattleScenario } from "./load-scenario";
 
-const idInput = z
-  .string()
-  .uuid()
-  .transform((id) => id.toLowerCase());
+const idInput = z.guid().transform((id) => id.toLowerCase());
 const createInput = z
   .object({
     scenarioAId: idInput,

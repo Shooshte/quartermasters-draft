@@ -19,6 +19,7 @@ Feature: Route Protection
       | /              |
       | /create        |
       | /play          |
+      | /battle        |
       | /replay/abc123 |
 
   Scenario: Unauthenticated user is redirected to login from /403 without next

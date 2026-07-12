@@ -3,7 +3,7 @@ import { test } from "../worker-base.fixture";
 import { expectPath, expectQueryParams } from "./auth.fixtures";
 
 test.describe("Route Protection", () => {
-  const protectedRoutes = ["/", "/create", "/play", "/replay/abc123"];
+  const protectedRoutes = ["/", "/create", "/play", "/battle", "/replay/abc123"];
 
   for (const route of protectedRoutes) {
     test(`unauthenticated user is redirected to /login from ${route} @smoke`, async ({ page }) => {

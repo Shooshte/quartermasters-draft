@@ -49,6 +49,9 @@ export const UNIT_IDS: Record<string, string> = {
 
 export const AMBUSH_AT_DAWN_ID = "a2000000-0000-0000-0000-000000000001";
 export const CASTLE_SIEGE_ID = "a2000000-0000-0000-0000-000000000002";
+export const AMBUSH_AT_DAWN_NAME = "Ambush at Dawn";
+export const CASTLE_SIEGE_NAME = "Castle Siege";
+export const BATTLE_LAB_SEED = "balance-pass-3";
 
 // ─── Misc ────────────────────────────────────────────────────────────────────
 

@@ -5,6 +5,8 @@ import { chainable, describeAuthGuard, gmCtx } from "../scenarioBuilder/test-uti
 const SCENARIO_A_ID = "a0000000-0000-4000-8000-000000000001";
 const SCENARIO_B_ID = "b0000000-0000-4000-8000-000000000002";
 const REPLAY_ID = "c0000000-0000-4000-8000-000000000003";
+const SEEDED_SCENARIO_A_ID = "a2000000-0000-0000-0000-000000000001";
+const SEEDED_SCENARIO_B_ID = "a2000000-0000-0000-0000-000000000002";
 
 const mockSelect = vi.fn();
 const mockInsert = vi.fn();
@@ -123,6 +125,36 @@ describe("battleLabRouter", () => {
           seed: "   ",
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("accepts deterministic seeded scenario IDs", async () => {
+      const seededScenarioA = livingScenario(SEEDED_SCENARIO_A_ID, "Seeded Alpha");
+      const seededScenarioB = livingScenario(SEEDED_SCENARIO_B_ID, "Seeded Bravo");
+      mockLoadBattleScenario
+        .mockResolvedValueOnce(seededScenarioA)
+        .mockResolvedValueOnce(seededScenarioB);
+      mockInsert.mockReturnValue(
+        chainable([
+          {
+            ...replay,
+            scenarioAId: SEEDED_SCENARIO_A_ID,
+            scenarioBId: SEEDED_SCENARIO_B_ID,
+          },
+        ]),
+      );
+
+      await expect(
+        createCaller(gmCtx).battleLab.create({
+          scenarioAId: SEEDED_SCENARIO_A_ID,
+          scenarioBId: SEEDED_SCENARIO_B_ID,
+          seed: "seed-data-replay",
+        }),
+      ).resolves.toMatchObject({
+        replay: {
+          scenarioAId: SEEDED_SCENARIO_A_ID,
+          scenarioBId: SEEDED_SCENARIO_B_ID,
+        },
+      });
     });
 
     it("resolves before insert, persists the trimmed seed, and returns the replay and result", async () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { BattleInput } from "./types";
 import {
   createBattleInput,
   createBattleInputWithSeed,
@@ -35,6 +36,21 @@ describe("battle input validation", () => {
 
   it("rejects a blank string seed", () => {
     expect(() => validateBattleInput(createBattleInputWithSeed("   "))).toThrow(/must not be blank/i);
+  });
+
+  it("rejects unsupported runtime seed types", () => {
+    const unsupportedSeeds: unknown[] = [true, null, {}, undefined];
+
+    for (const seed of unsupportedSeeds) {
+      const input = {
+        ...createBattleInputWithSeed(42),
+        seed,
+      } as unknown as BattleInput;
+
+      expect(() => validateBattleInput(input)).toThrow(
+        "Battle seed must be a finite number or non-blank string.",
+      );
+    }
   });
 
   it("throws when all units across both scenarios have zero health", () => {

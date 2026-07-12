@@ -13,6 +13,9 @@ export class InvalidBattleStateError extends Error {
 }
 
 export function validateBattleInput(input: BattleInput): void {
+  if (typeof input.seed !== "number" && typeof input.seed !== "string") {
+    throw new Error("Battle seed must be a finite number or non-blank string.");
+  }
   if (typeof input.seed === "number" && !Number.isFinite(input.seed)) {
     throw new Error("Battle seed must be a finite number or non-blank string.");
   }

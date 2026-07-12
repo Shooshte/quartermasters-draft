@@ -873,6 +873,43 @@ describe("useCreatePageState — URL param change resets", () => {
     resetMocks();
   });
 
+  it("keeps the direct entity workspace when the legacy entity id changes", async () => {
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Rage",
+      timingType: "instant",
+      effectType: "buff",
+      intervalMs: null,
+      triggerCount: null,
+    });
+
+    type Search = {
+      tab?: string;
+      effect_id?: string;
+      entity_id?: string;
+    };
+    const { result, rerender } = renderHook(
+      (props: { search: Search }) => useCreatePageState(props.search, vi.fn()),
+      {
+        wrapper: createWrapper(),
+        initialProps: {
+          search: { tab: "Effects", effect_id: "e1", entity_id: "legacy-1" },
+        },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace.mode).toBe("edit");
+      expect(result.current.entityWorkspace.entityId).toBe("e1");
+    });
+
+    rerender({ search: { tab: "Effects", effect_id: "e1", entity_id: "legacy-2" } });
+
+    expect(result.current.entityWorkspace.mode).toBe("edit");
+    expect(result.current.entityWorkspace.entityId).toBe("e1");
+    expect(mockEffectsGet).toHaveBeenCalledOnce();
+  });
+
   it("does not reset or refetch entity workspace when internal selection syncs the URL", async () => {
     mockSpellsGet
       .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })

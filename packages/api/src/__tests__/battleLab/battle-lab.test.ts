@@ -64,7 +64,11 @@ const replay = {
 
 describe("battleLabRouter", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    mockSelect.mockReset();
+    mockInsert.mockReset();
+    mockUpdate.mockReset();
+    mockLoadBattleScenario.mockReset();
   });
 
   describe("scenarioOptions", () => {
@@ -125,6 +129,44 @@ describe("battleLabRouter", () => {
           seed: "   ",
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("does not consume queued persistence mocks when validation fails", async () => {
+      mockLoadBattleScenario
+        .mockResolvedValueOnce(livingScenario(SCENARIO_A_ID, "Stale Alpha"))
+        .mockResolvedValueOnce(livingScenario(SCENARIO_B_ID, "Stale Bravo"));
+      mockInsert.mockReturnValueOnce(chainable([{ ...replay, seed: "stale-seed" }]));
+
+      await expect(
+        createCaller(gmCtx).battleLab.create({
+          scenarioAId: SCENARIO_A_ID,
+          scenarioBId: SCENARIO_B_ID,
+          seed: "   ",
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockLoadBattleScenario).not.toHaveBeenCalled();
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it("starts a valid call without queued values from a previous test", async () => {
+      const freshScenarioA = livingScenario(SCENARIO_A_ID, "Fresh Alpha");
+      const freshScenarioB = livingScenario(SCENARIO_B_ID, "Fresh Bravo");
+      mockLoadBattleScenario.mockImplementation((_executor, id) =>
+        Promise.resolve(id === SCENARIO_A_ID ? freshScenarioA : freshScenarioB),
+      );
+      mockInsert.mockReturnValue(chainable([{ ...replay, seed: "fresh-seed" }]));
+
+      const result = await createCaller(gmCtx).battleLab.create({
+        scenarioAId: SCENARIO_A_ID,
+        scenarioBId: SCENARIO_B_ID,
+        seed: "fresh-seed",
+      });
+
+      expect(result.scenarios).toEqual([
+        { id: SCENARIO_A_ID, name: "Fresh Alpha" },
+        { id: SCENARIO_B_ID, name: "Fresh Bravo" },
+      ]);
+      expect(result.replay.seed).toBe("fresh-seed");
     });
 
     it("accepts deterministic seeded scenario IDs", async () => {

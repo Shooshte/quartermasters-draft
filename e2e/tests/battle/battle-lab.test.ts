@@ -14,6 +14,38 @@ import { BattleLabPage } from "../pages/battle-lab.page";
 
 type ScenarioRowType = "ranged" | "support" | "melee" | "tank";
 
+interface BattleReplayResponse {
+  scenarios: { id: string; name: string }[];
+  result: {
+    winnerId: string | null;
+    ticksElapsed: number;
+    finalState: {
+      scenarios: {
+        id: string;
+        rows: Record<
+          ScenarioRowType,
+          {
+            name: string;
+            rowType: ScenarioRowType;
+            slot: number;
+            currentHealth: number;
+            baseStats: { health: number };
+            itemBonusStats: { health: number };
+            mana: number;
+            actedCount: number;
+            activeEffects: {
+              name: string;
+              remainingTriggers?: number;
+              expiresAtTick?: number;
+            }[];
+          }[]
+        >;
+      }[];
+    };
+    log: { tick: number; type: string; message: string }[];
+  };
+}
+
 interface ScenarioRecord {
   id: string;
   name: string;
@@ -22,11 +54,6 @@ interface ScenarioRecord {
     assignments: { unitId: string }[];
   }[];
 }
-
-const initialScenarios = [
-  { name: AMBUSH_AT_DAWN_NAME, unitCount: 3 },
-  { name: CASTLE_SIEGE_NAME, unitCount: 1 },
-];
 
 test.beforeEach(async ({ resetDb }) => {
   await resetDb();
@@ -39,6 +66,16 @@ test.afterEach(async ({ resetDb }) => {
 async function getScenario(request: APIRequestContext, id: string): Promise<ScenarioRecord> {
   const input = encodeURIComponent(JSON.stringify({ json: { id } }));
   const response = await request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`);
+  await expect(response).toBeOK();
+  return parseTrpcResponse(response);
+}
+
+async function getBattleReplay(
+  request: APIRequestContext,
+  id: string,
+): Promise<BattleReplayResponse> {
+  const input = encodeURIComponent(JSON.stringify({ json: { id } }));
+  const response = await request.get(`${TRPC_BASE}/battleLab.get?input=${input}`);
   await expect(response).toBeOK();
   return parseTrpcResponse(response);
 }
@@ -98,7 +135,8 @@ async function runSavedBattle(page: Page) {
   await battleLab.selectScenario("B", CASTLE_SIEGE_ID, CASTLE_SIEGE_NAME);
   await battleLab.setSeed(BATTLE_LAB_SEED);
   await battleLab.run();
-  await battleLab.expectResult(initialScenarios);
+  const replay = await getBattleReplay(page.request, battleLab.replayId);
+  await battleLab.expectResult(replay);
 
   return battleLab;
 }
@@ -124,7 +162,8 @@ test.describe("Battle Lab", () => {
       { id: CASTLE_SIEGE_ID, name: CASTLE_SIEGE_NAME },
       BATTLE_LAB_SEED,
     );
-    await battleLab.expectResult(initialScenarios);
+    const refreshedReplay = await getBattleReplay(gmPage.request, replayId);
+    await battleLab.expectResult(refreshedReplay);
   });
 
   test("same replay regenerates current scenario data after an edit", async ({ gmPage }) => {
@@ -142,9 +181,7 @@ test.describe("Battle Lab", () => {
       { id: CASTLE_SIEGE_ID, name: CASTLE_SIEGE_NAME },
       BATTLE_LAB_SEED,
     );
-    await battleLab.expectResult([
-      { name: renamedAmbush, unitCount: 3 },
-      { name: CASTLE_SIEGE_NAME, unitCount: 1 },
-    ]);
+    const regeneratedReplay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    await battleLab.expectResult(regeneratedReplay);
   });
 });

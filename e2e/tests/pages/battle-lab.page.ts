@@ -2,14 +2,67 @@ import { expect, type Page } from "@playwright/test";
 
 type ScenarioSide = "A" | "B";
 
-interface ExpectedScenario {
+const rowOrder = ["tank", "melee", "ranged", "support"] as const;
+
+type ScenarioRowType = (typeof rowOrder)[number];
+
+interface ExpectedBattleUnit {
   name: string;
-  unitCount: number;
+  rowType: ScenarioRowType;
+  slot: number;
+  currentHealth: number;
+  baseStats: { health: number };
+  itemBonusStats: { health: number };
+  mana: number;
+  actedCount: number;
+  activeEffects: {
+    name: string;
+    remainingTriggers?: number;
+    expiresAtTick?: number;
+  }[];
+}
+
+interface ExpectedBattleReplay {
+  scenarios: { id: string; name: string }[];
+  result: {
+    winnerId: string | null;
+    ticksElapsed: number;
+    finalState: {
+      scenarios: {
+        id: string;
+        rows: Record<ScenarioRowType, ExpectedBattleUnit[]>;
+      }[];
+    };
+    log: { tick: number; type: string; message: string }[];
+  };
 }
 
 interface ExpectedSelection {
   id: string;
   name: string;
+}
+
+function displayRow(row: ScenarioRowType) {
+  return `${row.charAt(0).toUpperCase()}${row.slice(1)}`;
+}
+
+function displayEffects(unit: ExpectedBattleUnit) {
+  if (unit.activeEffects.length === 0) return "—";
+
+  return unit.activeEffects
+    .map((effect) => {
+      if (effect.remainingTriggers !== undefined) {
+        const triggerLabel = effect.remainingTriggers === 1 ? "trigger" : "triggers";
+        return `${effect.name} (${effect.remainingTriggers} ${triggerLabel} remaining)`;
+      }
+
+      if (effect.expiresAtTick !== undefined) {
+        return `${effect.name} (until tick ${effect.expiresAtTick})`;
+      }
+
+      return effect.name;
+    })
+    .join(", ");
 }
 
 export class BattleLabPage {
@@ -71,29 +124,60 @@ export class BattleLabPage {
     await expect(this.page.getByRole("textbox", { name: "Battle seed" })).toHaveValue(seed);
   }
 
-  async expectResult(expectedScenarios: ExpectedScenario[]) {
+  async expectResult(expected: ExpectedBattleReplay) {
+    const winner = expected.scenarios.find((scenario) => scenario.id === expected.result.winnerId);
     await expect(
-      this.page.getByRole("heading", { name: /(?: wins|^Draw$)/, level: 2 }),
+      this.page.getByRole("heading", {
+        name: winner ? `${winner.name} wins` : "Draw",
+        level: 2,
+        exact: true,
+      }),
     ).toBeVisible();
-    await expect(this.page.getByText(/^\d+ ticks$/)).toBeVisible();
+    await expect(
+      this.page.getByText(`${expected.result.ticksElapsed} ticks`, { exact: true }),
+    ).toBeVisible();
 
-    for (const scenario of expectedScenarios) {
+    for (const finalScenario of expected.result.finalState.scenarios) {
+      const scenario = expected.scenarios.find((candidate) => candidate.id === finalScenario.id);
+      if (!scenario) {
+        throw new Error(`Expected scenario metadata for final-state scenario ${finalScenario.id}`);
+      }
+
       const table = this.page.getByRole("table", {
         name: `${scenario.name} final state`,
       });
+      const units = rowOrder.flatMap((row) => finalScenario.rows[row]);
       await expect(table).toBeVisible();
-      await expect(table.getByRole("row")).toHaveCount(scenario.unitCount + 1);
+      await expect(table.getByRole("row")).toHaveCount(units.length + 1);
+
+      for (const [index, unit] of units.entries()) {
+        const row = table.getByRole("row").nth(index + 1);
+        await expect(row.getByRole("cell")).toHaveText([
+          unit.name,
+          displayRow(unit.rowType),
+          String(unit.slot),
+          `${unit.currentHealth} / ${unit.baseStats.health + unit.itemBonusStats.health}`,
+          unit.currentHealth > 0 ? "Alive" : "Dead",
+          String(unit.mana),
+          String(unit.actedCount),
+          displayEffects(unit),
+        ]);
+      }
     }
 
     const eventLedger = this.page.getByRole("list", { name: "Battle events" });
     const eventEntries = eventLedger.getByRole("listitem");
     await expect(eventLedger).toBeVisible();
-    await expect(eventLedger.getByText(/^(?:attack|battle end)$/i).first()).toBeVisible();
+    await expect(eventEntries).toHaveCount(expected.result.log.length);
 
-    const tickLabels = await eventEntries.getByText(/^Tick \d+$/).allTextContents();
-    const ticks = tickLabels.map((label) => Number(label.replace("Tick ", "")));
-    expect(ticks.length).toBeGreaterThan(0);
-    expect(ticks).toEqual([...ticks].sort((left, right) => left - right));
+    for (const [index, entry] of expected.result.log.entries()) {
+      const renderedEntry = eventEntries.nth(index);
+      await expect(renderedEntry.getByText(`Tick ${entry.tick}`, { exact: true })).toBeVisible();
+      await expect(
+        renderedEntry.getByText(entry.type.replaceAll("-", " "), { exact: true }),
+      ).toBeVisible();
+      await expect(renderedEntry.getByText(entry.message, { exact: true })).toBeVisible();
+    }
   }
 
   get replayId() {

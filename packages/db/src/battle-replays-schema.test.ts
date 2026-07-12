@@ -7,9 +7,7 @@ describe("battleReplays schema", () => {
     expect(schema.battleReplays).toBeDefined();
     const config = getTableConfig(schema.battleReplays);
     expect(config.columns.find((column) => column.name === "seed")?.dataType).toBe("string");
-    expect(config.checks.map((check) => check.name)).toContain(
-      "battle_replays_distinct_scenarios",
-    );
+    expect(config.checks.map((check) => check.name)).toContain("battle_replays_distinct_scenarios");
   });
 
   it("cascades deletion through both scenario references", () => {

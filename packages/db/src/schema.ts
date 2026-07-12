@@ -381,9 +381,6 @@ export const battleReplays = pgTable(
   (table) => [
     index("battle_replays_scenario_a_id_idx").on(table.scenarioAId),
     index("battle_replays_scenario_b_id_idx").on(table.scenarioBId),
-    check(
-      "battle_replays_distinct_scenarios",
-      sql`${table.scenarioAId} <> ${table.scenarioBId}`,
-    ),
+    check("battle_replays_distinct_scenarios", sql`${table.scenarioAId} <> ${table.scenarioBId}`),
   ],
 );

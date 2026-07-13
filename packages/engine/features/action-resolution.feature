@@ -1,7 +1,10 @@
 Feature: Action resolution
   When a unit's action bar reaches 100, it acts. The engine iterates through
   equipped items in priority order and casts every affordable spell. If no
-  items were cast, the unit falls back to a free basic attack.
+  spells were cast, the unit falls back to a free basic attack. A spell with
+  no valid target is ignored: it consumes no item activation cost and creates
+  no spell-cast log entry. allowedRowTypes restricts target rows, not the
+  caster's row.
 
   Background:
     Given a battle with two opposing scenarios
@@ -187,10 +190,10 @@ Feature: Action resolution
     And the basic attack deals damage equal to "Warrior" meleeDmg of 15
 
   # ---------------------------------------------------------------------------
-  # Spell row restriction scenarios
+  # Target row restriction scenarios
   # ---------------------------------------------------------------------------
 
-  Scenario: Spell restricted to specific rows is not cast by unit in wrong row
+  Scenario: Spell with no living units in its allowed target rows is ignored
     Given "Warrior" is placed in the "melee" row
     And "Warrior" has the following equipped items:
       | itemName       | priority | activationManaCost | activationHealthCost | linkedSpell   |
@@ -201,6 +204,7 @@ Feature: Action resolution
       | support |
     When "Warrior" acts
     Then "Warrior" does not cast the spell "Aimed Shot"
+    And "Warrior" mana is not reduced
     And "Warrior" performs a basic attack
 
   Scenario: Spell with no row restrictions can be cast from any row
@@ -214,8 +218,9 @@ Feature: Action resolution
     And "Warrior" mana is reduced by 10
     And "Warrior" does not perform a basic attack
 
-  Scenario: Row-restricted spell is cast when unit is in an allowed row
-    Given "Warrior" is placed in the "ranged" row
+  Scenario: Target-row-restricted spell is cast when an allowed target row has a living unit
+    Given "Warrior" is placed in the "melee" row
+    And the opposing scenario has a living unit in the "ranged" row
     And "Warrior" has the following equipped items:
       | itemName       | priority | activationManaCost | activationHealthCost | linkedSpell   |
       | Sniper Bow     | 1        | 10                 | 0                    | Aimed Shot    |
@@ -228,7 +233,7 @@ Feature: Action resolution
     And "Warrior" mana is reduced by 10
     And "Warrior" does not perform a basic attack
 
-  Scenario: Row-restricted spell is skipped but later unrestricted item is still cast
+  Scenario: Targetless spell is skipped but later unrestricted item is still cast
     Given "Warrior" is placed in the "melee" row
     And "Warrior" has the following equipped items:
       | itemName       | priority | activationManaCost | activationHealthCost | linkedSpell     |
@@ -243,3 +248,22 @@ Feature: Action resolution
     And "Warrior" casts the spell "Flame Strike"
     And "Warrior" mana is reduced by 10
     And "Warrior" does not perform a basic attack
+
+  Scenario: Targetless spell on an item is skipped before a valid later spell on that item
+    Given "Warrior" is placed in the "melee" row
+    And "Warrior" has an item costing 10 mana and 15 health with spells "Aimed Shot" then "Fireball"
+    And the spell "Aimed Shot" targets only the "ranged" row, which has no living enemies
+    And the spell "Fireball" has no row restrictions
+    When "Warrior" acts
+    Then "Warrior" does not cast the spell "Aimed Shot"
+    And "Warrior" casts the spell "Fireball"
+    And "Warrior" mana is reduced by 10
+    And "Warrior" health is reduced by 15
+
+  Scenario: Later spell is ignored after an earlier spell eliminates its final target
+    Given "Warrior" has an item costing 10 mana with spells "Alpha Blast" then "Beta Follow-up"
+    And "Alpha Blast" eliminates the only valid enemy target
+    When "Warrior" acts
+    Then "Warrior" casts the spell "Alpha Blast"
+    And "Warrior" does not cast the spell "Beta Follow-up"
+    And the spell log contains no entry for "Beta Follow-up"

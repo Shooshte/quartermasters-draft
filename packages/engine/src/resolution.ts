@@ -1,4 +1,4 @@
-import { applySpell } from "./effects";
+import { applySpellToTargets } from "./effects";
 import { pushLog } from "./logging";
 import {
   computeBasicAttackDamage,
@@ -105,24 +105,29 @@ export function resolveUnitAction(
     const castableSpells = item.linkedSpells;
     if (castableSpells.length === 0) continue;
 
-    unit.mana -= item.activationManaCost;
-    unit.currentHealth -= item.activationHealthCost;
+    let itemActivated = false;
 
     for (const spell of [...castableSpells].sort((left, right) =>
       left.name.localeCompare(right.name),
     )) {
+      const targets = selectTargets(state, unit, spell);
+      if (targets.length === 0) continue;
+
+      if (!itemActivated) {
+        unit.mana -= item.activationManaCost;
+        unit.currentHealth -= item.activationHealthCost;
+        itemActivated = true;
+      }
+
       const startingHealthByTarget = new Map(
-        selectTargets(state, unit, spell).map((target) => [
-          target.instanceId,
-          target.currentHealth,
-        ]),
+        targets.map((target) => [target.instanceId, target.currentHealth]),
       );
-      const result = applySpell(state, unit, spell, tick);
+      const result = applySpellToTargets(state, unit, spell, targets, tick);
       castSpellNames.push(spell.name);
       totalDamage += result.targets.reduce((sum, target) => {
-        // biome-ignore lint/style/noNonNullAssertion: applySpell only returns targets from battle state.
+        // biome-ignore lint/style/noNonNullAssertion: applySpellToTargets only receives targets from battle state.
         const scenario = findScenario(state, target.scenarioId)!;
-        // biome-ignore lint/style/noNonNullAssertion: applySpell preserves returned targets in their row.
+        // biome-ignore lint/style/noNonNullAssertion: applySpellToTargets preserves targets in their row.
         const updated = scenario.rows[target.rowType].find(
           (candidate) => candidate.instanceId === target.instanceId,
         )!;

@@ -189,13 +189,13 @@ function applyEffectTemplate(
   return [effect.name ?? "Effect"];
 }
 
-export function applySpell(
+export function applySpellToTargets(
   state: BattleState,
   caster: BattleUnitState,
   spell: SpellInput,
+  targets: BattleUnitState[],
   tick = state.tick,
 ): ApplySpellResult {
-  const targets = selectTargets(state, caster, spell);
   const spellEntry: SpellCastLogEntry = {
     tick,
     type: "spell-cast",
@@ -225,6 +225,15 @@ export function applySpell(
     targets,
     appliedEffectNames,
   };
+}
+
+export function applySpell(
+  state: BattleState,
+  caster: BattleUnitState,
+  spell: SpellInput,
+  tick = state.tick,
+): ApplySpellResult {
+  return applySpellToTargets(state, caster, spell, selectTargets(state, caster, spell), tick);
 }
 
 export function processOngoingEffects(state: BattleState, elapsedTicks: number): void {

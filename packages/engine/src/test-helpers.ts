@@ -15,6 +15,7 @@ import type {
 export function createStats(overrides: Partial<UnitStats> = {}): UnitStats {
   return {
     health: 100,
+    mana: 100,
     meleeDmg: 10,
     rangedDmg: 10,
     manaRegen: 0,
@@ -37,6 +38,7 @@ export function createEffect(
     durationTicks: null,
     meleeDmg: null,
     health: null,
+    mana: null,
     rangedDmg: null,
     manaRegen: null,
     spellDmg: null,
@@ -71,6 +73,7 @@ export function createItem(
 ): BattleItemState {
   return {
     id: overrides.id ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
+    mana: 0,
     meleeDmg: 0,
     rangedDmg: 0,
     manaRegen: 0,

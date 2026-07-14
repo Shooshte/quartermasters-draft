@@ -12,6 +12,7 @@ describe("item-form", () => {
       name: "",
       meleeDmg: "0",
       rangedDmg: "0",
+      mana: "0",
       manaRegen: "0",
       spellDmg: "0",
       dodge: "0",
@@ -22,12 +23,23 @@ describe("item-form", () => {
     });
   });
 
+  it("accepts signed mana capacity modifiers", () => {
+    expect(
+      normalizeItemFormValues({
+        ...createDefaultItemFormValues(),
+        name: "Draining Focus",
+        mana: "-25",
+      }).mana,
+    ).toBe(-25);
+  });
+
   it("normalizes decimal stats, trims names, and dedupes linked spells", () => {
     expect(
       normalizeItemFormValues({
         name: "  Arcane Focus  ",
         meleeDmg: "12.5",
         rangedDmg: "0",
+        mana: "0",
         manaRegen: "-1.25",
         spellDmg: "4",
         dodge: "0",
@@ -40,6 +52,7 @@ describe("item-form", () => {
       name: "Arcane Focus",
       meleeDmg: 12.5,
       rangedDmg: 0,
+      mana: 0,
       manaRegen: -1.25,
       spellDmg: 4,
       dodge: 0,
@@ -56,6 +69,7 @@ describe("item-form", () => {
         name: "Broken Relay",
         meleeDmg: "0",
         rangedDmg: "0",
+        mana: "0",
         manaRegen: "0",
         spellDmg: "0",
         dodge: "0",
@@ -76,6 +90,7 @@ describe("item-form", () => {
         name: "Spell-less Relic",
         meleeDmg: "0",
         rangedDmg: "0",
+        mana: "0",
         manaRegen: "0",
         spellDmg: "0",
         dodge: "0",
@@ -94,6 +109,7 @@ describe("item-form", () => {
           name: "Oak Staff",
           meleeDmg: "0.0",
           rangedDmg: "0",
+          mana: "0",
           manaRegen: "3",
           spellDmg: "12.00",
           dodge: "0",
@@ -106,6 +122,7 @@ describe("item-form", () => {
           name: "Oak Staff",
           meleeDmg: 0,
           rangedDmg: 0,
+          mana: 0,
           manaRegen: 3,
           spellDmg: 12,
           dodge: 0,

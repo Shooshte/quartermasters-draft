@@ -18,13 +18,14 @@ export function getEffectiveStats(
   baseStats: UnitStats,
   items: Pick<
     BattleItemState,
-    "meleeDmg" | "rangedDmg" | "manaRegen" | "spellDmg" | "dodge" | "criticalChance"
+    "mana" | "meleeDmg" | "rangedDmg" | "manaRegen" | "spellDmg" | "dodge" | "criticalChance"
   >[],
   activeModifiers: ModifierLike[],
 ): UnitStats {
   const totals = { ...baseStats };
 
   for (const item of items) {
+    totals.mana += item.mana;
     totals.meleeDmg += item.meleeDmg;
     totals.rangedDmg += item.rangedDmg;
     totals.manaRegen += item.manaRegen;

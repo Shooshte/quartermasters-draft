@@ -291,6 +291,23 @@ describe("effectsRouter", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
+    it.each([
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ])("rejects non-finite mana modifier %s", async (mana) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Impossible Reservoir",
+          timingType: "instant",
+          effectType: "buff",
+          mana,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
     it("maps duplicate names to CONFLICT", async () => {
       mockInsertFn.mockReturnValue(chainable([]));
       mockInsertFn.mockImplementationOnce(() => ({

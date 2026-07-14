@@ -16,6 +16,7 @@ type UnitRecord = {
   id: string;
   name: string;
   health: number;
+  mana: number;
   meleeDmg: number;
   rangedDmg: number;
   manaRegen: number;
@@ -30,6 +31,7 @@ type ItemRecord = {
   name: string;
   meleeDmg: number;
   rangedDmg: number;
+  mana: number;
   manaRegen: number;
   spellDmg: number;
   dodge: number;
@@ -58,6 +60,7 @@ type EffectRecord = {
   durationTicks: number | null;
   meleeDmg: number | null;
   health: number | null;
+  mana: number | null;
   rangedDmg: number | null;
   manaRegen: number | null;
   spellDmg: number | null;
@@ -149,6 +152,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
           durationTicks: effect.durationTicks,
           meleeDmg: effect.meleeDmg,
           health: effect.health,
+          mana: effect.mana,
           rangedDmg: effect.rangedDmg,
           manaRegen: effect.manaRegen,
           spellDmg: effect.spellDmg,
@@ -187,6 +191,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
         name: item.name,
         meleeDmg: item.meleeDmg,
         rangedDmg: item.rangedDmg,
+        mana: item.mana,
         manaRegen: item.manaRegen,
         spellDmg: item.spellDmg,
         dodge: item.dodge,
@@ -210,6 +215,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
       name: assignment.unit.name,
       stats: {
         health: assignment.unit.health,
+        mana: assignment.unit.mana,
         meleeDmg: assignment.unit.meleeDmg,
         rangedDmg: assignment.unit.rangedDmg,
         manaRegen: assignment.unit.manaRegen,

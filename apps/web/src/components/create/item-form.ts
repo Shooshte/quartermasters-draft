@@ -7,6 +7,7 @@ export interface SpellOption {
 export const ITEM_NUMERIC_FIELDS = [
   "meleeDmg",
   "rangedDmg",
+  "mana",
   "manaRegen",
   "spellDmg",
   "dodge",
@@ -17,7 +18,7 @@ export const ITEM_NUMERIC_FIELDS = [
 
 export const ITEM_COMBAT_FIELDS = ["meleeDmg", "rangedDmg", "spellDmg", "criticalChance"] as const;
 
-export const ITEM_UTILITY_FIELDS = ["manaRegen", "dodge"] as const;
+export const ITEM_UTILITY_FIELDS = ["mana", "manaRegen", "dodge"] as const;
 export const ITEM_ACTIVATION_FIELDS = ["activationManaCost", "activationHealthCost"] as const;
 
 export interface ItemFormValues {
@@ -25,6 +26,7 @@ export interface ItemFormValues {
   name: string;
   meleeDmg: string;
   rangedDmg: string;
+  mana: string;
   manaRegen: string;
   spellDmg: string;
   dodge: string;
@@ -38,6 +40,7 @@ type ItemRecord = {
   name?: string | null;
   meleeDmg?: number | null;
   rangedDmg?: number | null;
+  mana?: number | null;
   manaRegen?: number | null;
   spellDmg?: number | null;
   dodge?: number | null;
@@ -53,6 +56,7 @@ export interface NormalizedItemInput {
   name: string;
   meleeDmg: number;
   rangedDmg: number;
+  mana: number;
   manaRegen: number;
   spellDmg: number;
   dodge: number;
@@ -65,6 +69,7 @@ export interface NormalizedItemInput {
 const ITEM_LABELS: Record<(typeof ITEM_NUMERIC_FIELDS)[number], string> = {
   meleeDmg: "Melee Damage",
   rangedDmg: "Ranged Damage",
+  mana: "Mana",
   manaRegen: "Mana Regen",
   spellDmg: "Spell Damage",
   dodge: "Dodge",
@@ -82,6 +87,7 @@ export function createDefaultItemFormValues(): ItemFormValues {
     name: "",
     meleeDmg: "0",
     rangedDmg: "0",
+    mana: "0",
     manaRegen: "0",
     spellDmg: "0",
     dodge: "0",
@@ -105,6 +111,7 @@ export function itemRecordToFormValues(record: Partial<ItemRecord>): ItemFormVal
     name: record.name ?? "",
     meleeDmg: numberToFormValue(record.meleeDmg),
     rangedDmg: numberToFormValue(record.rangedDmg),
+    mana: numberToFormValue(record.mana),
     manaRegen: numberToFormValue(record.manaRegen),
     spellDmg: numberToFormValue(record.spellDmg),
     dodge: numberToFormValue(record.dodge),
@@ -128,6 +135,7 @@ export function normalizeItemFormValues(values: ItemFormValues): NormalizedItemI
     name: values.name.trim(),
     meleeDmg: parseNumericField(values.meleeDmg),
     rangedDmg: parseNumericField(values.rangedDmg),
+    mana: parseNumericField(values.mana ?? "0"),
     manaRegen: parseNumericField(values.manaRegen),
     spellDmg: parseNumericField(values.spellDmg),
     dodge: parseNumericField(values.dodge),
@@ -147,7 +155,7 @@ export function validateItemForm(values: ItemFormValues): ItemFieldErrors {
   }
 
   for (const field of ITEM_NUMERIC_FIELDS) {
-    if (Number.isNaN(normalized[field])) {
+    if (!Number.isFinite(normalized[field])) {
       errors[field] = "Must be a valid number";
     }
   }

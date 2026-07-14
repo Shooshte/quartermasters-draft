@@ -8,6 +8,7 @@ const defaultFormValues: ItemFormValues = {
   name: "",
   meleeDmg: "0",
   rangedDmg: "0",
+  mana: "0",
   manaRegen: "0",
   spellDmg: "0",
   dodge: "0",
@@ -60,6 +61,7 @@ describe("ItemWorkspaceForm", () => {
     expect(screen.getByText("Activation Costs")).toBeInTheDocument();
     expect(screen.getByTestId("item-spell-picker")).toBeInTheDocument();
     expect(screen.getByTestId("item-meleeDmg-input")).toBeInTheDocument();
+    expect(screen.getByTestId("item-mana-input")).toBeInTheDocument();
     expect(screen.getByTestId("item-activationManaCost-input")).toBeInTheDocument();
   });
 

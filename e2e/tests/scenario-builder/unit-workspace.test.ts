@@ -29,7 +29,7 @@ test.describe("Unit Workspace", () => {
     await expect(unit.saveButton).toBeDisabled();
   });
 
-  test("stat fields default to zero", async ({ gmPage }) => {
+  test("mana defaults to 100 and other stat fields default to zero", async ({ gmPage }) => {
     const unit = new UnitWorkspacePage(gmPage);
     await unit.openNew();
 
@@ -40,6 +40,7 @@ test.describe("Unit Workspace", () => {
     await expectAllStats(gmPage, "unit", {
       meleeDmg: "0",
       health: "0",
+      mana: "100",
       rangedDmg: "0",
       manaRegen: "0",
       spellDmg: "0",
@@ -57,6 +58,7 @@ test.describe("Unit Workspace", () => {
     await unit.fillStats({
       meleeDmg: "18",
       health: "95",
+      mana: "200",
       rangedDmg: "6",
       manaRegen: "2",
       spellDmg: "4",
@@ -70,6 +72,7 @@ test.describe("Unit Workspace", () => {
     await expectAllStats(gmPage, "unit", {
       meleeDmg: "18",
       health: "95",
+      mana: "200",
       rangedDmg: "6",
       manaRegen: "2",
       spellDmg: "4",

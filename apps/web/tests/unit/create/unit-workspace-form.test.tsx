@@ -8,6 +8,7 @@ const defaultFormValues: UnitFormValues = {
   name: "",
   meleeDmg: "0",
   health: "0",
+  mana: "100",
   rangedDmg: "0",
   manaRegen: "0",
   spellDmg: "0",
@@ -60,6 +61,7 @@ describe("UnitWorkspaceForm", () => {
     expect(screen.getByTestId("unit-item-picker")).toBeInTheDocument();
     expect(screen.getByTestId("unit-meleeDmg-input")).toBeInTheDocument();
     expect(screen.getByTestId("unit-health-input")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-mana-input")).toBeInTheDocument();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Unit");
   });
 

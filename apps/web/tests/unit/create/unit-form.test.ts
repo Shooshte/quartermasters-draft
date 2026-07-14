@@ -12,6 +12,7 @@ describe("unit-form", () => {
       name: "",
       meleeDmg: "0",
       health: "0",
+      mana: "100",
       rangedDmg: "0",
       manaRegen: "0",
       spellDmg: "0",
@@ -22,12 +23,33 @@ describe("unit-form", () => {
     });
   });
 
+  it("rejects negative mana capacity", () => {
+    expect(
+      validateUnitForm({
+        ...createDefaultUnitFormValues(),
+        name: "Broken Mage",
+        mana: "-1",
+      }),
+    ).toMatchObject({ mana: "Must be zero or greater" });
+  });
+
+  it("rejects non-finite mana capacity", () => {
+    expect(
+      validateUnitForm({
+        ...createDefaultUnitFormValues(),
+        name: "Impossible Mage",
+        mana: "Infinity",
+      }),
+    ).toMatchObject({ mana: "Must be a valid number" });
+  });
+
   it("normalizes decimal stats, trims names, and preserves ordered duplicate linked items", () => {
     expect(
       normalizeUnitFormValues({
         name: "  Twinblade Adept  ",
         meleeDmg: "12.5",
         health: "82.25",
+        mana: "100",
         rangedDmg: "0",
         manaRegen: "-1.25",
         spellDmg: "4",
@@ -40,6 +62,7 @@ describe("unit-form", () => {
       name: "Twinblade Adept",
       meleeDmg: 12.5,
       health: 82.25,
+      mana: 100,
       rangedDmg: 0,
       manaRegen: -1.25,
       spellDmg: 4,
@@ -56,6 +79,7 @@ describe("unit-form", () => {
         name: " ",
         meleeDmg: "0",
         health: "oops",
+        mana: "100",
         rangedDmg: "0",
         manaRegen: "0",
         spellDmg: "0",
@@ -76,6 +100,7 @@ describe("unit-form", () => {
         name: "Barehand Adept",
         meleeDmg: "0",
         health: "0",
+        mana: "100",
         rangedDmg: "0",
         manaRegen: "0",
         spellDmg: "0",
@@ -94,6 +119,7 @@ describe("unit-form", () => {
           name: "Barbarian",
           meleeDmg: "15.0",
           health: "100.00",
+          mana: "100",
           rangedDmg: "0",
           manaRegen: "0",
           spellDmg: "0",
@@ -106,6 +132,7 @@ describe("unit-form", () => {
           name: "Barbarian",
           meleeDmg: 15,
           health: 100,
+          mana: 100,
           rangedDmg: 0,
           manaRegen: 0,
           spellDmg: 0,

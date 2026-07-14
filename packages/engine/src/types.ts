@@ -13,6 +13,7 @@ export type TargetPolicy = (typeof TARGET_POLICIES)[number];
 
 export const STAT_KEYS = [
   "health",
+  "mana",
   "meleeDmg",
   "rangedDmg",
   "manaRegen",
@@ -39,6 +40,7 @@ export interface EffectTemplateInput {
   durationTicks?: number | null;
   meleeDmg?: number | null;
   health?: number | null;
+  mana?: number | null;
   rangedDmg?: number | null;
   manaRegen?: number | null;
   spellDmg?: number | null;
@@ -69,6 +71,7 @@ export interface SpellInput {
 export interface ItemInput {
   id?: string;
   name: string;
+  mana?: number;
   meleeDmg?: number;
   rangedDmg?: number;
   manaRegen?: number;
@@ -87,7 +90,6 @@ export interface UnitInput {
   items?: ItemInput[];
   targetPolicy?: TargetPolicy;
   currentHealth?: number;
-  startingMana?: number;
   startingActionBar?: number;
 }
 
@@ -121,6 +123,7 @@ export interface BattleOptions {
 export interface BattleItemState {
   id?: string;
   name: string;
+  mana: number;
   meleeDmg: number;
   rangedDmg: number;
   manaRegen: number;

@@ -330,6 +330,7 @@ describe("itemSeedData", () => {
       expect(item.name).toBeDefined();
       expect(item.meleeDmg).toBeDefined();
       expect(item.rangedDmg).toBeDefined();
+      expect(item.mana).toBe(0);
       expect(item.manaRegen).toBeDefined();
       expect(item.spellDmg).toBeDefined();
       expect(item.dodge).toBeDefined();
@@ -355,6 +356,7 @@ describe("itemSeedData", () => {
     for (const item of itemSeedData) {
       expect(typeof item.meleeDmg).toBe("number");
       expect(typeof item.rangedDmg).toBe("number");
+      expect(typeof item.mana).toBe("number");
       expect(typeof item.manaRegen).toBe("number");
       expect(typeof item.spellDmg).toBe("number");
       expect(typeof item.dodge).toBe("number");
@@ -426,6 +428,7 @@ describe("unitSeedData", () => {
       expect(unit.name).toBeDefined();
       expect(unit.meleeDmg).toBeDefined();
       expect(unit.health).toBeDefined();
+      expect(unit.mana).toBe(100);
       expect(unit.rangedDmg).toBeDefined();
       expect(unit.manaRegen).toBeDefined();
       expect(unit.spellDmg).toBeDefined();
@@ -451,6 +454,7 @@ describe("unitSeedData", () => {
     for (const unit of unitSeedData) {
       expect(typeof unit.meleeDmg).toBe("number");
       expect(typeof unit.health).toBe("number");
+      expect(typeof unit.mana).toBe("number");
       expect(typeof unit.rangedDmg).toBe("number");
       expect(typeof unit.manaRegen).toBe("number");
       expect(typeof unit.spellDmg).toBe("number");

@@ -32,6 +32,7 @@ const { createCaller } = await import("../../root");
 
 const stats = {
   health: 10,
+  mana: 100,
   meleeDmg: 10,
   rangedDmg: 0,
   manaRegen: 0,

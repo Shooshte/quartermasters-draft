@@ -109,11 +109,11 @@ Feature: Battle initialization and validation
       When the battle is initialized with seed 7
       Then every unit in the battle state should have actionBar equal to 0
 
-  # ── Mana starts at zero ─────────────────────────────────────────────
+  # ── Mana starts full ────────────────────────────────────────────────
 
-  Rule: All units start with mana at 0
+  Rule: All units start with mana equal to effective mana capacity
 
-    Scenario: Mana is zero for every unit at initialization
+    Scenario: Mana is full for every unit at initialization
       Given scenario "Alpha" with rows:
         | row     | slot | unit      |
         | tank    | 1    | Templar   |
@@ -123,7 +123,7 @@ Feature: Battle initialization and validation
         | row     | slot | unit   |
         | support | 1    | Mage   |
       When the battle is initialized with seed 99
-      Then every unit in the battle state should have mana equal to 0
+      Then every unit in the battle state should have mana equal to its effective mana stat
 
   # ── Health equals base stat ─────────────────────────────────────────
 

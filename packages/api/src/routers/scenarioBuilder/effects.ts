@@ -38,6 +38,7 @@ const effectInputShape = {
   durationTicks: nullablePositiveInteger,
   meleeDmg: nullableNumber,
   health: nullableNumber,
+  mana: z.number().finite().nullable().default(null),
   rangedDmg: nullableNumber,
   manaRegen: nullableNumber,
   spellDmg: nullableNumber,

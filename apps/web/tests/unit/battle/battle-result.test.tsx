@@ -9,6 +9,7 @@ type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["row
 
 const stats = {
   health: 120,
+  mana: 100,
   meleeDmg: 28,
   rangedDmg: 0,
   manaRegen: 2,
@@ -20,6 +21,7 @@ const stats = {
 
 const zeroStats = {
   health: 0,
+  mana: 0,
   meleeDmg: 0,
   rangedDmg: 0,
   manaRegen: 0,

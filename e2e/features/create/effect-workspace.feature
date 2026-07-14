@@ -22,6 +22,10 @@ Feature: Effect workspace CRUD
     When I create a new interval effect named "Battle Rhythm"
     Then the saved effect should retain its tick timing values
 
+  Scenario: Create a signed mana capacity modifier
+    When I create a new effect named "Mana Drain" with mana -40
+    Then reloading the effect by URL should show mana as -40
+
   Scenario: Validation blocks save when tick interval fields are missing
     When I select interval timing for a new effect without tick interval values
     Then saving should remain blocked

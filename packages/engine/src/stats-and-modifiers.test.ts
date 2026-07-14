@@ -35,6 +35,21 @@ describe("stats and modifiers", () => {
     expect(effective.dodge).toBe(30);
   });
 
+  it("stacks item mana into effective capacity and floors it at zero", () => {
+    expect(
+      getEffectiveStats(
+        createStats({ mana: 100 }),
+        [createItem({ name: "Focus", mana: 25 }), createItem({ name: "Curse", mana: -10 })],
+        [],
+      ).mana,
+    ).toBe(115);
+
+    expect(
+      getEffectiveStats(createStats({ mana: 20 }), [createItem({ name: "Drain", mana: -50 })], [])
+        .mana,
+    ).toBe(0);
+  });
+
   it("floors effective stats at zero", () => {
     const effective = getEffectiveStats(
       createStats({ spellDmg: 2, dodge: 1 }),
@@ -78,6 +93,7 @@ describe("stats and modifiers", () => {
     const effective = getEffectiveStats(
       createStats({
         health: 1,
+        mana: 8,
         meleeDmg: 2,
         rangedDmg: 3,
         manaRegen: 4,
@@ -89,6 +105,7 @@ describe("stats and modifiers", () => {
       [],
       [
         { statKey: "health", value: -10 },
+        { statKey: "mana", value: -10 },
         { statKey: "meleeDmg", value: -10 },
         { statKey: "rangedDmg", value: -10 },
         { statKey: "manaRegen", value: -10 },
@@ -101,6 +118,7 @@ describe("stats and modifiers", () => {
 
     expect(effective).toEqual({
       health: 0,
+      mana: 0,
       meleeDmg: 0,
       rangedDmg: 0,
       manaRegen: 0,

@@ -19,7 +19,7 @@ Feature: Unit workspace create and edit
     When I start creating a new unit without filling in a name
     Then saving should remain blocked
 
-  Scenario: Stat fields default to zero
+  Scenario: Mana defaults to 100 and other stat fields default to zero
     When I create a new unit named "Blank Recruit"
     Then reloading the unit by URL should show all stat fields as 0
 
@@ -27,6 +27,7 @@ Feature: Unit workspace create and edit
     When I create a new unit named "Storm Lancer" with the following stats:
       | meleeDmg       | 18   |
       | health         | 95   |
+      | mana           | 200  |
       | rangedDmg      | 6    |
       | manaRegen      | 2    |
       | spellDmg       | 4    |

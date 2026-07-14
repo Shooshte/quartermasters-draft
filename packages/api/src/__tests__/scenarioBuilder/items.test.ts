@@ -89,6 +89,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 3,
+        mana: 0,
         spellDmg: 12,
         dodge: 0,
         criticalChance: 0,
@@ -137,6 +138,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: 0,
         dodge: 0,
         criticalChance: 0,
@@ -160,6 +162,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: 0,
         dodge: 0,
         criticalChance: 0,
@@ -185,6 +188,7 @@ describe("itemsRouter", () => {
         meleeDmg: 12.5,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: -3.5,
         dodge: -1,
         criticalChance: 7.25,
@@ -203,6 +207,7 @@ describe("itemsRouter", () => {
         meleeDmg: 12.5,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: -3.5,
         dodge: -1,
         criticalChance: 7.25,
@@ -216,6 +221,7 @@ describe("itemsRouter", () => {
         meleeDmg: 12.5,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: -3.5,
         dodge: -1,
         criticalChance: 7.25,
@@ -233,6 +239,7 @@ describe("itemsRouter", () => {
           meleeDmg: 0,
           rangedDmg: 0,
           manaRegen: 0,
+          mana: 0,
           spellDmg: 0,
           dodge: 0,
           criticalChance: 0,
@@ -243,6 +250,30 @@ describe("itemsRouter", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
+    it.each([
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ])("rejects non-finite mana modifier %s", async (mana) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.items.create({
+          name: "Impossible Focus",
+          meleeDmg: 0,
+          rangedDmg: 0,
+          mana,
+          manaRegen: 0,
+          spellDmg: 0,
+          dodge: 0,
+          criticalChance: 0,
+          activationManaCost: 0,
+          activationHealthCost: 0,
+          spellIds: [],
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
     it("creates an item with no linked spells", async () => {
       const created = {
         id: "d-spell-less",
@@ -250,6 +281,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: 0,
         dodge: 0,
         criticalChance: 0,
@@ -266,6 +298,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: 0,
         dodge: 0,
         criticalChance: 0,
@@ -284,6 +317,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 0,
         spellDmg: 0,
         dodge: 0,
         criticalChance: 0,
@@ -301,6 +335,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 3,
+        mana: 0,
         spellDmg: 20,
         dodge: 0,
         criticalChance: 0,
@@ -326,6 +361,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 3,
+        mana: 0,
         spellDmg: 20,
         dodge: 0,
         criticalChance: 0,
@@ -343,6 +379,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 3,
+        mana: 0,
         spellDmg: 20,
         dodge: 0,
         criticalChance: 0,
@@ -366,6 +403,7 @@ describe("itemsRouter", () => {
           meleeDmg: 0,
           rangedDmg: 0,
           manaRegen: 0,
+          mana: 0,
           spellDmg: 0,
           dodge: 0,
           criticalChance: 0,
@@ -383,6 +421,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 3,
+        mana: 0,
         spellDmg: 12,
         dodge: 0,
         criticalChance: 0,
@@ -401,6 +440,7 @@ describe("itemsRouter", () => {
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 3,
+        mana: 0,
         spellDmg: 12,
         dodge: 0,
         criticalChance: 0,
@@ -431,6 +471,7 @@ describe("itemsRouter", () => {
           meleeDmg: 0,
           rangedDmg: 0,
           manaRegen: 0,
+          mana: 0,
           spellDmg: 0,
           dodge: 0,
           criticalChance: 0,

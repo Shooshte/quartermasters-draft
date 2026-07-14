@@ -154,4 +154,52 @@ describe("mana system", () => {
     expect(spellLogs[0]?.message).toContain("Fireball");
     expect(Object.values(engine.getState().scenarios[0].rows).flat()[0]?.mana).toBe(5);
   });
+
+  it("does not charge a targetless item before casting a valid later item", () => {
+    const engine = new BattleEngine(
+      createBattleInput([
+        createScenario("A", {
+          melee: [
+            createUnit("Warrior", {
+              stats: createStats({ health: 100, speed: 100, manaRegen: 0 }),
+              startingMana: 30,
+              startingActionBar: 100,
+              items: [
+                createItem({
+                  name: "Sniper Bow",
+                  activationManaCost: 25,
+                  activationHealthCost: 35,
+                  linkedSpells: [
+                    createSpell({
+                      name: "Aimed Shot",
+                      targetPolicy: "highest_health",
+                      allowedRowTypes: ["ranged"],
+                    }),
+                  ],
+                }),
+                createItem({
+                  name: "Fire Sword",
+                  activationManaCost: 10,
+                  activationHealthCost: 15,
+                  linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })],
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("B", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 200, speed: 1 }) })],
+        }),
+      ]),
+    );
+
+    engine.tick(1);
+
+    const after = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
+    expect(after.mana).toBe(20);
+    expect(after.currentHealth).toBe(85);
+    const spellLogs = engine.getState().log.filter((entry) => entry.type === "spell-cast");
+    expect(spellLogs).toHaveLength(1);
+    expect(spellLogs[0]?.spell).toBe("Fireball");
+  });
 });

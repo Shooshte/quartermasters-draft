@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { createBattleInput, createScenario, createStats, createUnit } from "./test-helpers";
-import { validateBattleInput } from "./validation";
+import {
+  createBattleInput,
+  createBattleInputWithSeed,
+  createScenario,
+  createStats,
+  createUnit,
+} from "./test-helpers";
+import type { BattleInput } from "./types";
+import { InvalidBattleInputError, validateBattleInput } from "./validation";
 
 describe("battle input validation", () => {
+  it("uses a typed error for an invalid scenario graph", () => {
+    expect(InvalidBattleInputError).toBeTypeOf("function");
+    expect(() =>
+      validateBattleInput(createBattleInput([createScenario("A"), createScenario("B")], 1)),
+    ).toThrow(InvalidBattleInputError);
+  });
+
   it("throws when seed is NaN", () => {
     expect(() =>
       validateBattleInput(
@@ -21,6 +35,31 @@ describe("battle input validation", () => {
     expect(() =>
       validateBattleInput(createBattleInput([createScenario("A"), createScenario("B")], -Infinity)),
     ).toThrow(/finite number/i);
+  });
+
+  it("accepts a non-blank string seed", () => {
+    expect(() => validateBattleInput(createBattleInputWithSeed("balance-pass-3"))).not.toThrow();
+  });
+
+  it("rejects a blank string seed", () => {
+    expect(() => validateBattleInput(createBattleInputWithSeed("   "))).toThrow(
+      /must not be blank/i,
+    );
+  });
+
+  it("rejects unsupported runtime seed types", () => {
+    const unsupportedSeeds: unknown[] = [true, null, {}, undefined];
+
+    for (const seed of unsupportedSeeds) {
+      const input = {
+        ...createBattleInputWithSeed(42),
+        seed,
+      } as unknown as BattleInput;
+
+      expect(() => validateBattleInput(input)).toThrow(
+        "Battle seed must be a finite number or non-blank string.",
+      );
+    }
   });
 
   it("throws when all units across both scenarios have zero health", () => {

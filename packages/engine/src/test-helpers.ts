@@ -108,7 +108,7 @@ export function createScenario(
 
 export function createBattleInput(
   scenarios: [ScenarioInput, ScenarioInput],
-  seed = 42,
+  seed: number | string = 42,
   targetingOverrides?: BattleInput["targetingOverrides"],
 ): BattleInput {
   return {
@@ -116,6 +116,16 @@ export function createBattleInput(
     seed,
     targetingOverrides,
   };
+}
+
+export function createBattleInputWithSeed(seed: number | string): BattleInput {
+  return createBattleInput(
+    [
+      createScenario("A", { tank: [createUnit("A")] }),
+      createScenario("B", { tank: [createUnit("B")] }),
+    ],
+    seed,
+  );
 }
 
 export function effectSequence(...effects: EffectTemplateInput[]): SpellInput["effects"] {

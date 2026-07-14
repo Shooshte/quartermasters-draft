@@ -21,6 +21,18 @@ describe("seeded random", () => {
     );
   });
 
+  it("is deterministic for canonical string seeds", () => {
+    const first = createSeededRandom("balance-pass-3");
+    const second = createSeededRandom("  balance-pass-3  ");
+    expect(Array.from({ length: 20 }, first)).toEqual(Array.from({ length: 20 }, second));
+  });
+
+  it("produces different sequences for different string seeds", () => {
+    const first = createSeededRandom("alpha");
+    const second = createSeededRandom("bravo");
+    expect(Array.from({ length: 10 }, first)).not.toEqual(Array.from({ length: 10 }, second));
+  });
+
   it("produces different sequences for different seeds", () => {
     const first = createSeededRandom(1);
     const second = createSeededRandom(2);

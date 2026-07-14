@@ -34,6 +34,30 @@ function renderPopover() {
 }
 
 describe("EntityPickerPopover", () => {
+  it("associates an external label with the combobox trigger", () => {
+    render(
+      <>
+        <label htmlFor="effect-picker-trigger">Effect</label>
+        <EntityPickerPopover
+          pickerTestId="effect-picker"
+          searchTestId="effect-search"
+          emptyTestId="effect-empty"
+          optionTestIdPrefix="effect-option"
+          options={options}
+          selectedId=""
+          onSelect={vi.fn()}
+          searchPlaceholder="Search effects..."
+          triggerPlaceholder="Select effect"
+          listboxLabel="Effect options"
+          emptyMessage="No effects found."
+          triggerId="effect-picker-trigger"
+        />
+      </>,
+    );
+
+    expect(screen.getByRole("combobox", { name: "Effect" })).toBeVisible();
+  });
+
   it("focuses the search input on open and caps visible options at five", async () => {
     const user = userEvent.setup();
     renderPopover();

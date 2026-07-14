@@ -31,12 +31,17 @@ export function getDefaultRoute(role: UserRole): string {
 /** Routes restricted to specific roles. Unlisted routes are accessible to all authenticated users. */
 const routeRoleMap: Record<string, UserRole> = {
   "/create": Roles.GAME_MASTER,
+  "/battle": Roles.GAME_MASTER,
+  "/replay": Roles.GAME_MASTER,
 };
 
 /** Check if a role can access a given route path. */
 export function canAccessRoute(role: UserRole, path: string): boolean {
   const pathname = path.split("?")[0];
-  const requiredRole = routeRoleMap[pathname];
+  const restrictedRoute = Object.keys(routeRoleMap).find(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+  const requiredRole = restrictedRoute ? routeRoleMap[restrictedRoute] : undefined;
   if (!requiredRole) return true;
   return role === requiredRole;
 }

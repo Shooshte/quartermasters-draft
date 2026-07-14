@@ -1,6 +1,7 @@
 import type {
   BattleEndLogEntry,
   BattleLogEntry,
+  BattleLogOrigin,
   BattleState,
   BattleUnitState,
   EffectApplyLogEntry,
@@ -19,6 +20,8 @@ export function logEffectApplied(
   target: BattleUnitState,
   effect: string,
   stat?: string,
+  actionId?: string,
+  origin?: BattleLogOrigin,
 ): void {
   const entry: EffectApplyLogEntry = {
     tick,
@@ -27,6 +30,8 @@ export function logEffectApplied(
     targetId: target.instanceId,
     effect,
     stat,
+    actionId,
+    origin,
     message: stat
       ? `Tick ${tick}: ${target.name} gains ${effect} (${stat} modified)`
       : `Tick ${tick}: ${target.name} gains ${effect}`,
@@ -39,6 +44,7 @@ export function logEffectExpired(
   tick: number,
   target: BattleUnitState,
   effect: string,
+  origin?: BattleLogOrigin,
 ): void {
   const entry: EffectExpireLogEntry = {
     tick,
@@ -46,6 +52,7 @@ export function logEffectExpired(
     target: target.name,
     targetId: target.instanceId,
     effect,
+    origin,
     message: `Tick ${tick}: ${effect} expires on ${target.name}`,
   };
   pushLog(state, entry);
@@ -57,6 +64,8 @@ export function logHeal(
   source: BattleUnitState,
   target: BattleUnitState,
   amount: number,
+  origin: BattleLogOrigin,
+  actionId?: string,
 ): void {
   const entry: HealLogEntry = {
     tick,
@@ -66,6 +75,8 @@ export function logHeal(
     target: target.name,
     targetId: target.instanceId,
     amount,
+    actionId,
+    origin,
     message: `Tick ${tick}: ${source.name} heals ${target.name} for ${amount}`,
   };
   pushLog(state, entry);
@@ -83,6 +94,7 @@ export function logFatigue(
     target: target.name,
     targetId: target.instanceId,
     damage,
+    origin: { kind: "fatigue" },
     message: `Tick ${tick}: fatigue hits ${target.name} for ${damage} damage`,
   };
   pushLog(state, entry);

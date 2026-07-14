@@ -68,6 +68,13 @@ describe("canAccessRoute", () => {
     expect(canAccessRoute(UserRole.PLAYER, "/play")).toBe(true);
     expect(canAccessRoute(UserRole.GAME_MASTER, "/play")).toBe(true);
   });
+
+  it("restricts Battle Lab and dynamic replay routes to game masters", () => {
+    expect(canAccessRoute(UserRole.GAME_MASTER, "/battle")).toBe(true);
+    expect(canAccessRoute(UserRole.GAME_MASTER, "/replay/abc123")).toBe(true);
+    expect(canAccessRoute(UserRole.PLAYER, "/battle")).toBe(false);
+    expect(canAccessRoute(UserRole.PLAYER, "/replay/abc123")).toBe(false);
+  });
 });
 
 describe("isValidNextUrl", () => {

@@ -104,9 +104,11 @@ export interface TargetingOverrideInput {
   policy: TargetPolicy;
 }
 
+export type BattleSeed = number | string;
+
 export interface BattleInput {
   scenarios: [ScenarioInput, ScenarioInput];
-  seed: number;
+  seed: BattleSeed;
   targetingOverrides?: TargetingOverrideInput[];
 }
 
@@ -144,6 +146,7 @@ export interface ActiveEffectState {
   nextTriggerTick?: number;
   intervalMs?: number;
   expiresAtTick?: number;
+  origin?: BattleLogOrigin;
 }
 
 export interface BattleUnitState {
@@ -209,6 +212,23 @@ export interface BaseLogEntry {
   tick: number;
   type: string;
   message: string;
+  actionId?: string;
+  origin?: BattleLogOrigin;
+}
+
+export interface BattleLogSourceRef {
+  id?: string;
+  name: string;
+  position: number;
+}
+
+export interface BattleLogOrigin {
+  kind: "basic-attack" | "spell-effect" | "fatigue";
+  actionId?: string;
+  sourceUnitId?: string;
+  item?: BattleLogSourceRef;
+  spell?: BattleLogSourceRef;
+  effect?: BattleLogSourceRef;
 }
 
 export interface AttackLogEntry extends BaseLogEntry {

@@ -1,3 +1,5 @@
+import type { BattleSeed } from "./types";
+
 function fnv1a(value: string): number {
   let hash = 0x811c9dc5;
   for (let index = 0; index < value.length; index += 1) {
@@ -17,6 +19,10 @@ function mulberry32(seed: number) {
   };
 }
 
-export function createSeededRandom(seed: number) {
-  return mulberry32(fnv1a(String(seed)));
+function canonicalSeed(seed: BattleSeed): string {
+  return typeof seed === "string" ? seed.trim() : String(seed);
+}
+
+export function createSeededRandom(seed: BattleSeed) {
+  return mulberry32(fnv1a(canonicalSeed(seed)));
 }

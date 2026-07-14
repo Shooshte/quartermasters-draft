@@ -23,12 +23,13 @@ Feature: Logout
       | next | /replay/abc445 |
     And my session should be cleared
 
-  Scenario: Regardless of user role, after logout I should be redirected to "/login" with next pointing to the current route (player)
+  Scenario: Player logout after a forbidden replay omits the next query param
     Given I am logged in as a player
-    And I am on "/replay/abc445"
+    When I navigate to "/replay/abc445"
+    Then I should be on "/403"
     When I log out
-    Then I should be redirected to "/login" with query params:
-      | next | /replay/abc445 |
+    Then I should be on "/login"
+    And the "next" query param should not be present
     And my session should be cleared
 
   Scenario: If I log out when on route "/403" the next query param should not be added (game master)

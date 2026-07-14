@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedPlayRouteImport } from './routes/_authenticated/play'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
+import { Route as AuthenticatedBattleRouteImport } from './routes/_authenticated/battle'
 import { Route as Authenticated403RouteImport } from './routes/_authenticated/403'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
@@ -43,6 +44,11 @@ const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
   path: '/create',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBattleRoute = AuthenticatedBattleRouteImport.update({
+  id: '/battle',
+  path: '/battle',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const Authenticated403Route = Authenticated403RouteImport.update({
   id: '/403',
   path: '/403',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/403': typeof Authenticated403Route
+  '/battle': typeof AuthenticatedBattleRoute
   '/create': typeof AuthenticatedCreateRoute
   '/play': typeof AuthenticatedPlayRoute
   '/replay/$id': typeof AuthenticatedReplayIdRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/403': typeof Authenticated403Route
+  '/battle': typeof AuthenticatedBattleRoute
   '/create': typeof AuthenticatedCreateRoute
   '/play': typeof AuthenticatedPlayRoute
   '/': typeof AuthenticatedIndexRoute
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/403': typeof Authenticated403Route
+  '/_authenticated/battle': typeof AuthenticatedBattleRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/play': typeof AuthenticatedPlayRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/403'
+    | '/battle'
     | '/create'
     | '/play'
     | '/replay/$id'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/403'
+    | '/battle'
     | '/create'
     | '/play'
     | '/'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/403'
+    | '/_authenticated/battle'
     | '/_authenticated/create'
     | '/_authenticated/play'
     | '/_authenticated/'
@@ -174,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/battle': {
+      id: '/_authenticated/battle'
+      path: '/battle'
+      fullPath: '/battle'
+      preLoaderRoute: typeof AuthenticatedBattleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/403': {
       id: '/_authenticated/403'
       path: '/403'
@@ -207,6 +226,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   Authenticated403Route: typeof Authenticated403Route
+  AuthenticatedBattleRoute: typeof AuthenticatedBattleRoute
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedPlayRoute: typeof AuthenticatedPlayRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -215,6 +235,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   Authenticated403Route: Authenticated403Route,
+  AuthenticatedBattleRoute: AuthenticatedBattleRoute,
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedPlayRoute: AuthenticatedPlayRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

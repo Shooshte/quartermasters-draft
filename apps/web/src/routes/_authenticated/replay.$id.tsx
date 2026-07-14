@@ -1,15 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { BattleWorkbench } from "~/components/battle/battle-workbench";
+import { canAccessRoute } from "~/lib/route-utils";
 
 export const Route = createFileRoute("/_authenticated/replay/$id")({
+  beforeLoad: ({ context }) => {
+    if (!canAccessRoute(context.userRole, "/replay")) {
+      throw redirect({ to: "/403", search: { notice: undefined } });
+    }
+  },
   component: ReplayPage,
 });
 
 function ReplayPage() {
   const { id } = Route.useParams();
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center">
-      <h1 className="text-4xl font-bold">Replay</h1>
-      <p className="text-muted-foreground">Game: {id}</p>
-    </main>
-  );
+  return <BattleWorkbench replayId={id} />;
 }

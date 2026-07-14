@@ -119,6 +119,145 @@ describe("action resolution", () => {
     expect(warrior.mana).toBe(40);
   });
 
+  it("skips a targetless item spell without consuming costs and falls back to a basic attack", () => {
+    const state = makeStateWithWarrior("melee", [
+      createItem({
+        name: "Sniper Bow",
+        activationManaCost: 10,
+        activationHealthCost: 20,
+        linkedSpells: [
+          createSpell({
+            name: "Aimed Shot",
+            targetPolicy: "highest_health",
+            allowedRowTypes: ["ranged"],
+          }),
+        ],
+      }),
+    ]);
+    const warrior = state.scenarios[0].rows.melee[0]!;
+    warrior.mana = 50;
+
+    const outcome = resolveUnitAction(state, warrior);
+
+    expect(outcome).toEqual({
+      usedBasicAttack: true,
+      totalDamage: 11,
+      castSpellNames: [],
+    });
+    expect(warrior.mana).toBe(50);
+    expect(warrior.currentHealth).toBe(100);
+    expect(state.log.some((entry) => entry.type === "spell-cast")).toBe(false);
+  });
+
+  it("charges an item once when a later spell has valid targets", () => {
+    const state = makeStateWithWarrior("melee", [
+      createItem({
+        name: "Versatile Focus",
+        activationManaCost: 10,
+        activationHealthCost: 15,
+        linkedSpells: [
+          createSpell({
+            name: "Aimed Shot",
+            targetPolicy: "highest_health",
+            allowedRowTypes: ["ranged"],
+          }),
+          createSpell({
+            name: "Fireball",
+            targetPolicy: "highest_health",
+            effects: effectSequence(
+              createEffect({
+                name: "Flame",
+                effectType: "damage",
+                timingType: "instant",
+                directSpellDmg: 10,
+              }),
+            ),
+          }),
+        ],
+      }),
+    ]);
+    const warrior = state.scenarios[0].rows.melee[0]!;
+    warrior.mana = 50;
+
+    const outcome = resolveUnitAction(state, warrior);
+
+    expect(outcome.usedBasicAttack).toBe(false);
+    expect(outcome.castSpellNames).toEqual(["Fireball"]);
+    expect(outcome.totalDamage).toBe(10);
+    expect(warrior.mana).toBe(40);
+    expect(warrior.currentHealth).toBe(85);
+    expect(state.log.filter((entry) => entry.type === "spell-cast")).toHaveLength(1);
+  });
+
+  it("preserves a targetless item cost for a valid later item", () => {
+    const state = makeStateWithWarrior("melee", [
+      createItem({
+        name: "Sniper Bow",
+        activationManaCost: 25,
+        activationHealthCost: 35,
+        linkedSpells: [
+          createSpell({
+            name: "Aimed Shot",
+            targetPolicy: "highest_health",
+            allowedRowTypes: ["ranged"],
+          }),
+        ],
+      }),
+      createItem({
+        name: "Fire Sword",
+        activationManaCost: 10,
+        activationHealthCost: 15,
+        linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })],
+      }),
+    ]);
+    const warrior = state.scenarios[0].rows.melee[0]!;
+    warrior.mana = 30;
+
+    const outcome = resolveUnitAction(state, warrior);
+
+    expect(outcome.usedBasicAttack).toBe(false);
+    expect(outcome.castSpellNames).toEqual(["Fireball"]);
+    expect(warrior.mana).toBe(20);
+    expect(warrior.currentHealth).toBe(85);
+    expect(state.log.filter((entry) => entry.type === "spell-cast")).toHaveLength(1);
+  });
+
+  it("skips a later spell that loses its final target during the same item activation", () => {
+    const state = makeStateWithWarrior("melee", [
+      createItem({
+        name: "Execution Focus",
+        activationManaCost: 10,
+        linkedSpells: [
+          createSpell({
+            name: "Alpha Blast",
+            targetPolicy: "highest_health",
+            effects: effectSequence(
+              createEffect({
+                name: "Execute",
+                effectType: "damage",
+                timingType: "instant",
+                directSpellDmg: 200,
+              }),
+            ),
+          }),
+          createSpell({ name: "Beta Follow-up", targetPolicy: "highest_health" }),
+        ],
+      }),
+    ]);
+    const warrior = state.scenarios[0].rows.melee[0]!;
+    warrior.mana = 50;
+
+    const outcome = resolveUnitAction(state, warrior);
+
+    expect(outcome.usedBasicAttack).toBe(false);
+    expect(outcome.castSpellNames).toEqual(["Alpha Blast"]);
+    expect(outcome.totalDamage).toBe(200);
+    expect(warrior.mana).toBe(40);
+    const spellLogs = state.log.filter((entry) => entry.type === "spell-cast");
+    expect(spellLogs).toHaveLength(1);
+    expect(spellLogs[0]?.spell).toBe("Alpha Blast");
+  });
+
   it("reports only the damage dealt during the current action", () => {
     const state = makeStateWithWarrior("melee", [
       createItem({
@@ -152,7 +291,7 @@ describe("action resolution", () => {
     const aimedShot = createSpell({
       name: "Aimed Shot",
       targetPolicy: "highest_health",
-      allowedRowTypes: ["ranged", "support"],
+      allowedRowTypes: ["tank"],
     });
     const flameStrike = createSpell({ name: "Flame Strike", targetPolicy: "highest_health" });
     const state = makeStateWithWarrior("melee", [

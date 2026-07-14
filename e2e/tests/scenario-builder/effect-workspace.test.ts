@@ -14,10 +14,12 @@ test.describe("Effect Workspace CRUD", () => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openNew();
 
-    await expect(gmPage.getByTestId("effect-intervalMs-input")).toBeVisible();
+    await expect(gmPage.getByTestId("effect-intervalTicks-input")).toBeVisible();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeVisible();
-    await expect(gmPage.getByTestId("effect-intervalMs-input")).toBeDisabled();
+    await expect(gmPage.getByTestId("effect-intervalTicks-input")).toBeDisabled();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeDisabled();
+    await expect(gmPage.getByText("Interval (ticks)", { exact: true })).toBeVisible();
+    await expect(gmPage.getByText("Duration (ticks)", { exact: true })).toBeVisible();
   });
 
   test("validation blocks save when interval fields are missing", async ({ gmPage }) => {
@@ -60,12 +62,14 @@ test.describe("Effect Workspace CRUD", () => {
 
     await effect.fillName("Battle Rhythm");
     await effect.setTimingType("interval");
-    await gmPage.getByTestId("effect-intervalMs-input").fill("1000");
+    await gmPage.getByTestId("effect-intervalTicks-input").fill("1000");
+    await gmPage.getByTestId("effect-durationTicks-input").fill("2500");
     await gmPage.getByTestId("effect-triggerCount-input").fill("3");
     await effect.saveCreate();
 
     await expect(effect.timingTypeSelect).toHaveValue("interval");
-    await expect(gmPage.getByTestId("effect-intervalMs-input")).toHaveValue("1000");
+    await expect(gmPage.getByTestId("effect-intervalTicks-input")).toHaveValue("1000");
+    await expect(gmPage.getByTestId("effect-durationTicks-input")).toHaveValue("2500");
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toHaveValue("3");
   });
 

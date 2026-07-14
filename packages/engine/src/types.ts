@@ -34,9 +34,9 @@ export interface EffectTemplateInput {
   name?: string;
   timingType: EffectTimingType;
   effectType: EffectCategory;
-  intervalMs?: number | null;
+  intervalTicks?: number | null;
   triggerCount?: number | null;
-  durationMs?: number | null;
+  durationTicks?: number | null;
   meleeDmg?: number | null;
   health?: number | null;
   rangedDmg?: number | null;
@@ -144,7 +144,7 @@ export interface ActiveEffectState {
   value: number;
   remainingTriggers?: number;
   nextTriggerTick?: number;
-  intervalMs?: number;
+  intervalTicks?: number;
   expiresAtTick?: number;
   origin?: BattleLogOrigin;
 }

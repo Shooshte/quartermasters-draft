@@ -86,7 +86,7 @@ export function EffectWorkspaceForm({
               label={COMPACT_LABELS[field] ?? field}
               value={normalizedFormValues[field]}
               error={errors[field]}
-              disabled={field !== "durationMs" && intervalDisabled}
+              disabled={field !== "durationTicks" && intervalDisabled}
               step={1}
               onChange={(value) => onFieldChange(field, toNumericValue(value))}
             />

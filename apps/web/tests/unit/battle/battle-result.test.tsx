@@ -103,7 +103,7 @@ const fixture: Pick<ReplayOutput, "scenarios" | "result"> = {
                     value: 4,
                     remainingTriggers: 2,
                     nextTriggerTick: 190,
-                    intervalMs: 10,
+                    intervalTicks: 10,
                   },
                 ],
               }),

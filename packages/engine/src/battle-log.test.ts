@@ -16,7 +16,7 @@ function createLoggedBattle() {
     name: "Burning",
     effectType: "damage",
     timingType: "interval",
-    intervalMs: 3,
+    intervalTicks: 3,
     triggerCount: 1,
     directSpellDmg: 10,
   });

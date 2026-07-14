@@ -237,7 +237,7 @@ describe("effectsRouter", () => {
             name: "New Effect",
             timingType: "instant",
             effectType: "buff",
-            intervalMs: null,
+            intervalTicks: null,
             triggerCount: null,
           },
         ]),
@@ -261,7 +261,7 @@ describe("effectsRouter", () => {
             name: "Rage",
             timingType: "interval",
             effectType: "buff",
-            intervalMs: 1000,
+            intervalTicks: 1000,
             triggerCount: 3,
           },
         ]),
@@ -272,14 +272,14 @@ describe("effectsRouter", () => {
         name: "Rage",
         timingType: "interval",
         effectType: "buff",
-        intervalMs: 1000,
+        intervalTicks: 1000,
         triggerCount: 3,
       });
 
       expect(result).toMatchObject({
         id: "e2",
         timingType: "interval",
-        intervalMs: 1000,
+        intervalTicks: 1000,
         triggerCount: 3,
       });
     });

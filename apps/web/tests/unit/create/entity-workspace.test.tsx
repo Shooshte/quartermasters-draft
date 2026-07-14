@@ -106,7 +106,7 @@ describe("EntityWorkspace", () => {
               name: "Barbarian Roar",
               timingType: "instant",
               effectType: "buff",
-              intervalMs: null,
+              intervalTicks: null,
               triggerCount: null,
             },
           })}
@@ -152,7 +152,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalMs: null,
+            intervalTicks: null,
             triggerCount: null,
           },
         })}
@@ -162,7 +162,7 @@ describe("EntityWorkspace", () => {
 
     expect(screen.getByTestId("effect-timing-type-select")).toBeInTheDocument();
     expect(screen.getByTestId("effect-effect-type-select")).toBeInTheDocument();
-    expect(screen.getByTestId("effect-intervalMs-input")).toBeDisabled();
+    expect(screen.getByTestId("effect-intervalTicks-input")).toBeDisabled();
     expect(screen.getByTestId("effect-triggerCount-input")).toBeDisabled();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
   });
@@ -239,7 +239,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalMs: null,
+            intervalTicks: null,
             triggerCount: null,
           },
         })}
@@ -273,7 +273,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalMs: null,
+            intervalTicks: null,
             triggerCount: null,
           },
         })}
@@ -304,7 +304,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "damage",
-            intervalMs: null,
+            intervalTicks: null,
             triggerCount: null,
           },
         })}
@@ -327,7 +327,7 @@ describe("EntityWorkspace", () => {
             name: "Rage",
             timingType: "interval",
             effectType: "buff",
-            intervalMs: 1000,
+            intervalTicks: 1000,
             triggerCount: 3,
           },
         })}
@@ -335,7 +335,7 @@ describe("EntityWorkspace", () => {
       />,
     );
 
-    expect(screen.getByTestId("effect-intervalMs-input")).toBeEnabled();
+    expect(screen.getByTestId("effect-intervalTicks-input")).toBeEnabled();
     expect(screen.getByTestId("effect-triggerCount-input")).toBeEnabled();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Save Changes");
   });
@@ -352,7 +352,7 @@ describe("EntityWorkspace", () => {
             name: "Rage",
             timingType: "interval",
             effectType: "buff",
-            intervalMs: 1000,
+            intervalTicks: 1000,
             triggerCount: 3,
           },
         })}

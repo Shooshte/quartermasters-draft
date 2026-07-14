@@ -155,7 +155,7 @@ function applyInstantEffect(
         statKey: modifier.statKey,
         value:
           effect.effectType === "debuff" ? normalizeDebuffValue(modifier.value) : modifier.value,
-        expiresAtTick: tick + (effect.durationMs ?? 0),
+        expiresAtTick: tick + (effect.durationTicks ?? 0),
         origin,
       };
       target.activeEffects.push(activeEffect);
@@ -197,8 +197,8 @@ function queueIntervalEffect(
       timingType: effect.timingType,
       value: effect.directHealing ?? effect.directSpellDmg ?? 0,
       remainingTriggers: effect.triggerCount ?? 0,
-      nextTriggerTick: tick + (effect.intervalMs ?? 0),
-      intervalMs: effect.intervalMs ?? 0,
+      nextTriggerTick: tick + (effect.intervalTicks ?? 0),
+      intervalTicks: effect.intervalTicks ?? 0,
       origin,
     });
   }
@@ -357,7 +357,7 @@ export function processCurrentTickEffects(state: BattleState): void {
           }
           effect.remainingTriggers -= 1;
           if ((effect.remainingTriggers ?? 0) > 0) {
-            effect.nextTriggerTick += effect.intervalMs ?? 0;
+            effect.nextTriggerTick += effect.intervalTicks ?? 0;
           }
         }
       }

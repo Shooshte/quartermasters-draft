@@ -13,7 +13,7 @@ describe("effect-form", () => {
       name: "",
       timingType: "instant",
       effectType: "buff",
-      intervalMs: null,
+      intervalTicks: null,
       triggerCount: null,
     });
   });
@@ -28,19 +28,19 @@ describe("effect-form", () => {
 
     expect(result.name).toBe("Barbarian Roar");
     expect(result.meleeDmg).toBe(2);
-    expect(result.durationMs).toBeNull();
+    expect(result.durationTicks).toBeNull();
   });
 
   it("normalizes instant timing to null interval fields", () => {
     const result = normalizeEffectFormValues({
       ...createDefaultEffectFormValues(),
       name: "  Test  ",
-      intervalMs: 500,
+      intervalTicks: 500,
       triggerCount: 2,
     });
 
     expect(result.name).toBe("Test");
-    expect(result.intervalMs).toBeNull();
+    expect(result.intervalTicks).toBeNull();
     expect(result.triggerCount).toBeNull();
   });
 
@@ -56,7 +56,7 @@ describe("effect-form", () => {
       timingType: "interval",
     });
 
-    expect(errors.intervalMs).toContain("required");
+    expect(errors.intervalTicks).toContain("required");
     expect(errors.triggerCount).toContain("required");
   });
 
@@ -65,13 +65,13 @@ describe("effect-form", () => {
       ...createDefaultEffectFormValues(),
       name: "Rage",
       timingType: "interval",
-      intervalMs: 0,
+      intervalTicks: 0,
       triggerCount: 1.5,
-      durationMs: -1,
+      durationTicks: -1,
     });
 
-    expect(errors.intervalMs).toContain("positive integer");
+    expect(errors.intervalTicks).toContain("positive integer");
     expect(errors.triggerCount).toContain("positive integer");
-    expect(errors.durationMs).toContain("positive integer");
+    expect(errors.durationTicks).toContain("positive integer");
   });
 });

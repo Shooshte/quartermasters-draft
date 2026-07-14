@@ -13,17 +13,17 @@ Feature: Effect workspace CRUD
     Then the effect workspace should save the effect in edit mode
     And the URL should contain the created "effect_id"
 
-  Scenario: Interval fields are visible but disabled for instant timing
+  Scenario: Tick interval fields are visible but disabled for instant timing
     When I start creating a new effect
     Then the interval timing fields should remain visible
     And the interval timing fields should be disabled for instant timing
 
-  Scenario: Create a new interval effect with required interval fields
+  Scenario: Create a new interval effect with required tick timing fields
     When I create a new interval effect named "Battle Rhythm"
-    Then the saved effect should retain its interval timing values
+    Then the saved effect should retain its tick timing values
 
-  Scenario: Validation blocks save when interval fields are missing
-    When I select interval timing for a new effect without interval values
+  Scenario: Validation blocks save when tick interval fields are missing
+    When I select interval timing for a new effect without tick interval values
     Then saving should remain blocked
 
   Scenario: Edit an existing effect

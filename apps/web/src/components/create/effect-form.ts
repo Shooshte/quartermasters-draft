@@ -5,10 +5,10 @@ export interface EffectFormValues {
   [key: string]: unknown;
   name: string;
   timingType: TimingType;
-  intervalMs: number | null;
+  intervalTicks: number | null;
   triggerCount: number | null;
   effectType: EffectType;
-  durationMs: number | null;
+  durationTicks: number | null;
   meleeDmg: number | null;
   health: number | null;
   rangedDmg: number | null;
@@ -28,10 +28,10 @@ export type EffectFieldErrors = Partial<Record<keyof EffectFormValues, string>>;
 type EffectRecord = {
   name: string;
   timingType: TimingType;
-  intervalMs: number | null;
+  intervalTicks: number | null;
   triggerCount: number | null;
   effectType: EffectType;
-  durationMs: number | null;
+  durationTicks: number | null;
   meleeDmg: number | null;
   health: number | null;
   rangedDmg: number | null;
@@ -47,9 +47,9 @@ type EffectRecord = {
 };
 
 export const EFFECT_NUMERIC_FIELDS = [
-  "intervalMs",
+  "intervalTicks",
   "triggerCount",
-  "durationMs",
+  "durationTicks",
   "meleeDmg",
   "health",
   "rangedDmg",
@@ -65,19 +65,19 @@ export const EFFECT_NUMERIC_FIELDS = [
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
 const POSITIVE_INTEGER_FIELDS = [
-  "intervalMs",
+  "intervalTicks",
   "triggerCount",
-  "durationMs",
+  "durationTicks",
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
 export function createDefaultEffectFormValues(): EffectFormValues {
   return {
     name: "",
     timingType: "instant",
-    intervalMs: null,
+    intervalTicks: null,
     triggerCount: null,
     effectType: "buff",
-    durationMs: null,
+    durationTicks: null,
     meleeDmg: null,
     health: null,
     rangedDmg: null,
@@ -109,7 +109,7 @@ export function normalizeEffectFormValues(values: EffectFormValues): EffectFormV
     name: values.name.trim(),
   };
   if (normalized.timingType === "instant") {
-    normalized.intervalMs = null;
+    normalized.intervalTicks = null;
     normalized.triggerCount = null;
   }
   return normalized;
@@ -132,8 +132,8 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
   }
 
   if (normalized.timingType === "interval") {
-    if (normalized.intervalMs === null) {
-      errors.intervalMs = "Interval ms is required for interval timing.";
+    if (normalized.intervalTicks === null) {
+      errors.intervalTicks = "Tick interval is required for interval timing.";
     }
     if (normalized.triggerCount === null) {
       errors.triggerCount = "Trigger count is required for interval timing.";

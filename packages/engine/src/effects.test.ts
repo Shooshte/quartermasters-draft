@@ -128,7 +128,7 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalMs: 1000,
+            intervalTicks: 1000,
             triggerCount: 3,
           }),
         ),
@@ -152,6 +152,40 @@ describe("effects", () => {
     expect(mage.activeEffects).toHaveLength(0);
   });
 
+  it("waits intervalTicks before the first trigger and between subsequent triggers", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applySpell(
+      state,
+      mage,
+      createSpell({
+        name: "Delayed Burn",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Delayed Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            intervalTicks: 2,
+            triggerCount: 2,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+    expect(warrior.currentHealth).toBe(300);
+    processOngoingEffects(state, 1);
+    expect(warrior.currentHealth).toBe(280);
+    processOngoingEffects(state, 1);
+    expect(warrior.currentHealth).toBe(280);
+    processOngoingEffects(state, 1);
+    expect(warrior.currentHealth).toBe(260);
+  });
+
   it("expires interval effects cleanly if the source unit no longer exists", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;
@@ -169,7 +203,7 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalMs: 1,
+            intervalTicks: 1,
             triggerCount: 2,
           }),
         ),
@@ -274,7 +308,7 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalMs: 1,
+            intervalTicks: 1,
             triggerCount: 2,
           }),
         ),

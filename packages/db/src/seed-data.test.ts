@@ -91,20 +91,20 @@ describe("effectSeedData", () => {
     expect(timingTypes).toContain("interval");
   });
 
-  it("interval records have intervalMs and triggerCount set", () => {
+  it("interval records have intervalTicks and triggerCount set", () => {
     const intervalRecords = effectSeedData.filter((t) => t.timingType === "interval");
     expect(intervalRecords.length).toBeGreaterThan(0);
     for (const template of intervalRecords) {
-      expect(template.intervalMs).toBeDefined();
+      expect(template.intervalTicks).toBeDefined();
       expect(template.triggerCount).toBeDefined();
     }
   });
 
-  it("instant records do not have intervalMs or triggerCount set", () => {
+  it("instant records do not have intervalTicks or triggerCount set", () => {
     const instantRecords = effectSeedData.filter((t) => t.timingType === "instant");
     expect(instantRecords.length).toBeGreaterThan(0);
     for (const template of instantRecords) {
-      expect(template.intervalMs).toBeUndefined();
+      expect(template.intervalTicks).toBeUndefined();
       expect(template.triggerCount).toBeUndefined();
     }
   });

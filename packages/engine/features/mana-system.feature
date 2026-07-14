@@ -3,9 +3,11 @@ Feature: Mana regeneration and spending
   each tick for living units and is spent when items are cast.
 
   Rules:
-    - All units start with mana at 0
+    - All units start with mana equal to their effective mana stat
     - Each tick: every living unit's mana increases by their manaRegen stat
-    - Mana has NO cap — it accumulates indefinitely if unspent
+    - Mana cannot exceed the unit's effective mana stat
+    - Item and effect mana modifiers change that capacity
+    - Capacity changes preserve the unit's missing mana
     - Dead units do NOT regenerate mana
     - Items have activationManaCost and activationHealthCost
     - When a unit acts, it tries ALL items in priority order; each affordable
@@ -18,6 +20,7 @@ Feature: Mana regeneration and spending
     Given the following unit stats:
       | stat           | value |
       | health         | 100   |
+      | mana           | 100   |
       | meleeDmg       | 10    |
       | rangedDmg      | 10    |
       | speed          | 50    |
@@ -25,34 +28,39 @@ Feature: Mana regeneration and spending
       | spellDmg       | 20    |
       | dodge          | 0     |
       | criticalChance | 0     |
-    And the unit starts with 0 mana
+    And the unit starts with 100 mana
 
-  Scenario: Mana increases by manaRegen each tick
+  Scenario: A full unit does not regenerate past its capacity
     When 1 tick passes
-    Then the unit should have 5 mana
+    Then the unit should have 100 mana
 
-  Scenario: Mana accumulates across multiple ticks
-    When 4 ticks pass
-    Then the unit should have 20 mana
-
-  Scenario: Mana has no cap — continues accumulating past high values
-    Given the unit has the following stats:
+  Scenario: Mana regeneration is capped after mana is spent
+    Given the unit has 90 mana
+    And the unit has the following stats:
       | stat      | value |
-      | manaRegen | 100   |
-    When 50 ticks pass
-    Then the unit should have 5000 mana
+      | mana      | 100   |
+      | manaRegen | 20    |
+    When 1 tick passes
+    Then the unit should have 100 mana
 
   Scenario: Unit with zero manaRegen never gains mana
     Given the unit has the following stats:
       | stat      | value |
       | manaRegen | 0     |
     When 10 ticks pass
-    Then the unit should have 0 mana
+    Then the unit should have 100 mana
 
   Scenario: Dead units do not regenerate mana
     Given the unit is dead
     When 5 ticks pass
-    Then the unit should have 0 mana
+    Then the unit should have 100 mana
+
+  Scenario: Capacity buffs preserve missing mana
+    Given the unit has 70 mana
+    When a 50 mana capacity buff is applied
+    Then the unit should have 120 mana out of 150
+    When the mana capacity buff expires
+    Then the unit should have 70 mana out of 100
 
   Scenario: Casting deducts mana when spell is cast
     Given the unit has 30 mana

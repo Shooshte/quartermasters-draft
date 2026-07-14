@@ -26,6 +26,7 @@ type InternalBattleState = BattleState & {
 function zeroStats(): UnitStats {
   return {
     health: 0,
+    mana: 0,
     meleeDmg: 0,
     rangedDmg: 0,
     manaRegen: 0,
@@ -40,6 +41,7 @@ function normalizeItem(item: ItemInput): BattleItemState {
   return {
     id: item.id,
     name: item.name,
+    mana: item.mana ?? 0,
     meleeDmg: item.meleeDmg ?? 0,
     rangedDmg: item.rangedDmg ?? 0,
     manaRegen: item.manaRegen ?? 0,
@@ -57,6 +59,7 @@ function normalizeItem(item: ItemInput): BattleItemState {
 function itemBonusStats(items: BattleItemState[]): UnitStats {
   const totals = zeroStats();
   for (const item of items) {
+    totals.mana += item.mana;
     totals.meleeDmg += item.meleeDmg;
     totals.rangedDmg += item.rangedDmg;
     totals.manaRegen += item.manaRegen;
@@ -74,6 +77,7 @@ function createUnitState(
   unit: UnitInput,
 ): BattleUnitState {
   const items = (unit.items ?? []).map(normalizeItem);
+  const bonuses = itemBonusStats(items);
   return {
     instanceId: `${scenarioId}:${rowType}:${slot}`,
     templateId: unit.id,
@@ -82,9 +86,9 @@ function createUnitState(
     slot,
     name: unit.name,
     baseStats: { ...unit.stats },
-    itemBonusStats: itemBonusStats(items),
+    itemBonusStats: bonuses,
     currentHealth: unit.currentHealth ?? unit.stats.health,
-    mana: unit.startingMana ?? 0,
+    mana: Math.max(0, unit.stats.mana + bonuses.mana),
     actionBar: unit.startingActionBar ?? 0,
     items,
     targetPolicy: unit.targetPolicy ?? null,
@@ -226,6 +230,14 @@ export function clampHealth(unit: BattleUnitState, maxHealth: number): void {
   if (unit.currentHealth > maxHealth) {
     unit.currentHealth = maxHealth;
   }
+}
+
+export function reconcileManaForCapacityChange(
+  unit: BattleUnitState,
+  oldMaximum: number,
+  newMaximum: number,
+): void {
+  unit.mana = Math.min(newMaximum, Math.max(0, unit.mana + newMaximum - oldMaximum));
 }
 
 export function createActiveModifier(statKey: StatKey, value: number) {

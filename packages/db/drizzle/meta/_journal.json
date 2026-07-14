@@ -92,6 +92,13 @@
       "when": 1784060144039,
       "tag": "0012_rename_effect_timing_to_ticks",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784062848398,
+      "tag": "0013_wild_lionheart",
+      "breakpoints": true
     }
   ]
 }

@@ -203,6 +203,7 @@ describe("unitsRouter", () => {
         health: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 0,
         dodge: 0,
@@ -210,6 +211,27 @@ describe("unitsRouter", () => {
         itemIds: [],
       }),
     );
+
+    it("rejects negative mana capacity", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.units.create({
+          name: "Broken Mage",
+          meleeDmg: 0,
+          health: 100,
+          mana: -1,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 1,
+          dodge: 0,
+          criticalChance: 0,
+          itemIds: [],
+        }),
+      ).rejects.toBeDefined();
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
 
     it("creates a unit with no linked items", async () => {
       const created = {
@@ -219,6 +241,7 @@ describe("unitsRouter", () => {
         health: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 0,
         dodge: 0,
@@ -235,6 +258,7 @@ describe("unitsRouter", () => {
         health: 0,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 0,
         dodge: 0,
@@ -257,6 +281,7 @@ describe("unitsRouter", () => {
         health: 82.25,
         rangedDmg: 0,
         manaRegen: -1.25,
+        mana: 100,
         spellDmg: 4,
         speed: 1.35,
         dodge: 6.5,
@@ -278,6 +303,7 @@ describe("unitsRouter", () => {
         health: 82.25,
         rangedDmg: 0,
         manaRegen: -1.25,
+        mana: 100,
         spellDmg: 4,
         speed: 1.35,
         dodge: 6.5,
@@ -295,6 +321,7 @@ describe("unitsRouter", () => {
         health: 82.25,
         rangedDmg: 0,
         manaRegen: -1.25,
+        mana: 100,
         spellDmg: 4,
         speed: 1.35,
         dodge: 6.5,
@@ -317,6 +344,7 @@ describe("unitsRouter", () => {
         health: 120,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 1,
         dodge: 5,
@@ -333,6 +361,7 @@ describe("unitsRouter", () => {
         health: 120,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 1,
         dodge: 5,
@@ -353,6 +382,7 @@ describe("unitsRouter", () => {
         health: 120,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 1,
         dodge: 5,
@@ -370,6 +400,7 @@ describe("unitsRouter", () => {
         health: 120,
         rangedDmg: 0,
         manaRegen: 0,
+        mana: 100,
         spellDmg: 0,
         speed: 1,
         dodge: 5,
@@ -394,6 +425,7 @@ describe("unitsRouter", () => {
           health: 0,
           rangedDmg: 0,
           manaRegen: 0,
+          mana: 100,
           spellDmg: 0,
           speed: 0,
           dodge: 0,

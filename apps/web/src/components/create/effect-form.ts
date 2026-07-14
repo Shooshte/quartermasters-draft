@@ -11,6 +11,7 @@ export interface EffectFormValues {
   durationTicks: number | null;
   meleeDmg: number | null;
   health: number | null;
+  mana: number | null;
   rangedDmg: number | null;
   manaRegen: number | null;
   spellDmg: number | null;
@@ -34,6 +35,7 @@ type EffectRecord = {
   durationTicks: number | null;
   meleeDmg: number | null;
   health: number | null;
+  mana: number | null;
   rangedDmg: number | null;
   manaRegen: number | null;
   spellDmg: number | null;
@@ -52,6 +54,7 @@ export const EFFECT_NUMERIC_FIELDS = [
   "durationTicks",
   "meleeDmg",
   "health",
+  "mana",
   "rangedDmg",
   "manaRegen",
   "spellDmg",
@@ -80,6 +83,7 @@ export function createDefaultEffectFormValues(): EffectFormValues {
     durationTicks: null,
     meleeDmg: null,
     health: null,
+    mana: null,
     rangedDmg: null,
     manaRegen: null,
     spellDmg: null,

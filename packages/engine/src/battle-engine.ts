@@ -61,7 +61,7 @@ function incrementManaAndBars(state: BattleState): void {
   for (const unit of allUnits(state)) {
     if (!isUnitAlive(unit)) continue;
     const stats = getUnitEffectiveStats(unit);
-    unit.mana += stats.manaRegen;
+    unit.mana = Math.min(stats.mana, unit.mana + stats.manaRegen);
     unit.actionBar += stats.speed;
   }
 }
@@ -76,6 +76,7 @@ const DEFAULT_INPUT: BattleInput = {
             name: "Default A",
             stats: {
               health: 100,
+              mana: 100,
               meleeDmg: 10,
               rangedDmg: 0,
               manaRegen: 0,
@@ -96,6 +97,7 @@ const DEFAULT_INPUT: BattleInput = {
             name: "Default B",
             stats: {
               health: 100,
+              mana: 100,
               meleeDmg: 10,
               rangedDmg: 0,
               manaRegen: 0,

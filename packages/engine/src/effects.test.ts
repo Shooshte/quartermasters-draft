@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applySpell, processOngoingEffects } from "./effects";
+import { getUnitEffectiveStats } from "./math";
 import { initializeBattleState } from "./state";
 import {
   createBattleInput,
@@ -66,6 +67,104 @@ function createEffectState() {
 }
 
 describe("effects", () => {
+  it("preserves mana deficit when a capacity buff applies and expires", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+    mage.mana = 70;
+
+    applySpell(
+      state,
+      cleric,
+      createSpell({
+        name: "Arcane Well",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Expanded Mind",
+            effectType: "buff",
+            timingType: "instant",
+            mana: 50,
+            durationTicks: 2,
+          }),
+        ),
+      }),
+    );
+
+    expect(mage.mana).toBe(120);
+    processOngoingEffects(state, 2);
+    expect(mage.mana).toBe(70);
+  });
+
+  it("preserves spent mana when a negative capacity modifier applies and expires", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+    mage.mana = 70;
+
+    applySpell(
+      state,
+      cleric,
+      createSpell({
+        name: "Mana Seal",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Restricted Mind",
+            effectType: "buff",
+            timingType: "instant",
+            mana: -50,
+            durationTicks: 2,
+          }),
+        ),
+      }),
+    );
+
+    expect(getUnitEffectiveStats(mage).mana).toBe(50);
+    expect(mage.mana).toBe(20);
+    processOngoingEffects(state, 2);
+    expect(getUnitEffectiveStats(mage).mana).toBe(100);
+    expect(mage.mana).toBe(70);
+  });
+
+  it("floors capacity at zero and reconciles simultaneous expirations once", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+    mage.mana = 10;
+
+    applySpell(
+      state,
+      cleric,
+      createSpell({
+        name: "Unstable Reservoir",
+        targetPolicy: "highest_health",
+        effects: effectSequence(
+          createEffect({
+            name: "Expanded Mind",
+            effectType: "buff",
+            timingType: "instant",
+            mana: 50,
+            durationTicks: 2,
+          }),
+          createEffect({
+            name: "Mana Collapse",
+            effectType: "buff",
+            timingType: "instant",
+            mana: -120,
+            durationTicks: 2,
+          }),
+        ),
+      }),
+    );
+
+    expect(getUnitEffectiveStats(mage).mana).toBe(30);
+    expect(mage.mana).toBe(0);
+    processOngoingEffects(state, 2);
+    expect(getUnitEffectiveStats(mage).mana).toBe(100);
+    expect(mage.mana).toBe(70);
+  });
+
   it("applies instant direct damage and healing and clamps healing to max health", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

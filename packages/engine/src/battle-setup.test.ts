@@ -20,7 +20,25 @@ function getUnitByName(engine: BattleEngine, scenarioId: string, name: string) {
 }
 
 describe("battle setup", () => {
-  it("initializes battle state with fixed row order, zero action bar, zero mana, and base health", () => {
+  it("initializes current mana at effective base plus item capacity", () => {
+    const engine = new BattleEngine(
+      createBattleInput([
+        createScenario("A", {
+          support: [
+            createUnit("Mage", {
+              stats: createStats({ mana: 200 }),
+              items: [createItem({ name: "Focus", mana: 25 })],
+            }),
+          ],
+        }),
+        createScenario("B", { tank: [createUnit("Dummy")] }),
+      ]),
+    );
+
+    expect(getUnitByName(engine, "A", "Mage").mana).toBe(225);
+  });
+
+  it("initializes battle state with fixed row order, zero action bar, full mana, and base health", () => {
     const alpha = createScenario("Alpha", {
       tank: [
         createUnit("Templar", { stats: createStats({ health: 150, meleeDmg: 20, dodge: 5 }) }),
@@ -48,7 +66,7 @@ describe("battle setup", () => {
     expect(state.scenarios[0].id).toBe("Alpha");
     expect(Object.keys(state.scenarios[0].rows)).toEqual(["tank", "melee", "ranged", "support"]);
     expect(getUnitByName(engine, "Alpha", "Templar").actionBar).toBe(0);
-    expect(getUnitByName(engine, "Alpha", "Templar").mana).toBe(0);
+    expect(getUnitByName(engine, "Alpha", "Templar").mana).toBe(100);
     expect(getUnitByName(engine, "Alpha", "Templar").currentHealth).toBe(150);
     expect(getUnitByName(engine, "Bravo", "Barbarian").currentHealth).toBe(120);
   });

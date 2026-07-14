@@ -1,6 +1,6 @@
 import { logEffectApplied, logEffectExpired, logHeal, pushLog } from "./logging";
 import { computeSpellDamageWithModifiers, getUnitEffectiveStats } from "./math";
-import { clampHealth, findUnitById, nextEffectId } from "./state";
+import { clampHealth, findUnitById, nextEffectId, reconcileManaForCapacityChange } from "./state";
 import { selectTargets } from "./targeting";
 import type {
   ActiveEffectState,
@@ -29,6 +29,7 @@ function effectStatEntries(
   const entries: Array<{ statKey: StatKey; value: number }> = [];
   for (const statKey of [
     "health",
+    "mana",
     "meleeDmg",
     "rangedDmg",
     "manaRegen",
@@ -143,6 +144,7 @@ function applyInstantEffect(
   }
 
   if (effect.effectType === "buff" || effect.effectType === "debuff") {
+    const oldMaximumMana = getUnitEffectiveStats(target).mana;
     for (const modifier of effectStatEntries(effect)) {
       const activeEffect: ActiveEffectState = {
         id: nextEffectId(state),
@@ -170,7 +172,9 @@ function applyInstantEffect(
         origin,
       );
     }
-    clampHealth(target, getUnitEffectiveStats(target).health);
+    const updatedStats = getUnitEffectiveStats(target);
+    clampHealth(target, updatedStats.health);
+    reconcileManaForCapacityChange(target, oldMaximumMana, updatedStats.mana);
   }
 
   return appliedModifiers;
@@ -306,6 +310,7 @@ export function processOngoingEffects(state: BattleState, elapsedTicks: number):
 export function processCurrentTickEffects(state: BattleState): void {
   const currentTick = state.tick;
   for (const unit of state.scenarios.flatMap((scenario) => Object.values(scenario.rows).flat())) {
+    const oldMaximumMana = getUnitEffectiveStats(unit).mana;
     const remaining: ActiveEffectState[] = [];
     for (const effect of unit.activeEffects) {
       if (
@@ -386,5 +391,8 @@ export function processCurrentTickEffects(state: BattleState): void {
       }
     }
     unit.activeEffects = remaining;
+    const updatedStats = getUnitEffectiveStats(unit);
+    clampHealth(unit, updatedStats.health);
+    reconcileManaForCapacityChange(unit, oldMaximumMana, updatedStats.mana);
   }
 }

@@ -97,7 +97,7 @@ export function EffectWorkspaceForm({
       {MODIFIER_GROUPS.map((group) => (
         <WorkspaceSection key={group.label} title={group.label}>
           <div
-            className={`grid gap-1.5 ${group.cols === 2 ? "grid-cols-2" : group.cols === 4 ? "grid-cols-4" : "grid-cols-3"}`}
+            className={`grid gap-1.5 ${group.cols === 4 ? "grid-cols-4" : "grid-cols-3"}`}
             data-testid={`effect-group-${group.label.toLowerCase().replaceAll(" ", "-")}`}
           >
             {group.fields.map((field) => (

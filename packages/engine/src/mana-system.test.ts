@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BattleEngine } from "./battle-engine";
+import { reconcileManaForCapacityChange } from "./state";
 import {
   createBattleInput,
   createItem,
@@ -39,11 +40,41 @@ function makeManaEngine() {
 }
 
 describe("mana system", () => {
-  it("regenerates mana each tick for living units with no cap", () => {
+  it("caps regeneration at effective mana capacity", () => {
+    const engine = new BattleEngine(
+      createBattleInput([
+        createScenario("A", {
+          melee: [createUnit("Warrior", { stats: createStats({ mana: 20, manaRegen: 100 }) })],
+        }),
+        createScenario("B", { tank: [createUnit("Dummy")] }),
+      ]),
+      { resolveActionsOnTick: false },
+    );
+
+    engine.tick(50);
+
+    const warrior = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
+    expect(warrior.mana).toBe(20);
+  });
+
+  it("preserves mana deficit when capacity effects apply and expire", () => {
+    const engine = makeManaEngine();
+    const state = engine.getState();
+    const warrior = Object.values(state.scenarios[0].rows).flat()[0]!;
+    warrior.mana = 70;
+
+    reconcileManaForCapacityChange(warrior, 100, 150);
+    expect(warrior.mana).toBe(120);
+
+    reconcileManaForCapacityChange(warrior, 150, 100);
+    expect(warrior.mana).toBe(70);
+  });
+
+  it("starts living units full and does not regenerate past capacity", () => {
     const engine = makeManaEngine();
     engine.tick(4);
-    let warrior = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
-    expect(warrior.mana).toBe(20);
+    const warrior = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
+    expect(warrior.mana).toBe(100);
 
     const capped = new BattleEngine(
       createBattleInput([
@@ -57,8 +88,7 @@ describe("mana system", () => {
       { resolveActionsOnTick: false },
     );
     capped.tick(50);
-    warrior = Object.values(capped.getState().scenarios[0].rows).flat()[0]!;
-    expect(warrior.mana).toBe(5000);
+    expect(Object.values(capped.getState().scenarios[0].rows).flat()[0]?.mana).toBe(100);
   });
 
   it("does not regenerate mana for dead units", () => {
@@ -73,7 +103,7 @@ describe("mana system", () => {
     );
     engine.tick(5);
     const dead = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
-    expect(dead.mana).toBe(0);
+    expect(dead.mana).toBe(100);
   });
 
   it("deducts mana and health per affordable item in action order", () => {
@@ -84,8 +114,7 @@ describe("mana system", () => {
         createScenario("A", {
           melee: [
             createUnit("Warrior", {
-              stats: createStats({ health: 80, speed: 100, manaRegen: 0 }),
-              startingMana: 50,
+              stats: createStats({ health: 80, mana: 50, speed: 100, manaRegen: 0 }),
               startingActionBar: 100,
               items: [
                 createItem({
@@ -122,8 +151,7 @@ describe("mana system", () => {
         createScenario("A", {
           melee: [
             createUnit("Warrior", {
-              stats: createStats({ speed: 100, manaRegen: 0 }),
-              startingMana: 30,
+              stats: createStats({ mana: 30, speed: 100, manaRegen: 0 }),
               startingActionBar: 100,
               items: [
                 createItem({
@@ -161,8 +189,7 @@ describe("mana system", () => {
         createScenario("A", {
           melee: [
             createUnit("Warrior", {
-              stats: createStats({ health: 100, speed: 100, manaRegen: 0 }),
-              startingMana: 30,
+              stats: createStats({ health: 100, mana: 30, speed: 100, manaRegen: 0 }),
               startingActionBar: 100,
               items: [
                 createItem({

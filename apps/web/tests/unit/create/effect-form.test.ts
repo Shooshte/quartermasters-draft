@@ -15,6 +15,7 @@ describe("effect-form", () => {
       effectType: "buff",
       intervalTicks: null,
       triggerCount: null,
+      mana: null,
     });
   });
 

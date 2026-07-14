@@ -38,6 +38,7 @@ const effectInputShape = {
   durationTicks: nullablePositiveInteger,
   meleeDmg: nullableNumber,
   health: nullableNumber,
+  mana: nullableNumber,
   rangedDmg: nullableNumber,
   manaRegen: nullableNumber,
   spellDmg: nullableNumber,

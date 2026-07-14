@@ -41,6 +41,7 @@ test.describe("Item Workspace", () => {
     await expectAllStats(gmPage, "item", {
       meleeDmg: "0",
       rangedDmg: "0",
+      mana: "0",
       manaRegen: "0",
       spellDmg: "0",
       dodge: "0",
@@ -78,6 +79,7 @@ test.describe("Item Workspace", () => {
 
     await item.fillName("Shade Charm");
     await item.fillStats({
+      mana: "-25",
       manaRegen: "4.5",
       dodge: "6",
     });
@@ -85,6 +87,7 @@ test.describe("Item Workspace", () => {
 
     await gmPage.reload();
     await expectAllStats(gmPage, "item", {
+      mana: "-25",
       manaRegen: "4.5",
       dodge: "6",
     });

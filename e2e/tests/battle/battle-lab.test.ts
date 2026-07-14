@@ -29,14 +29,16 @@ interface BattleReplayResponse {
             rowType: ScenarioRowType;
             slot: number;
             currentHealth: number;
-            baseStats: { health: number };
-            itemBonusStats: { health: number };
+            baseStats: { health: number; mana: number };
+            itemBonusStats: { health: number; mana: number };
             mana: number;
             actedCount: number;
             activeEffects: {
               name: string;
               remainingTriggers?: number;
               expiresAtTick?: number;
+              statKey?: string;
+              value: number;
             }[];
           }[]
         >;
@@ -156,6 +158,20 @@ test.describe("Battle Lab", () => {
     const battleLab = await runSavedBattle(gmPage);
 
     expect(battleLab.replayId).toMatch(/^[0-9a-f-]{36}$/);
+    const replay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    for (const unit of replay.result.finalState.scenarios.flatMap((scenario) =>
+      Object.values(scenario.rows).flat(),
+    )) {
+      const activeMana = unit.activeEffects
+        .filter((effect) => effect.statKey === "mana")
+        .reduce((total, effect) => total + effect.value, 0);
+      const effectiveMaximum = Math.max(
+        0,
+        unit.baseStats.mana + unit.itemBonusStats.mana + activeMana,
+      );
+      expect(unit.mana).toBeGreaterThanOrEqual(0);
+      expect(unit.mana).toBeLessThanOrEqual(effectiveMaximum);
+    }
   });
 
   test("saved replay keeps its setup and result after refresh", async ({ gmPage }) => {

@@ -120,6 +120,7 @@ export const effects = pgTable(
       .$onUpdate(() => new Date()),
     meleeDmg: real("melee_dmg"),
     health: real("health"),
+    mana: real("mana"),
     rangedDmg: real("ranged_dmg"),
     manaRegen: real("mana_regen"),
     spellDmg: real("spell_dmg"),
@@ -236,6 +237,7 @@ export const items = pgTable(
     name: text("name").notNull().unique(),
     meleeDmg: real("melee_dmg").notNull().default(0),
     rangedDmg: real("ranged_dmg").notNull().default(0),
+    mana: real("mana").notNull().default(0),
     manaRegen: real("mana_regen").notNull().default(0),
     spellDmg: real("spell_dmg").notNull().default(0),
     dodge: real("dodge").notNull().default(0),
@@ -273,23 +275,28 @@ export const itemsSpells = pgTable(
 );
 // Item-spell links are optional; items can exist without rows in items_spells.
 
-export const units = pgTable("units", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull().unique(),
-  meleeDmg: real("melee_dmg").notNull().default(0),
-  health: real("health").notNull().default(0),
-  rangedDmg: real("ranged_dmg").notNull().default(0),
-  manaRegen: real("mana_regen").notNull().default(0),
-  spellDmg: real("spell_dmg").notNull().default(0),
-  speed: real("speed").notNull().default(0),
-  dodge: real("dodge").notNull().default(0),
-  criticalChance: real("critical_chance").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const units = pgTable(
+  "units",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(),
+    meleeDmg: real("melee_dmg").notNull().default(0),
+    health: real("health").notNull().default(0),
+    mana: real("mana").notNull().default(100),
+    rangedDmg: real("ranged_dmg").notNull().default(0),
+    manaRegen: real("mana_regen").notNull().default(0),
+    spellDmg: real("spell_dmg").notNull().default(0),
+    speed: real("speed").notNull().default(0),
+    dodge: real("dodge").notNull().default(0),
+    criticalChance: real("critical_chance").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [check("units_mana_nonnegative", sql`${table.mana} >= 0`)],
+);
 
 // Unique on (unitId, priority) — not (unitId, itemId) — so the same item
 // can be assigned to a unit at different priority slots (e.g., dual-wielding).

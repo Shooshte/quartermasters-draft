@@ -34,6 +34,7 @@ Feature: Item workspace create and edit
 
   Scenario: Create an item with utility stats
     When I create a new item named "Shade Charm" with the following stats:
+      | mana      | -25 |
       | manaRegen | 4.5 |
       | dodge     | 6   |
     Then reloading the item by URL should show the saved stat values

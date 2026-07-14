@@ -73,6 +73,18 @@ test.describe("Effect Workspace CRUD", () => {
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toHaveValue("3");
   });
 
+  test("creates and reloads a signed mana capacity modifier", async ({ gmPage }) => {
+    const effect = new EffectWorkspacePage(gmPage);
+    await effect.openNew();
+
+    await effect.fillName("Mana Drain");
+    await gmPage.getByTestId("effect-mana-input").fill("-40");
+    await effect.saveCreate();
+    await gmPage.reload();
+
+    await expect(gmPage.getByTestId("effect-mana-input")).toHaveValue("-40");
+  });
+
   test("edit an existing effect and persist changes", async ({ gmPage }) => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openById(BARBARIAN_ROAR_ID);

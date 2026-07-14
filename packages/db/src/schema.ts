@@ -111,7 +111,7 @@ export const effects = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull().unique(),
     timingType: timingTypeEnum("timing_type").notNull(),
-    intervalMs: integer("interval_ms"),
+    intervalTicks: integer("interval_ticks"),
     triggerCount: integer("trigger_count"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -127,26 +127,32 @@ export const effects = pgTable(
     dodge: real("dodge"),
     criticalChance: real("critical_chance"),
     effectType: effectTypeEnum("effect_type").notNull().default("buff"),
-    durationMs: integer("duration_ms"),
+    durationTicks: integer("duration_ticks"),
     directHealing: real("direct_healing"),
     directMeleeDmg: real("direct_melee_dmg"),
     directRangedDmg: real("direct_ranged_dmg"),
     directSpellDmg: real("direct_spell_dmg"),
   },
   (table) => [
-    check("interval_ms_positive", sql`${table.intervalMs} IS NULL OR ${table.intervalMs} > 0`),
+    check(
+      "interval_ticks_positive",
+      sql`${table.intervalTicks} IS NULL OR ${table.intervalTicks} > 0`,
+    ),
     check(
       "trigger_count_positive",
       sql`${table.triggerCount} IS NULL OR ${table.triggerCount} > 0`,
     ),
-    check("duration_ms_positive", sql`${table.durationMs} IS NULL OR ${table.durationMs} > 0`),
+    check(
+      "duration_ticks_positive",
+      sql`${table.durationTicks} IS NULL OR ${table.durationTicks} > 0`,
+    ),
     check(
       "interval_fields_required",
-      sql`${table.timingType} != 'interval' OR (${table.intervalMs} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`,
+      sql`${table.timingType} != 'interval' OR (${table.intervalTicks} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`,
     ),
     check(
       "instant_fields_forbidden",
-      sql`${table.timingType} != 'instant' OR (${table.intervalMs} IS NULL AND ${table.triggerCount} IS NULL)`,
+      sql`${table.timingType} != 'instant' OR (${table.intervalTicks} IS NULL AND ${table.triggerCount} IS NULL)`,
     ),
   ],
 );

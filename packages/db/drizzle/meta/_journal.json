@@ -85,6 +85,13 @@
       "when": 1783883259355,
       "tag": "0011_battle_replays",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784060144039,
+      "tag": "0012_rename_effect_timing_to_ticks",
+      "breakpoints": true
     }
   ]
 }

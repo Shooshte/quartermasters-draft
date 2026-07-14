@@ -32,10 +32,10 @@ const nullablePositiveInteger = z.number().int().positive().nullable().default(n
 const effectInputShape = {
   name: z.string().trim().min(1),
   timingType: z.enum(["instant", "interval"]),
-  intervalMs: nullablePositiveInteger,
+  intervalTicks: nullablePositiveInteger,
   triggerCount: nullablePositiveInteger,
   effectType: z.enum(["buff", "debuff", "healing", "damage"]),
-  durationMs: nullablePositiveInteger,
+  durationTicks: nullablePositiveInteger,
   meleeDmg: nullableNumber,
   health: nullableNumber,
   rangedDmg: nullableNumber,
@@ -54,11 +54,11 @@ const effectInputBaseSchema = z.object(effectInputShape);
 
 function validateTimingFields(input: z.infer<typeof effectInputBaseSchema>, ctx: z.RefinementCtx) {
   if (input.timingType === "interval") {
-    if (input.intervalMs === null) {
+    if (input.intervalTicks === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["intervalMs"],
-        message: "Interval ms is required for interval timing.",
+        path: ["intervalTicks"],
+        message: "Tick interval is required for interval timing.",
       });
     }
     if (input.triggerCount === null) {
@@ -72,7 +72,7 @@ function validateTimingFields(input: z.infer<typeof effectInputBaseSchema>, ctx:
 
   if (
     input.timingType === "instant" &&
-    (input.intervalMs !== null || input.triggerCount !== null)
+    (input.intervalTicks !== null || input.triggerCount !== null)
   ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -88,7 +88,7 @@ function normalizeEffectInput<T extends z.infer<typeof effectInputSchema>>(input
   return {
     ...input,
     name: input.name.trim(),
-    intervalMs: input.timingType === "instant" ? null : input.intervalMs,
+    intervalTicks: input.timingType === "instant" ? null : input.intervalTicks,
     triggerCount: input.timingType === "instant" ? null : input.triggerCount,
   };
 }

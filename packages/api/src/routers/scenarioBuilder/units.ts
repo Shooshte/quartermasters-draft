@@ -22,7 +22,7 @@ const unitInputBaseSchema = z.object({
   name: z.string().trim().min(1),
   meleeDmg: z.number(),
   health: z.number(),
-  mana: z.number().min(0),
+  mana: z.number().finite().min(0),
   rangedDmg: z.number(),
   manaRegen: z.number(),
   spellDmg: z.number(),

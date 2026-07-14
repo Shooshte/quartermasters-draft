@@ -233,6 +233,30 @@ describe("unitsRouter", () => {
       expect(mockTransaction).not.toHaveBeenCalled();
     });
 
+    it.each([
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ])("rejects non-finite mana capacity %s", async (mana) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.units.create({
+          name: "Impossible Mage",
+          meleeDmg: 0,
+          health: 100,
+          mana,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 1,
+          dodge: 0,
+          criticalChance: 0,
+          itemIds: [],
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
     it("creates a unit with no linked items", async () => {
       const created = {
         id: "u-created",

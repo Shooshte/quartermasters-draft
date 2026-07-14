@@ -30,7 +30,7 @@ const itemInputBaseSchema = z.object({
   name: z.string().trim().min(1),
   meleeDmg: z.number(),
   rangedDmg: z.number(),
-  mana: z.number(),
+  mana: z.number().finite(),
   manaRegen: z.number(),
   spellDmg: z.number(),
   dodge: z.number(),

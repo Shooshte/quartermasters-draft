@@ -1,6 +1,6 @@
 import type { AppRouter } from "@qd/api";
 import type { inferRouterOutputs } from "@trpc/server";
-import { Card, CardContent, CardDescription, CardHeader } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import {
   Table,
   TableBody,
@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { BattleEventLedger } from "./battle-event-ledger";
 
 type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
 type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["rows"]["tank"][number];
@@ -119,14 +120,6 @@ function FinalStateLedger({
 export function BattleResultView({ scenarios, result }: BattleResultViewProps) {
   const winner = scenarios.find((scenario) => scenario.id === result.winnerId);
   const outcome = winner ? `${winner.name} wins` : "Draw";
-  const signatureCounts = new Map<string, number>();
-  const eventEntries = result.log.map((entry) => {
-    const signature = `${entry.tick}-${entry.type}-${entry.message}`;
-    const occurrence = signatureCounts.get(signature) ?? 0;
-    signatureCounts.set(signature, occurrence + 1);
-    return { entry, key: `${signature}-${occurrence}` };
-  });
-
   return (
     <section aria-labelledby="battle-outcome" className="space-y-4">
       <Card className="relative overflow-hidden border-primary/25 bg-primary/[0.055] py-0">
@@ -159,36 +152,7 @@ export function BattleResultView({ scenarios, result }: BattleResultViewProps) {
         ))}
       </div>
 
-      <Card className="gap-0 overflow-hidden py-0">
-        <CardHeader className="border-b border-border/70 px-5 py-4 sm:px-6">
-          <div>
-            <h3 className="text-base font-semibold">Event ledger</h3>
-            <CardDescription>Recorded in resolution order.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="px-0">
-          <ol aria-label="Battle events" className="divide-y divide-border/70">
-            {eventEntries.map(({ entry, key }) => (
-              <li
-                key={key}
-                className="grid grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7rem_minmax(0,1fr)]"
-              >
-                <div className="border-r border-border/70 bg-muted/25 px-3 py-3 text-right sm:px-4">
-                  <p className="text-xs font-semibold tabular-nums text-primary">
-                    Tick {entry.tick}
-                  </p>
-                  <p className="mt-0.5 text-[10px] tracking-[0.12em] text-muted-foreground uppercase">
-                    {entry.type.replaceAll("-", " ")}
-                  </p>
-                </div>
-                <p className="px-4 py-3 text-sm leading-5 text-foreground/90 sm:px-5">
-                  {entry.message}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
+      <BattleEventLedger scenarios={scenarios} result={result} />
     </section>
   );
 }

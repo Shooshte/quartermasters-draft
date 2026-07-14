@@ -66,6 +66,45 @@ function createLoggedBattle() {
 }
 
 describe("battle log", () => {
+  it("attributes immediate spell damage to its action, item, spell, and effect", () => {
+    const log = createLoggedBattle().resolve().log;
+    const cast = log.find((entry) => entry.type === "spell-cast");
+    const damage = log.find((entry) => entry.type === "damage");
+
+    expect(cast).toMatchObject({
+      actionId: expect.any(String),
+      origin: {
+        kind: "spell-effect",
+        item: { name: "Fire Staff", position: 1 },
+        spell: { name: "Fireball", position: 1 },
+      },
+    });
+    expect(damage).toMatchObject({
+      actionId: cast && (cast as { actionId?: string }).actionId,
+      origin: {
+        kind: "spell-effect",
+        effect: { name: "Impact", position: 1 },
+      },
+    });
+  });
+
+  it("keeps interval effect attribution without grouping it into the original action", () => {
+    const log = createLoggedBattle().resolve().log;
+    const delayedDamage = log.find(
+      (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Burning",
+    );
+
+    expect(delayedDamage).toMatchObject({
+      actionId: undefined,
+      origin: {
+        kind: "spell-effect",
+        item: { name: "Fire Staff", position: 1 },
+        spell: { name: "Fireball", position: 1 },
+        effect: { name: "Burning", position: 2 },
+      },
+    });
+  });
+
   it("produces structured chronological log entries and ends with a battle outcome", () => {
     const result = createLoggedBattle().resolve();
     expect(Array.isArray(result.log)).toBe(true);

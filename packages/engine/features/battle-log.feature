@@ -89,3 +89,15 @@ Feature: Battle log output
     And the battle is resolved again with the same inputs and seed as "run2"
     Then "run1" log should be identical to "run2" log
     And every entry at each index should match exactly
+
+  Scenario: Action outcomes retain structured attribution
+    Given a unit activates an item that casts a spell with an effect
+    When the spell deals damage or healing
+    Then each outcome should reference the originating item, spell, and effect
+    And all immediate entries from that unit action should share an action identifier
+
+  Scenario: Interval effects retain their original attribution
+    Given a spell applies an interval effect
+    When the effect triggers later in the battle
+    Then the delayed outcome should reference the original item, spell, and effect
+    And the delayed outcome should remain in chronological log order

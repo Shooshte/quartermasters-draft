@@ -8,7 +8,7 @@ import {
 import { compareUnitOrder } from "./rows";
 import { findScenario } from "./state";
 import { selectTargets } from "./targeting";
-import type { BattleState, BattleUnitState, SpellInput } from "./types";
+import type { BattleLogOrigin, BattleState, BattleUnitState, SpellInput } from "./types";
 
 export type ActionOutcome = {
   usedBasicAttack: boolean;
@@ -32,6 +32,7 @@ export function performBasicAttack(
   state: BattleState,
   attacker: BattleUnitState,
   tick = state.tick,
+  actionId = `${tick}:${attacker.instanceId}:${attacker.actedCount + 1}`,
 ): number {
   const targets = selectTargets(state, attacker, basicAttackPolicySpell(attacker));
   const target = targets[0];
@@ -63,6 +64,8 @@ export function performBasicAttack(
     target: target.name,
     targetId: target.instanceId,
     damage,
+    actionId,
+    origin: { kind: "basic-attack", actionId, sourceUnitId: attacker.instanceId },
     message: `Tick ${tick}: ${attacker.name} attacks ${target.name} for ${damage} damage`,
   });
   pushLog(state, {
@@ -73,6 +76,8 @@ export function performBasicAttack(
     target: target.name,
     targetId: target.instanceId,
     damage,
+    actionId,
+    origin: { kind: "basic-attack", actionId, sourceUnitId: attacker.instanceId },
     message: `Tick ${tick}: ${attacker.name} hits ${target.name} for ${damage} damage`,
   });
   if (target.currentHealth === 0) {
@@ -81,6 +86,8 @@ export function performBasicAttack(
       type: "death",
       unit: target.name,
       unitId: target.instanceId,
+      actionId,
+      origin: { kind: "basic-attack", actionId, sourceUnitId: attacker.instanceId },
       message: `Tick ${tick}: ${target.name} dies`,
     });
   }
@@ -94,10 +101,11 @@ export function resolveUnitAction(
 ): ActionOutcome {
   const castSpellNames: string[] = [];
   let totalDamage = 0;
+  const actionId = `${tick}:${unit.instanceId}:${unit.actedCount + 1}`;
 
   const items = [...unit.items];
 
-  for (const item of items) {
+  for (const [itemIndex, item] of items.entries()) {
     if (item.linkedSpells.length === 0) continue;
     if (unit.mana < item.activationManaCost) continue;
     if (unit.currentHealth < item.activationHealthCost) continue;
@@ -107,9 +115,9 @@ export function resolveUnitAction(
 
     let itemActivated = false;
 
-    for (const spell of [...castableSpells].sort((left, right) =>
-      left.name.localeCompare(right.name),
-    )) {
+    for (const [spellIndex, spell] of [...castableSpells]
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .entries()) {
       const targets = selectTargets(state, unit, spell);
       if (targets.length === 0) continue;
 
@@ -122,7 +130,14 @@ export function resolveUnitAction(
       const startingHealthByTarget = new Map(
         targets.map((target) => [target.instanceId, target.currentHealth]),
       );
-      const result = applySpellToTargets(state, unit, spell, targets, tick);
+      const origin: BattleLogOrigin = {
+        kind: "spell-effect",
+        actionId,
+        sourceUnitId: unit.instanceId,
+        item: { id: item.id, name: item.name, position: itemIndex + 1 },
+        spell: { id: spell.id, name: spell.name, position: spellIndex + 1 },
+      };
+      const result = applySpellToTargets(state, unit, spell, targets, tick, origin);
       castSpellNames.push(spell.name);
       totalDamage += result.targets.reduce((sum, target) => {
         // biome-ignore lint/style/noNonNullAssertion: applySpellToTargets only receives targets from battle state.
@@ -152,7 +167,7 @@ export function resolveUnitAction(
 
   return {
     usedBasicAttack: true,
-    totalDamage: performBasicAttack(state, unit, tick),
+    totalDamage: performBasicAttack(state, unit, tick, actionId),
     castSpellNames,
   };
 }

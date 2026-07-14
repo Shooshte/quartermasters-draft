@@ -156,7 +156,7 @@ describe("BattleResultView", () => {
     expect(screen.getByRole("cell", { name: "Alive" })).toBeVisible();
     expect(screen.getAllByRole("cell", { name: "Dead" })).toHaveLength(2);
     expect(screen.getByText("Burning (2 triggers remaining)")).toBeVisible();
-    expect(screen.getByText("Tick 184: Battle ends: Ambush at Dawn wins")).toBeVisible();
+    expect(screen.getByText("Battle ended: Ambush at Dawn.")).toBeVisible();
 
     const firstLedger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
     const unitNames = within(firstLedger)
@@ -171,8 +171,8 @@ describe("BattleResultView", () => {
         .getAllByRole("listitem")
         .map((entry) => entry.textContent),
     ).toEqual([
-      expect.stringContaining(attackLog.message),
-      expect.stringContaining(battleEndLog.message),
+      "Basic attackDealt 28 damage to Iron Guard · The Iron Line / Melee 1.",
+      "Battle ended: Ambush at Dawn.",
     ]);
   });
 
@@ -185,5 +185,111 @@ describe("BattleResultView", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Draw" })).toBeVisible();
+  });
+
+  it("renders attributed turn blocks without per-event tick labels", () => {
+    const actionId = "11:scenario-a:tank:1:8";
+    const result = {
+      ...fixture.result,
+      log: [
+        {
+          ...attackLog,
+          actionId,
+          origin: {
+            kind: "basic-attack",
+            actionId,
+            sourceUnitId: attackLog.attackerId,
+          },
+        },
+        {
+          tick: 11,
+          type: "damage",
+          source: attackLog.attacker,
+          sourceId: attackLog.attackerId,
+          target: attackLog.target,
+          targetId: attackLog.targetId,
+          damage: attackLog.damage,
+          actionId,
+          origin: {
+            kind: "basic-attack",
+            actionId,
+            sourceUnitId: attackLog.attackerId,
+          },
+          message: "Tick 11: Dawn Warden hits Iron Guard for 28 damage",
+        },
+      ],
+    } as unknown as ReplayOutput["result"];
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    const events = screen.getByRole("list", { name: "Battle events" });
+    expect(within(events).getByText("Dawn Warden · Ambush at Dawn / Tank 1")).toBeVisible();
+    expect(within(events).getByText(/Iron Guard · The Iron Line \/ Melee 1/)).toBeVisible();
+    expect(within(events).getByText("Basic attack")).toBeVisible();
+    expect(within(events).queryByText("Tick 11", { exact: false })).not.toBeInTheDocument();
+  });
+
+  it("shows spell-effect attribution on immediate and delayed outcomes", () => {
+    const actionId = "11:scenario-a:tank:1:8";
+    const spellOrigin = {
+      kind: "spell-effect",
+      actionId,
+      sourceUnitId: attackLog.attackerId,
+      item: { name: "Fire Staff", position: 1 },
+      spell: { name: "Fireball", position: 1 },
+    };
+    const result = {
+      ...fixture.result,
+      log: [
+        {
+          tick: 11,
+          type: "spell-cast",
+          caster: attackLog.attacker,
+          casterId: attackLog.attackerId,
+          spell: "Fireball",
+          targets: [attackLog.target],
+          targetIds: [attackLog.targetId],
+          effects: ["Impact", "Burning"],
+          actionId,
+          origin: spellOrigin,
+          message: "Tick 11: Dawn Warden casts Fireball on Iron Guard",
+        },
+        {
+          tick: 11,
+          type: "damage",
+          source: attackLog.attacker,
+          sourceId: attackLog.attackerId,
+          target: attackLog.target,
+          targetId: attackLog.targetId,
+          damage: 20,
+          actionId,
+          origin: { ...spellOrigin, effect: { name: "Impact", position: 1 } },
+          message: "Tick 11: Dawn Warden hits Iron Guard for 20 damage",
+        },
+        {
+          tick: 19,
+          type: "damage",
+          source: attackLog.attacker,
+          sourceId: attackLog.attackerId,
+          target: attackLog.target,
+          targetId: attackLog.targetId,
+          damage: 8,
+          origin: { ...spellOrigin, effect: { name: "Burning", position: 2 } },
+          message: "Tick 19: Dawn Warden hits Iron Guard for 8 damage",
+        },
+      ],
+    } as unknown as ReplayOutput["result"];
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    const events = screen.getByRole("list", { name: "Battle events" });
+    expect(within(events).getByText("Fire Staff › Fireball")).toBeVisible();
+    expect(within(events).getByText(/Impact dealt 20 damage/)).toBeVisible();
+    expect(within(events).getByText(/Burning dealt 8 damage/)).toBeVisible();
+    expect(
+      within(events).getByText(
+        "From Dawn Warden · Ambush at Dawn / Tank 1 · Fire Staff › Fireball",
+      ),
+    ).toBeVisible();
   });
 });

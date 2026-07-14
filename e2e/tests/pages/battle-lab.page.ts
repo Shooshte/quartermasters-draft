@@ -168,15 +168,19 @@ export class BattleLabPage {
     const eventLedger = this.page.getByRole("list", { name: "Battle events" });
     const eventEntries = eventLedger.getByRole("listitem");
     await expect(eventLedger).toBeVisible();
-    await expect(eventEntries).toHaveCount(expected.result.log.length);
+    await expect(eventEntries.first()).toBeVisible();
+    await expect(eventLedger.getByText(/Tick \d+/)).toHaveCount(0);
+    await expect(eventEntries.last()).toContainText("Battle ended:");
 
-    for (const [index, entry] of expected.result.log.entries()) {
-      const renderedEntry = eventEntries.nth(index);
-      await expect(renderedEntry.getByText(`Tick ${entry.tick}`, { exact: true })).toBeVisible();
+    const attributedSpell = expected.result.log.find(
+      (entry) => entry.origin?.item?.name && entry.origin.spell?.name,
+    );
+    if (attributedSpell?.origin?.item && attributedSpell.origin.spell) {
       await expect(
-        renderedEntry.getByText(entry.type.replaceAll("-", " "), { exact: true }),
+        eventLedger.getByText(
+          `${attributedSpell.origin.item.name} › ${attributedSpell.origin.spell.name}`,
+        ),
       ).toBeVisible();
-      await expect(renderedEntry.getByText(entry.message, { exact: true })).toBeVisible();
     }
   }
 

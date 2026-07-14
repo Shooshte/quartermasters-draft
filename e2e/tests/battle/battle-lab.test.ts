@@ -42,7 +42,17 @@ interface BattleReplayResponse {
         >;
       }[];
     };
-    log: { tick: number; type: string; message: string }[];
+    log: {
+      tick: number;
+      type: string;
+      message: string;
+      actionId?: string;
+      origin?: {
+        item?: { name: string };
+        spell?: { name: string };
+        effect?: { name: string };
+      };
+    }[];
   };
 }
 

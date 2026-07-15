@@ -7,6 +7,26 @@ Feature: Spell target selection
   # When targetRowCount < 4, targeting starts from the frontmost occupied row and moves backward.
   # Healing effects target allies (same army); damage effects target enemies.
 
+  Scenario: self scope targets only the caster
+    Given a spell with targetPolicy "lowest_health", targetScope "self", targetRowCount 1 and maxTargetsPerRow 1
+    When army "Alpha" unit "Knight" casts the spell against army "Bravo"
+    Then the selected targets should be:
+      | name   |
+      | Knight |
+
+  Scenario: others scope excludes the caster from allied healing targets
+    Given army "Alpha" unit "Cleric" has current health 1 out of max health 80
+    And a healing spell with targetPolicy "lowest_health", targetScope "others", targetRowCount 1 and maxTargetsPerRow 1
+    When army "Alpha" unit "Cleric" casts the healing spell
+    Then the selected targets should not include "Cleric"
+
+  Scenario: self priority falls back deterministically when the caster is unavailable
+    Given a spell with targetPolicy "self" and targetRowCount 1 and maxTargetsPerRow 1
+    When army "Alpha" unit "Knight" casts the spell against army "Bravo"
+    Then the selected targets should be:
+      | name    |
+      | Warrior |
+
   Background:
     Given two opposing armies "Alpha" and "Bravo"
     And army "Alpha" has the following formation:

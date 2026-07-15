@@ -14,9 +14,17 @@ Feature: Spell workspace create and edit
     Then the spell workspace should save the spell in edit mode
     And the URL should contain the created "spell_id"
 
-  Scenario: Target policy offers all four options
+  Scenario: Target policy offers all five options
     When I start creating a new spell
-    Then the target policy dropdown should offer "highest_health", "lowest_health", "highest_damage", and "random"
+    Then the target policy dropdown should offer "highest_health", "lowest_health", "highest_damage", "random", and "self"
+
+  Scenario: Target scope defaults and persists
+    When I start creating a new spell
+    Then the target scope should default to "self_and_others"
+    When I create a new spell named "Inner Ward" with target policy "self" and target scope "self"
+    And I add effect "Barbarian Roar" at sequence position 1
+    And I save the spell
+    Then reloading the spell by URL should show target scope "self"
 
   Scenario: Target policy is required
     When I start creating a new spell without selecting a target policy

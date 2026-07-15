@@ -32,7 +32,8 @@ const allowedRowTypeEnum = z.enum(["support", "ranged", "melee", "tank"]);
 const spellInputFields = z.object({
   name: z.string().trim().min(1),
   description: z.string().nullable().optional().default(null),
-  targetPolicy: z.enum(["highest_health", "lowest_health", "highest_damage", "random"]),
+  targetPolicy: z.enum(["highest_health", "lowest_health", "highest_damage", "random", "self"]),
+  targetScope: z.enum(["self", "self_and_others", "others"]).default("self_and_others"),
   effectIds: z.array(idSchema).min(1, "At least one linked effect is required"),
   targetRowCount: z.number().int().min(1).max(4).default(1),
   maxTargetsPerRow: z.number().int().min(1).nullable().default(1),
@@ -57,6 +58,13 @@ function addTargetingRefinements<T extends z.ZodType<z.infer<typeof spellInputFi
         path: ["targetOnlyAdjacent"],
       });
     }
+    if (d.targetPolicy === "self" && d.targetScope === "others") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Self priority cannot be used when the caster is excluded",
+        path: ["targetScope"],
+      });
+    }
   });
 }
 
@@ -67,6 +75,7 @@ function normalizeSpellInput(input: z.infer<typeof spellInputBaseSchema>) {
     name: input.name.trim(),
     description: input.description?.trim() ? input.description.trim() : null,
     targetPolicy: input.targetPolicy,
+    targetScope: input.targetScope,
     effectIds: input.effectIds,
     targetRowCount: input.targetRowCount,
     maxTargetsPerRow: input.maxTargetsPerRow,
@@ -153,6 +162,7 @@ export const spellsRouter = router({
         name: spells.name,
         description: spells.description,
         targetPolicy: spells.targetPolicy,
+        targetScope: spells.targetScope,
         targetRowCount: spells.targetRowCount,
         maxTargetsPerRow: spells.maxTargetsPerRow,
         targetOnlyAdjacent: spells.targetOnlyAdjacent,
@@ -208,6 +218,7 @@ export const spellsRouter = router({
             name: normalized.name,
             description: normalized.description,
             targetPolicy: normalized.targetPolicy,
+            targetScope: normalized.targetScope,
             targetRowCount: normalized.targetRowCount,
             maxTargetsPerRow: normalized.maxTargetsPerRow,
             targetOnlyAdjacent: normalized.targetOnlyAdjacent,
@@ -253,6 +264,7 @@ export const spellsRouter = router({
               name: normalized.name,
               description: normalized.description,
               targetPolicy: normalized.targetPolicy,
+              targetScope: normalized.targetScope,
               targetRowCount: normalized.targetRowCount,
               maxTargetsPerRow: normalized.maxTargetsPerRow,
               targetOnlyAdjacent: normalized.targetOnlyAdjacent,

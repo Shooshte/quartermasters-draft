@@ -8,6 +8,7 @@ const defaultFormValues: SpellFormValues = {
   name: "",
   description: "",
   targetPolicy: "",
+  targetScope: "self_and_others",
   effectIds: [],
   targetRowCount: 1,
   maxTargetsPerRow: 1,
@@ -88,6 +89,18 @@ describe("SpellWorkspaceForm", () => {
         "lowest_health",
         "highest_damage",
         "random",
+        "self",
+      ]);
+    });
+
+    it("renders target scope options", () => {
+      renderForm();
+
+      const select = screen.getByTestId("spell-target-scope-select") as HTMLSelectElement;
+      expect(Array.from(select.options).map((option) => option.value)).toEqual([
+        "self",
+        "self_and_others",
+        "others",
       ]);
     });
 

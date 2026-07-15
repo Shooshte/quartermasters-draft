@@ -96,6 +96,7 @@ export async function loadBattleScenario(
               name: spells.name,
               description: spells.description,
               targetPolicy: spells.targetPolicy,
+              targetScope: spells.targetScope,
               targetRowCount: spells.targetRowCount,
               maxTargetsPerRow: spells.maxTargetsPerRow,
               targetOnlyAdjacent: spells.targetOnlyAdjacent,

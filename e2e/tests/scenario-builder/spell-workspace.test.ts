@@ -26,11 +26,11 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(spell.nameInput).toHaveValue("Arcane Volley");
   });
 
-  test("target policy offers all four options", async ({ gmPage }) => {
+  test("target policy offers all five options", async ({ gmPage }) => {
     const spell = new SpellWorkspacePage(gmPage);
     await spell.openNew();
 
-    for (const policy of ["highest_health", "lowest_health", "highest_damage", "random"]) {
+    for (const policy of ["highest_health", "lowest_health", "highest_damage", "random", "self"]) {
       await expect(spell.targetPolicySelect.locator(`option[value="${policy}"]`)).toBeAttached();
     }
   });
@@ -223,6 +223,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(gmPage.getByTestId("spell-target-row-count-input")).toHaveValue("1");
     await expect(gmPage.getByTestId("spell-max-targets-per-row-input")).toHaveValue("1");
     await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).not.toBeChecked();
+    await expect(gmPage.getByTestId("spell-target-scope-select")).toHaveValue("self_and_others");
 
     // No row type restriction pills should be active
     for (const rowType of ["melee", "tank", "ranged", "support"]) {
@@ -231,6 +232,19 @@ test.describe("Spell Workspace — Target Scope", () => {
         "true",
       );
     }
+  });
+
+  test("target scope persists after save and reload", async ({ gmPage }) => {
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
+    await spell.fillName("Inner Ward");
+    await spell.setTargetPolicy("self");
+    await gmPage.getByTestId("spell-target-scope-select").selectOption("self");
+    await spell.addEffect("Barbarian Roar");
+    await spell.saveCreate();
+
+    await gmPage.reload();
+    await expect(gmPage.getByTestId("spell-target-scope-select")).toHaveValue("self");
   });
 
   test("create a spell targeting a whole row", async ({ gmPage }) => {

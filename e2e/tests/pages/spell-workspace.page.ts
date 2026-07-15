@@ -25,6 +25,10 @@ export class SpellWorkspacePage {
     return this.page.getByTestId("spell-target-policy-select");
   }
 
+  get targetScopeSelect() {
+    return this.page.getByTestId("spell-target-scope-select");
+  }
+
   get descriptionInput() {
     return this.page.getByTestId("spell-description-input");
   }
@@ -59,6 +63,10 @@ export class SpellWorkspacePage {
 
   async setTargetPolicy(policy: string) {
     await this.targetPolicySelect.selectOption(policy);
+  }
+
+  async setTargetScope(scope: string) {
+    await this.targetScopeSelect.selectOption(scope);
   }
 
   async addEffect(name: string, search?: string) {

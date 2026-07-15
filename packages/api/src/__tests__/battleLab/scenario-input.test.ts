@@ -153,6 +153,7 @@ describe("toScenarioInput", () => {
                 linkedSpells: [
                   {
                     ...fireball,
+                    targetScope: "self_and_others",
                     allowedRowTypes: ["ranged", "support"],
                     effects: [
                       { sequenceOrder: 1, effect: scorch },

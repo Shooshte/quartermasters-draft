@@ -5,6 +5,7 @@ import type {
   ScenarioInput,
   SpellInput,
   TargetPolicy,
+  TargetScope,
 } from "@qd/engine";
 
 type ScenarioRecord = {
@@ -45,6 +46,7 @@ type SpellRecord = {
   name: string;
   description: string | null;
   targetPolicy: TargetPolicy;
+  targetScope?: TargetScope;
   targetRowCount: number;
   maxTargetsPerRow: number | null;
   targetOnlyAdjacent: boolean;
@@ -173,6 +175,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
       name: spell.name,
       description: spell.description,
       targetPolicy: spell.targetPolicy,
+      targetScope: spell.targetScope ?? "self_and_others",
       targetRowCount: spell.targetRowCount,
       maxTargetsPerRow: spell.maxTargetsPerRow,
       targetOnlyAdjacent: spell.targetOnlyAdjacent,

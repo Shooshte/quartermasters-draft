@@ -7,9 +7,14 @@ export const TARGET_POLICIES = [
   "lowest_health",
   "highest_damage",
   "random",
+  "self",
 ] as const;
 
 export type TargetPolicy = (typeof TARGET_POLICIES)[number];
+
+export const TARGET_SCOPES = ["self", "self_and_others", "others"] as const;
+
+export type TargetScope = (typeof TARGET_SCOPES)[number];
 
 export const STAT_KEYS = [
   "health",
@@ -58,6 +63,7 @@ export interface SpellInput {
   name: string;
   description?: string | null;
   targetPolicy: TargetPolicy;
+  targetScope?: TargetScope;
   targetRowCount?: number;
   maxTargetsPerRow?: number | null;
   targetOnlyAdjacent?: boolean;

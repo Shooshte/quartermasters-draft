@@ -21,7 +21,9 @@ export const targetPolicyEnum = pgEnum("target_policy", [
   "lowest_health",
   "highest_damage",
   "random",
+  "self",
 ]);
+export const targetScopeEnum = pgEnum("target_scope", ["self", "self_and_others", "others"]);
 export const rowTypeEnum = pgEnum("row_type", ["support", "ranged", "melee", "tank"]);
 
 export const user = pgTable(
@@ -165,6 +167,7 @@ export const spells = pgTable(
     name: text("name").notNull().unique(),
     description: text("description"),
     targetPolicy: targetPolicyEnum("target_policy").notNull(),
+    targetScope: targetScopeEnum("target_scope").notNull().default("self_and_others"),
     targetRowCount: integer("target_row_count").notNull().default(1),
     maxTargetsPerRow: integer("max_targets_per_row").default(1),
     targetOnlyAdjacent: boolean("target_only_adjacent").notNull().default(false),
@@ -190,6 +193,10 @@ export const spells = pgTable(
     check(
       "target_only_adjacent_min_targets",
       sql`${table.targetOnlyAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`,
+    ),
+    check(
+      "self_priority_requires_self_eligible_scope",
+      sql`${table.targetScope} != 'others' OR ${table.targetPolicy}::text != 'self'`,
     ),
   ],
 );

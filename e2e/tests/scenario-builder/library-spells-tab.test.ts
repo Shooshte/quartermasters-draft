@@ -161,7 +161,7 @@ test.describe("Spells Library Tab — Sorting", () => {
     await lib.clickSortColumn("Target Policy");
 
     // PostgreSQL sorts enums by declaration order, not alphabetically
-    // Enum order: highest_health, lowest_health, highest_damage, random
+    // Enum order: highest_health, lowest_health, highest_damage, random, self
     // highest_health: Dark Pact, Fireball
     // Secondary sort by name asc within same policy
     await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Dark Pact");
@@ -175,7 +175,7 @@ test.describe("Spells Library Tab — Sorting", () => {
     await lib.clickSortColumn("Target Policy");
     await lib.clickSortColumn("Target Policy");
 
-    // random is last in enum declaration order, so first when descending
+    // self is last but has no seeded records; random is the first populated policy when descending
     // random: Battle Cry, Earthquake — secondary sort by name asc
     await expect(lib.rows.nth(0)).toHaveAttribute("aria-label", "Battle Cry");
   });

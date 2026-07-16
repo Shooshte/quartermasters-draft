@@ -254,6 +254,7 @@ describe("spellsRouter", () => {
         name: "Silent Strike",
         description: null,
         targetPolicy: "random",
+        targetScope: "self_and_others",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
         targetOnlyAdjacent: false,
@@ -490,6 +491,54 @@ describe("spellsRouter", () => {
       expect(result.allowedRowTypes).toEqual([]);
     });
 
+    it("defaults omitted target scope to self and others", async () => {
+      const created = {
+        id: "b0000000-0000-4000-8000-000000000034",
+        name: "Scoped Spell",
+        description: null,
+        targetPolicy: "random",
+        targetScope: "self_and_others",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        targetOnlyAdjacent: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const values = vi
+        .fn()
+        .mockReturnValueOnce(chainable([created]))
+        .mockReturnValueOnce(chainable([]));
+      mockInsertFn.mockReturnValue({ values });
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.spells.create({
+        name: "Scoped Spell",
+        targetPolicy: "random",
+        effectIds: ["a0000000-0000-4000-8000-000000000001"],
+      });
+
+      expect(values.mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({ targetScope: "self_and_others" }),
+      );
+      expect(result.targetScope).toBe("self_and_others");
+    });
+
+    it("rejects self priority when the caster is excluded", async () => {
+      const caller = createCaller(gmCtx);
+      const create = caller.spells.create as (input: unknown) => Promise<unknown>;
+
+      await expect(
+        create({
+          name: "Invalid Scope",
+          targetPolicy: "self",
+          targetScope: "others",
+          effectIds: ["a0000000-0000-4000-8000-000000000001"],
+        }),
+      ).rejects.toThrow("Self priority cannot be used when the caster is excluded");
+
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
     it("rejects targetRowCount less than 1", async () => {
       const caller = createCaller(gmCtx);
       await expect(
@@ -584,6 +633,7 @@ describe("spellsRouter", () => {
         name: "Fireball Updated",
         description: "Updated desc",
         targetPolicy: "highest_damage",
+        targetScope: "self_and_others",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
         targetOnlyAdjacent: false,
@@ -618,6 +668,7 @@ describe("spellsRouter", () => {
         name: "Silent Spell",
         description: null,
         targetPolicy: "random",
+        targetScope: "self_and_others",
         targetRowCount: 1,
         maxTargetsPerRow: 1,
         targetOnlyAdjacent: false,

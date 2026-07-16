@@ -84,10 +84,14 @@ export function computeIsDirty(
   return Object.keys(formValues).some((key) => {
     const current = formValues[key];
     const original = originalData ? originalData[key] : "";
+    const compatibilityDefault =
+      entityType === "spell" && key === "targetScope" && original === undefined
+        ? "self_and_others"
+        : original;
     if (Array.isArray(current) && Array.isArray(original)) {
       return current.length !== original.length || current.some((v, i) => v !== original[i]);
     }
-    return normalise(current) !== normalise(original);
+    return normalise(current) !== normalise(compatibilityDefault);
   });
 }
 

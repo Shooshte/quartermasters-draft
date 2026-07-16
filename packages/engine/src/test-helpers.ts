@@ -59,6 +59,7 @@ export function createSpell(
   return {
     id: overrides.id ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
     description: null,
+    targetScope: "self_and_others",
     targetRowCount: 1,
     maxTargetsPerRow: 1,
     targetOnlyAdjacent: false,

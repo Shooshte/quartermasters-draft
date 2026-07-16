@@ -15,6 +15,7 @@ export type {
   SpellInput,
   StatKey,
   TargetPolicy,
+  TargetScope,
   UnitInput,
   UnitStats,
 } from "./types";

@@ -38,6 +38,7 @@ export function TargetingCard({ formValues, errors, onFieldChange }: TargetingCa
               { value: "lowest_health" },
               { value: "highest_damage" },
               { value: "random" },
+              { value: "self" },
             ]}
             onChange={(value) => onFieldChange("targetPolicy", value)}
           />
@@ -45,6 +46,23 @@ export function TargetingCard({ formValues, errors, onFieldChange }: TargetingCa
         {errors.targetPolicy ? (
           <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
             {errors.targetPolicy}
+          </p>
+        ) : null}
+
+        <div className="targeting-card-policy-row">
+          <span className="targeting-card-policy-label">Scope</span>
+          <WorkspaceSelectChip
+            chipTestId="spell-target-scope-chip"
+            selectTestId="spell-target-scope-select"
+            className="ws-chip"
+            value={formValues.targetScope}
+            options={[{ value: "self" }, { value: "self_and_others" }, { value: "others" }]}
+            onChange={(value) => onFieldChange("targetScope", value)}
+          />
+        </div>
+        {errors.targetScope ? (
+          <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
+            {errors.targetScope}
           </p>
         ) : null}
 

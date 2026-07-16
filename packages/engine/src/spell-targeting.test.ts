@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initializeBattleState } from "./state";
+import { asInternalState, initializeBattleState } from "./state";
 import { selectTargets } from "./targeting";
 import {
   createBattleInput,
@@ -338,5 +338,105 @@ describe("spell targeting", () => {
     );
 
     expect(targets.map((unit) => unit.name)).toEqual(["Ranger", "Sorcerer"]);
+  });
+
+  it("targets only the caster when scope is self", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+
+    const targets = selectTargets(
+      state,
+      caster,
+      createSpell({
+        name: "Self Ward",
+        targetPolicy: "lowest_health",
+        targetScope: "self",
+      } as never),
+    );
+
+    expect(targets.map((unit) => unit.name)).toEqual(["Knight"]);
+  });
+
+  it("excludes the caster from allied targets when scope is others", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.melee[0]!;
+    caster.currentHealth = 1;
+
+    const targets = selectTargets(
+      state,
+      caster,
+      createSpell({
+        name: "Other Heal",
+        targetPolicy: "lowest_health",
+        targetScope: "others",
+        effects: effectSequence(
+          createEffect({
+            name: "Mend Others",
+            effectType: "healing",
+            timingType: "instant",
+            directHealing: 10,
+          }),
+        ),
+      } as never),
+    );
+
+    expect(targets.map((unit) => unit.name)).toEqual(["Mage"]);
+  });
+
+  it("prioritizes the caster when self is an eligible priority target", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.ranged[1]!;
+
+    const targets = selectTargets(
+      state,
+      caster,
+      createSpell({
+        name: "Self Priority Heal",
+        targetPolicy: "self",
+        targetScope: "self_and_others",
+        effects: effectSequence(
+          createEffect({
+            name: "Mend Self",
+            effectType: "healing",
+            timingType: "instant",
+            directHealing: 10,
+          }),
+        ),
+      } as never),
+    );
+
+    expect(targets.map((unit) => unit.name)).toEqual(["Mage"]);
+  });
+
+  it("uses deterministic fallback order when self priority has no eligible caster", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+
+    const targets = selectTargets(
+      state,
+      caster,
+      createSpell({ name: "Self Priority Attack", targetPolicy: "self" } as never),
+    );
+
+    expect(targets.map((unit) => unit.name)).toEqual(["Warrior"]);
+  });
+
+  it("uses deterministic fallback order for tied random scores", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.tank[0]!;
+    asInternalState(state).__rng = () => 0.5;
+
+    const targets = selectTargets(
+      state,
+      caster,
+      createSpell({
+        name: "Tied Random",
+        targetPolicy: "random",
+        targetRowCount: 2,
+        maxTargetsPerRow: 1,
+      }),
+    );
+
+    expect(targets.map((unit) => unit.name)).toEqual(["Warrior", "Ranger"]);
   });
 });

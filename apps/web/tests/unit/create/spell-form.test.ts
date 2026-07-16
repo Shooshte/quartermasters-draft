@@ -14,6 +14,7 @@ describe("spell-form", () => {
       name: "",
       description: "",
       targetPolicy: "",
+      targetScope: "self_and_others",
       effectIds: [],
       targetRowCount: 1,
       maxTargetsPerRow: 1,
@@ -281,5 +282,27 @@ describe("spell-form", () => {
       maxTargetsPerRow: null,
     });
     expect(result.maxTargetsPerRow).toBeNull();
+  });
+
+  it("defaults missing target scope to self and others", () => {
+    const defaults = createDefaultSpellFormValues();
+    const loaded = spellRecordToFormValues({ name: "Legacy Spell" });
+
+    expect(defaults).toMatchObject({ targetScope: "self_and_others" });
+    expect(loaded).toMatchObject({ targetScope: "self_and_others" });
+  });
+
+  it("rejects self priority when scope excludes the caster", () => {
+    const errors = validateSpellForm({
+      ...createDefaultSpellFormValues(),
+      name: "Invalid Scope",
+      targetPolicy: "self" as never,
+      targetScope: "others",
+      effectIds: ["id-1"],
+    });
+
+    expect(errors).toMatchObject({
+      targetScope: "Self priority cannot be used when the caster is excluded",
+    });
   });
 });

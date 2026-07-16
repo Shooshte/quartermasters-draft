@@ -4,7 +4,13 @@ export interface EffectOption {
   effectType: string;
 }
 
-export type TargetPolicy = "highest_health" | "lowest_health" | "highest_damage" | "random";
+export type TargetPolicy =
+  | "highest_health"
+  | "lowest_health"
+  | "highest_damage"
+  | "random"
+  | "self";
+export type TargetScope = "self" | "self_and_others" | "others";
 export type RowType = "support" | "ranged" | "melee" | "tank";
 
 const VALID_TARGET_POLICIES: readonly string[] = [
@@ -12,6 +18,7 @@ const VALID_TARGET_POLICIES: readonly string[] = [
   "lowest_health",
   "highest_damage",
   "random",
+  "self",
 ];
 
 export interface SpellFormValues {
@@ -19,6 +26,7 @@ export interface SpellFormValues {
   name: string;
   description: string;
   targetPolicy: TargetPolicy | "";
+  targetScope: TargetScope;
   effectIds: string[];
   targetRowCount: number;
   maxTargetsPerRow: number | null;
@@ -30,6 +38,7 @@ interface SpellRecord {
   name: string;
   description?: string | null;
   targetPolicy?: string | null;
+  targetScope?: string | null;
   effectIds?: string[] | null;
   targetRowCount?: number | null;
   maxTargetsPerRow?: number | null;
@@ -41,6 +50,7 @@ export type SpellFieldErrors = Partial<
   Record<
     | "name"
     | "targetPolicy"
+    | "targetScope"
     | "effectIds"
     | "targetRowCount"
     | "maxTargetsPerRow"
@@ -54,6 +64,7 @@ export function createDefaultSpellFormValues(): SpellFormValues {
     name: "",
     description: "",
     targetPolicy: "",
+    targetScope: "self_and_others",
     effectIds: [],
     targetRowCount: 1,
     maxTargetsPerRow: 1,
@@ -71,6 +82,10 @@ export function validateSpellForm(values: SpellFormValues): SpellFieldErrors {
 
   if (!VALID_TARGET_POLICIES.includes(values.targetPolicy)) {
     errors.targetPolicy = "Target policy is required";
+  }
+
+  if (values.targetPolicy === "self" && values.targetScope === "others") {
+    errors.targetScope = "Self priority cannot be used when the caster is excluded";
   }
 
   if (values.effectIds.length === 0) {
@@ -108,6 +123,7 @@ export function spellRecordToFormValues(record: Partial<SpellRecord>): SpellForm
     name: record.name ?? "",
     description: record.description ?? "",
     targetPolicy: (record.targetPolicy as TargetPolicy | "") ?? "",
+    targetScope: (record.targetScope as TargetScope | null | undefined) ?? "self_and_others",
     effectIds: record.effectIds ?? [],
     targetRowCount: record.targetRowCount ?? 1,
     maxTargetsPerRow: record.maxTargetsPerRow === undefined ? 1 : record.maxTargetsPerRow,
@@ -120,6 +136,7 @@ export interface NormalizedSpellInput {
   name: string;
   description: string | null;
   targetPolicy: TargetPolicy;
+  targetScope: TargetScope;
   effectIds: string[];
   targetRowCount: number;
   maxTargetsPerRow: number | null;
@@ -133,6 +150,7 @@ export function normalizeSpellFormValues(values: SpellFormValues): NormalizedSpe
     name: values.name.trim(),
     description: trimmedDesc || null,
     targetPolicy: values.targetPolicy as TargetPolicy,
+    targetScope: values.targetScope,
     effectIds: values.effectIds,
     targetRowCount: values.targetRowCount,
     maxTargetsPerRow: values.maxTargetsPerRow,

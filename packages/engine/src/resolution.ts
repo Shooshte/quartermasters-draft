@@ -20,6 +20,7 @@ function basicAttackPolicySpell(unit: BattleUnitState): SpellInput {
   return {
     name: "Basic Attack",
     targetPolicy: unit.targetPolicyOverride ?? unit.targetPolicy ?? "highest_health",
+    targetScope: "others",
     targetRowCount: 1,
     maxTargetsPerRow: 1,
     targetOnlyAdjacent: false,

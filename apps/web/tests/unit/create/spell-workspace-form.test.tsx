@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { SpellFormValues } from "~/components/create/spell-form";
+import type { EffectOption, SpellFormValues } from "~/components/create/spell-form";
 import { SpellWorkspaceForm } from "~/components/create/spell-workspace-form";
 
 const defaultFormValues: SpellFormValues = {
@@ -16,7 +16,7 @@ const defaultFormValues: SpellFormValues = {
   allowedRowTypes: [],
 };
 
-const sampleEffectOptions = [
+const sampleEffectOptions: EffectOption[] = [
   { id: "eff-1", name: "Arcane Damage", effectType: "damage" },
   { id: "eff-7", name: "Astral Ward", effectType: "buff" },
   { id: "eff-4", name: "Exhaust", effectType: "debuff" },
@@ -556,6 +556,54 @@ describe("SpellWorkspaceForm", () => {
 
       expect(screen.getByTestId("spell-targeting-summary")).toBeInTheDocument();
       expect(screen.queryByTestId("targeting-grid")).not.toBeInTheDocument();
+    });
+
+    it("uses the first linked effect to describe target allegiance", () => {
+      renderForm({ formValues: { effectIds: ["eff-7", "eff-1"] } });
+
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Target side: Allies, including the caster.");
+      expect(summary).toHaveTextContent("The first linked effect, Astral Ward (Buff)");
+      expect(summary).toHaveTextContent("later Damage effects also apply to those allies.");
+    });
+
+    it("updates target allegiance when a mixed spell is reordered", async () => {
+      const onFieldChange = vi.fn();
+      const { rerender, props } = renderForm({
+        onFieldChange,
+        formValues: { effectIds: ["eff-7", "eff-1"] },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-effect-move-down-0"));
+      expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-1", "eff-7"]);
+
+      rerender(
+        <SpellWorkspaceForm
+          {...props}
+          formValues={{ ...props.formValues, effectIds: ["eff-1", "eff-7"] }}
+        />,
+      );
+
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Target side: Enemies.");
+      expect(summary).toHaveTextContent("The first linked effect, Arcane Damage (Damage)");
+      expect(summary).toHaveTextContent("later Buff effects also apply to those enemies.");
+    });
+
+    it("shows neutral copy when first-effect metadata is unavailable", () => {
+      renderForm({ formValues: { effectIds: ["missing-effect"] } });
+
+      expect(screen.getByTestId("spell-targeting-summary")).toHaveTextContent(
+        "Target side: Waiting for the first linked effect's details.",
+      );
+    });
+
+    it("shows the existing Self override for a damage effect", () => {
+      renderForm({ formValues: { targetScope: "self", effectIds: ["eff-1"] } });
+
+      expect(screen.getByTestId("spell-targeting-summary")).toHaveTextContent(
+        "Target side: Caster. Self scope overrides the first effect's normal allegiance",
+      );
     });
 
     it("renders row-count choices from 1 through 4", () => {

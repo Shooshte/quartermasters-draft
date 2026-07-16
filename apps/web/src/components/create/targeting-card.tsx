@@ -2,6 +2,7 @@ import type { RowType, SpellFieldErrors, SpellFormValues } from "./spell-form";
 import {
   getEffectiveAllowedRows,
   TARGET_ROW_TYPES_IN_COMBAT_ORDER,
+  type TargetingEffectSummary,
   TargetingRuleSummary,
 } from "./targeting-rule-summary";
 import { WorkspaceRowTypePill } from "./workspace-row-type-pill";
@@ -11,10 +12,16 @@ import { WorkspaceSelectChip } from "./workspace-select-chip";
 interface TargetingCardProps {
   formValues: SpellFormValues;
   errors: SpellFieldErrors;
+  linkedEffects: readonly (TargetingEffectSummary | null)[];
   onFieldChange: (field: string, value: unknown) => void;
 }
 
-export function TargetingCard({ formValues, errors, onFieldChange }: TargetingCardProps) {
+export function TargetingCard({
+  formValues,
+  errors,
+  linkedEffects,
+  onFieldChange,
+}: TargetingCardProps) {
   const perRowMode = formValues.maxTargetsPerRow === null ? "all" : "limit";
   const adjacentDisabled = formValues.maxTargetsPerRow === null || formValues.maxTargetsPerRow < 2;
   const effectiveAllowedRows = getEffectiveAllowedRows(formValues.allowedRowTypes);
@@ -97,10 +104,12 @@ export function TargetingCard({ formValues, errors, onFieldChange }: TargetingCa
 
         <TargetingRuleSummary
           targetPolicy={formValues.targetPolicy}
+          targetScope={formValues.targetScope}
           targetRowCount={formValues.targetRowCount}
           maxTargetsPerRow={formValues.maxTargetsPerRow}
           targetOnlyAdjacent={formValues.targetOnlyAdjacent}
           allowedRowTypes={formValues.allowedRowTypes}
+          linkedEffects={linkedEffects}
         />
 
         <div className="targeting-card-body">

@@ -103,10 +103,12 @@ describe("buildTargetingRuleSummary", () => {
   it("treats an empty row restriction as all rows in combat order", () => {
     const summary = buildTargetingRuleSummary({
       targetPolicy: "highest_health",
+      targetScope: "self_and_others",
       targetRowCount: 1,
       maxTargetsPerRow: 1,
       targetOnlyAdjacent: false,
       allowedRowTypes: [],
+      linkedEffects: [],
     });
 
     expect(summary.eligibleRows).toBe("Eligible rows: Tank, Melee, Ranged, and Support.");
@@ -115,10 +117,12 @@ describe("buildTargetingRuleSummary", () => {
   it("caps the effective row count by the eligible row types", () => {
     const summary = buildTargetingRuleSummary({
       targetPolicy: "highest_damage",
+      targetScope: "self_and_others",
       targetRowCount: 4,
       maxTargetsPerRow: 3,
       targetOnlyAdjacent: false,
       allowedRowTypes: ["melee", "tank"],
+      linkedEffects: [],
     });
 
     expect(summary.eligibleRows).toBe("Eligible rows: Tank and Melee.");
@@ -130,10 +134,12 @@ describe("buildTargetingRuleSummary", () => {
   it("uses singular copy for a single row and target", () => {
     const summary = buildTargetingRuleSummary({
       targetPolicy: "highest_health",
+      targetScope: "self_and_others",
       targetRowCount: 1,
       maxTargetsPerRow: 1,
       targetOnlyAdjacent: false,
       allowedRowTypes: ["tank"],
+      linkedEffects: [],
     });
 
     expect(summary.selection).toBe(
@@ -144,10 +150,12 @@ describe("buildTargetingRuleSummary", () => {
   it("describes adjacent targets as one group around the primary unit", () => {
     const summary = buildTargetingRuleSummary({
       targetPolicy: "lowest_health",
+      targetScope: "self_and_others",
       targetRowCount: 1,
       maxTargetsPerRow: 3,
       targetOnlyAdjacent: true,
       allowedRowTypes: [],
+      linkedEffects: [],
     });
 
     expect(summary.selection).toBe(
@@ -158,10 +166,12 @@ describe("buildTargetingRuleSummary", () => {
   it("describes whole-row targeting without a position constraint", () => {
     const summary = buildTargetingRuleSummary({
       targetPolicy: "random",
+      targetScope: "self_and_others",
       targetRowCount: 2,
       maxTargetsPerRow: null,
       targetOnlyAdjacent: false,
       allowedRowTypes: [],
+      linkedEffects: [],
     });
 
     expect(summary.selection).toBe(
@@ -172,10 +182,12 @@ describe("buildTargetingRuleSummary", () => {
   it("uses safe copy before a priority has been selected", () => {
     const summary = buildTargetingRuleSummary({
       targetPolicy: "",
+      targetScope: "self_and_others",
       targetRowCount: 1,
       maxTargetsPerRow: 2,
       targetOnlyAdjacent: false,
       allowedRowTypes: [],
+      linkedEffects: [],
     });
 
     expect(summary.selection).toContain("The selected priority chooses up to 2 units");
@@ -187,10 +199,12 @@ describe("TargetingRuleSummary", () => {
     render(
       <TargetingRuleSummary
         targetPolicy="highest_health"
+        targetScope="self_and_others"
         targetRowCount={1}
         maxTargetsPerRow={1}
         targetOnlyAdjacent={false}
         allowedRowTypes={[]}
+        linkedEffects={[]}
       />,
     );
 
@@ -199,5 +213,8 @@ describe("TargetingRuleSummary", () => {
     expect(status).toHaveAttribute("aria-atomic", "true");
     expect(status).toHaveTextContent("Eligible rows: Tank, Melee, Ranged, and Support.");
     expect(status).toHaveTextContent("Highest health chooses 1 unit");
+    expect(status).toHaveTextContent(
+      "Target side: Add an effect to determine whether this spell targets allies or enemies.",
+    );
   });
 });

@@ -960,6 +960,11 @@
   margin-bottom: 3px;
 }
 
+.targeting-rule-summary .targeting-rule-summary-side {
+  margin-top: 5px;
+  color: oklch(0.84 0.13 78);
+}
+
 .targeting-controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

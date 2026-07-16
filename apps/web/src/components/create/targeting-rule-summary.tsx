@@ -10,15 +10,18 @@ export const TARGET_ROW_TYPES_IN_COMBAT_ORDER: readonly RowType[] = [
 
 interface TargetingRuleConfig {
   targetPolicy: TargetPolicy | "";
+  targetScope: TargetScope;
   targetRowCount: number;
   maxTargetsPerRow: number | null;
   targetOnlyAdjacent: boolean;
   allowedRowTypes: RowType[];
+  linkedEffects: readonly (TargetingEffectSummary | null)[];
 }
 
 interface TargetingRuleCopy {
   eligibleRows: string;
   selection: string;
+  targetSide: string;
 }
 
 const POLICY_LABELS: Record<TargetPolicy, string> = {
@@ -142,6 +145,7 @@ export function buildTargetingRuleSummary(config: TargetingRuleConfig): Targetin
   return {
     eligibleRows: `Eligible rows: ${formatRowList(eligibleRows)}.`,
     selection: `${rowRule} ${targetRule}`,
+    targetSide: buildTargetSideSummary(config.targetScope, config.linkedEffects),
   };
 }
 
@@ -158,6 +162,7 @@ export function TargetingRuleSummary(props: TargetingRuleConfig) {
     >
       <p className="targeting-rule-summary-rows">{summary.eligibleRows}</p>
       <p>{summary.selection}</p>
+      <p className="targeting-rule-summary-side">{summary.targetSide}</p>
     </div>
   );
 }

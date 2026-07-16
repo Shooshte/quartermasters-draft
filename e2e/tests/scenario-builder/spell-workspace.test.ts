@@ -243,6 +243,24 @@ test.describe("Spell Workspace — Target Scope", () => {
     );
   });
 
+  test("first effect controls the target side for mixed effects", async ({ gmPage }) => {
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
+    await spell.addEffect("Barbarian Roar");
+    await spell.addEffect("Arcane Damage");
+
+    const summary = gmPage.getByTestId("spell-targeting-summary");
+    await expect(summary).toContainText("Target side: Allies, including the caster.");
+    await expect(summary).toContainText("first linked effect, Barbarian Roar (Buff)");
+    await expect(summary).toContainText("later Damage effects also apply to those allies.");
+
+    await gmPage.getByTestId("spell-effect-move-up-1").click();
+
+    await expect(summary).toContainText("Target side: Enemies.");
+    await expect(summary).toContainText("first linked effect, Arcane Damage (Damage)");
+    await expect(summary).toContainText("later Buff effects also apply to those enemies.");
+  });
+
   test("target scope persists after save and reload", async ({ gmPage }) => {
     const spell = new SpellWorkspacePage(gmPage);
     await spell.openNew();

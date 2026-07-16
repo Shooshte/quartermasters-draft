@@ -108,6 +108,16 @@ Feature: Spell workspace create and edit
     And all row type controls should show as eligible
     And the targeting summary should explain that all rows are eligible
 
+  Scenario: The first effect determines the target side for a mixed spell
+    When I start creating a new spell
+    And I add effect "Barbarian Roar" at sequence position 1
+    And I add effect "Arcane Damage" at sequence position 2
+    Then the targeting summary should identify allies from the first Buff effect
+    And the targeting summary should warn that the later Damage effect applies to allies
+    When I move effect at position 2 up
+    Then the targeting summary should identify enemies from the first Damage effect
+    And the targeting summary should warn that the later Buff effect applies to enemies
+
   Scenario: Create a spell targeting a whole row
     When I create a new spell named "Inferno Wave" with target policy "random"
     And I click the "All" per-row toggle segment

@@ -54,6 +54,10 @@ export function SpellWorkspaceForm({
     badgeText: effect.effectType,
     badgeClassName: getEffectBadgeClass(effect.effectType),
   }));
+  const effectOptionsById = new Map(effectOptions.map((effect) => [effect.id, effect]));
+  const orderedLinkedEffects = normalizedFormValues.effectIds.map(
+    (effectId) => effectOptionsById.get(effectId) ?? null,
+  );
 
   return (
     <div className="flex flex-col gap-4" data-testid="spell-form-fields">
@@ -82,6 +86,7 @@ export function SpellWorkspaceForm({
       <TargetingCard
         formValues={normalizedFormValues}
         errors={errors}
+        linkedEffects={orderedLinkedEffects}
         onFieldChange={onFieldChange}
       />
 

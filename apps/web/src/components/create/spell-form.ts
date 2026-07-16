@@ -1,7 +1,9 @@
+import type { EffectType } from "./effect-form";
+
 export interface EffectOption {
   id: string;
   name: string;
-  effectType: string;
+  effectType: EffectType;
 }
 
 export type TargetPolicy =

@@ -1,4 +1,5 @@
-import type { RowType, TargetPolicy } from "./spell-form";
+import type { EffectType } from "./effect-form";
+import type { RowType, TargetPolicy, TargetScope } from "./spell-form";
 
 export const TARGET_ROW_TYPES_IN_COMBAT_ORDER: readonly RowType[] = [
   "tank",
@@ -43,6 +44,75 @@ function formatRowList(rowTypes: RowType[]): string {
   if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
 
   return `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}`;
+}
+
+export interface TargetingEffectSummary {
+  id: string;
+  name: string;
+  effectType: EffectType;
+}
+
+type TargetAllegiance = "allies" | "enemies";
+
+const EFFECT_TYPE_LABELS: Record<EffectType, string> = {
+  buff: "Buff",
+  debuff: "Debuff",
+  healing: "Healing",
+  damage: "Damage",
+};
+
+function effectAllegiance(effectType: EffectType): TargetAllegiance {
+  return effectType === "buff" || effectType === "healing" ? "allies" : "enemies";
+}
+
+function formatEffectTypeList(effectTypes: EffectType[]): string {
+  const labels = effectTypes.map((effectType) => EFFECT_TYPE_LABELS[effectType]);
+  if (labels.length === 1) return labels[0] ?? "";
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}`;
+}
+
+export function buildTargetSideSummary(
+  targetScope: TargetScope,
+  linkedEffects: readonly (TargetingEffectSummary | null)[],
+): string {
+  if (targetScope === "self") {
+    return "Target side: Caster. Self scope overrides the first effect's normal allegiance, so every linked effect applies to the caster.";
+  }
+
+  if (linkedEffects.length === 0) {
+    return "Target side: Add an effect to determine whether this spell targets allies or enemies.";
+  }
+
+  const firstEffect = linkedEffects[0];
+  if (!firstEffect) {
+    return "Target side: Waiting for the first linked effect's details.";
+  }
+
+  const allegiance = effectAllegiance(firstEffect.effectType);
+  const side =
+    allegiance === "enemies"
+      ? "Enemies"
+      : targetScope === "others"
+        ? "Allies other than the caster"
+        : "Allies, including the caster";
+  const base = `Target side: ${side}. The first linked effect, ${firstEffect.name} (${EFFECT_TYPE_LABELS[firstEffect.effectType]}), determines the target side for every effect in this spell.`;
+  const laterEffects = linkedEffects.slice(1);
+
+  if (laterEffects.some((effect) => effect === null)) return base;
+
+  const oppositeTypes = Array.from(
+    new Set(
+      laterEffects
+        .filter((effect): effect is TargetingEffectSummary => effect !== null)
+        .filter((effect) => effectAllegiance(effect.effectType) !== allegiance)
+        .map((effect) => effect.effectType),
+    ),
+  );
+
+  if (oppositeTypes.length === 0) return base;
+
+  return `${base} Mixed effects keep this target side; later ${formatEffectTypeList(oppositeTypes)} effects also apply to those ${allegiance}.`;
 }
 
 export function buildTargetingRuleSummary(config: TargetingRuleConfig): TargetingRuleCopy {

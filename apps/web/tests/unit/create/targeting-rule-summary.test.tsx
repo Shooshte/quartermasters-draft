@@ -2,8 +2,102 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   buildTargetingRuleSummary,
+  buildTargetSideSummary,
+  type TargetingEffectSummary,
   TargetingRuleSummary,
 } from "~/components/create/targeting-rule-summary";
+
+function linkedEffect(
+  id: string,
+  name: string,
+  effectType: TargetingEffectSummary["effectType"],
+): TargetingEffectSummary {
+  return { id, name, effectType };
+}
+
+describe("buildTargetSideSummary", () => {
+  it.each([
+    ["buff", "Barbarian Roar", "Buff"],
+    ["healing", "Heal Light", "Healing"],
+  ] as const)("maps a first %s effect to allies", (effectType, name, label) => {
+    expect(
+      buildTargetSideSummary("self_and_others", [linkedEffect("first", name, effectType)]),
+    ).toBe(
+      `Target side: Allies, including the caster. The first linked effect, ${name} (${label}), determines the target side for every effect in this spell.`,
+    );
+  });
+
+  it.each([
+    ["damage", "Arcane Damage", "Damage"],
+    ["debuff", "Exhaust", "Debuff"],
+  ] as const)("maps a first %s effect to enemies", (effectType, name, label) => {
+    expect(
+      buildTargetSideSummary("self_and_others", [linkedEffect("first", name, effectType)]),
+    ).toBe(
+      `Target side: Enemies. The first linked effect, ${name} (${label}), determines the target side for every effect in this spell.`,
+    );
+  });
+
+  it("describes Others scope as allies without the caster", () => {
+    expect(
+      buildTargetSideSummary("others", [linkedEffect("first", "Heal Light", "healing")]),
+    ).toContain("Target side: Allies other than the caster.");
+  });
+
+  it("preserves the existing Self scope override", () => {
+    expect(buildTargetSideSummary("self", [linkedEffect("first", "Arcane Damage", "damage")])).toBe(
+      "Target side: Caster. Self scope overrides the first effect's normal allegiance, so every linked effect applies to the caster.",
+    );
+  });
+
+  it("prompts for the first effect when no effect is linked", () => {
+    expect(buildTargetSideSummary("self_and_others", [])).toBe(
+      "Target side: Add an effect to determine whether this spell targets allies or enemies.",
+    );
+  });
+
+  it("waits when first-effect metadata is unavailable", () => {
+    expect(buildTargetSideSummary("self_and_others", [null])).toBe(
+      "Target side: Waiting for the first linked effect's details.",
+    );
+  });
+
+  it("warns that enemy-side later effects still apply to allies", () => {
+    expect(
+      buildTargetSideSummary("self_and_others", [
+        linkedEffect("buff", "Barbarian Roar", "buff"),
+        linkedEffect("damage", "Arcane Damage", "damage"),
+        linkedEffect("debuff", "Exhaust", "debuff"),
+        linkedEffect("damage-2", "Frostbite", "damage"),
+      ]),
+    ).toContain(
+      "Mixed effects keep this target side; later Damage and Debuff effects also apply to those allies.",
+    );
+  });
+
+  it("warns that ally-side later effects still apply to enemies", () => {
+    expect(
+      buildTargetSideSummary("self_and_others", [
+        linkedEffect("damage", "Arcane Damage", "damage"),
+        linkedEffect("healing", "Heal Light", "healing"),
+        linkedEffect("buff", "Barbarian Roar", "buff"),
+      ]),
+    ).toContain(
+      "Mixed effects keep this target side; later Healing and Buff effects also apply to those enemies.",
+    );
+  });
+
+  it("omits the warning while later metadata is unavailable", () => {
+    const copy = buildTargetSideSummary("self_and_others", [
+      linkedEffect("buff", "Barbarian Roar", "buff"),
+      null,
+      linkedEffect("damage", "Arcane Damage", "damage"),
+    ]);
+
+    expect(copy).toContain("Target side: Allies, including the caster.");
+    expect(copy).not.toContain("Mixed effects keep this target side");
+  });
+});
 
 describe("buildTargetingRuleSummary", () => {
   it("treats an empty row restriction as all rows in combat order", () => {

@@ -49,4 +49,28 @@ describe("WorkspaceRowTypePill", () => {
     const pill = screen.getByTestId("pill");
     expect(pill.classList.contains("tank")).toBe(true);
   });
+
+  it("renders a selected indicator when active", () => {
+    render(<WorkspaceRowTypePill rowType="tank" active={true} onClick={() => {}} testId="pill" />);
+
+    expect(screen.getByTestId("pill").querySelector("[data-selected-indicator]")).not.toBeNull();
+  });
+
+  it("supports disabling the last eligible row", async () => {
+    const onClick = vi.fn();
+    render(
+      <WorkspaceRowTypePill
+        rowType="tank"
+        active={true}
+        disabled
+        onClick={onClick}
+        testId="pill"
+      />,
+    );
+
+    const pill = screen.getByTestId("pill");
+    expect(pill).toBeDisabled();
+    await userEvent.click(pill);
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

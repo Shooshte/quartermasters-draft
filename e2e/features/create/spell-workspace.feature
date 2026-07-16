@@ -104,8 +104,9 @@ Feature: Spell workspace create and edit
     When I start creating a new spell
     Then the target row count should default to 1
     And the per-row toggle should default to "Limit" with value 1
-    And target only adjacent should default to unchecked
-    And no row type restriction pills should be active
+    And the position rule should default to "Any"
+    And all row type controls should show as eligible
+    And the targeting summary should explain that all rows are eligible
 
   Scenario: Create a spell targeting a whole row
     When I create a new spell named "Inferno Wave" with target policy "random"
@@ -117,31 +118,32 @@ Feature: Spell workspace create and edit
   Scenario: Create a spell with adjacent targeting
     When I create a new spell named "Lightning Chain" with target policy "highest_damage"
     And I set max targets per row to 3
-    And I check target only adjacent
+    And I choose the "Adjacent" position rule
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
-    Then reloading the spell by URL should show target only adjacent as checked
+    Then reloading the spell by URL should show the "Adjacent" position rule
 
   Scenario: Adjacent requires at least 2 targets per row
     When I start creating a new spell
     And I set max targets per row to 1
-    Then the target only adjacent checkbox should be disabled
+    Then the "Adjacent" position rule should be disabled
 
   Scenario: Adjacent is disabled for whole row targeting
     When I start creating a new spell
     And I click the "All" per-row toggle segment
-    Then the target only adjacent checkbox should be disabled
+    Then the "Adjacent" position rule should be disabled
 
   Scenario: Create a spell with row type restrictions
     When I create a new spell named "Tank Buster" with target policy "highest_health"
-    And I click the "melee" and "tank" row type pills
+    And I make only the "melee" and "tank" rows eligible
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
     Then reloading the spell by URL should show row restrictions "melee" and "tank"
+    And the targeting summary should explain that only Tank and Melee are eligible
 
   Scenario: Create a spell targeting multiple rows
     When I create a new spell named "Earthquake II" with target policy "random"
-    And I set target row count to 2
+    And I choose 2 rows hit per cast
     And I click the "All" per-row toggle segment
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell

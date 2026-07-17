@@ -1,8 +1,9 @@
 interface WorkspaceSegmentToggleProps {
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; disabled?: boolean }[];
   value: string;
   onChange: (value: string) => void;
   testId?: string;
+  ariaLabel?: string;
 }
 
 export function WorkspaceSegmentToggle({
@@ -10,9 +11,11 @@ export function WorkspaceSegmentToggle({
   value,
   onChange,
   testId,
+  ariaLabel,
 }: WorkspaceSegmentToggleProps) {
   return (
-    <div className="ws-segment-toggle" data-testid={testId}>
+    <fieldset className="ws-segment-toggle" data-testid={testId}>
+      {ariaLabel ? <legend className="sr-only">{ariaLabel}</legend> : null}
       {options.map((option) => (
         <button
           key={option.value}
@@ -21,8 +24,9 @@ export function WorkspaceSegmentToggle({
           data-testid={testId ? `${testId}-${option.value}` : undefined}
           data-active={option.value === value ? "true" : "false"}
           aria-pressed={option.value === value}
+          disabled={option.disabled}
           onClick={() => {
-            if (option.value !== value) {
+            if (!option.disabled && option.value !== value) {
               onChange(option.value);
             }
           }}
@@ -30,6 +34,6 @@ export function WorkspaceSegmentToggle({
           {option.label}
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }

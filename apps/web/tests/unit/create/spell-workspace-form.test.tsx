@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { SpellFormValues } from "~/components/create/spell-form";
+import type { EffectOption, SpellFormValues } from "~/components/create/spell-form";
 import { SpellWorkspaceForm } from "~/components/create/spell-workspace-form";
 
 const defaultFormValues: SpellFormValues = {
@@ -16,7 +16,7 @@ const defaultFormValues: SpellFormValues = {
   allowedRowTypes: [],
 };
 
-const sampleEffectOptions = [
+const sampleEffectOptions: EffectOption[] = [
   { id: "eff-1", name: "Arcane Damage", effectType: "damage" },
   { id: "eff-7", name: "Astral Ward", effectType: "buff" },
   { id: "eff-4", name: "Exhaust", effectType: "debuff" },
@@ -551,16 +551,88 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByText("Targeting")).toBeInTheDocument();
     });
 
-    it("renders targeting grid preview", () => {
+    it("renders the targeting rules summary instead of a fixed-slot preview", () => {
       renderForm();
 
-      expect(screen.getByTestId("targeting-grid")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-targeting-summary")).toBeInTheDocument();
+      expect(screen.queryByTestId("targeting-grid")).not.toBeInTheDocument();
     });
 
-    it("renders target row count input", () => {
+    it("uses the first linked effect to describe target allegiance", () => {
+      renderForm({ formValues: { effectIds: ["eff-7", "eff-1"] } });
+
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Target side: Allies, including the caster.");
+      expect(summary).toHaveTextContent("The first linked effect, Astral Ward (Buff)");
+      expect(summary).toHaveTextContent("later Damage effects also apply to those allies.");
+    });
+
+    it("updates target allegiance when a mixed spell is reordered", async () => {
+      const onFieldChange = vi.fn();
+      const { rerender, props } = renderForm({
+        onFieldChange,
+        formValues: { effectIds: ["eff-7", "eff-1"] },
+      });
+
+      await userEvent.click(screen.getByTestId("spell-effect-move-down-0"));
+      expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-1", "eff-7"]);
+
+      rerender(
+        <SpellWorkspaceForm
+          {...props}
+          formValues={{ ...props.formValues, effectIds: ["eff-1", "eff-7"] }}
+        />,
+      );
+
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Target side: Enemies.");
+      expect(summary).toHaveTextContent("The first linked effect, Arcane Damage (Damage)");
+      expect(summary).toHaveTextContent("later Buff effects also apply to those enemies.");
+    });
+
+    it("shows neutral copy when first-effect metadata is unavailable", () => {
+      renderForm({ formValues: { effectIds: ["missing-effect"] } });
+
+      expect(screen.getByTestId("spell-targeting-summary")).toHaveTextContent(
+        "Target side: Waiting for the first linked effect's details.",
+      );
+    });
+
+    it("summarizes Self as only the eligible caster despite multi-target settings", () => {
+      renderForm({
+        formValues: {
+          targetPolicy: "highest_damage",
+          targetScope: "self",
+          targetRowCount: 4,
+          maxTargetsPerRow: 3,
+          targetOnlyAdjacent: true,
+          allowedRowTypes: ["melee", "tank"],
+          effectIds: ["eff-1"],
+        },
+      });
+
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Eligible rows: Tank and Melee.");
+      expect(summary).toHaveTextContent(
+        "Self scope selects only the caster when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority do not add targets.",
+      );
+      expect(summary).toHaveTextContent(
+        "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.",
+      );
+      expect(summary).not.toHaveTextContent("occupied eligible rows");
+      expect(summary).not.toHaveTextContent("adjacent group");
+    });
+
+    it("renders row-count choices from 1 through 4", () => {
       renderForm();
 
-      expect(screen.getByTestId("spell-target-row-count-input")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-target-row-count-toggle-1")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByTestId("spell-target-row-count-toggle-2")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-target-row-count-toggle-3")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-target-row-count-toggle-4")).toBeInTheDocument();
     });
 
     it("renders per-row segment toggle with All and Limit options", () => {
@@ -583,10 +655,14 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.queryByTestId("spell-max-targets-per-row-input")).not.toBeInTheDocument();
     });
 
-    it("renders target only adjacent checkbox", () => {
+    it("renders Any and Adjacent position choices", () => {
       renderForm();
 
-      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeInTheDocument();
+      expect(screen.getByTestId("spell-target-position-toggle-any")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(screen.getByTestId("spell-target-position-toggle-adjacent")).toBeInTheDocument();
     });
 
     it("renders allowed row type pills", () => {
@@ -598,12 +674,11 @@ describe("SpellWorkspaceForm", () => {
       expect(screen.getByTestId("spell-allowed-row-tank")).toBeInTheDocument();
     });
 
-    it("calls onFieldChange when target row count changes", () => {
+    it("calls onFieldChange when the target row count changes", async () => {
       const onFieldChange = vi.fn();
       renderForm({ onFieldChange, formValues: { targetRowCount: 1 } });
 
-      const input = screen.getByTestId("spell-target-row-count-input");
-      fireEvent.change(input, { target: { value: "2" } });
+      await userEvent.click(screen.getByTestId("spell-target-row-count-toggle-2"));
 
       expect(onFieldChange).toHaveBeenCalledWith("targetRowCount", 2);
     });
@@ -639,46 +714,60 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", 1);
     });
 
-    it("target only adjacent checkbox is disabled when All is selected", () => {
+    it("Adjacent is disabled when All is selected and explains why", () => {
       renderForm({ formValues: { maxTargetsPerRow: null } });
 
-      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
+      expect(screen.getByTestId("spell-target-position-toggle-adjacent")).toBeDisabled();
+      expect(
+        screen.getByText("Adjacent placement does not apply when all units are targeted."),
+      ).toBeInTheDocument();
     });
 
-    it("target only adjacent checkbox is disabled when maxTargetsPerRow is 1", () => {
+    it("Adjacent is disabled when maxTargetsPerRow is 1", () => {
       renderForm({ formValues: { maxTargetsPerRow: 1 } });
 
-      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
+      expect(screen.getByTestId("spell-target-position-toggle-adjacent")).toBeDisabled();
     });
 
-    it("target only adjacent checkbox is enabled when maxTargetsPerRow >= 2", () => {
+    it("Adjacent is enabled when maxTargetsPerRow is at least 2", () => {
       renderForm({ formValues: { maxTargetsPerRow: 3 } });
 
-      expect(screen.getByTestId("spell-target-only-adjacent-checkbox")).toBeEnabled();
+      expect(screen.getByTestId("spell-target-position-toggle-adjacent")).toBeEnabled();
     });
 
-    it("calls onFieldChange when target only adjacent is toggled", async () => {
+    it("calls onFieldChange when Adjacent is selected", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
         formValues: { maxTargetsPerRow: 3, targetOnlyAdjacent: false },
       });
 
-      await userEvent.click(screen.getByTestId("spell-target-only-adjacent-checkbox"));
+      await userEvent.click(screen.getByTestId("spell-target-position-toggle-adjacent"));
 
       expect(onFieldChange).toHaveBeenCalledWith("targetOnlyAdjacent", true);
     });
 
-    it("calls onFieldChange when allowed row type pill is toggled on", async () => {
+    it("shows every row selected when an empty restriction means all rows", () => {
+      renderForm({ formValues: { allowedRowTypes: [] } });
+
+      for (const rowType of ["tank", "melee", "ranged", "support"]) {
+        expect(screen.getByTestId(`spell-allowed-row-${rowType}`)).toHaveAttribute(
+          "aria-pressed",
+          "true",
+        );
+      }
+    });
+
+    it("deselects one row from the effective all-rows state", async () => {
       const onFieldChange = vi.fn();
       renderForm({
         onFieldChange,
         formValues: { allowedRowTypes: [] },
       });
 
-      await userEvent.click(screen.getByTestId("spell-allowed-row-melee"));
+      await userEvent.click(screen.getByTestId("spell-allowed-row-ranged"));
 
-      expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["melee"]);
+      expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["tank", "melee", "support"]);
     });
 
     it("calls onFieldChange when allowed row type pill is toggled off", async () => {
@@ -693,21 +782,55 @@ describe("SpellWorkspaceForm", () => {
       expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["tank"]);
     });
 
-    it("grid preview shows correct targeted slots for default state", () => {
-      renderForm();
+    it("normalizes four explicitly selected rows back to the all-rows sentinel", async () => {
+      const onFieldChange = vi.fn();
+      renderForm({
+        onFieldChange,
+        formValues: { allowedRowTypes: ["tank", "melee", "ranged"] },
+      });
 
-      expect(screen.getByTestId("targeting-grid-slot-ranged-0")).toHaveAttribute(
-        "data-targeted",
-        "true",
-      );
-      expect(screen.getByTestId("targeting-grid-slot-ranged-1")).toHaveAttribute(
-        "data-targeted",
-        "false",
-      );
-      expect(screen.getByTestId("targeting-grid-slot-support-0")).toHaveAttribute(
-        "data-targeted",
-        "false",
-      );
+      await userEvent.click(screen.getByTestId("spell-allowed-row-support"));
+
+      expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", []);
+    });
+
+    it("prevents deselecting the final eligible row", () => {
+      renderForm({ formValues: { allowedRowTypes: ["tank"] } });
+
+      expect(screen.getByTestId("spell-allowed-row-tank")).toBeDisabled();
+      expect(screen.getByText("At least one row must remain eligible.")).toBeInTheDocument();
+    });
+
+    it("clears adjacency when the per-row limit is reduced below 2", () => {
+      const onFieldChange = vi.fn();
+      renderForm({
+        onFieldChange,
+        formValues: { maxTargetsPerRow: 3, targetOnlyAdjacent: true },
+      });
+
+      fireEvent.change(screen.getByTestId("spell-max-targets-per-row-input"), {
+        target: { value: "1" },
+      });
+
+      expect(onFieldChange).toHaveBeenCalledWith("targetOnlyAdjacent", false);
+      expect(onFieldChange).toHaveBeenCalledWith("maxTargetsPerRow", 1);
+    });
+
+    it("summarizes row restrictions, target limits, and position rules", () => {
+      renderForm({
+        formValues: {
+          targetPolicy: "highest_damage",
+          targetRowCount: 4,
+          maxTargetsPerRow: 3,
+          targetOnlyAdjacent: true,
+          allowedRowTypes: ["melee", "tank"],
+        },
+      });
+
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Eligible rows: Tank and Melee.");
+      expect(summary).toHaveTextContent("Hits up to 2 occupied eligible rows per cast.");
+      expect(summary).toHaveTextContent("up to 3 units form one adjacent group");
     });
 
     it("save button is disabled when targeting validation fails", () => {

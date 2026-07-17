@@ -220,31 +220,73 @@ test.describe("Spell Workspace — Target Scope", () => {
     const spell = new SpellWorkspacePage(gmPage);
     await spell.openNew();
 
-    await expect(gmPage.getByTestId("spell-target-row-count-input")).toHaveValue("1");
+    await expect(gmPage.getByTestId("spell-target-row-count-toggle-1")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await expect(gmPage.getByTestId("spell-max-targets-per-row-input")).toHaveValue("1");
-    await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).not.toBeChecked();
+    await expect(gmPage.getByTestId("spell-target-position-toggle-any")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await expect(gmPage.getByTestId("spell-target-scope-select")).toHaveValue("self_and_others");
 
-    // No row type restriction pills should be active
+    // Empty restrictions mean every row is visibly eligible.
     for (const rowType of ["melee", "tank", "ranged", "support"]) {
-      await expect(gmPage.getByTestId(`spell-allowed-row-${rowType}`)).not.toHaveAttribute(
+      await expect(gmPage.getByTestId(`spell-allowed-row-${rowType}`)).toHaveAttribute(
         "aria-pressed",
         "true",
       );
     }
+    await expect(gmPage.getByTestId("spell-targeting-summary")).toContainText(
+      "Eligible rows: Tank, Melee, Ranged, and Support.",
+    );
   });
 
-  test("target scope persists after save and reload", async ({ gmPage }) => {
+  test("first effect controls the target side for mixed effects", async ({ gmPage }) => {
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openNew();
+    await spell.addEffect("Barbarian Roar");
+    await spell.addEffect("Arcane Damage");
+
+    const summary = gmPage.getByTestId("spell-targeting-summary");
+    await expect(summary).toContainText("Target side: Allies, including the caster.");
+    await expect(summary).toContainText("first linked effect, Barbarian Roar (Buff)");
+    await expect(summary).toContainText("later Damage effects also apply to those allies.");
+
+    await gmPage.getByTestId("spell-effect-move-up-1").click();
+
+    await expect(summary).toContainText("Target side: Enemies.");
+    await expect(summary).toContainText("first linked effect, Arcane Damage (Damage)");
+    await expect(summary).toContainText("later Buff effects also apply to those enemies.");
+  });
+
+  test("Self summary and target scope persist after save and reload", async ({ gmPage }) => {
     const spell = new SpellWorkspacePage(gmPage);
     await spell.openNew();
     await spell.fillName("Inner Ward");
-    await spell.setTargetPolicy("self");
+    await spell.setTargetPolicy("highest_damage");
     await gmPage.getByTestId("spell-target-scope-select").selectOption("self");
-    await spell.addEffect("Barbarian Roar");
+    await gmPage.getByTestId("spell-target-row-count-toggle-4").click();
+    await gmPage.getByTestId("spell-max-targets-per-row-input").fill("3");
+    await gmPage.getByTestId("spell-target-position-toggle-adjacent").click();
+    await gmPage.getByTestId("spell-allowed-row-ranged").click();
+    await gmPage.getByTestId("spell-allowed-row-support").click();
+    await spell.addEffect("Arcane Damage");
     await spell.saveCreate();
 
     await gmPage.reload();
     await expect(gmPage.getByTestId("spell-target-scope-select")).toHaveValue("self");
+    const summary = gmPage.getByTestId("spell-targeting-summary");
+    await expect(summary).toContainText("Eligible rows: Tank and Melee.");
+    await expect(summary).toContainText(
+      "Self scope selects only the caster when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority do not add targets.",
+    );
+    await expect(summary).toContainText(
+      "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.",
+    );
+    await expect(summary).not.toContainText("occupied eligible rows");
+    await expect(summary).not.toContainText("adjacent group");
   });
 
   test("create a spell targeting a whole row", async ({ gmPage }) => {
@@ -271,14 +313,17 @@ test.describe("Spell Workspace — Target Scope", () => {
     await spell.fillName("Lightning Chain");
     await spell.setTargetPolicy("highest_damage");
     await gmPage.getByTestId("spell-max-targets-per-row-input").fill("3");
-    await gmPage.getByTestId("spell-target-only-adjacent-checkbox").check();
+    await gmPage.getByTestId("spell-target-position-toggle-adjacent").click();
     await spell.addEffect("Barbarian Roar");
 
     await spell.saveCreate();
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).toBeChecked();
+    await expect(gmPage.getByTestId("spell-target-position-toggle-adjacent")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("adjacent requires at least 2 targets per row", async ({ gmPage }) => {
@@ -286,7 +331,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     await spell.openNew();
 
     await gmPage.getByTestId("spell-max-targets-per-row-input").fill("1");
-    await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
+    await expect(gmPage.getByTestId("spell-target-position-toggle-adjacent")).toBeDisabled();
   });
 
   test("adjacent is disabled for whole row targeting", async ({ gmPage }) => {
@@ -294,7 +339,7 @@ test.describe("Spell Workspace — Target Scope", () => {
     await spell.openNew();
 
     await gmPage.getByTestId("per-row-toggle").getByText("All").click();
-    await expect(gmPage.getByTestId("spell-target-only-adjacent-checkbox")).toBeDisabled();
+    await expect(gmPage.getByTestId("spell-target-position-toggle-adjacent")).toBeDisabled();
   });
 
   test("create a spell with row type restrictions", async ({ gmPage }) => {
@@ -303,8 +348,8 @@ test.describe("Spell Workspace — Target Scope", () => {
 
     await spell.fillName("Tank Buster");
     await spell.setTargetPolicy("highest_health");
-    await gmPage.getByTestId("spell-allowed-row-melee").click();
-    await gmPage.getByTestId("spell-allowed-row-tank").click();
+    await gmPage.getByTestId("spell-allowed-row-ranged").click();
+    await gmPage.getByTestId("spell-allowed-row-support").click();
     await spell.addEffect("Barbarian Roar");
 
     await spell.saveCreate();
@@ -327,6 +372,9 @@ test.describe("Spell Workspace — Target Scope", () => {
       "aria-pressed",
       "true",
     );
+    await expect(gmPage.getByTestId("spell-targeting-summary")).toContainText(
+      "Eligible rows: Tank and Melee.",
+    );
   });
 
   test("create a spell targeting multiple rows", async ({ gmPage }) => {
@@ -335,7 +383,7 @@ test.describe("Spell Workspace — Target Scope", () => {
 
     await spell.fillName("Earthquake II");
     await spell.setTargetPolicy("random");
-    await gmPage.getByTestId("spell-target-row-count-input").fill("2");
+    await gmPage.getByTestId("spell-target-row-count-toggle-2").click();
     await gmPage.getByTestId("per-row-toggle").getByText("All").click();
     await spell.addEffect("Barbarian Roar");
 
@@ -343,6 +391,9 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(gmPage).toHaveURL(/spell_id=/);
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("spell-target-row-count-input")).toHaveValue("2");
+    await expect(gmPage.getByTestId("spell-target-row-count-toggle-2")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });

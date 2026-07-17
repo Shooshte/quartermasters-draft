@@ -67,4 +67,37 @@ describe("WorkspaceSegmentToggle", () => {
     );
     expect(screen.getByTestId("my-toggle")).toBeInTheDocument();
   });
+
+  it("uses the supplied accessible group label", () => {
+    render(
+      <WorkspaceSegmentToggle
+        options={defaultOptions}
+        value="all"
+        onChange={() => {}}
+        ariaLabel="Targets in each row"
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "Targets in each row" })).toBeInTheDocument();
+  });
+
+  it("disables unavailable options and does not emit their value", async () => {
+    const onChange = vi.fn();
+    render(
+      <WorkspaceSegmentToggle
+        options={[
+          { value: "any", label: "Any" },
+          { value: "adjacent", label: "Adjacent", disabled: true },
+        ]}
+        value="any"
+        onChange={onChange}
+        testId="position-toggle"
+      />,
+    );
+
+    const adjacent = screen.getByTestId("position-toggle-adjacent");
+    expect(adjacent).toBeDisabled();
+    await userEvent.click(adjacent);
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

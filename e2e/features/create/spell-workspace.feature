@@ -26,6 +26,13 @@ Feature: Spell workspace create and edit
     And I save the spell
     Then reloading the spell by URL should show target scope "self"
 
+  Scenario: Self targeting summary explains the eligible-caster restriction
+    When I configure Self scope with restricted eligible rows, multiple rows, multiple adjacent targets, and a priority
+    Then the targeting summary should say Self selects only the caster when the caster's current row is eligible
+    And the targeting summary should say the spell has no target when the caster's current row is ineligible
+    And the targeting summary should say row count, per-row limit, position rule, and priority do not add targets
+    And the targeting summary should condition every linked effect on the caster's current row being eligible
+
   Scenario: Target policy is required
     When I start creating a new spell without selecting a target policy
     Then saving should remain blocked
@@ -104,8 +111,19 @@ Feature: Spell workspace create and edit
     When I start creating a new spell
     Then the target row count should default to 1
     And the per-row toggle should default to "Limit" with value 1
-    And target only adjacent should default to unchecked
-    And no row type restriction pills should be active
+    And the position rule should default to "Any"
+    And all row type controls should show as eligible
+    And the targeting summary should explain that all rows are eligible
+
+  Scenario: The first effect determines the target side for a mixed spell
+    When I start creating a new spell
+    And I add effect "Barbarian Roar" at sequence position 1
+    And I add effect "Arcane Damage" at sequence position 2
+    Then the targeting summary should identify allies from the first Buff effect
+    And the targeting summary should warn that the later Damage effect applies to allies
+    When I move effect at position 2 up
+    Then the targeting summary should identify enemies from the first Damage effect
+    And the targeting summary should warn that the later Buff effect applies to enemies
 
   Scenario: Create a spell targeting a whole row
     When I create a new spell named "Inferno Wave" with target policy "random"
@@ -117,31 +135,32 @@ Feature: Spell workspace create and edit
   Scenario: Create a spell with adjacent targeting
     When I create a new spell named "Lightning Chain" with target policy "highest_damage"
     And I set max targets per row to 3
-    And I check target only adjacent
+    And I choose the "Adjacent" position rule
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
-    Then reloading the spell by URL should show target only adjacent as checked
+    Then reloading the spell by URL should show the "Adjacent" position rule
 
   Scenario: Adjacent requires at least 2 targets per row
     When I start creating a new spell
     And I set max targets per row to 1
-    Then the target only adjacent checkbox should be disabled
+    Then the "Adjacent" position rule should be disabled
 
   Scenario: Adjacent is disabled for whole row targeting
     When I start creating a new spell
     And I click the "All" per-row toggle segment
-    Then the target only adjacent checkbox should be disabled
+    Then the "Adjacent" position rule should be disabled
 
   Scenario: Create a spell with row type restrictions
     When I create a new spell named "Tank Buster" with target policy "highest_health"
-    And I click the "melee" and "tank" row type pills
+    And I make only the "melee" and "tank" rows eligible
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell
     Then reloading the spell by URL should show row restrictions "melee" and "tank"
+    And the targeting summary should explain that only Tank and Melee are eligible
 
   Scenario: Create a spell targeting multiple rows
     When I create a new spell named "Earthquake II" with target policy "random"
-    And I set target row count to 2
+    And I choose 2 rows hit per cast
     And I click the "All" per-row toggle segment
     And I add effect "Barbarian Roar" at sequence position 1
     And I save the spell

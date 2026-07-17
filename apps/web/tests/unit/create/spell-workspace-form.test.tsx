@@ -598,12 +598,29 @@ describe("SpellWorkspaceForm", () => {
       );
     });
 
-    it("shows the existing Self override for a damage effect", () => {
-      renderForm({ formValues: { targetScope: "self", effectIds: ["eff-1"] } });
+    it("summarizes Self as only the eligible caster despite multi-target settings", () => {
+      renderForm({
+        formValues: {
+          targetPolicy: "highest_damage",
+          targetScope: "self",
+          targetRowCount: 4,
+          maxTargetsPerRow: 3,
+          targetOnlyAdjacent: true,
+          allowedRowTypes: ["melee", "tank"],
+          effectIds: ["eff-1"],
+        },
+      });
 
-      expect(screen.getByTestId("spell-targeting-summary")).toHaveTextContent(
-        "Target side: Caster. Self scope overrides the first effect's normal allegiance",
+      const summary = screen.getByTestId("spell-targeting-summary");
+      expect(summary).toHaveTextContent("Eligible rows: Tank and Melee.");
+      expect(summary).toHaveTextContent(
+        "Self scope selects only the caster when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority do not add targets.",
       );
+      expect(summary).toHaveTextContent(
+        "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.",
+      );
+      expect(summary).not.toHaveTextContent("occupied eligible rows");
+      expect(summary).not.toHaveTextContent("adjacent group");
     });
 
     it("renders row-count choices from 1 through 4", () => {

@@ -26,6 +26,13 @@ Feature: Spell workspace create and edit
     And I save the spell
     Then reloading the spell by URL should show target scope "self"
 
+  Scenario: Self targeting summary explains the eligible-caster restriction
+    When I configure Self scope with restricted eligible rows, multiple rows, multiple adjacent targets, and a priority
+    Then the targeting summary should say Self selects only the caster when the caster's current row is eligible
+    And the targeting summary should say the spell has no target when the caster's current row is ineligible
+    And the targeting summary should say row count, per-row limit, position rule, and priority do not add targets
+    And the targeting summary should condition every linked effect on the caster's current row being eligible
+
   Scenario: Target policy is required
     When I start creating a new spell without selecting a target policy
     Then saving should remain blocked

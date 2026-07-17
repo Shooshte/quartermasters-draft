@@ -44,9 +44,9 @@ describe("buildTargetSideSummary", () => {
     ).toContain("Target side: Allies other than the caster.");
   });
 
-  it("preserves the existing Self scope override", () => {
+  it("describes the eligible-row condition for the Self scope override", () => {
     expect(buildTargetSideSummary("self", [linkedEffect("first", "Arcane Damage", "damage")])).toBe(
-      "Target side: Caster. Self scope overrides the first effect's normal allegiance, so every linked effect applies to the caster.",
+      "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.",
     );
   });
 
@@ -129,6 +129,28 @@ describe("buildTargetingRuleSummary", () => {
     expect(summary.selection).toBe(
       "Hits up to 2 occupied eligible rows per cast. Highest damage chooses up to 3 units in each selected row; they may occupy any positions.",
     );
+  });
+
+  it("explains that Self selects only an eligible caster regardless of other selection rules", () => {
+    const summary = buildTargetingRuleSummary({
+      targetPolicy: "highest_damage",
+      targetScope: "self",
+      targetRowCount: 4,
+      maxTargetsPerRow: 3,
+      targetOnlyAdjacent: true,
+      allowedRowTypes: ["melee", "tank"],
+      linkedEffects: [linkedEffect("first", "Arcane Damage", "damage")],
+    });
+
+    expect(summary.eligibleRows).toBe("Eligible rows: Tank and Melee.");
+    expect(summary.selection).toBe(
+      "Self scope selects only the caster when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority do not add targets.",
+    );
+    expect(summary.targetSide).toBe(
+      "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.",
+    );
+    expect(summary.selection).not.toContain("occupied eligible rows");
+    expect(summary.selection).not.toContain("adjacent group");
   });
 
   it("uses singular copy for a single row and target", () => {

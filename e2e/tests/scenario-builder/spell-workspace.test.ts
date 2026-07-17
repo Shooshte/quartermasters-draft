@@ -261,17 +261,32 @@ test.describe("Spell Workspace — Target Scope", () => {
     await expect(summary).toContainText("later Buff effects also apply to those enemies.");
   });
 
-  test("target scope persists after save and reload", async ({ gmPage }) => {
+  test("Self summary and target scope persist after save and reload", async ({ gmPage }) => {
     const spell = new SpellWorkspacePage(gmPage);
     await spell.openNew();
     await spell.fillName("Inner Ward");
-    await spell.setTargetPolicy("self");
+    await spell.setTargetPolicy("highest_damage");
     await gmPage.getByTestId("spell-target-scope-select").selectOption("self");
-    await spell.addEffect("Barbarian Roar");
+    await gmPage.getByTestId("spell-target-row-count-toggle-4").click();
+    await gmPage.getByTestId("spell-max-targets-per-row-input").fill("3");
+    await gmPage.getByTestId("spell-target-position-toggle-adjacent").click();
+    await gmPage.getByTestId("spell-allowed-row-ranged").click();
+    await gmPage.getByTestId("spell-allowed-row-support").click();
+    await spell.addEffect("Arcane Damage");
     await spell.saveCreate();
 
     await gmPage.reload();
     await expect(gmPage.getByTestId("spell-target-scope-select")).toHaveValue("self");
+    const summary = gmPage.getByTestId("spell-targeting-summary");
+    await expect(summary).toContainText("Eligible rows: Tank and Melee.");
+    await expect(summary).toContainText(
+      "Self scope selects only the caster when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority do not add targets.",
+    );
+    await expect(summary).toContainText(
+      "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.",
+    );
+    await expect(summary).not.toContainText("occupied eligible rows");
+    await expect(summary).not.toContainText("adjacent group");
   });
 
   test("create a spell targeting a whole row", async ({ gmPage }) => {

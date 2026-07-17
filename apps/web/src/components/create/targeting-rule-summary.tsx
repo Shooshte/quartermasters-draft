@@ -80,7 +80,7 @@ export function buildTargetSideSummary(
   linkedEffects: readonly (TargetingEffectSummary | null)[],
 ): string {
   if (targetScope === "self") {
-    return "Target side: Caster. Self scope overrides the first effect's normal allegiance, so every linked effect applies to the caster.";
+    return "Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.";
   }
 
   if (linkedEffects.length === 0) {
@@ -120,6 +120,17 @@ export function buildTargetSideSummary(
 
 export function buildTargetingRuleSummary(config: TargetingRuleConfig): TargetingRuleCopy {
   const eligibleRows = getEffectiveAllowedRows(config.allowedRowTypes);
+  const eligibleRowsCopy = `Eligible rows: ${formatRowList(eligibleRows)}.`;
+
+  if (config.targetScope === "self") {
+    return {
+      eligibleRows: eligibleRowsCopy,
+      selection:
+        "Self scope selects only the caster when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority do not add targets.",
+      targetSide: buildTargetSideSummary(config.targetScope, config.linkedEffects),
+    };
+  }
+
   const effectiveRowCount = Math.min(config.targetRowCount, eligibleRows.length);
   const rowNoun = effectiveRowCount === 1 ? "row" : "rows";
   const rowRule = `Hits up to ${effectiveRowCount} occupied eligible ${rowNoun} per cast.`;
@@ -143,7 +154,7 @@ export function buildTargetingRuleSummary(config: TargetingRuleConfig): Targetin
   }
 
   return {
-    eligibleRows: `Eligible rows: ${formatRowList(eligibleRows)}.`,
+    eligibleRows: eligibleRowsCopy,
     selection: `${rowRule} ${targetRule}`,
     targetSide: buildTargetSideSummary(config.targetScope, config.linkedEffects),
   };

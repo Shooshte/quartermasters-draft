@@ -8,12 +8,14 @@
 
 **Tech Stack:** React 19, TypeScript, Vitest, Testing Library, Playwright, Gherkin acceptance criteria, Biome, pnpm/Turborepo.
 
+> **Post-review correction (`abf8599`):** The historical Self copy and code examples below that say every linked effect applies to the caster unconditionally are superseded by commit `abf8599c2c0bd081d8d4b6910dda4104323c9020`. Self overrides effect allegiance, but the caster is the sole candidate only when the caster's current row is eligible; otherwise the spell has no target. Row count, per-row limit, position rule, and priority cannot add targets under Self. The old snippets remain only as a record of the original TDD sequence and are not the current expected behavior. No database constraint is added.
+
 ## Global Constraints
 
 - Follow TDD: add behavior tests first and confirm the expected failure before production edits.
 - Buff and Healing first effects map to allies; Damage and Debuff first effects map to enemies.
 - The first linked effect determines allegiance for every later effect.
-- `targetScope: "self"` continues to select the caster and override normal effect allegiance.
+- `targetScope: "self"` overrides normal effect allegiance and selects only an eligible-row caster; an ineligible-row caster yields no target, and other selection rules cannot add one.
 - Do not add database constraints, migrations, API validation, engine changes, dependencies, or persisted form fields.
 - Preserve `role="status"`, `aria-live="polite"`, and `aria-atomic="true"`.
 - Keep PR #56 based on `develop` and preserve `feature/spell-targeting-rules-summary`.

@@ -9,7 +9,7 @@ The battle engine derives that allegiance from the first linked effect in sequen
 - `buff` and `healing` select allied candidates.
 - `damage` and `debuff` select enemy candidates.
 - Every later effect is applied to the same selected targets, even when its type normally maps to the other side.
-- `targetScope: "self"` is handled before effect allegiance and selects the caster.
+- `targetScope: "self"` is handled before effect allegiance. The caster is the sole candidate only when the caster's current row is eligible; otherwise the spell has no target.
 
 This behavior already exists in the engine. The change will expose it in the spell workspace without changing targeting mechanics.
 
@@ -36,11 +36,13 @@ The line names the first effect and its type so the ordering rule is explicit. E
 
 ### Self scope
 
-Self scope preserves current engine behavior:
+Self scope preserves current engine behavior. It overrides the first effect's normal allegiance, but it does not bypass eligible-row filtering:
 
-`Target side: Caster. Self scope overrides the first effect's normal allegiance, so every linked effect applies to the caster.`
+`Target side: Caster. Self scope overrides the first effect's normal allegiance; if the caster's current row is eligible, every linked effect applies to the caster.`
 
-No database constraint, API validation, form validation, or engine change will be added. In particular, self-scoped Damage and Debuff effects remain possible because they are possible today.
+The caster is the only possible target when the caster's current row is eligible; when that row is ineligible, the spell has no target. Row count, per-row limit, position rule, and priority cannot add targets under Self scope.
+
+No database constraint, API validation, form validation, or engine change will be added. In particular, self-scoped Damage and Debuff effects remain possible because they are possible today; their application remains conditional on the caster's current row being eligible.
 
 ### Mixed-effect spells
 
@@ -51,14 +53,14 @@ When a later linked effect maps to the opposite side from the first effect, appe
 
 When multiple opposite-side types occur, list each unique type in sequence order. Reordering effects can therefore change both the target side and the warning immediately.
 
-For self scope, the base self-scope sentence is sufficient: it already states that every linked effect applies to the caster.
+For self scope, the base self-scope sentence is sufficient: it states that every linked effect applies to the caster only when the caster's current row is eligible.
 
 ### Incomplete effect data
 
 - With no linked effects, show: `Target side: Add an effect to determine whether this spell targets allies or enemies.`
 - If the form contains a linked effect ID whose option metadata is not available yet, show: `Target side: Waiting for the first linked effect's details.`
 
-Self scope takes precedence over both incomplete states and continues to identify the caster. For non-self scopes, the summary must not guess a side while the first effect's data is loading. If the first effect is available but a later effect is not, show the known target side and temporarily omit the mixed-effect warning.
+Self scope takes precedence over both incomplete states and continues to identify the caster as the sole possible candidate, subject to the eligible-row condition. For non-self scopes, the summary must not guess a side while the first effect's data is loading. If the first effect is available but a later effect is not, show the known target side and temporarily omit the mixed-effect warning.
 
 ## Component and Data Flow
 
@@ -87,7 +89,7 @@ Database schema, migrations, API inputs and outputs, engine interfaces, and pers
 - A Buff-first or Healing-first spell identifies allies as the target side.
 - `Others` scope excludes the caster from the allied description.
 - A Damage-first or Debuff-first spell identifies enemies as the target side.
-- `Self` scope identifies the caster and explains the existing override.
+- `Self` scope explains that the caster is the sole candidate only when the caster's current row is eligible, otherwise the spell has no target, and other selection rules cannot add targets.
 - A spell with no linked effects explains that its first effect will determine allegiance.
 - A mixed spell explains that later opposite-side effects use the first effect's targets.
 - Reordering a mixed spell updates the target side and mixed-effect warning immediately.

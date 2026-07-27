@@ -13,6 +13,7 @@ interface LinkedEntitySectionProps {
   emptyMessage: string;
   addButtonLabel: string;
   onChange: (nextIds: string[]) => void;
+  onEdit: (linkedId: string) => void;
   error?: string;
   pickerTestId: string;
   searchTestId: string;
@@ -23,6 +24,7 @@ interface LinkedEntitySectionProps {
   removeTestIdPrefix: string;
   moveUpTestIdPrefix?: string;
   moveDownTestIdPrefix?: string;
+  editTestIdPrefix: string;
   showSequence?: boolean;
   allowReorder?: boolean;
   childrenAfterPicker?: ReactNode;
@@ -39,6 +41,7 @@ export function LinkedEntitySection({
   emptyMessage,
   addButtonLabel,
   onChange,
+  onEdit,
   error,
   childrenAfterPicker,
   ...pickerProps
@@ -55,6 +58,7 @@ export function LinkedEntitySection({
         emptyMessage={emptyMessage}
         addButtonLabel={addButtonLabel}
         onChange={onChange}
+        onEdit={onEdit}
         {...pickerProps}
       />
       {error ? <p className="mt-1 text-sm text-destructive">{error}</p> : null}

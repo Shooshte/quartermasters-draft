@@ -33,6 +33,7 @@ function renderForm(
     spellOptions?: typeof sampleSpellOptions;
     onFieldChange?: (field: string, value: unknown) => void;
     onSave?: () => void;
+    onEditSpell?: (spellId: string) => void;
     isSaving?: boolean;
     saveError?: string | null;
     mode?: "create" | "edit";
@@ -44,6 +45,7 @@ function renderForm(
     spellOptions: overrides.spellOptions ?? sampleSpellOptions,
     onFieldChange: overrides.onFieldChange ?? vi.fn(),
     onSave: overrides.onSave ?? vi.fn(),
+    onEditSpell: overrides.onEditSpell ?? vi.fn(),
     isSaving: overrides.isSaving ?? false,
     saveError: overrides.saveError ?? null,
   };
@@ -125,5 +127,19 @@ describe("ItemWorkspaceForm", () => {
     await user.type(screen.getByTestId("item-meleeDmg-input"), "5");
 
     expect(onFieldChange).toHaveBeenCalledWith("meleeDmg", "5");
+  });
+
+  it("edits a linked spell", async () => {
+    const user = userEvent.setup();
+    const onEditSpell = vi.fn();
+    renderForm({
+      formValues: { name: "Oak Staff", spellIds: ["sp-1"] },
+      onEditSpell,
+    });
+
+    await user.click(screen.getByTestId("item-spell-edit-0"));
+
+    expect(screen.getByRole("button", { name: "Edit Fireball" })).toBeInTheDocument();
+    expect(onEditSpell).toHaveBeenCalledWith("sp-1");
   });
 });

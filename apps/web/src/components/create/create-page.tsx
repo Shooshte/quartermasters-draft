@@ -131,6 +131,7 @@ export function CreatePage({ search }: CreatePageProps) {
           isSaving={state.isScenarioSaving}
           saveError={state.scenarioSaveError}
           unitOptions={state.scenarioUnitOptions}
+          onEditUnit={(unitId) => state.selectRecord("Units", unitId)}
         />
         <div data-testid="workspace-divider" className="border-t border-border" />
         <EntityWorkspace
@@ -142,6 +143,7 @@ export function CreatePage({ search }: CreatePageProps) {
           effectOptions={state.effectOptions}
           spellOptions={state.spellOptions}
           itemOptions={state.itemOptions}
+          onEditLinkedEntity={(tab, id) => state.selectRecord(tab, id)}
         />
       </div>
       <UnsavedChangesDialog

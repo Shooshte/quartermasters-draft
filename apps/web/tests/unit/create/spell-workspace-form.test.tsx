@@ -33,6 +33,7 @@ function renderForm(
     effectOptions?: typeof sampleEffectOptions;
     onFieldChange?: (field: string, value: unknown) => void;
     onSave?: () => void;
+    onEditEffect?: (effectId: string) => void;
     isSaving?: boolean;
     saveError?: string | null;
   } = {},
@@ -43,6 +44,7 @@ function renderForm(
     effectOptions: overrides.effectOptions ?? sampleEffectOptions,
     onFieldChange: overrides.onFieldChange ?? vi.fn(),
     onSave: overrides.onSave ?? vi.fn(),
+    onEditEffect: overrides.onEditEffect ?? vi.fn(),
     isSaving: overrides.isSaving ?? false,
     saveError: overrides.saveError ?? null,
   };
@@ -288,6 +290,17 @@ describe("SpellWorkspaceForm", () => {
 
       expect(row0).toHaveTextContent("Arcane Damage");
       expect(row1).toHaveTextContent("Heal Light");
+    });
+
+    it("edits a linked effect", async () => {
+      const user = userEvent.setup();
+      const onEditEffect = vi.fn();
+      renderForm({ formValues: { effectIds: ["eff-1"] }, onEditEffect });
+
+      await user.click(screen.getByTestId("spell-effect-edit-0"));
+
+      expect(screen.getByRole("button", { name: "Edit Arcane Damage" })).toBeInTheDocument();
+      expect(onEditEffect).toHaveBeenCalledWith("eff-1");
     });
 
     it("renders sequence numbers starting from 1", () => {

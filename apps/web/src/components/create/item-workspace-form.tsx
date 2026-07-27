@@ -21,6 +21,7 @@ interface ItemWorkspaceFormProps {
   spellOptions: SpellOption[];
   onFieldChange: (field: string, value: unknown) => void;
   onSave: () => void;
+  onEditSpell?: (spellId: string) => void;
   isSaving: boolean;
   saveError: string | null;
 }
@@ -41,6 +42,7 @@ export function ItemWorkspaceForm({
   spellOptions,
   onFieldChange,
   onSave,
+  onEditSpell = () => {},
   isSaving,
   saveError,
 }: ItemWorkspaceFormProps) {
@@ -82,6 +84,8 @@ export function ItemWorkspaceForm({
         optionTestIdPrefix="item-spell-picker-option"
         rowTestIdPrefix="item-spell-row"
         removeTestIdPrefix="item-spell-remove"
+        editTestIdPrefix="item-spell-edit"
+        onEdit={onEditSpell}
       />
 
       <WorkspaceSection title="Combat Stats">

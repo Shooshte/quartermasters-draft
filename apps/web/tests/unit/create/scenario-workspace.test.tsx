@@ -288,6 +288,58 @@ describe("ScenarioWorkspace", () => {
     ]);
   });
 
+  it("edits a scenario unit through its one-based edit button", async () => {
+    const user = userEvent.setup();
+    const onEditUnit = vi.fn();
+
+    render(
+      <ScenarioWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "scenario",
+          entityId: "123",
+          data: {
+            name: "Castle Siege",
+            rows: [
+              { id: "r1", rowType: "tank", assignments: [] },
+              {
+                id: "r2",
+                rowType: "melee",
+                assignments: [
+                  { assignmentId: "a1", unitId: "u-1", unitName: "Barbarian", position: 1 },
+                ],
+              },
+              { id: "r3", rowType: "ranged", assignments: [] },
+              { id: "r4", rowType: "support", assignments: [] },
+            ],
+          },
+          formValues: {
+            name: "Castle Siege",
+            rows: [
+              { rowType: "ranged", unitIds: [] },
+              { rowType: "support", unitIds: [] },
+              { rowType: "melee", unitIds: ["u-1"] },
+              { rowType: "tank", unitIds: [] },
+            ],
+          },
+        })}
+        onFieldChange={vi.fn()}
+        onEditUnit={onEditUnit}
+        onSave={vi.fn()}
+        isSaving={false}
+        saveError={null}
+        unitOptions={unitOptions}
+      />,
+    );
+
+    const editButton = screen.getByTestId("scenario-row-melee-edit-1");
+    expect(editButton).toHaveAccessibleName("Edit Barbarian");
+
+    await user.click(editButton);
+
+    expect(onEditUnit).toHaveBeenCalledWith("u-1");
+  });
+
   it("shows duplicate save errors and saving state", () => {
     render(
       <ScenarioWorkspace

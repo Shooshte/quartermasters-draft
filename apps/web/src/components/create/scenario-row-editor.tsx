@@ -1,3 +1,4 @@
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { type EntityPickerOption, EntityPickerPopover } from "./entity-picker-popover";
@@ -15,6 +16,7 @@ interface ScenarioRowEditorProps {
   unitIds: string[];
   unitOptions: EntityPickerOption[];
   onChange: (unitIds: string[]) => void;
+  onEditUnit: (unitId: string) => void;
 }
 
 export function ScenarioRowEditor({
@@ -22,6 +24,7 @@ export function ScenarioRowEditor({
   unitIds,
   unitOptions,
   onChange,
+  onEditUnit,
 }: ScenarioRowEditorProps) {
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const { label, icon } = ROW_CONFIG[rowType];
@@ -74,6 +77,15 @@ export function ScenarioRowEditor({
               <span className="sw-slot-number">{slot}</span>
               <span className="sw-slot-name">{unitNameById.get(unitId) ?? unitId}</span>
               <div className="sw-slot-actions">
+                <button
+                  type="button"
+                  data-testid={`scenario-row-${rowType}-edit-${slot}`}
+                  className="sw-slot-btn"
+                  aria-label={`Edit ${unitNameById.get(unitId) ?? unitId}`}
+                  onClick={() => onEditUnit(unitId)}
+                >
+                  <Pencil size={13} />
+                </button>
                 <button
                   type="button"
                   data-testid={`scenario-row-${rowType}-move-up-${slot}`}

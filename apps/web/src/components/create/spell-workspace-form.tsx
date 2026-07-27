@@ -17,6 +17,7 @@ interface SpellWorkspaceFormProps {
   effectOptions: EffectOption[];
   onFieldChange: (field: string, value: unknown) => void;
   onSave: () => void;
+  onEditEffect?: (effectId: string) => void;
   isSaving: boolean;
   saveError: string | null;
 }
@@ -42,6 +43,7 @@ export function SpellWorkspaceForm({
   effectOptions,
   onFieldChange,
   onSave,
+  onEditEffect = () => {},
   isSaving,
   saveError,
 }: SpellWorkspaceFormProps) {
@@ -101,6 +103,7 @@ export function SpellWorkspaceForm({
         removeTestIdPrefix="spell-effect-remove"
         moveUpTestIdPrefix="spell-effect-move-up"
         moveDownTestIdPrefix="spell-effect-move-down"
+        editTestIdPrefix="spell-effect-edit"
         options={linkedEffectOptions}
         linkedIds={normalizedFormValues.effectIds}
         allowDuplicates
@@ -113,6 +116,7 @@ export function SpellWorkspaceForm({
         allowReorder
         error={errors.effectIds}
         onChange={(nextIds) => onFieldChange("effectIds", nextIds)}
+        onEdit={onEditEffect}
       />
 
       <WorkspaceSaveFooter

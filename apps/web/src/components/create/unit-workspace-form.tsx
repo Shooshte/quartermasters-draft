@@ -20,6 +20,7 @@ interface UnitWorkspaceFormProps {
   itemOptions: ItemOption[];
   onFieldChange: (field: string, value: unknown) => void;
   onSave: () => void;
+  onEditItem?: (itemId: string) => void;
   isSaving: boolean;
   saveError: string | null;
 }
@@ -30,6 +31,7 @@ export function UnitWorkspaceForm({
   itemOptions,
   onFieldChange,
   onSave,
+  onEditItem = () => {},
   isSaving,
   saveError,
 }: UnitWorkspaceFormProps) {
@@ -59,6 +61,7 @@ export function UnitWorkspaceForm({
         removeTestIdPrefix="unit-item-remove"
         moveUpTestIdPrefix="unit-item-move-up"
         moveDownTestIdPrefix="unit-item-move-down"
+        editTestIdPrefix="unit-item-edit"
         options={linkedItemOptions}
         linkedIds={formValues.itemIds}
         allowDuplicates
@@ -70,6 +73,7 @@ export function UnitWorkspaceForm({
         showSequence
         allowReorder
         onChange={(nextIds) => onFieldChange("itemIds", nextIds)}
+        onEdit={onEditItem}
       />
 
       <WorkspaceSection title="Combat Stats">

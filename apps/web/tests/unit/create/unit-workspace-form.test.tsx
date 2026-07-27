@@ -33,6 +33,7 @@ function renderForm(
     itemOptions?: typeof sampleItemOptions;
     onFieldChange?: (field: string, value: unknown) => void;
     onSave?: () => void;
+    onEditItem?: (itemId: string) => void;
     isSaving?: boolean;
     saveError?: string | null;
     mode?: "create" | "edit";
@@ -44,6 +45,7 @@ function renderForm(
     itemOptions: overrides.itemOptions ?? sampleItemOptions,
     onFieldChange: overrides.onFieldChange ?? vi.fn(),
     onSave: overrides.onSave ?? vi.fn(),
+    onEditItem: overrides.onEditItem ?? vi.fn(),
     isSaving: overrides.isSaving ?? false,
     saveError: overrides.saveError ?? null,
   };
@@ -137,6 +139,23 @@ describe("UnitWorkspaceForm", () => {
     expect(screen.getByTestId("unit-item-row-1")).toBeInTheDocument();
     expect(screen.getByTestId("unit-item-move-up-1")).toBeInTheDocument();
     expect(screen.getByTestId("unit-item-move-down-0")).toBeInTheDocument();
+  });
+
+  it("edits a linked item without changing the unit form", async () => {
+    const user = userEvent.setup();
+    const onEditItem = vi.fn();
+    const onFieldChange = vi.fn();
+    renderForm({
+      formValues: { name: "Barbarian", itemIds: ["it-1"] },
+      onEditItem,
+      onFieldChange,
+    });
+
+    await user.click(screen.getByTestId("unit-item-edit-0"));
+
+    expect(screen.getByRole("button", { name: "Edit Iron Sword" })).toBeInTheDocument();
+    expect(onEditItem).toHaveBeenCalledWith("it-1");
+    expect(onFieldChange).not.toHaveBeenCalled();
   });
 
   it("shows a save error when provided", () => {

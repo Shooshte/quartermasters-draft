@@ -501,6 +501,7 @@ export function useWorkspaceLoader({
   const loadEntity = useCallback(
     async (tab: TabName, id: string) => {
       if (!isEntityTab(tab)) return;
+      setActiveTabState(tab);
       const requestedEntityType = TAB_TO_ENTITY_TYPE[tab];
       const routerKey = TAB_TO_ROUTER_KEY[tab];
       pendingEntityIdRef.current = id;
@@ -571,6 +572,7 @@ export function useWorkspaceLoader({
             delete next.item_id;
             delete next.unit_id;
             delete next.entity_id;
+            next.tab = tab;
             next[urlParam] = id;
             return next;
           },
@@ -588,7 +590,7 @@ export function useWorkspaceLoader({
         });
       }
     },
-    [navigate],
+    [navigate, setActiveTabState],
   );
 
   const loadScenario = useCallback(

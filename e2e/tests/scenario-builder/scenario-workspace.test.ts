@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
-import { AMBUSH_AT_DAWN_ID, CASTLE_SIEGE_ID } from "../helpers/seed-constants";
+import { AMBUSH_AT_DAWN_ID, BARBARIAN_ID, CASTLE_SIEGE_ID } from "../helpers/seed-constants";
 import { saveEntityAndWait } from "../helpers/workspace-helpers";
 import { ScenarioWorkspacePage } from "../pages/scenario-workspace.page";
 
@@ -102,6 +102,25 @@ test.describe("Scenario Workspace", () => {
     await scenario.expectRowUnits("melee", ["Barbarian"]);
     await scenario.expectRowUnits("ranged", ["Mage"]);
     await scenario.expectRowUnits("support", ["Ranger"]);
+  });
+
+  test("edit a linked unit while preserving the scenario workspace and URL context", async ({
+    gmPage,
+  }) => {
+    const scenario = new ScenarioWorkspacePage(gmPage);
+    await scenario.openById(AMBUSH_AT_DAWN_ID);
+
+    await scenario.editUnit("melee", 1);
+
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
+    await expect(scenario.nameInput).toHaveValue("Ambush at Dawn");
+    await expect(gmPage).toHaveURL(new RegExp(`scenario_id=${AMBUSH_AT_DAWN_ID}`));
+    await expect(gmPage).toHaveURL(new RegExp(`unit_id=${BARBARIAN_ID}`));
+    await expect(gmPage).toHaveURL(/tab=Units/);
   });
 
   test("add multiple units to the same row in slot order", async ({ gmPage }) => {

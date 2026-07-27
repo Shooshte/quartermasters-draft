@@ -169,6 +169,22 @@ test.describe("Item Workspace", () => {
     await expect(gmPage.getByTestId("item-spellDmg-input")).toHaveValue("20");
   });
 
+  test("edit a linked spell", async ({ gmPage }) => {
+    const item = new ItemWorkspacePage(gmPage);
+    await item.openById(OAK_STAFF_ID);
+
+    await item.editSpell(0);
+
+    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await expect(gmPage).toHaveURL(/tab=Spells/);
+    await expect(gmPage).toHaveURL(/spell_id=/);
+    await expect(gmPage).not.toHaveURL(/item_id=/);
+  });
+
   test("duplicate name shows a save error", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openById(OAK_STAFF_ID);

@@ -53,6 +53,23 @@ Feature: Unit workspace create and edit
     When I update the unit health to 120
     Then reloading the unit by URL should show health as 120
 
+  Scenario: Open an item linked to a unit
+    Given I have loaded the unit "Barbarian" in the unit workspace
+    When I edit linked item at position 1
+    Then the "Items" tab should be active
+    And item "Iron Sword" should be open in the item workspace
+
+  Scenario: Cancel or discard linked-item navigation with unsaved unit changes
+    Given I have loaded the unit "Barbarian" in the unit workspace
+    And I have changed the unit name to "Barbarian Updated" without saving
+    When I edit linked item at position 1
+    Then I should be warned about unsaved changes
+    When I cancel the linked-item navigation
+    Then unit "Barbarian Updated" should remain open in the unit workspace
+    When I edit linked item at position 1
+    And I choose to discard my unsaved changes
+    Then item "Iron Sword" should be open in the item workspace
+
   Scenario: Duplicate name shows a save error
     Given I have loaded the unit "Barbarian" in the unit workspace
     When I rename the unit to "Mage"

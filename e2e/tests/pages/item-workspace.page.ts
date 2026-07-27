@@ -70,6 +70,10 @@ export class ItemWorkspacePage {
     await this.page.getByTestId(`item-spell-remove-${index}`).click();
   }
 
+  async editSpell(index: number) {
+    await this.page.getByTestId(`item-spell-edit-${index}`).click();
+  }
+
   async saveCreate() {
     await saveEntityAndWait(this.page, "items", "create");
     await expect(this.page).toHaveURL(/(?:\?|&)item_id=/);

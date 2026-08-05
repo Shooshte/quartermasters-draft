@@ -31,10 +31,10 @@ Feature: Stats and modifiers
     Then the outgoing damage should be 125
     # Formula: 100 * (1 + 25/100) = 125
 
-  Scenario: Critical chance adds percentage bonus to spell direct damage
+  Scenario: Critical chance adds percentage bonus to item direct damage
     Given "Attacker" has a criticalChance of 40
-    When "Attacker" casts a direct damage spell against "Defender"
-    Then the outgoing spell damage should be 70
+    When "Attacker" activates an item with a direct damage effect against "Defender"
+    Then the outgoing item damage should be 70
     # Formula: 50 * (1 + 40/100) = 70
 
   Scenario: Zero critical chance means no damage bonus
@@ -51,10 +51,10 @@ Feature: Stats and modifiers
     Then the incoming damage to "Defender" should be 70
     # Formula: 100 * (1 - 30/100) = 70
 
-  Scenario: Dodge reduces incoming spell direct damage
+  Scenario: Dodge reduces incoming item direct damage
     Given "Defender" has a dodge of 20
-    When "Attacker" casts a direct damage spell against "Defender"
-    Then the incoming spell damage to "Defender" should be 40
+    When "Attacker" activates an item with a direct damage effect against "Defender"
+    Then the incoming item damage to "Defender" should be 40
     # Formula: 50 * (1 - 20/100) = 40
 
   Scenario: Zero dodge means no damage reduction
@@ -72,11 +72,11 @@ Feature: Stats and modifiers
     Then the incoming damage to "Defender" should be 120
     # Formula: 100 * (1 + 50/100) * (1 - 20/100) = 100 * 1.5 * 0.8 = 120
 
-  Scenario: Critical and dodge compose multiplicatively on spell direct damage
+  Scenario: Critical and dodge compose multiplicatively on item direct damage
     Given "Attacker" has a criticalChance of 60
     And "Defender" has a dodge of 25
-    When "Attacker" casts a direct damage spell against "Defender"
-    Then the incoming spell damage to "Defender" should be 60
+    When "Attacker" activates an item with a direct damage effect against "Defender"
+    Then the incoming item damage to "Defender" should be 60
     # Formula: 50 * (1 + 60/100) * (1 - 25/100) = 50 * 1.6 * 0.75 = 60
 
   # ---------- Item stat bonuses ----------

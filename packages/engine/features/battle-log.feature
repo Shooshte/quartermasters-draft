@@ -21,7 +21,7 @@ Feature: Battle log output
     Then the log contains "Tick <tick>: <caster> activates <item> on <targets>"
     And the activation entry includes tick, caster, item, targets, effects, and message
     And the effects are recorded in their activation order
-    And no activation origin references a spell
+    And every activation origin identifies an item and its effect
 
   Scenario: Delayed effects retain item and effect attribution
     Given item "Venom Blade" applies interval effect "Poison"

@@ -12,18 +12,22 @@ Feature: Unit target selection
     When "Knight" selects targets
     Then the only selected target is "Knight"
 
-  Scenario Outline: Each target policy chooses candidates deterministically
-    Given "Knight" targets enemies using "<policy>"
+  Scenario Outline: Each target side accepts only its valid target policies
+    Given "Knight" targets <target_side> using "<policy>"
     When "Knight" selects targets with seed 42
     Then targets follow the "<policy>" policy
 
     Examples:
-      | policy         |
-      | highest_health |
-      | lowest_health  |
-      | highest_damage |
-      | random         |
-      | self           |
+      | target_side | policy         |
+      | allies      | highest_health |
+      | allies      | lowest_health  |
+      | allies      | highest_damage |
+      | allies      | random         |
+      | enemies     | highest_health |
+      | enemies     | lowest_health  |
+      | enemies     | highest_damage |
+      | enemies     | random         |
+      | self        | self           |
 
   Scenario: Self policy is not valid for enemy targeting
     Given "Knight" targets enemies using "self"

@@ -165,23 +165,22 @@ Feature: Scenario builder effects library tab
     Scenario: Show only effects linked to a selected scenario through the full chain
       Given scenario "Ambush at Dawn" has unit "Barbarian" assigned to the "melee" row
       And unit "Barbarian" links item "Oak Staff"
-      And item "Oak Staff" links spell "Fireball"
-      And spell "Fireball" links effect "Barbarian Roar"
-      And effect "Zodiac Burst" is not linked to any spell
+      And item "Oak Staff" links effect "Barbarian Roar"
+      And effect "Zodiac Burst" is not linked to any item
       When I filter the entities explorer to scenario "Ambush at Dawn"
       Then I should see the effect "Barbarian Roar"
       And I should not see the effect "Zodiac Burst"
 
     Scenario: Show only effects that are not linked anywhere
-      Given spell "Fireball" links effect "Barbarian Roar"
-      And effect "Zodiac Burst" is not linked to any spell
+      Given item "Oak Staff" links effect "Barbarian Roar"
+      And effect "Zodiac Burst" is not linked to any item
       When I filter the entities explorer to unlinked entities
       Then I should see the effect "Zodiac Burst"
       And I should not see the effect "Barbarian Roar"
 
     Scenario: Filtering only affects selectable rows in the entities explorer
       Given I have loaded the effect "Barbarian Roar" in the effect workspace
-      And effect "Zodiac Burst" is not linked to any spell
+      And effect "Zodiac Burst" is not linked to any item
       When I filter the entities explorer to unlinked entities
       Then I should see the effect "Zodiac Burst"
       And I should not see the effect "Barbarian Roar"
@@ -246,12 +245,12 @@ Feature: Scenario builder effects library tab
       And I cancel the deletion
       Then the effect "Zodiac Burst" should still appear in the list
 
-    Scenario: Cannot delete an effect that is linked to a spell
+    Scenario: Cannot delete an effect that is linked to an item
       Given the seed effect "Barbarian Roar" exists with id "a0000000-0000-0000-0000-000000000001"
       And I have loaded the effect "Barbarian Roar" in the effect workspace
       When I delete the effect "Barbarian Roar"
       And I confirm the deletion
-      Then I should see a linked-spell dependency delete error
+      Then I should see a linked-item dependency delete error
       And the effect "Barbarian Roar" should still appear in the list
       And the effect workspace should remain loaded
 

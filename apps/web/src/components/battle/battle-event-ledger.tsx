@@ -37,7 +37,7 @@ function unitLabel(unitIds: Map<string, string>, unitId: string | undefined, fal
 function sourceLabel(entry: BattleLogEntry) {
   const origin = entry.origin;
   if (!origin) return null;
-  return [origin.item?.name, origin.spell?.name].filter(Boolean).join(" › ") || null;
+  return origin.item?.name ?? null;
 }
 
 function effectLabel(entry: BattleLogEntry) {
@@ -72,8 +72,8 @@ function EventDescription({
           </p>
         </>
       );
-    case "spell-cast":
-      return <p className="font-medium text-foreground">{sourceLabel(entry) ?? entry.spell}</p>;
+    case "item-activation":
+      return <p className="font-medium text-foreground">{sourceLabel(entry) ?? entry.item}</p>;
     case "damage":
       return (
         <p className="text-rose-300/90">

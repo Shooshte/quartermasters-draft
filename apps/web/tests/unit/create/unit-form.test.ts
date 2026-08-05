@@ -20,6 +20,12 @@ describe("unit-form", () => {
       dodge: "0",
       criticalChance: "0",
       itemIds: [],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
   });
 
@@ -57,6 +63,12 @@ describe("unit-form", () => {
         dodge: "6.5",
         criticalChance: "7.25",
         itemIds: ["it-1", "it-1", "it-2"],
+        targetSide: "enemies",
+        targetPolicy: "highest_health",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        targetOnlyAdjacent: false,
+        allowedRowTypes: [],
       }),
     ).toEqual({
       name: "Twinblade Adept",
@@ -70,23 +82,21 @@ describe("unit-form", () => {
       dodge: 6.5,
       criticalChance: 7.25,
       itemIds: ["it-1", "it-1", "it-2"],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
   });
 
   it("requires a name and valid numeric fields", () => {
     expect(
       validateUnitForm({
+        ...createDefaultUnitFormValues(),
         name: " ",
-        meleeDmg: "0",
         health: "oops",
-        mana: "100",
-        rangedDmg: "0",
-        manaRegen: "0",
-        spellDmg: "0",
-        speed: "0",
-        dodge: "0",
-        criticalChance: "0",
-        itemIds: [],
       }),
     ).toMatchObject({
       name: "Name is required",
@@ -97,25 +107,82 @@ describe("unit-form", () => {
   it("allows empty linked item ids when the rest of the form is valid", () => {
     expect(
       validateUnitForm({
+        ...createDefaultUnitFormValues(),
         name: "Barehand Adept",
-        meleeDmg: "0",
-        health: "0",
-        mana: "100",
-        rangedDmg: "0",
-        manaRegen: "0",
-        spellDmg: "0",
-        speed: "0",
-        dodge: "0",
-        criticalChance: "0",
         itemIds: [],
       }),
     ).toEqual({});
+  });
+
+  it("requires an explicit target side", () => {
+    expect(
+      validateUnitForm({
+        ...createDefaultUnitFormValues(),
+        name: "Lost Archer",
+        targetSide: "",
+      }),
+    ).toMatchObject({ targetSide: "Target side is required" });
+  });
+
+  it("rejects self priority when targeting enemies", () => {
+    expect(
+      validateUnitForm({
+        ...createDefaultUnitFormValues(),
+        name: "Confused Duelist",
+        targetSide: "enemies",
+        targetPolicy: "self",
+      }),
+    ).toMatchObject({ targetSide: "Self priority cannot be used when targeting enemies" });
+  });
+
+  it.each([
+    {
+      maxTargetsPerRow: null,
+      message: "Adjacent targeting requires a limited number of targets per row",
+    },
+    { maxTargetsPerRow: 1, message: "Adjacent targeting requires at least 2 targets per row" },
+  ])("rejects adjacent targeting when max targets per row is $maxTargetsPerRow", ({
+    maxTargetsPerRow,
+    message,
+  }) => {
+    expect(
+      validateUnitForm({
+        ...createDefaultUnitFormValues(),
+        name: "Broken Formation",
+        maxTargetsPerRow,
+        targetOnlyAdjacent: true,
+      }),
+    ).toMatchObject({ targetOnlyAdjacent: message });
+  });
+
+  it("normalizes targeting fields without inferring them from linked items", () => {
+    expect(
+      normalizeUnitFormValues({
+        ...createDefaultUnitFormValues(),
+        name: "  Ally Vanguard  ",
+        targetSide: "allies",
+        targetPolicy: "lowest_health",
+        targetRowCount: 2,
+        maxTargetsPerRow: 3,
+        targetOnlyAdjacent: true,
+        allowedRowTypes: ["tank", "melee"],
+      }),
+    ).toMatchObject({
+      name: "Ally Vanguard",
+      targetSide: "allies",
+      targetPolicy: "lowest_health",
+      targetRowCount: 2,
+      maxTargetsPerRow: 3,
+      targetOnlyAdjacent: true,
+      allowedRowTypes: ["tank", "melee"],
+    });
   });
 
   it("treats linked items as ordered and duplicate-aware for dirty checks", () => {
     expect(
       isUnitFormDirty(
         {
+          ...createDefaultUnitFormValues(),
           name: "Barbarian",
           meleeDmg: "15.0",
           health: "100.00",

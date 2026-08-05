@@ -15,25 +15,25 @@ const defaultFormValues: ItemFormValues = {
   criticalChance: "0",
   activationManaCost: "0",
   activationHealthCost: "0",
-  spellIds: [],
+  effectIds: [],
 };
 
-const sampleSpellOptions = [
-  { id: "sp-1", name: "Fireball" },
-  { id: "sp-2", name: "Healing Touch" },
-  { id: "sp-3", name: "Battle Cry" },
-  { id: "sp-4", name: "Arcane Shield" },
-  { id: "sp-5", name: "Dark Pact" },
-  { id: "sp-6", name: "Rune Cascade" },
+const sampleEffectOptions = [
+  { id: "eff-1", name: "Arcane Damage", effectType: "damage" as const },
+  { id: "eff-2", name: "Healing Light", effectType: "healing" as const },
+  { id: "eff-3", name: "Battle Cry", effectType: "buff" as const },
+  { id: "eff-4", name: "Armor Break", effectType: "debuff" as const },
+  { id: "eff-5", name: "Dark Pact", effectType: "buff" as const },
+  { id: "eff-6", name: "Tectonic Pulse", effectType: "damage" as const },
 ];
 
 function renderForm(
   overrides: {
     formValues?: Partial<ItemFormValues>;
-    spellOptions?: typeof sampleSpellOptions;
+    effectOptions?: typeof sampleEffectOptions;
     onFieldChange?: (field: string, value: unknown) => void;
     onSave?: () => void;
-    onEditSpell?: (spellId: string) => void;
+    onEditEffect?: (effectId: string) => void;
     isSaving?: boolean;
     saveError?: string | null;
     mode?: "create" | "edit";
@@ -42,10 +42,10 @@ function renderForm(
   const props = {
     mode: overrides.mode ?? "create",
     formValues: { ...defaultFormValues, ...overrides.formValues } as ItemFormValues,
-    spellOptions: overrides.spellOptions ?? sampleSpellOptions,
+    effectOptions: overrides.effectOptions ?? sampleEffectOptions,
     onFieldChange: overrides.onFieldChange ?? vi.fn(),
     onSave: overrides.onSave ?? vi.fn(),
-    onEditSpell: overrides.onEditSpell ?? vi.fn(),
+    onEditEffect: overrides.onEditEffect ?? vi.fn(),
     isSaving: overrides.isSaving ?? false,
     saveError: overrides.saveError ?? null,
   };
@@ -57,11 +57,11 @@ describe("ItemWorkspaceForm", () => {
   it("renders all item sections and fields", () => {
     renderForm();
 
-    expect(screen.getByText("Linked Spells")).toBeInTheDocument();
+    expect(screen.getByText("Linked Effects")).toBeInTheDocument();
     expect(screen.getByText("Combat Stats")).toBeInTheDocument();
     expect(screen.getByText("Utility Stats")).toBeInTheDocument();
     expect(screen.getByText("Activation Costs")).toBeInTheDocument();
-    expect(screen.getByTestId("item-spell-picker")).toBeInTheDocument();
+    expect(screen.getByTestId("item-effect-picker")).toBeInTheDocument();
     expect(screen.getByTestId("item-meleeDmg-input")).toBeInTheDocument();
     expect(screen.getByTestId("item-mana-input")).toBeInTheDocument();
     expect(screen.getByTestId("item-activationManaCost-input")).toBeInTheDocument();
@@ -71,52 +71,55 @@ describe("ItemWorkspaceForm", () => {
     renderForm();
 
     expect(screen.getByTestId("entity-save-button")).toBeDisabled();
-    expect(screen.queryByText("At least one linked spell is required")).not.toBeInTheDocument();
+    expect(screen.queryByText("At least one linked effect is required")).not.toBeInTheDocument();
   });
 
-  it("enables save when a name is present even without linked spells", () => {
+  it("enables save when a name is present even without linked effects", () => {
     renderForm({
-      formValues: { name: "Bronze Buckler", spellIds: [] },
+      formValues: { name: "Bronze Buckler", effectIds: [] },
     });
 
     expect(screen.getByTestId("entity-save-button")).toBeEnabled();
   });
 
-  it("adds a linked spell through the picker", async () => {
+  it("adds a linked effect through the picker without sorting", async () => {
     const user = userEvent.setup();
     const onFieldChange = vi.fn();
-    renderForm({ onFieldChange });
+    renderForm({
+      onFieldChange,
+      formValues: { effectIds: ["eff-2"] },
+    });
 
-    await user.click(screen.getByTestId("item-spell-picker"));
-    await user.click(screen.getByTestId("item-spell-picker-option-sp-1"));
-    await user.click(screen.getByTestId("item-add-spell-button"));
+    await user.click(screen.getByTestId("item-effect-picker"));
+    await user.click(screen.getByTestId("item-effect-picker-option-eff-1"));
+    await user.click(screen.getByTestId("item-add-effect-button"));
 
-    expect(onFieldChange).toHaveBeenCalledWith("spellIds", ["sp-1"]);
+    expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-2", "eff-1"]);
   });
 
-  it("does not offer an already linked spell again", async () => {
+  it("offers an already linked effect again", async () => {
     const user = userEvent.setup();
-    renderForm({ formValues: { name: "Echo Crystal", spellIds: ["sp-1"] } });
+    renderForm({ formValues: { name: "Echo Crystal", effectIds: ["eff-1"] } });
 
-    await user.click(screen.getByTestId("item-spell-picker"));
+    await user.click(screen.getByTestId("item-effect-picker"));
 
-    expect(screen.queryByTestId("item-spell-picker-option-sp-1")).not.toBeInTheDocument();
-    expect(screen.getByTestId("item-spell-picker-option-sp-2")).toBeInTheDocument();
+    expect(screen.getByTestId("item-effect-picker-option-eff-1")).toBeInTheDocument();
+    expect(screen.getByTestId("item-effect-picker-option-eff-2")).toBeInTheDocument();
   });
 
   it("limits the visible picker options to five and uses the search prompt only as a placeholder", async () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByTestId("item-spell-picker"));
+    await user.click(screen.getByTestId("item-effect-picker"));
 
-    const listbox = screen.getByRole("listbox", { name: "Item spell options" });
+    const listbox = screen.getByRole("listbox", { name: "Item effect options" });
     expect(within(listbox).getAllByRole("option")).toHaveLength(5);
-    expect(screen.getByTestId("item-spell-picker-search")).toHaveAttribute(
+    expect(screen.getByTestId("item-effect-picker-search")).toHaveAttribute(
       "placeholder",
-      "Search spells...",
+      "Search effects...",
     );
-    expect(screen.queryByRole("option", { name: "Search spells..." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Search effects..." })).not.toBeInTheDocument();
   });
 
   it("calls onFieldChange when a numeric field changes", async () => {
@@ -129,17 +132,41 @@ describe("ItemWorkspaceForm", () => {
     expect(onFieldChange).toHaveBeenCalledWith("meleeDmg", "5");
   });
 
-  it("edits a linked spell", async () => {
-    const user = userEvent.setup();
-    const onEditSpell = vi.fn();
+  it("renders linked effects with sequence numbers and reorder controls", () => {
     renderForm({
-      formValues: { name: "Oak Staff", spellIds: ["sp-1"] },
-      onEditSpell,
+      formValues: { name: "Oak Staff", effectIds: ["eff-1", "eff-3"] },
     });
 
-    await user.click(screen.getByTestId("item-spell-edit-0"));
+    expect(screen.getByTestId("item-effect-row-0")).toHaveTextContent("1");
+    expect(screen.getByTestId("item-effect-row-1")).toHaveTextContent("2");
+    expect(screen.getByTestId("item-effect-move-up-1")).toBeInTheDocument();
+    expect(screen.getByTestId("item-effect-move-down-0")).toBeInTheDocument();
+  });
 
-    expect(screen.getByRole("button", { name: "Edit Fireball" })).toBeInTheDocument();
-    expect(onEditSpell).toHaveBeenCalledWith("sp-1");
+  it("reorders linked effects without losing duplicates", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+    renderForm({
+      formValues: { effectIds: ["eff-1", "eff-2", "eff-1"] },
+      onFieldChange,
+    });
+
+    await user.click(screen.getByTestId("item-effect-move-down-0"));
+
+    expect(onFieldChange).toHaveBeenCalledWith("effectIds", ["eff-2", "eff-1", "eff-1"]);
+  });
+
+  it("edits a linked effect", async () => {
+    const user = userEvent.setup();
+    const onEditEffect = vi.fn();
+    renderForm({
+      formValues: { name: "Oak Staff", effectIds: ["eff-1"] },
+      onEditEffect,
+    });
+
+    await user.click(screen.getByTestId("item-effect-edit-0"));
+
+    expect(screen.getByRole("button", { name: "Edit Arcane Damage" })).toBeInTheDocument();
+    expect(onEditEffect).toHaveBeenCalledWith("eff-1");
   });
 });

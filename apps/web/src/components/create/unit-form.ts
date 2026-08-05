@@ -3,6 +3,24 @@ export interface ItemOption {
   name: string;
 }
 
+export type TargetSide = "allies" | "enemies" | "self";
+export type TargetPolicy =
+  | "highest_health"
+  | "lowest_health"
+  | "highest_damage"
+  | "random"
+  | "self";
+export type RowType = "support" | "ranged" | "melee" | "tank";
+
+const VALID_TARGET_SIDES: readonly string[] = ["allies", "enemies", "self"];
+const VALID_TARGET_POLICIES: readonly string[] = [
+  "highest_health",
+  "lowest_health",
+  "highest_damage",
+  "random",
+  "self",
+];
+
 export const UNIT_NUMERIC_FIELDS = [
   "meleeDmg",
   "health",
@@ -32,6 +50,12 @@ export interface UnitFormValues {
   dodge: string;
   criticalChance: string;
   itemIds: string[];
+  targetSide: TargetSide | "";
+  targetPolicy: TargetPolicy | "";
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
+  allowedRowTypes: RowType[];
 }
 
 type UnitRecord = {
@@ -46,6 +70,12 @@ type UnitRecord = {
   dodge?: number | null;
   criticalChance?: number | null;
   itemIds?: string[] | null;
+  targetSide?: string | null;
+  targetPolicy?: string | null;
+  targetRowCount?: number | null;
+  maxTargetsPerRow?: number | null;
+  targetOnlyAdjacent?: boolean | null;
+  allowedRowTypes?: RowType[] | null;
 };
 
 export type UnitFieldErrors = Partial<Record<keyof UnitFormValues, string>>;
@@ -62,6 +92,12 @@ export interface NormalizedUnitInput {
   dodge: number;
   criticalChance: number;
   itemIds: string[];
+  targetSide: TargetSide;
+  targetPolicy: TargetPolicy;
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
+  allowedRowTypes: RowType[];
 }
 
 const UNIT_LABELS: Record<(typeof UNIT_NUMERIC_FIELDS)[number], string> = {
@@ -93,6 +129,12 @@ export function createDefaultUnitFormValues(): UnitFormValues {
     dodge: "0",
     criticalChance: "0",
     itemIds: [],
+    targetSide: "enemies",
+    targetPolicy: "highest_health",
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
+    allowedRowTypes: [],
   };
 }
 
@@ -117,6 +159,12 @@ export function unitRecordToFormValues(record: Partial<UnitRecord>): UnitFormVal
     dodge: numberToFormValue(record.dodge),
     criticalChance: numberToFormValue(record.criticalChance),
     itemIds: record.itemIds ? [...record.itemIds] : [],
+    targetSide: (record.targetSide as TargetSide | "") ?? "enemies",
+    targetPolicy: (record.targetPolicy as TargetPolicy | "") ?? "highest_health",
+    targetRowCount: record.targetRowCount ?? 1,
+    maxTargetsPerRow: record.maxTargetsPerRow === undefined ? 1 : record.maxTargetsPerRow,
+    targetOnlyAdjacent: record.targetOnlyAdjacent ?? false,
+    allowedRowTypes: record.allowedRowTypes ? [...record.allowedRowTypes] : [],
   };
 }
 
@@ -141,6 +189,12 @@ export function normalizeUnitFormValues(values: UnitFormValues): NormalizedUnitI
     dodge: parseNumericField(values.dodge),
     criticalChance: parseNumericField(values.criticalChance),
     itemIds: [...values.itemIds],
+    targetSide: values.targetSide as TargetSide,
+    targetPolicy: values.targetPolicy as TargetPolicy,
+    targetRowCount: values.targetRowCount,
+    maxTargetsPerRow: values.maxTargetsPerRow,
+    targetOnlyAdjacent: values.targetOnlyAdjacent,
+    allowedRowTypes: [...values.allowedRowTypes],
   };
 }
 
@@ -160,6 +214,43 @@ export function validateUnitForm(values: UnitFormValues): UnitFieldErrors {
 
   if (Number.isFinite(normalized.mana) && normalized.mana < 0) {
     errors.mana = "Must be zero or greater";
+  }
+
+  if (!VALID_TARGET_SIDES.includes(values.targetSide)) {
+    errors.targetSide = "Target side is required";
+  }
+
+  if (!VALID_TARGET_POLICIES.includes(values.targetPolicy)) {
+    errors.targetPolicy = "Target policy is required";
+  }
+
+  if (values.targetPolicy === "self" && values.targetSide === "enemies") {
+    errors.targetSide = "Self priority cannot be used when targeting enemies";
+  }
+
+  if (
+    !Number.isInteger(values.targetRowCount) ||
+    values.targetRowCount < 1 ||
+    values.targetRowCount > 4
+  ) {
+    errors.targetRowCount = "Target row count must be between 1 and 4";
+  }
+
+  if (
+    values.maxTargetsPerRow !== null &&
+    (!Number.isInteger(values.maxTargetsPerRow) || values.maxTargetsPerRow < 1)
+  ) {
+    errors.maxTargetsPerRow = "Max targets per row must be at least 1";
+  }
+
+  if (values.targetOnlyAdjacent && values.maxTargetsPerRow === null) {
+    errors.targetOnlyAdjacent = "Adjacent targeting requires a limited number of targets per row";
+  } else if (
+    values.targetOnlyAdjacent &&
+    values.maxTargetsPerRow !== null &&
+    values.maxTargetsPerRow < 2
+  ) {
+    errors.targetOnlyAdjacent = "Adjacent targeting requires at least 2 targets per row";
   }
 
   return errors;
@@ -186,6 +277,25 @@ export function isUnitFormDirty(
     if (current[field] !== original[field]) {
       return true;
     }
+  }
+
+  if (
+    current.targetSide !== original.targetSide ||
+    current.targetPolicy !== original.targetPolicy ||
+    current.targetRowCount !== original.targetRowCount ||
+    current.maxTargetsPerRow !== original.maxTargetsPerRow ||
+    current.targetOnlyAdjacent !== original.targetOnlyAdjacent
+  ) {
+    return true;
+  }
+
+  const currentAllowedRows = [...current.allowedRowTypes].sort();
+  const originalAllowedRows = [...original.allowedRowTypes].sort();
+  if (
+    currentAllowedRows.length !== originalAllowedRows.length ||
+    currentAllowedRows.some((rowType, index) => rowType !== originalAllowedRows[index])
+  ) {
+    return true;
   }
 
   return (

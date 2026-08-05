@@ -1,7 +1,9 @@
-export interface SpellOption {
+import type { EffectType } from "./effect-form";
+
+export interface EffectOption {
   id: string;
   name: string;
-  targetPolicy?: string;
+  effectType: EffectType;
 }
 
 export const ITEM_NUMERIC_FIELDS = [
@@ -33,7 +35,7 @@ export interface ItemFormValues {
   criticalChance: string;
   activationManaCost: string;
   activationHealthCost: string;
-  spellIds: string[];
+  effectIds: string[];
 }
 
 type ItemRecord = {
@@ -47,7 +49,7 @@ type ItemRecord = {
   criticalChance?: number | null;
   activationManaCost?: number | null;
   activationHealthCost?: number | null;
-  spellIds?: string[] | null;
+  effectIds?: string[] | null;
 };
 
 export type ItemFieldErrors = Partial<Record<keyof ItemFormValues, string>>;
@@ -63,7 +65,7 @@ export interface NormalizedItemInput {
   criticalChance: number;
   activationManaCost: number;
   activationHealthCost: number;
-  spellIds: string[];
+  effectIds: string[];
 }
 
 const ITEM_LABELS: Record<(typeof ITEM_NUMERIC_FIELDS)[number], string> = {
@@ -94,7 +96,7 @@ export function createDefaultItemFormValues(): ItemFormValues {
     criticalChance: "0",
     activationManaCost: "0",
     activationHealthCost: "0",
-    spellIds: [],
+    effectIds: [],
   };
 }
 
@@ -118,7 +120,7 @@ export function itemRecordToFormValues(record: Partial<ItemRecord>): ItemFormVal
     criticalChance: numberToFormValue(record.criticalChance),
     activationManaCost: numberToFormValue(record.activationManaCost),
     activationHealthCost: numberToFormValue(record.activationHealthCost),
-    spellIds: record.spellIds ? [...record.spellIds] : [],
+    effectIds: record.effectIds ? [...record.effectIds] : [],
   };
 }
 
@@ -142,7 +144,7 @@ export function normalizeItemFormValues(values: ItemFormValues): NormalizedItemI
     criticalChance: parseNumericField(values.criticalChance),
     activationManaCost: parseNumericField(values.activationManaCost),
     activationHealthCost: parseNumericField(values.activationHealthCost),
-    spellIds: [...new Set(values.spellIds)],
+    effectIds: [...values.effectIds],
   };
 }
 
@@ -175,10 +177,6 @@ export function hasItemFormErrors(values: ItemFormValues): boolean {
   return Object.keys(validateItemForm(values)).length > 0;
 }
 
-function sortedUniqueIds(ids: string[]): string[] {
-  return [...new Set(ids)].sort();
-}
-
 export function isItemFormDirty(
   formValues: ItemFormValues,
   originalData: ItemRecord | null,
@@ -198,10 +196,8 @@ export function isItemFormDirty(
     }
   }
 
-  const currentSpellIds = sortedUniqueIds(current.spellIds);
-  const originalSpellIds = sortedUniqueIds(original.spellIds);
   return (
-    currentSpellIds.length !== originalSpellIds.length ||
-    currentSpellIds.some((id, index) => id !== originalSpellIds[index])
+    current.effectIds.length !== original.effectIds.length ||
+    current.effectIds.some((id, index) => id !== original.effectIds[index])
   );
 }

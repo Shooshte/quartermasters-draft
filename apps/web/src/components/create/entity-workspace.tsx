@@ -3,10 +3,8 @@ import { Label } from "~/components/ui/label";
 import { capitalize } from "~/lib/string-utils";
 import type { EffectFormValues } from "./effect-form";
 import { EffectWorkspaceForm } from "./effect-workspace-form";
-import type { ItemFormValues, SpellOption } from "./item-form";
+import type { EffectOption, ItemFormValues } from "./item-form";
 import { ItemWorkspaceForm } from "./item-workspace-form";
-import type { EffectOption, SpellFormValues } from "./spell-form";
-import { SpellWorkspaceForm } from "./spell-workspace-form";
 import type { EntityTab, WorkspaceState } from "./types";
 import type { ItemOption, UnitFormValues } from "./unit-form";
 import { UnitWorkspaceForm } from "./unit-workspace-form";
@@ -18,7 +16,6 @@ interface EntityWorkspaceProps {
   isSaving: boolean;
   saveError: string | null;
   effectOptions?: EffectOption[];
-  spellOptions?: SpellOption[];
   itemOptions?: ItemOption[];
   onEditLinkedEntity?: (tab: EntityTab, id: string) => void;
 }
@@ -30,7 +27,6 @@ export function EntityWorkspace({
   isSaving,
   saveError,
   effectOptions = [],
-  spellOptions = [],
   itemOptions = [],
   onEditLinkedEntity = () => {},
 }: EntityWorkspaceProps) {
@@ -85,25 +81,14 @@ export function EntityWorkspace({
                 isSaving={isSaving}
                 saveError={saveError}
               />
-            ) : entityType === "spell" ? (
-              <SpellWorkspaceForm
-                mode={mode}
-                formValues={formValues as SpellFormValues}
-                effectOptions={effectOptions}
-                onFieldChange={onFieldChange}
-                onSave={onSave}
-                onEditEffect={(effectId) => onEditLinkedEntity("Effects", effectId)}
-                isSaving={isSaving}
-                saveError={saveError}
-              />
             ) : entityType === "item" ? (
               <ItemWorkspaceForm
                 mode={mode}
                 formValues={formValues as ItemFormValues}
-                spellOptions={spellOptions}
+                effectOptions={effectOptions}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
-                onEditSpell={(spellId) => onEditLinkedEntity("Spells", spellId)}
+                onEditEffect={(effectId) => onEditLinkedEntity("Effects", effectId)}
                 isSaving={isSaving}
                 saveError={saveError}
               />

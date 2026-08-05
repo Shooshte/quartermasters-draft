@@ -16,6 +16,12 @@ const defaultFormValues: UnitFormValues = {
   dodge: "0",
   criticalChance: "0",
   itemIds: [],
+  targetSide: "enemies",
+  targetPolicy: "highest_health",
+  targetRowCount: 1,
+  maxTargetsPerRow: 1,
+  targetOnlyAdjacent: false,
+  allowedRowTypes: [],
 };
 
 const sampleItemOptions = [
@@ -58,12 +64,15 @@ describe("UnitWorkspaceForm", () => {
     renderForm();
 
     expect(screen.getByText("Linked Items")).toBeInTheDocument();
+    expect(screen.getByText("Targeting")).toBeInTheDocument();
     expect(screen.getByText("Combat Stats")).toBeInTheDocument();
     expect(screen.getByText("Vital Stats")).toBeInTheDocument();
     expect(screen.getByTestId("unit-item-picker")).toBeInTheDocument();
     expect(screen.getByTestId("unit-meleeDmg-input")).toBeInTheDocument();
     expect(screen.getByTestId("unit-health-input")).toBeInTheDocument();
     expect(screen.getByTestId("unit-mana-input")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-target-side-select")).toHaveValue("enemies");
+    expect(screen.getByTestId("unit-target-policy-select")).toHaveValue("highest_health");
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Unit");
   });
 
@@ -167,5 +176,55 @@ describe("UnitWorkspaceForm", () => {
     expect(screen.getByTestId("entity-save-error")).toHaveTextContent(
       "A unit with this name already exists",
     );
+  });
+
+  it("renders an explicit-side targeting summary without effect-allegiance inference", () => {
+    renderForm({
+      formValues: {
+        name: "Ally Vanguard",
+        targetSide: "allies",
+        targetPolicy: "lowest_health",
+      },
+    });
+
+    const summary = screen.getByTestId("unit-targeting-summary");
+    expect(summary).toHaveTextContent("Target side: Allies.");
+    expect(summary).toHaveTextContent("Lowest health");
+    expect(summary).not.toHaveTextContent(/first (linked )?effect/i);
+    expect(summary).not.toHaveTextContent(/effect.*determine/i);
+  });
+
+  it("changes target side and policy through explicit selectors", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+    renderForm({ onFieldChange, formValues: { name: "Field Captain" } });
+
+    await user.selectOptions(screen.getByTestId("unit-target-side-select"), "allies");
+    await user.selectOptions(screen.getByTestId("unit-target-policy-select"), "random");
+
+    expect(onFieldChange).toHaveBeenCalledWith("targetSide", "allies");
+    expect(onFieldChange).toHaveBeenCalledWith("targetPolicy", "random");
+  });
+
+  it("renders unit targeting row controls with unit-owned test ids", () => {
+    renderForm({
+      formValues: { name: "Formation Guard", maxTargetsPerRow: 3 },
+    });
+
+    expect(screen.getByTestId("unit-target-row-count-toggle-1")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-target-row-count-toggle-4")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-target-per-row-toggle-all")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-target-max-targets-per-row-input")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-target-position-toggle-adjacent")).toBeEnabled();
+    expect(screen.getByTestId("unit-target-allowed-row-tank")).toBeInTheDocument();
+  });
+
+  it("disables save for an invalid enemy self-priority combination", () => {
+    renderForm({
+      formValues: { name: "Confused Duelist", targetSide: "enemies", targetPolicy: "self" },
+    });
+
+    expect(screen.getByTestId("entity-save-button")).toBeDisabled();
+    expect(screen.getByText("Self priority cannot be used when targeting enemies")).toBeVisible();
   });
 });

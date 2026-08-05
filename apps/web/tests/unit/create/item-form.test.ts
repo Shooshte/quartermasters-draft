@@ -19,7 +19,7 @@ describe("item-form", () => {
       criticalChance: "0",
       activationManaCost: "0",
       activationHealthCost: "0",
-      spellIds: [],
+      effectIds: [],
     });
   });
 
@@ -33,7 +33,7 @@ describe("item-form", () => {
     ).toBe(-25);
   });
 
-  it("normalizes decimal stats, trims names, and dedupes linked spells", () => {
+  it("normalizes decimal stats, trims names, and preserves ordered duplicate effects", () => {
     expect(
       normalizeItemFormValues({
         name: "  Arcane Focus  ",
@@ -46,7 +46,7 @@ describe("item-form", () => {
         criticalChance: "7.25",
         activationManaCost: "3",
         activationHealthCost: "0",
-        spellIds: ["sp-1", "sp-1", "sp-2"],
+        effectIds: ["eff-2", "eff-1", "eff-2"],
       }),
     ).toEqual({
       name: "Arcane Focus",
@@ -59,11 +59,11 @@ describe("item-form", () => {
       criticalChance: 7.25,
       activationManaCost: 3,
       activationHealthCost: 0,
-      spellIds: ["sp-1", "sp-2"],
+      effectIds: ["eff-2", "eff-1", "eff-2"],
     });
   });
 
-  it("validates activation costs without requiring linked spells", () => {
+  it("validates activation costs without requiring linked effects", () => {
     expect(
       validateItemForm({
         name: "Broken Relay",
@@ -76,7 +76,7 @@ describe("item-form", () => {
         criticalChance: "0",
         activationManaCost: "-1",
         activationHealthCost: "-2",
-        spellIds: [],
+        effectIds: [],
       }),
     ).toMatchObject({
       activationManaCost: "Must be zero or greater",
@@ -84,10 +84,10 @@ describe("item-form", () => {
     });
   });
 
-  it("allows empty linked spell ids when the rest of the form is valid", () => {
+  it("allows empty linked effect ids when the rest of the form is valid", () => {
     expect(
       validateItemForm({
-        name: "Spell-less Relic",
+        name: "Effect-less Relic",
         meleeDmg: "0",
         rangedDmg: "0",
         mana: "0",
@@ -97,12 +97,12 @@ describe("item-form", () => {
         criticalChance: "0",
         activationManaCost: "0",
         activationHealthCost: "0",
-        spellIds: [],
+        effectIds: [],
       }),
     ).toEqual({});
   });
 
-  it("treats linked spells as an unordered set and numeric strings by parsed value for dirty checks", () => {
+  it("treats reordered linked effects as dirty while comparing numeric strings by parsed value", () => {
     expect(
       isItemFormDirty(
         {
@@ -116,7 +116,7 @@ describe("item-form", () => {
           criticalChance: "0",
           activationManaCost: "0",
           activationHealthCost: "0",
-          spellIds: ["sp-2", "sp-1"],
+          effectIds: ["eff-2", "eff-1"],
         },
         {
           name: "Oak Staff",
@@ -129,10 +129,10 @@ describe("item-form", () => {
           criticalChance: 0,
           activationManaCost: 0,
           activationHealthCost: 0,
-          spellIds: ["sp-1", "sp-2"],
+          effectIds: ["eff-1", "eff-2"],
         },
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("treats a modified create form as dirty against item defaults", () => {
@@ -141,7 +141,7 @@ describe("item-form", () => {
         {
           ...createDefaultItemFormValues(),
           name: "Bronze Buckler",
-          spellIds: ["sp-1"],
+          effectIds: ["eff-1"],
         },
         null,
       ),

@@ -70,6 +70,10 @@ export class UnitWorkspacePage {
     await this.page.getByTestId(`unit-item-remove-${index}`).click();
   }
 
+  async editItem(index: number) {
+    await this.page.getByTestId(`unit-item-edit-${index}`).click();
+  }
+
   async saveCreate() {
     await saveEntityAndWait(this.page, "units", "create");
     await expect(this.page).toHaveURL(/(?:\?|&)unit_id=/);

@@ -73,6 +73,10 @@ export class ScenarioWorkspacePage {
     await this.page.getByTestId(`scenario-row-${rowType}-move-up-${slotIndex}`).click();
   }
 
+  async editUnit(rowType: RowType, slotIndex: number) {
+    await this.page.getByTestId(`scenario-row-${rowType}-edit-${slotIndex}`).click();
+  }
+
   // ─── Save ───────────────────────────────────────────────────────────────────
 
   async saveCreate() {

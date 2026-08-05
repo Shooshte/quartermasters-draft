@@ -67,6 +67,12 @@ Feature: Item workspace create and edit
     When I update the item spellDmg to 20
     Then reloading the item by URL should show spellDmg as 20
 
+  Scenario: Open a spell linked to an item
+    Given I have loaded the item "Oak Staff" in the item workspace
+    When I edit linked spell at position 1
+    Then the "Spells" tab should be active
+    And spell "Fireball" should be open in the spell workspace
+
   Scenario: Duplicate name shows a save error
     Given I have loaded the item "Oak Staff" in the item workspace
     When I rename the item to "Iron Sword"

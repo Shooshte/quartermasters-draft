@@ -124,6 +124,52 @@ test.describe("Unit Workspace", () => {
     await expect(gmPage.getByTestId("unit-health-input")).toHaveValue("120");
   });
 
+  test("edit a linked item", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
+
+    await unit.editItem(0);
+
+    await expect(gmPage.getByRole("tab", { name: "Items" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
+    await expect(gmPage).toHaveURL(/tab=Items/);
+    await expect(gmPage).toHaveURL(/item_id=/);
+    await expect(gmPage).not.toHaveURL(/unit_id=/);
+  });
+
+  test("cancel or discard linked-item navigation with unsaved unit changes", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openById(BARBARIAN_ID);
+    await unit.fillName("Barbarian Updated");
+
+    await unit.editItem(0);
+    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
+
+    await gmPage.getByRole("button", { name: "Cancel" }).click();
+    await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(unit.nameInput).toHaveValue("Barbarian Updated");
+
+    await unit.editItem(0);
+    await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
+    await gmPage.getByRole("button", { name: "Discard" }).click();
+
+    await expect(gmPage.getByRole("tab", { name: "Items" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
+    await expect(gmPage).toHaveURL(/tab=Items/);
+    await expect(gmPage).toHaveURL(/item_id=/);
+    await expect(gmPage).not.toHaveURL(/unit_id=/);
+  });
+
   test("duplicate name shows a save error", async ({ gmPage }) => {
     const unit = new UnitWorkspacePage(gmPage);
     await unit.openById(BARBARIAN_ID);

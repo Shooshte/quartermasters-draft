@@ -59,6 +59,12 @@ Feature: Spell workspace create and edit
     When I update the spell name to "Fireball Updated"
     Then reloading the spell by URL should show "Fireball Updated"
 
+  Scenario: Open an effect linked to a spell
+    Given I have loaded the spell "Fireball" in the spell workspace
+    When I edit linked effect at position 1
+    Then the "Effects" tab should be active
+    And effect "Arcane Damage" should be open in the effect workspace
+
   Scenario: Duplicate name shows a save error
     Given I have loaded the spell "Fireball" in the spell workspace
     When I rename the spell to "Battle Cry"

@@ -11,6 +11,7 @@ const options = [
 
 function renderPicker(overrides: Partial<React.ComponentProps<typeof LinkedEntityPicker>> = {}) {
   const onChange = overrides.onChange ?? vi.fn();
+  const onEdit = overrides.onEdit ?? vi.fn();
 
   render(
     <LinkedEntityPicker
@@ -23,6 +24,7 @@ function renderPicker(overrides: Partial<React.ComponentProps<typeof LinkedEntit
       removeTestIdPrefix="picker-remove"
       moveUpTestIdPrefix="picker-up"
       moveDownTestIdPrefix="picker-down"
+      editTestIdPrefix="picker-edit"
       options={options}
       linkedIds={[]}
       allowDuplicates={false}
@@ -32,11 +34,12 @@ function renderPicker(overrides: Partial<React.ComponentProps<typeof LinkedEntit
       emptyMessage="No options found."
       addButtonLabel="+ Add"
       onChange={onChange}
+      onEdit={onEdit}
       {...overrides}
     />,
   );
 
-  return { onChange };
+  return { onChange, onEdit };
 }
 
 describe("LinkedEntityPicker", () => {
@@ -90,5 +93,20 @@ describe("LinkedEntityPicker", () => {
 
     await user.click(screen.getByTestId("picker-remove-1"));
     expect(onChange).toHaveBeenCalledWith(["1"]);
+  });
+
+  it("edits the selected duplicate occurrence through its accessible edit button", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    renderPicker({ linkedIds: ["1", "1"], allowDuplicates: true, onEdit });
+
+    const editButtons = screen.getAllByRole("button", { name: "Edit Arcane Damage" });
+    expect(editButtons).toHaveLength(2);
+    expect(screen.getByTestId("picker-edit-1")).toBe(editButtons[1]);
+
+    await user.click(editButtons[1]);
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(onEdit).toHaveBeenCalledWith("1");
   });
 });

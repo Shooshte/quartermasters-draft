@@ -15,6 +15,7 @@ interface ScenarioWorkspaceProps {
   isSaving: boolean;
   saveError: string | null;
   unitOptions: { id: string; name: string }[];
+  onEditUnit?: (unitId: string) => void;
 }
 
 function getWorkspaceTitle(workspace: WorkspaceState) {
@@ -50,6 +51,7 @@ export function ScenarioWorkspace({
   isSaving,
   saveError,
   unitOptions,
+  onEditUnit = () => {},
 }: ScenarioWorkspaceProps) {
   const { mode, formValues } = workspace;
   const isTransitioning = mode === "loading" && workspace.data !== null;
@@ -121,6 +123,7 @@ export function ScenarioWorkspace({
                     unitIds={row.unitIds}
                     unitOptions={unitOptions}
                     onChange={(unitIds) => updateRow(row.rowType, unitIds)}
+                    onEditUnit={onEditUnit}
                   />
                 ))}
               </div>

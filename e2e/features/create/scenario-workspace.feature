@@ -47,6 +47,14 @@ Feature: Scenario workspace create and edit
 
   Rule: Edit existing scenarios
 
+    Scenario: Open a unit linked to a scenario
+      Given I have loaded the scenario "Ambush at Dawn" in the scenario workspace
+      When I edit the unit at slot 1 in the "melee" row
+      Then the "Units" tab should be active
+      And unit "Barbarian" should be open in the unit workspace
+      And scenario "Ambush at Dawn" should remain open in the scenario workspace
+      And the URL should preserve the scenario and select unit "Barbarian"
+
     Scenario: Edit an existing scenario name
       Given I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I update the scenario name to "Ambush at Dusk"

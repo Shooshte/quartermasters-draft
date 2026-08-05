@@ -7,7 +7,7 @@ import type { ItemFormValues, SpellOption } from "./item-form";
 import { ItemWorkspaceForm } from "./item-workspace-form";
 import type { EffectOption, SpellFormValues } from "./spell-form";
 import { SpellWorkspaceForm } from "./spell-workspace-form";
-import type { WorkspaceState } from "./types";
+import type { EntityTab, WorkspaceState } from "./types";
 import type { ItemOption, UnitFormValues } from "./unit-form";
 import { UnitWorkspaceForm } from "./unit-workspace-form";
 
@@ -20,6 +20,7 @@ interface EntityWorkspaceProps {
   effectOptions?: EffectOption[];
   spellOptions?: SpellOption[];
   itemOptions?: ItemOption[];
+  onEditLinkedEntity?: (tab: EntityTab, id: string) => void;
 }
 
 export function EntityWorkspace({
@@ -31,6 +32,7 @@ export function EntityWorkspace({
   effectOptions = [],
   spellOptions = [],
   itemOptions = [],
+  onEditLinkedEntity = () => {},
 }: EntityWorkspaceProps) {
   const { mode, entityType, formValues } = workspace;
   const isTransitioning = mode === "loading" && workspace.data !== null;
@@ -90,6 +92,7 @@ export function EntityWorkspace({
                 effectOptions={effectOptions}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
+                onEditEffect={(effectId) => onEditLinkedEntity("Effects", effectId)}
                 isSaving={isSaving}
                 saveError={saveError}
               />
@@ -100,6 +103,7 @@ export function EntityWorkspace({
                 spellOptions={spellOptions}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
+                onEditSpell={(spellId) => onEditLinkedEntity("Spells", spellId)}
                 isSaving={isSaving}
                 saveError={saveError}
               />
@@ -110,6 +114,7 @@ export function EntityWorkspace({
                 itemOptions={itemOptions}
                 onFieldChange={onFieldChange}
                 onSave={onSave}
+                onEditItem={(itemId) => onEditLinkedEntity("Items", itemId)}
                 isSaving={isSaving}
                 saveError={saveError}
               />

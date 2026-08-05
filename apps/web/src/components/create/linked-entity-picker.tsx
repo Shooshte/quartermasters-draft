@@ -1,3 +1,4 @@
+import { Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { type EntityPickerOption, EntityPickerPopover } from "./entity-picker-popover";
@@ -14,6 +15,7 @@ interface LinkedEntityPickerProps {
   removeTestIdPrefix: string;
   moveUpTestIdPrefix?: string;
   moveDownTestIdPrefix?: string;
+  editTestIdPrefix: string;
   options: LinkedEntityOption[];
   linkedIds: string[];
   allowDuplicates: boolean;
@@ -25,6 +27,7 @@ interface LinkedEntityPickerProps {
   showSequence?: boolean;
   allowReorder?: boolean;
   onChange: (nextIds: string[]) => void;
+  onEdit: (linkedId: string) => void;
 }
 
 function getAvailableLinkedEntityOptions(
@@ -79,6 +82,7 @@ export function LinkedEntityPicker({
   removeTestIdPrefix,
   moveUpTestIdPrefix,
   moveDownTestIdPrefix,
+  editTestIdPrefix,
   options,
   linkedIds,
   allowDuplicates,
@@ -90,6 +94,7 @@ export function LinkedEntityPicker({
   showSequence = false,
   allowReorder = false,
   onChange,
+  onEdit,
 }: LinkedEntityPickerProps) {
   const [selectedId, setSelectedId] = useState("");
 
@@ -205,6 +210,16 @@ export function LinkedEntityPicker({
               ) : null}
 
               <div className="flex gap-0.5" style={{ flexShrink: 0 }}>
+                <button
+                  type="button"
+                  data-testid={`${editTestIdPrefix}-${index}`}
+                  className="inline-flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                  style={{ width: 24, height: 24 }}
+                  aria-label={`Edit ${option?.name ?? linkedId}`}
+                  onClick={() => onEdit(linkedId)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
                 {allowReorder ? (
                   <>
                     <button

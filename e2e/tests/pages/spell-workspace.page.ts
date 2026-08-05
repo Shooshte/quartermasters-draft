@@ -84,6 +84,10 @@ export class SpellWorkspacePage {
     await this.page.getByTestId(`spell-effect-remove-${index}`).click();
   }
 
+  async editEffect(index: number) {
+    await this.page.getByTestId(`spell-effect-edit-${index}`).click();
+  }
+
   async saveCreate() {
     await saveEntityAndWait(this.page, "spells", "create");
     await expect(this.page).toHaveURL(/(?:\?|&)spell_id=/);

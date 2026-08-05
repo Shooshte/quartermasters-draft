@@ -96,6 +96,22 @@ test.describe("Spell Workspace — CRUD", () => {
     await expect(spell.nameInput).toHaveValue("Fireball Updated");
   });
 
+  test("edit a linked effect", async ({ gmPage }) => {
+    const spell = new SpellWorkspacePage(gmPage);
+    await spell.openById(FIREBALL_ID);
+
+    await spell.editEffect(0);
+
+    await expect(gmPage.getByRole("tab", { name: "Effects" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Arcane Damage");
+    await expect(gmPage).toHaveURL(/tab=Effects/);
+    await expect(gmPage).toHaveURL(/effect_id=/);
+    await expect(gmPage).not.toHaveURL(/spell_id=/);
+  });
+
   test("duplicate name shows a save error", async ({ gmPage }) => {
     const spell = new SpellWorkspacePage(gmPage);
     await spell.openById(FIREBALL_ID);

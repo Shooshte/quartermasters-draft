@@ -1154,6 +1154,93 @@ describe("useCreatePageState — URL param change resets", () => {
   });
 });
 
+describe("useCreatePageState — linked entity navigation", () => {
+  beforeEach(() => {
+    resetMocks();
+  });
+
+  it("replaces a dirty unit with its linked item only after discard and switches the tab URL", async () => {
+    mockUnitsGet.mockResolvedValueOnce({
+      id: "u1",
+      name: "Barbarian",
+      meleeDmg: 0,
+      health: 100,
+      mana: 100,
+      rangedDmg: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      speed: 0,
+      dodge: 0,
+      criticalChance: 0,
+      itemIds: ["i1"],
+    });
+    mockItemsGet.mockResolvedValueOnce({
+      id: "i1",
+      name: "Iron Sword",
+      meleeDmg: 10,
+      rangedDmg: 0,
+      mana: 0,
+      manaRegen: 0,
+      spellDmg: 0,
+      dodge: 0,
+      criticalChance: 0,
+      activationManaCost: 0,
+      activationHealthCost: 0,
+      spellIds: [],
+    });
+
+    let currentSearch: Record<string, unknown> = {
+      tab: "Units",
+      scenario_id: "sc1",
+    };
+    let rerenderHook!: (props: { search: Record<string, unknown> }) => void;
+    const navigate = vi.fn(
+      ({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
+        currentSearch = search(currentSearch);
+        rerenderHook({ search: currentSearch });
+      },
+    );
+    const { result, rerender } = renderHook(
+      (props: { search: Record<string, unknown> }) => useCreatePageState(props.search, navigate),
+      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
+    );
+    rerenderHook = rerender;
+
+    await act(async () => {
+      result.current.selectRecord("Units", "u1");
+    });
+    act(() => {
+      result.current.updateEntityField("name", "Barbarian Updated");
+      result.current.selectRecord("Items", "i1");
+    });
+
+    expect(result.current.isDialogOpen).toBe(true);
+    expect(result.current.activeTab).toBe("Units");
+    expect(result.current.entityWorkspace.formValues.name).toBe("Barbarian Updated");
+
+    act(() => {
+      result.current.cancelDiscard();
+    });
+    expect(result.current.isDialogOpen).toBe(false);
+    expect(result.current.entityWorkspace.formValues.name).toBe("Barbarian Updated");
+
+    act(() => {
+      result.current.selectRecord("Items", "i1");
+    });
+    expect(result.current.isDialogOpen).toBe(true);
+    await act(async () => {
+      result.current.confirmDiscard();
+    });
+
+    await waitFor(() => {
+      expect(result.current.activeTab).toBe("Items");
+      expect(result.current.entityWorkspace.entityType).toBe("item");
+      expect(result.current.entityWorkspace.formValues.name).toBe("Iron Sword");
+    });
+    expect(currentSearch).toEqual({ tab: "Items", item_id: "i1", scenario_id: "sc1" });
+  });
+});
+
 describe("useCreatePageState — scenario list features", () => {
   beforeEach(() => {
     resetMocks();

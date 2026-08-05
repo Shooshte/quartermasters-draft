@@ -1,7 +1,7 @@
 Feature: Unit workspace create and edit
   As a game master
-  I want to create and edit units inside the entity builder on the "/create" page
-  So that unit records and their linked items can be managed without leaving the builder workflow
+  I want to create and edit units with explicit targeting
+  So that every item activation uses the unit's target configuration
 
   Background:
     Given I am authenticated as a game master
@@ -10,10 +10,12 @@ Feature: Unit workspace create and edit
 
   # Linked items on units are ordered by priority and may repeat.
 
-  Scenario: Create a new unit with default stats
+  Scenario: Create a new unit with default stats and targeting
     When I create a new unit named "Bronze Sentinel"
     Then the unit workspace should save the unit in edit mode
     And the URL should contain the created "unit_id"
+    And reloading the unit by URL should show target side "enemies" and target policy "highest_health"
+    And reloading the unit by URL should show one target row, one target per row, non-adjacent targeting, and all rows eligible
 
   Scenario: Name is required
     When I start creating a new unit without filling in a name
@@ -41,7 +43,7 @@ Feature: Unit workspace create and edit
       | health | 82.25 |
       | speed  | 1.35  |
       | dodge  | 6.5   |
-    Then reloading the unit by URL should show the saved decimal values
+    Then reloading the unit by URL should show the saved stat values
 
   Scenario: Edit an existing unit
     Given I have loaded the unit "Barbarian" in the unit workspace
@@ -52,6 +54,68 @@ Feature: Unit workspace create and edit
     Given I have loaded the unit "Barbarian" in the unit workspace
     When I update the unit health to 120
     Then reloading the unit by URL should show health as 120
+
+  Scenario: Each target side is explicit and persists
+    When I create a new unit named "Ally Vanguard" targeting "allies" using "lowest_health"
+    Then reloading the unit by URL should show target side "allies"
+    When I create a new unit named "Enemy Hunter" targeting "enemies" using "highest_damage"
+    Then reloading the unit by URL should show target side "enemies"
+    When I create a new unit named "Self Warder" targeting "self" using "self"
+    Then reloading the unit by URL should show target side "self"
+
+  Scenario: Target policy offers all five options
+    When I start creating a new unit
+    Then the target policy dropdown should offer "highest_health", "lowest_health", "highest_damage", "random", and "self"
+
+  Scenario: Self policy is invalid for enemies
+    When I create a new unit targeting "enemies" using "self"
+    Then saving should remain blocked
+
+  Scenario: Targeting summary comes only from the unit configuration
+    Given I have loaded the unit "Barbarian" in the unit workspace
+    When I choose target side "allies" and target policy "lowest_health"
+    Then the targeting summary should identify allies and "lowest_health"
+    And the targeting summary should not infer a side from any item effects
+
+  Scenario: Damage effects can apply to allies
+    Given unit "Barbarian" targets "allies" using "highest_health"
+    And item "Fire Sword" has damage effect "Flame Strike"
+    When "Barbarian" activates item "Fire Sword"
+    Then "Flame Strike" should apply to an ally
+
+  Scenario: Healing effects can apply to enemies
+    Given unit "Barbarian" targets "enemies" using "lowest_health"
+    And item "Mercy Staff" has healing effect "Restoration"
+    When "Barbarian" activates item "Mercy Staff"
+    Then "Restoration" should apply to an enemy
+
+  Scenario: Target row count supports one through four rows
+    When I start creating a new unit
+    Then the target row count control should offer 1, 2, 3, and 4
+
+  Scenario: Whole-row and limited per-row controls persist
+    When I create a new unit targeting "enemies" using "random"
+    And I choose 2 target rows
+    And I click the "All" per-row toggle segment
+    Then reloading the unit by URL should show target row count as 2 and max targets per row as "whole row"
+
+  Scenario: Adjacent targeting requires a limited count of at least two
+    When I start creating a new unit
+    And I set max targets per row to 1
+    Then the "Adjacent" position rule should be disabled
+    When I set max targets per row to 3
+    Then the "Adjacent" position rule should be enabled
+    When I click the "All" per-row toggle segment
+    Then the "Adjacent" position rule should be disabled
+
+  Scenario: Allowed row controls default to all and persist restrictions
+    When I start creating a new unit
+    Then all row type controls should show as eligible
+    And the targeting summary should explain that all rows are eligible
+    When I create a new unit named "Tank Buster" targeting "enemies" using "highest_health"
+    And I make only the "melee" and "tank" rows eligible
+    Then reloading the unit by URL should show row restrictions "melee" and "tank"
+    And the targeting summary should explain that only Tank and Melee are eligible
 
   Scenario: Open an item linked to a unit
     Given I have loaded the unit "Barbarian" in the unit workspace
@@ -80,56 +144,15 @@ Feature: Unit workspace create and edit
     Then the unit workspace should save the unit in edit mode
     And reloading the unit by URL should show no linked items
 
-  Scenario: Add an item to a unit
-    When I create a new unit named "Iron Vanguard"
-    And I link item "Iron Sword" to the unit
-    And I save the unit
-    Then reloading the unit by URL should show item "Iron Sword" linked
-
-  Scenario: Add multiple items to a unit in priority order
-    When I create a new unit named "Field Captain"
-    And I link item "Iron Sword" to the unit
-    And I link item "Leather Shield" to the unit
-    And I save the unit
-    Then reloading the unit by URL should show items "Iron Sword" and "Leather Shield" in order
-
-  Scenario: Search for a specific item before linking it
-    When I start creating a new unit
-    Then the link-item picker should allow searching for "Oak Staff"
-
-  Scenario: Link-item picker shows at most five options
-    When I start creating a new unit
-    Then opening the link-item picker should show no more than 5 items
-
-  Scenario: Link-item picker does not include the search prompt as an option
-    When I start creating a new unit
-    Then the link-item picker should use "Search items..." as input placeholder only
-
-  Scenario: Reorder linked items
-    Given I have loaded the unit "Barbarian" in the unit workspace
-    And I link item "Leather Shield" to the unit
-    And I save the unit
-    When I reorder the linked items so that position 1 becomes position 2 and position 2 becomes position 1
-    And I save the unit
-    Then reloading the unit by URL should show the items in the new order
-
-  Scenario: Remove a linked item while at least one remains
-    Given I have loaded the unit "Barbarian" in the unit workspace
-    And I link item "Leather Shield" to the unit
-    And I save the unit
-    When I remove the item at position 2
-    And I save the unit
-    Then reloading the unit by URL should show only the remaining item
-
-  Scenario: Removing the final linked item is allowed on edit
-    Given I have loaded the unit "Barbarian" in the unit workspace
-    When I remove the item at position 1
-    And I save the unit
-    Then reloading the unit by URL should show no linked items
-
-  Scenario: Duplicate item links are allowed
+  Scenario: Add, search, reorder, remove, and duplicate item links
     When I create a new unit named "Twinblade Adept"
+    Then the link-item picker should allow searching for "Iron Sword"
+    And opening the link-item picker should show no more than 5 items
+    And the link-item picker should use "Search items..." as input placeholder only
+    When I link item "Iron Sword" to the unit
     And I link item "Iron Sword" to the unit
-    And I link item "Iron Sword" to the unit
+    And I link item "Leather Shield" to the unit
+    And I reorder the linked items so that position 1 becomes position 2 and position 2 becomes position 1
+    And I remove the item at position 3
     And I save the unit
     Then reloading the unit by URL should show "Iron Sword" at both positions

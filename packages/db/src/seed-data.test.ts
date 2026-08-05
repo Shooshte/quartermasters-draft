@@ -3,13 +3,10 @@ import {
   buildSeedData,
   effectSeedData,
   itemSeedData,
-  itemsSpellsSeedData,
+  itemsEffectsSeedData,
   scenarioSeedData,
   scenariosRowsSeedData,
   scenariosRowsUnitsSeedData,
-  spellSeedData,
-  spellsAllowedRowsSeedData,
-  spellsEffectsSeedData,
   unitSeedData,
   unitsItemsSeedData,
 } from "./seed-data";
@@ -135,190 +132,6 @@ describe("effectSeedData", () => {
   });
 });
 
-describe("spellSeedData", () => {
-  it("has 21 spell records", () => {
-    expect(spellSeedData).toHaveLength(21);
-  });
-
-  it("each record has required fields: name, targetPolicy", () => {
-    for (const spell of spellSeedData) {
-      expect(spell.name).toBeDefined();
-      expect(spell.targetPolicy).toBeDefined();
-    }
-  });
-
-  it("all names are unique", () => {
-    const names = spellSeedData.map((s) => s.name);
-    expect(new Set(names).size).toBe(names.length);
-  });
-
-  it("covers all 4 targetPolicy values", () => {
-    const policies = spellSeedData.map((s) => s.targetPolicy);
-    expect(policies).toContain("highest_health");
-    expect(policies).toContain("lowest_health");
-    expect(policies).toContain("highest_damage");
-    expect(policies).toContain("random");
-  });
-
-  it("description is defined on all records", () => {
-    for (const spell of spellSeedData) {
-      expect(spell.description).toBeDefined();
-    }
-  });
-
-  it("each record has a deterministic id", () => {
-    for (const spell of spellSeedData) {
-      expect(spell.id).toBeDefined();
-      expect(typeof spell.id).toBe("string");
-    }
-  });
-
-  it("at least one spell has targetRowCount > 1", () => {
-    expect(spellSeedData.some((s) => s.targetRowCount !== undefined && s.targetRowCount > 1)).toBe(
-      true,
-    );
-  });
-
-  it("at least one spell has maxTargetsPerRow set to null (whole row)", () => {
-    expect(spellSeedData.some((s) => s.maxTargetsPerRow === null)).toBe(true);
-  });
-
-  it("at least one spell has targetOnlyAdjacent set to true", () => {
-    expect(spellSeedData.some((s) => s.targetOnlyAdjacent === true)).toBe(true);
-  });
-
-  it("spells with targetOnlyAdjacent true have maxTargetsPerRow >= 2", () => {
-    const adjacentSpells = spellSeedData.filter((s) => s.targetOnlyAdjacent === true);
-    for (const spell of adjacentSpells) {
-      expect(spell.maxTargetsPerRow).toBeDefined();
-      expect(spell.maxTargetsPerRow).not.toBeNull();
-      expect(spell.maxTargetsPerRow!).toBeGreaterThanOrEqual(2);
-    }
-  });
-
-  it("spells with maxTargetsPerRow null do not have targetOnlyAdjacent true", () => {
-    const wholeRowSpells = spellSeedData.filter((s) => s.maxTargetsPerRow === null);
-    for (const spell of wholeRowSpells) {
-      expect(spell.targetOnlyAdjacent ?? false).toBe(false);
-    }
-  });
-});
-
-describe("spellsAllowedRowsSeedData", () => {
-  it("has expected number of records", () => {
-    expect(spellsAllowedRowsSeedData.length).toBeGreaterThan(0);
-  });
-
-  it("each record has required fields: spellId, rowType", () => {
-    for (const record of spellsAllowedRowsSeedData) {
-      expect(record.spellId).toBeDefined();
-      expect(record.rowType).toBeDefined();
-    }
-  });
-
-  it("all spellId values reference spells in spellSeedData", () => {
-    const spellIds = new Set(spellSeedData.map((s) => s.id));
-    for (const record of spellsAllowedRowsSeedData) {
-      expect(spellIds.has(record.spellId)).toBe(true);
-    }
-  });
-
-  it("rowType values are valid", () => {
-    const validRowTypes = ["support", "ranged", "melee", "tank"];
-    for (const record of spellsAllowedRowsSeedData) {
-      expect(validRowTypes).toContain(record.rowType);
-    }
-  });
-
-  it("no duplicate (spellId, rowType) combinations", () => {
-    const seen = new Set<string>();
-    for (const record of spellsAllowedRowsSeedData) {
-      const key = `${record.spellId}:${record.rowType}`;
-      expect(seen.has(key)).toBe(false);
-      seen.add(key);
-    }
-  });
-
-  it("each record has a deterministic id", () => {
-    for (const record of spellsAllowedRowsSeedData) {
-      expect(record.id).toBeDefined();
-      expect(typeof record.id).toBe("string");
-    }
-  });
-
-  it("at least one spell has no allowed-row restrictions", () => {
-    const restrictedSpellIds = new Set(spellsAllowedRowsSeedData.map((r) => r.spellId));
-    expect(spellSeedData.some((spell) => spell.id && !restrictedSpellIds.has(spell.id))).toBe(true);
-  });
-});
-
-describe("spellsEffectsSeedData", () => {
-  it("has expected number of records", () => {
-    expect(spellsEffectsSeedData.length).toBeGreaterThanOrEqual(spellSeedData.length);
-  });
-
-  it("each record has required fields: spellId, effectTemplateId, sequenceOrder", () => {
-    for (const record of spellsEffectsSeedData) {
-      expect(record.spellId).toBeDefined();
-      expect(record.effectTemplateId).toBeDefined();
-      expect(record.sequenceOrder).toBeDefined();
-    }
-  });
-
-  it("sequenceOrder is > 0 for all records", () => {
-    for (const record of spellsEffectsSeedData) {
-      expect(record.sequenceOrder).toBeGreaterThan(0);
-    }
-  });
-
-  it("all spellId values reference spells in spellSeedData", () => {
-    const spellIds = new Set(spellSeedData.map((s) => s.id));
-    for (const record of spellsEffectsSeedData) {
-      expect(spellIds.has(record.spellId)).toBe(true);
-    }
-  });
-
-  it("all effectTemplateId values reference effects in effectSeedData", () => {
-    const effectIds = new Set(effectSeedData.map((e) => e.id));
-    for (const record of spellsEffectsSeedData) {
-      expect(effectIds.has(record.effectTemplateId)).toBe(true);
-    }
-  });
-
-  it("each record has a deterministic id", () => {
-    for (const record of spellsEffectsSeedData) {
-      expect(record.id).toBeDefined();
-      expect(typeof record.id).toBe("string");
-    }
-  });
-
-  it("no duplicate sequenceOrder within the same spell", () => {
-    const seen = new Set<string>();
-    for (const record of spellsEffectsSeedData) {
-      const key = `${record.spellId}:${record.sequenceOrder}`;
-      expect(seen.has(key)).toBe(false);
-      seen.add(key);
-    }
-  });
-
-  it("every spell has at least one linked effect", () => {
-    const spellIdsWithEffects = new Set(spellsEffectsSeedData.map((record) => record.spellId));
-    for (const spell of spellSeedData) {
-      expect(spell.id).toBeDefined();
-      if (!spell.id) {
-        throw new Error("Expected seeded spell to have an id");
-      }
-      expect(spellIdsWithEffects.has(spell.id)).toBe(true);
-    }
-  });
-
-  it("at least one seeded effect remains unlinked from spells", () => {
-    const linkedEffectIds = new Set(spellsEffectsSeedData.map((record) => record.effectTemplateId));
-    expect(effectSeedData.some((effect) => effect.id && !linkedEffectIds.has(effect.id))).toBe(
-      true,
-    );
-  });
-});
 
 describe("itemSeedData", () => {
   it("has 21 item records", () => {
@@ -374,47 +187,28 @@ describe("itemSeedData", () => {
   });
 });
 
-describe("itemsSpellsSeedData", () => {
-  it("contains linked spell rows for seeded items", () => {
-    expect(itemsSpellsSeedData.length).toBeGreaterThan(0);
+describe("itemsEffectsSeedData", () => {
+  it("uses positive, unique sequence orders per item", () => {
+    expect(itemsEffectsSeedData.every((link) => link.sequenceOrder > 0)).toBe(true);
+    expect(new Set(itemsEffectsSeedData.map((link) => `${link.itemId}:${link.sequenceOrder}`)).size).toBe(
+      itemsEffectsSeedData.length,
+    );
   });
 
-  it("each record has required fields: itemId, spellId", () => {
-    for (const record of itemsSpellsSeedData) {
-      expect(record.itemId).toBeDefined();
-      expect(record.spellId).toBeDefined();
+  it("references seeded items and effects", () => {
+    const itemIds = new Set(itemSeedData.map((item) => item.id));
+    const effectIds = new Set(effectSeedData.map((effect) => effect.id));
+
+    for (const link of itemsEffectsSeedData) {
+      expect(itemIds.has(link.itemId)).toBe(true);
+      expect(effectIds.has(link.effectTemplateId)).toBe(true);
     }
   });
 
-  it("all itemId values reference items in itemSeedData", () => {
-    const itemIds = new Set(itemSeedData.map((i) => i.id));
-    for (const record of itemsSpellsSeedData) {
-      expect(itemIds.has(record.itemId)).toBe(true);
+  it("uses deterministic ids", () => {
+    for (const link of itemsEffectsSeedData) {
+      expect(typeof link.id).toBe("string");
     }
-  });
-
-  it("all spellId values reference spells in spellSeedData", () => {
-    const spellIds = new Set(spellSeedData.map((s) => s.id));
-    for (const record of itemsSpellsSeedData) {
-      expect(spellIds.has(record.spellId)).toBe(true);
-    }
-  });
-
-  it("each record has a deterministic id", () => {
-    for (const record of itemsSpellsSeedData) {
-      expect(record.id).toBeDefined();
-      expect(typeof record.id).toBe("string");
-    }
-  });
-
-  it("at least one seeded item has no linked spells", () => {
-    const itemIdsWithSpells = new Set(itemsSpellsSeedData.map((record) => record.itemId));
-    expect(itemSeedData.some((item) => item.id && !itemIdsWithSpells.has(item.id))).toBe(true);
-  });
-
-  it("at least one seeded spell remains unlinked from items", () => {
-    const linkedSpellIds = new Set(itemsSpellsSeedData.map((record) => record.spellId));
-    expect(spellSeedData.some((spell) => spell.id && !linkedSpellIds.has(spell.id))).toBe(true);
   });
 });
 
@@ -441,6 +235,10 @@ describe("unitSeedData", () => {
   it("all names are unique", () => {
     const names = unitSeedData.map((u) => u.name);
     expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("defaults every unit to target enemies", () => {
+    expect(unitSeedData.every((unit) => unit.targetSide === "enemies")).toBe(true);
   });
 
   it("each record has a deterministic id", () => {

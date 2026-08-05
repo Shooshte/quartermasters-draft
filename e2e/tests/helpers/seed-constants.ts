@@ -12,12 +12,6 @@ export const TRPC_BASE = "/api/trpc";
 export const BARBARIAN_ROAR_ID = "a0000000-0000-0000-0000-000000000001";
 export const ZODIAC_BURST_ID = "a0000000-0000-0000-0000-000000000021";
 
-// ─── Spell IDs ───────────────────────────────────────────────────────────────
-
-export const FIREBALL_ID = "b0000000-0000-0000-0000-000000000001";
-export const BATTLE_CRY_ID = "b0000000-0000-0000-0000-000000000002";
-export const ZENITH_BLOOM_ID = "b0000000-0000-0000-0000-000000000021";
-
 // ─── Item IDs ────────────────────────────────────────────────────────────────
 
 export const IRON_SWORD_ID = "d0000000-0000-0000-0000-000000000001";
@@ -62,7 +56,6 @@ export const UNKNOWN_UUID = "00000000-0000-0000-0000-000000000099";
 /** ID prefix patterns used for each entity type in the seed data */
 const ENTITY_PREFIXES: Record<string, string> = {
   effects: "a0000000-0000-0000-0000-",
-  spells: "b0000000-0000-0000-0000-",
   items: "d0000000-0000-0000-0000-",
   units: "f0000000-0000-0000-0000-",
   scenarios: "a2000000-0000-0000-0000-",
@@ -74,7 +67,7 @@ const ENTITY_PREFIXES: Record<string, string> = {
  * @example generateEntityIds("items", 21) → ["d0000000-0000-0000-0000-000000000001", ...]
  */
 export function generateEntityIds(
-  entityType: "effects" | "spells" | "items" | "units" | "scenarios",
+  entityType: "effects" | "items" | "units" | "scenarios",
   count: number,
 ): string[] {
   const prefix = ENTITY_PREFIXES[entityType];

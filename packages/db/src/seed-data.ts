@@ -1,14 +1,12 @@
 import type {
   effects,
   items,
-  itemsSpells,
+  itemsEffects,
   scenarios,
   scenariosRows,
   scenariosRowsUnits,
-  spells,
-  spellsAllowedRows,
-  spellsEffects,
   units,
+  unitsAllowedRows,
   unitsItems,
 } from "./schema";
 
@@ -230,327 +228,6 @@ export const effectSeedData: (typeof effects.$inferInsert)[] = [
     effectType: "damage" as const,
     timingType: "instant" as const,
     directSpellDmg: 20.0,
-  },
-];
-
-export const spellSeedData: (typeof spells.$inferInsert)[] = [
-  {
-    id: "b0000000-0000-0000-0000-000000000001",
-    name: "Fireball",
-    description:
-      "Hurls a ball of fire at the target, dealing instant arcane damage followed by burning.",
-    targetPolicy: "highest_health" as const,
-    updatedAt: new Date("2025-01-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000002",
-    name: "Battle Cry",
-    description: "A mighty roar that buffs the caster with increased melee damage.",
-    targetPolicy: "random" as const,
-    updatedAt: new Date("2025-02-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000003",
-    name: "Healing Touch",
-    description: "Gently mends wounds, restoring health over time.",
-    targetPolicy: "lowest_health" as const,
-    updatedAt: new Date("2025-03-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000004",
-    name: "Arcane Shield",
-    description: "Conjures a protective barrier of arcane energy around the caster.",
-    targetPolicy: "lowest_health" as const,
-    updatedAt: new Date("2025-04-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000005",
-    name: "Chain Lightning",
-    description: "Unleashes a bolt of lightning that jumps between nearby enemies.",
-    targetPolicy: "highest_damage" as const,
-    maxTargetsPerRow: 3,
-    targetOnlyAdjacent: true,
-    updatedAt: new Date("2025-05-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000006",
-    name: "Dark Pact",
-    description: "Sacrifices health to deal devastating shadow damage to the target.",
-    targetPolicy: "highest_health" as const,
-    updatedAt: new Date("2025-06-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000007",
-    name: "Earthquake",
-    description: "Shakes the ground beneath all enemies, dealing area damage.",
-    targetPolicy: "random" as const,
-    targetRowCount: 2,
-    maxTargetsPerRow: null,
-    updatedAt: new Date("2025-07-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000008",
-    name: "Frost Nova",
-    description: "Releases a burst of frost that slows and damages nearby foes.",
-    targetPolicy: "highest_damage" as const,
-    maxTargetsPerRow: null,
-    updatedAt: new Date("2025-08-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000009",
-    name: "Guardian Spirit",
-    description: "Summons a spirit to protect the weakest ally from fatal blows.",
-    targetPolicy: "lowest_health" as const,
-    updatedAt: new Date("2025-09-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000010",
-    name: "Holy Light",
-    description: "Channels divine energy to restore a large amount of health.",
-    targetPolicy: "lowest_health" as const,
-    maxTargetsPerRow: 2,
-    updatedAt: new Date("2025-10-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000011",
-    name: "Ignite",
-    description: "Sets the target ablaze, dealing fire damage over time.",
-    targetPolicy: "highest_damage" as const,
-    updatedAt: new Date("2025-11-01T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000012",
-    name: "Jade Tempest",
-    description: "Slices through the battlefield with a fast-moving storm of sharpened wind.",
-    targetPolicy: "highest_damage" as const,
-    updatedAt: new Date("2025-03-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000013",
-    name: "Kindled Ward",
-    description: "Wraps a weakened ally in embers that harden into a protective shell.",
-    targetPolicy: "lowest_health" as const,
-    updatedAt: new Date("2025-04-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000014",
-    name: "Lunar Spear",
-    description: "Calls down a pale spear of moonlight to pierce the toughest foe.",
-    targetPolicy: "highest_health" as const,
-    updatedAt: new Date("2025-05-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000015",
-    name: "Mirror Veil",
-    description: "Creates flickering doubles around the caster to confuse enemy focus.",
-    targetPolicy: "random" as const,
-    updatedAt: new Date("2025-06-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000016",
-    name: "Nether Bloom",
-    description: "Detonates a shadowy blossom that erupts beneath the most dangerous foe.",
-    targetPolicy: "highest_damage" as const,
-    updatedAt: new Date("2025-07-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000017",
-    name: "Obsidian Lance",
-    description: "Launches a dark crystal shard to steady and protect an injured ally.",
-    targetPolicy: "lowest_health" as const,
-    updatedAt: new Date("2025-08-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000018",
-    name: "Prism Surge",
-    description: "Refracts raw mana into a chaotic burst that picks a random opponent.",
-    targetPolicy: "random" as const,
-    updatedAt: new Date("2025-09-15T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000019",
-    name: "Quicksilver Aura",
-    description: "Bathes the healthiest enemy in unstable silver energy that soon erupts.",
-    targetPolicy: "highest_health" as const,
-    updatedAt: new Date("2025-03-20T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000020",
-    name: "Rune Cascade",
-    description: "Drops a chain of carved sigils that punish the fiercest attacker.",
-    targetPolicy: "highest_damage" as const,
-    updatedAt: new Date("2025-04-20T00:00:00Z"),
-  },
-  {
-    id: "b0000000-0000-0000-0000-000000000021",
-    name: "Zenith Bloom",
-    description: "Unfolds a radiant flower of mana to restore the ally in greatest danger.",
-    targetPolicy: "lowest_health" as const,
-    updatedAt: new Date("2025-05-20T00:00:00Z"),
-  },
-];
-
-export const spellsEffectsSeedData: (typeof spellsEffects.$inferInsert)[] = [
-  {
-    id: "c0000000-0000-0000-0000-000000000001",
-    spellId: "b0000000-0000-0000-0000-000000000001",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000006", // Arcane Damage
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000002",
-    spellId: "b0000000-0000-0000-0000-000000000001",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000007", // Sizzling Flesh
-    sequenceOrder: 2,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000003",
-    spellId: "b0000000-0000-0000-0000-000000000002",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000001", // Barbarian Roar
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000004",
-    spellId: "b0000000-0000-0000-0000-000000000003",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000004", // Mend
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000005",
-    spellId: "b0000000-0000-0000-0000-000000000003",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000005", // Bandage
-    sequenceOrder: 2,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000006",
-    spellId: "b0000000-0000-0000-0000-000000000004",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000009",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000007",
-    spellId: "b0000000-0000-0000-0000-000000000005",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000012",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000008",
-    spellId: "b0000000-0000-0000-0000-000000000006",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000009",
-    spellId: "b0000000-0000-0000-0000-000000000007",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000012",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000010",
-    spellId: "b0000000-0000-0000-0000-000000000008",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000008",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000011",
-    spellId: "b0000000-0000-0000-0000-000000000009",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000017",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000012",
-    spellId: "b0000000-0000-0000-0000-000000000010",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000015",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000013",
-    spellId: "b0000000-0000-0000-0000-000000000011",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000016",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000014",
-    spellId: "b0000000-0000-0000-0000-000000000012",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000012",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000015",
-    spellId: "b0000000-0000-0000-0000-000000000013",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000013",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000016",
-    spellId: "b0000000-0000-0000-0000-000000000014",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000017",
-    spellId: "b0000000-0000-0000-0000-000000000015",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000009",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000018",
-    spellId: "b0000000-0000-0000-0000-000000000016",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000014",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000019",
-    spellId: "b0000000-0000-0000-0000-000000000017",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000015",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000020",
-    spellId: "b0000000-0000-0000-0000-000000000018",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000021",
-    spellId: "b0000000-0000-0000-0000-000000000019",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000016",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000022",
-    spellId: "b0000000-0000-0000-0000-000000000020",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
-    sequenceOrder: 1,
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000023",
-    spellId: "b0000000-0000-0000-0000-000000000021",
-    effectTemplateId: "a0000000-0000-0000-0000-000000000019",
-    sequenceOrder: 1,
-  },
-];
-
-export const spellsAllowedRowsSeedData: (typeof spellsAllowedRows.$inferInsert)[] = [
-  {
-    id: "f0000000-0000-0000-0000-000000000001",
-    spellId: "b0000000-0000-0000-0000-000000000005", // Chain Lightning
-    rowType: "melee" as const,
-  },
-  {
-    id: "f0000000-0000-0000-0000-000000000002",
-    spellId: "b0000000-0000-0000-0000-000000000005", // Chain Lightning
-    rowType: "tank" as const,
-  },
-  {
-    id: "f0000000-0000-0000-0000-000000000003",
-    spellId: "b0000000-0000-0000-0000-000000000008", // Frost Nova
-    rowType: "ranged" as const,
-  },
-  {
-    id: "f0000000-0000-0000-0000-000000000004",
-    spellId: "b0000000-0000-0000-0000-000000000008", // Frost Nova
-    rowType: "support" as const,
   },
 ];
 
@@ -851,106 +528,144 @@ export const itemSeedData: (typeof items.$inferInsert)[] = [
   },
 ];
 
-export const itemsSpellsSeedData: (typeof itemsSpells.$inferInsert)[] = [
+export const itemsEffectsSeedData: (typeof itemsEffects.$inferInsert)[] = [
   {
-    id: "e0000000-0000-0000-0000-000000000001",
-    itemId: "d0000000-0000-0000-0000-000000000001", // Iron Sword
-    spellId: "b0000000-0000-0000-0000-000000000002", // Battle Cry
+    id: "c0000000-0000-0000-0000-000000000001",
+    itemId: "d0000000-0000-0000-0000-000000000001",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000006",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000002",
-    itemId: "d0000000-0000-0000-0000-000000000002", // Oak Staff
-    spellId: "b0000000-0000-0000-0000-000000000001", // Fireball
+    id: "c0000000-0000-0000-0000-000000000002",
+    itemId: "d0000000-0000-0000-0000-000000000001",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000007",
+    sequenceOrder: 2,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000003",
-    itemId: "d0000000-0000-0000-0000-000000000003", // Leather Shield
-    spellId: "b0000000-0000-0000-0000-000000000003", // Healing Touch
+    id: "c0000000-0000-0000-0000-000000000003",
+    itemId: "d0000000-0000-0000-0000-000000000002",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000001",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000004",
-    itemId: "d0000000-0000-0000-0000-000000000004", // Pearl Dagger
-    spellId: "b0000000-0000-0000-0000-000000000004", // Arcane Shield
+    id: "c0000000-0000-0000-0000-000000000004",
+    itemId: "d0000000-0000-0000-0000-000000000003",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000004",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000005",
-    itemId: "d0000000-0000-0000-0000-000000000005", // Quartz Staff
-    spellId: "b0000000-0000-0000-0000-000000000005", // Chain Lightning
+    id: "c0000000-0000-0000-0000-000000000005",
+    itemId: "d0000000-0000-0000-0000-000000000003",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000005",
+    sequenceOrder: 2,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000006",
-    itemId: "d0000000-0000-0000-0000-000000000006", // Ruby Wand
-    spellId: "b0000000-0000-0000-0000-000000000006", // Dark Pact
+    id: "c0000000-0000-0000-0000-000000000006",
+    itemId: "d0000000-0000-0000-0000-000000000004",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000009",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000007",
-    itemId: "d0000000-0000-0000-0000-000000000007", // Silver Shield
-    spellId: "b0000000-0000-0000-0000-000000000007", // Earthquake
+    id: "c0000000-0000-0000-0000-000000000007",
+    itemId: "d0000000-0000-0000-0000-000000000005",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000012",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000008",
-    itemId: "d0000000-0000-0000-0000-000000000008", // Thunder Hammer
-    spellId: "b0000000-0000-0000-0000-000000000008", // Frost Nova
+    id: "c0000000-0000-0000-0000-000000000008",
+    itemId: "d0000000-0000-0000-0000-000000000006",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000009",
-    itemId: "d0000000-0000-0000-0000-000000000009", // Unicorn Horn
-    spellId: "b0000000-0000-0000-0000-000000000009", // Guardian Spirit
+    id: "c0000000-0000-0000-0000-000000000009",
+    itemId: "d0000000-0000-0000-0000-000000000007",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000012",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000010",
-    itemId: "d0000000-0000-0000-0000-000000000010", // Venom Blade
-    spellId: "b0000000-0000-0000-0000-000000000010", // Holy Light
+    id: "c0000000-0000-0000-0000-000000000010",
+    itemId: "d0000000-0000-0000-0000-000000000008",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000008",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000011",
-    itemId: "d0000000-0000-0000-0000-000000000011", // Wyrm Scale
-    spellId: "b0000000-0000-0000-0000-000000000011", // Ignite
+    id: "c0000000-0000-0000-0000-000000000011",
+    itemId: "d0000000-0000-0000-0000-000000000009",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000017",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000012",
-    itemId: "d0000000-0000-0000-0000-000000000012", // Xiphos
-    spellId: "b0000000-0000-0000-0000-000000000012", // Jade Tempest
+    id: "c0000000-0000-0000-0000-000000000012",
+    itemId: "d0000000-0000-0000-0000-000000000010",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000015",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000013",
-    itemId: "d0000000-0000-0000-0000-000000000013", // Amber Amulet
-    spellId: "b0000000-0000-0000-0000-000000000013", // Kindled Ward
+    id: "c0000000-0000-0000-0000-000000000013",
+    itemId: "d0000000-0000-0000-0000-000000000011",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000016",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000014",
-    itemId: "d0000000-0000-0000-0000-000000000014", // Luminous Cape
-    spellId: "b0000000-0000-0000-0000-000000000014", // Lunar Spear
+    id: "c0000000-0000-0000-0000-000000000014",
+    itemId: "d0000000-0000-0000-0000-000000000012",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000012",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000015",
-    itemId: "d0000000-0000-0000-0000-000000000015", // Moonsteel Helm
-    spellId: "b0000000-0000-0000-0000-000000000015", // Mirror Veil
+    id: "c0000000-0000-0000-0000-000000000015",
+    itemId: "d0000000-0000-0000-0000-000000000013",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000013",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000016",
-    itemId: "d0000000-0000-0000-0000-000000000016", // Nightglass Orb
-    spellId: "b0000000-0000-0000-0000-000000000016", // Nether Bloom
+    id: "c0000000-0000-0000-0000-000000000016",
+    itemId: "d0000000-0000-0000-0000-000000000014",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000017",
-    itemId: "d0000000-0000-0000-0000-000000000017", // Onyx Pike
-    spellId: "b0000000-0000-0000-0000-000000000017", // Obsidian Lance
+    id: "c0000000-0000-0000-0000-000000000017",
+    itemId: "d0000000-0000-0000-0000-000000000015",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000009",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000018",
-    itemId: "d0000000-0000-0000-0000-000000000018", // Phoenix Mail
-    spellId: "b0000000-0000-0000-0000-000000000018", // Prism Surge
+    id: "c0000000-0000-0000-0000-000000000018",
+    itemId: "d0000000-0000-0000-0000-000000000016",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000014",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000019",
-    itemId: "d0000000-0000-0000-0000-000000000019", // Quillblade
-    spellId: "b0000000-0000-0000-0000-000000000019", // Quicksilver Aura
+    id: "c0000000-0000-0000-0000-000000000019",
+    itemId: "d0000000-0000-0000-0000-000000000017",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000015",
+    sequenceOrder: 1,
   },
   {
-    id: "e0000000-0000-0000-0000-000000000020",
-    itemId: "d0000000-0000-0000-0000-000000000020", // Yew Longbow
-    spellId: "b0000000-0000-0000-0000-000000000020", // Rune Cascade
+    id: "c0000000-0000-0000-0000-000000000020",
+    itemId: "d0000000-0000-0000-0000-000000000018",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
+    sequenceOrder: 1,
+  },
+  {
+    id: "c0000000-0000-0000-0000-000000000021",
+    itemId: "d0000000-0000-0000-0000-000000000019",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000016",
+    sequenceOrder: 1,
+  },
+  {
+    id: "c0000000-0000-0000-0000-000000000022",
+    itemId: "d0000000-0000-0000-0000-000000000020",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000020",
+    sequenceOrder: 1,
+  },
+  {
+    id: "c0000000-0000-0000-0000-000000000023",
+    itemId: "d0000000-0000-0000-0000-000000000021",
+    effectTemplateId: "a0000000-0000-0000-0000-000000000019",
+    sequenceOrder: 1,
   },
 ];
 
@@ -958,6 +673,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000001",
     name: "Barbarian",
+    targetSide: "enemies" as const,
+    targetPolicy: "random" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 25,
     health: 120,
     rangedDmg: 5,
@@ -972,6 +692,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000002",
     name: "Mage",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 5,
     health: 70,
     rangedDmg: 10,
@@ -986,6 +711,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000003",
     name: "Ranger",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 10,
     health: 90,
     rangedDmg: 25,
@@ -1000,6 +730,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000004",
     name: "Samurai",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 28,
     health: 100,
     rangedDmg: 0,
@@ -1014,6 +749,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000005",
     name: "Templar",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_damage" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 3,
+    targetOnlyAdjacent: true,
     meleeDmg: 18,
     health: 130,
     rangedDmg: 0,
@@ -1028,6 +768,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000006",
     name: "Undead Knight",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 20,
     health: 110,
     rangedDmg: 0,
@@ -1042,6 +787,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000007",
     name: "Valkyrie",
+    targetSide: "enemies" as const,
+    targetPolicy: "random" as const,
+    targetRowCount: 2,
+    maxTargetsPerRow: null,
+    targetOnlyAdjacent: false,
     meleeDmg: 22,
     health: 105,
     rangedDmg: 15,
@@ -1056,6 +806,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000008",
     name: "Warlord",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_damage" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: null,
+    targetOnlyAdjacent: false,
     meleeDmg: 30,
     health: 115,
     rangedDmg: 5,
@@ -1070,6 +825,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000009",
     name: "Xenomancer",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 3,
     health: 65,
     rangedDmg: 8,
@@ -1084,6 +844,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000010",
     name: "Yeti Rider",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 2,
+    targetOnlyAdjacent: false,
     meleeDmg: 20,
     health: 140,
     rangedDmg: 0,
@@ -1098,6 +863,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000011",
     name: "Zephyr Monk",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_damage" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 15,
     health: 80,
     rangedDmg: 20,
@@ -1112,6 +882,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000012",
     name: "Nimbus Adept",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_damage" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 8,
     health: 88,
     rangedDmg: 14,
@@ -1126,6 +901,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000013",
     name: "Obsidian Archer",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 9,
     health: 85,
     rangedDmg: 27,
@@ -1140,6 +920,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000014",
     name: "Phantom Brute",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 24,
     health: 125,
     rangedDmg: 0,
@@ -1154,6 +939,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000015",
     name: "Quartz Sage",
+    targetSide: "enemies" as const,
+    targetPolicy: "random" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 4,
     health: 72,
     rangedDmg: 8,
@@ -1168,6 +958,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000016",
     name: "Runeblade Duelist",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_damage" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 21,
     health: 96,
     rangedDmg: 5,
@@ -1182,6 +977,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000017",
     name: "Sunforged Cleric",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 7,
     health: 102,
     rangedDmg: 0,
@@ -1196,6 +996,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000018",
     name: "Thunder Warden",
+    targetSide: "enemies" as const,
+    targetPolicy: "random" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 23,
     health: 118,
     rangedDmg: 4,
@@ -1210,6 +1015,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000019",
     name: "Umbral Beast",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 26,
     health: 112,
     rangedDmg: 0,
@@ -1224,6 +1034,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000020",
     name: "Yojimbo Captain",
+    targetSide: "enemies" as const,
+    targetPolicy: "highest_damage" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 19,
     health: 108,
     rangedDmg: 11,
@@ -1238,6 +1053,11 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
   {
     id: "f0000000-0000-0000-0000-000000000021",
     name: "Zircon Juggernaut",
+    targetSide: "enemies" as const,
+    targetPolicy: "lowest_health" as const,
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
     meleeDmg: 31,
     health: 150,
     rangedDmg: 0,
@@ -1248,6 +1068,29 @@ export const unitSeedData: (typeof units.$inferInsert)[] = [
     dodge: 2,
     criticalChance: 6,
     updatedAt: new Date("2025-09-30T00:00:00Z"),
+  },
+];
+
+export const unitsAllowedRowsSeedData: (typeof unitsAllowedRows.$inferInsert)[] = [
+  {
+    id: "b1000000-0000-0000-0000-000000000001",
+    unitId: "f0000000-0000-0000-0000-000000000005",
+    rowType: "melee" as const,
+  },
+  {
+    id: "b1000000-0000-0000-0000-000000000002",
+    unitId: "f0000000-0000-0000-0000-000000000005",
+    rowType: "tank" as const,
+  },
+  {
+    id: "b1000000-0000-0000-0000-000000000003",
+    unitId: "f0000000-0000-0000-0000-000000000008",
+    rowType: "ranged" as const,
+  },
+  {
+    id: "b1000000-0000-0000-0000-000000000004",
+    unitId: "f0000000-0000-0000-0000-000000000008",
+    rowType: "support" as const,
   },
 ];
 

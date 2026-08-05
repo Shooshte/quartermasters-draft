@@ -33,7 +33,7 @@ export async function openNewEntity(
  */
 export async function saveEntityAndWait(
   page: Page,
-  entityType: "effects" | "spells" | "items" | "units" | "scenarios",
+  entityType: "effects" | "items" | "units" | "scenarios",
   mutation: "create" | "update",
   opts?: { saveButtonTestId?: string },
 ): Promise<void> {
@@ -74,11 +74,11 @@ export async function expectAllStats(
 // ─── Entity Pickers ──────────────────────────────────────────────────────────
 
 /**
- * Add a linked entity via the picker popover (used for spell→effect, item→spell, unit→item links).
+ * Add a linked entity via the picker popover (used for item→effect and unit→item links).
  *
- * @param pickerTestId    - Test ID of the picker trigger (e.g. "item-spell-picker")
- * @param searchTestId    - Test ID of the search input (e.g. "item-spell-picker-search")
- * @param addButtonTestId - Test ID of the add button (e.g. "item-add-spell-button")
+ * @param pickerTestId    - Test ID of the picker trigger (e.g. "item-effect-picker")
+ * @param searchTestId    - Test ID of the search input (e.g. "item-effect-picker-search")
+ * @param addButtonTestId - Test ID of the add button (e.g. "item-add-effect-button")
  * @param entityName      - Display name of the entity to select
  * @param search          - Optional search text (defaults to entityName)
  */

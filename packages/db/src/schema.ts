@@ -23,7 +23,7 @@ export const targetPolicyEnum = pgEnum("target_policy", [
   "random",
   "self",
 ]);
-export const targetScopeEnum = pgEnum("target_scope", ["self", "self_and_others", "others"]);
+export const targetSideEnum = pgEnum("target_side", ["allies", "enemies", "self"]);
 export const rowTypeEnum = pgEnum("row_type", ["support", "ranged", "melee", "tank"]);
 
 export const user = pgTable(
@@ -160,83 +160,6 @@ export const effects = pgTable(
   ],
 );
 
-export const spells = pgTable(
-  "spells",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull().unique(),
-    description: text("description"),
-    targetPolicy: targetPolicyEnum("target_policy").notNull(),
-    targetScope: targetScopeEnum("target_scope").notNull().default("self_and_others"),
-    targetRowCount: integer("target_row_count").notNull().default(1),
-    maxTargetsPerRow: integer("max_targets_per_row").default(1),
-    targetOnlyAdjacent: boolean("target_only_adjacent").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
-  },
-  (table) => [
-    check(
-      "target_row_count_range",
-      sql`${table.targetRowCount} >= 1 AND ${table.targetRowCount} <= 4`,
-    ),
-    check(
-      "max_targets_per_row_positive",
-      sql`${table.maxTargetsPerRow} IS NULL OR ${table.maxTargetsPerRow} >= 1`,
-    ),
-    check(
-      "target_only_adjacent_whole_row",
-      sql`${table.maxTargetsPerRow} IS NOT NULL OR ${table.targetOnlyAdjacent} = false`,
-    ),
-    check(
-      "target_only_adjacent_min_targets",
-      sql`${table.targetOnlyAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`,
-    ),
-    check(
-      "self_priority_requires_self_eligible_scope",
-      sql`${table.targetScope} != 'others' OR ${table.targetPolicy}::text != 'self'`,
-    ),
-  ],
-);
-
-export const spellsEffects = pgTable(
-  "spells_effects",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    spellId: uuid("spell_id")
-      .notNull()
-      .references(() => spells.id, { onDelete: "cascade" }),
-    effectTemplateId: uuid("effect_template_id")
-      .notNull()
-      .references(() => effects.id),
-    sequenceOrder: integer("sequence_order").notNull(),
-  },
-  (table) => [
-    index("spells_effects_spell_id_idx").on(table.spellId),
-    index("spells_effects_effect_template_id_idx").on(table.effectTemplateId),
-    check("sequence_order_positive", sql`${table.sequenceOrder} > 0`),
-    unique("spells_effects_spell_id_sequence_order_unique").on(table.spellId, table.sequenceOrder),
-  ],
-);
-// Migration 0005 adds deferred constraint triggers so every spell keeps at least one linked effect.
-
-export const spellsAllowedRows = pgTable(
-  "spells_allowed_rows",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    spellId: uuid("spell_id")
-      .notNull()
-      .references(() => spells.id, { onDelete: "cascade" }),
-    rowType: rowTypeEnum("row_type").notNull(),
-  },
-  (table) => [
-    index("spells_allowed_rows_spell_id_idx").on(table.spellId),
-    unique("spells_allowed_rows_spell_id_row_type_unique").on(table.spellId, table.rowType),
-  ],
-);
-
 export const items = pgTable(
   "items",
   {
@@ -263,24 +186,26 @@ export const items = pgTable(
   ],
 );
 
-export const itemsSpells = pgTable(
-  "items_spells",
+export const itemsEffects = pgTable(
+  "items_effects",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     itemId: uuid("item_id")
       .notNull()
       .references(() => items.id, { onDelete: "cascade" }),
-    spellId: uuid("spell_id")
+    effectTemplateId: uuid("effect_template_id")
       .notNull()
-      .references(() => spells.id),
+      .references(() => effects.id),
+    sequenceOrder: integer("sequence_order").notNull(),
   },
   (table) => [
-    index("items_spells_item_id_idx").on(table.itemId),
-    index("items_spells_spell_id_idx").on(table.spellId),
-    unique("items_spells_item_id_spell_id_unique").on(table.itemId, table.spellId),
+    index("items_effects_item_id_idx").on(table.itemId),
+    index("items_effects_effect_template_id_idx").on(table.effectTemplateId),
+    check("items_effects_sequence_order_positive", sql`${table.sequenceOrder} > 0`),
+    unique("items_effects_item_id_sequence_order_unique").on(table.itemId, table.sequenceOrder),
   ],
 );
-// Item-spell links are optional; items can exist without rows in items_spells.
+// Item-effect links are optional; items without rows in items_effects are stat-only.
 
 export const units = pgTable(
   "units",
@@ -296,13 +221,55 @@ export const units = pgTable(
     speed: real("speed").notNull().default(0),
     dodge: real("dodge").notNull().default(0),
     criticalChance: real("critical_chance").notNull().default(0),
+    targetSide: targetSideEnum("target_side").notNull().default("enemies"),
+    targetPolicy: targetPolicyEnum("target_policy").notNull().default("highest_health"),
+    targetRowCount: integer("target_row_count").notNull().default(1),
+    maxTargetsPerRow: integer("max_targets_per_row").default(1),
+    targetOnlyAdjacent: boolean("target_only_adjacent").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => [check("units_mana_nonnegative", sql`${table.mana} >= 0`)],
+  (table) => [
+    check("units_mana_nonnegative", sql`${table.mana} >= 0`),
+    check(
+      "units_target_row_count_range",
+      sql`${table.targetRowCount} >= 1 AND ${table.targetRowCount} <= 4`,
+    ),
+    check(
+      "units_max_targets_per_row_positive",
+      sql`${table.maxTargetsPerRow} IS NULL OR ${table.maxTargetsPerRow} >= 1`,
+    ),
+    check(
+      "units_target_only_adjacent_whole_row",
+      sql`${table.maxTargetsPerRow} IS NOT NULL OR ${table.targetOnlyAdjacent} = false`,
+    ),
+    check(
+      "units_target_only_adjacent_min_targets",
+      sql`${table.targetOnlyAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`,
+    ),
+    check(
+      "units_self_policy_requires_non_enemy_side",
+      sql`${table.targetSide} != 'enemies' OR ${table.targetPolicy}::text != 'self'`,
+    ),
+  ],
+);
+
+export const unitsAllowedRows = pgTable(
+  "units_allowed_rows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    unitId: uuid("unit_id")
+      .notNull()
+      .references(() => units.id, { onDelete: "cascade" }),
+    rowType: rowTypeEnum("row_type").notNull(),
+  },
+  (table) => [
+    index("units_allowed_rows_unit_id_idx").on(table.unitId),
+    unique("units_allowed_rows_unit_id_row_type_unique").on(table.unitId, table.rowType),
+  ],
 );
 
 // Unique on (unitId, priority) — not (unitId, itemId) — so the same item

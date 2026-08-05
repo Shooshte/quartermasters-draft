@@ -23,8 +23,8 @@ vi.mock("@qd/db", async (importOriginal) => {
 const { itemsRouter } = await import("../../routers/scenarioBuilder/items");
 
 const createCaller = createCallerFactory(router({ items: itemsRouter }));
-const SPELL_ID_1 = "00000000-0000-4000-8000-000000000001";
-const SPELL_ID_2 = "00000000-0000-4000-8000-000000000002";
+const EFFECT_ID_1 = "00000000-0000-4000-8000-000000000001";
+const EFFECT_ID_2 = "00000000-0000-4000-8000-000000000002";
 
 describe("itemsRouter", () => {
   beforeEach(() => {
@@ -82,7 +82,7 @@ describe("itemsRouter", () => {
   });
 
   describe("get", () => {
-    it("returns item with full stats and spellIds sorted by spell name", async () => {
+    it("returns item with effectIds ordered by sequence", async () => {
       const mockItem = {
         id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff",
@@ -96,9 +96,10 @@ describe("itemsRouter", () => {
         activationManaCost: 0,
         activationHealthCost: 0,
       };
-      const mockSpellLinks = [
-        { spellId: "spell-b", spellName: "Battle Cry" },
-        { spellId: "spell-a", spellName: "Fireball" },
+      const mockEffectLinks = [
+        { effectTemplateId: EFFECT_ID_2 },
+        { effectTemplateId: EFFECT_ID_1 },
+        { effectTemplateId: EFFECT_ID_2 },
       ];
 
       let callCount = 0;
@@ -107,7 +108,7 @@ describe("itemsRouter", () => {
         if (callCount === 1) {
           return chainable([mockItem]);
         }
-        return chainable(mockSpellLinks);
+        return chainable(mockEffectLinks);
       });
 
       const caller = createCaller(gmCtx);
@@ -116,7 +117,7 @@ describe("itemsRouter", () => {
       });
       expect(result).toEqual({
         ...mockItem,
-        spellIds: ["spell-b", "spell-a"],
+        effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
       });
     });
 
@@ -131,7 +132,7 @@ describe("itemsRouter", () => {
   });
 
   describe("create", () => {
-    it("creates an item and dedupes linked spell ids", async () => {
+    it("creates an item and preserves ordered duplicate effect ids", async () => {
       const created = {
         id: "d-created",
         name: "Arcane Focus",
@@ -151,8 +152,9 @@ describe("itemsRouter", () => {
         .mockReturnValueOnce({ values: insertLinks });
       mockSelect.mockReturnValueOnce(
         chainable([
-          { spellId: SPELL_ID_1, spellName: "Fireball" },
-          { spellId: SPELL_ID_2, spellName: "Healing Touch" },
+          { effectTemplateId: EFFECT_ID_1 },
+          { effectTemplateId: EFFECT_ID_1 },
+          { effectTemplateId: EFFECT_ID_2 },
         ]),
       );
 
@@ -168,16 +170,17 @@ describe("itemsRouter", () => {
         criticalChance: 0,
         activationManaCost: 0,
         activationHealthCost: 0,
-        spellIds: [SPELL_ID_1, SPELL_ID_1, SPELL_ID_2],
+        effectIds: [EFFECT_ID_1, EFFECT_ID_1, EFFECT_ID_2],
       });
 
       expect(result).toEqual({
         ...created,
-        spellIds: [SPELL_ID_1, SPELL_ID_2],
+        effectIds: [EFFECT_ID_1, EFFECT_ID_1, EFFECT_ID_2],
       });
       expect(insertLinks).toHaveBeenCalledWith([
-        { itemId: "d-created", spellId: SPELL_ID_1 },
-        { itemId: "d-created", spellId: SPELL_ID_2 },
+        { itemId: "d-created", effectTemplateId: EFFECT_ID_1, sequenceOrder: 1 },
+        { itemId: "d-created", effectTemplateId: EFFECT_ID_1, sequenceOrder: 2 },
+        { itemId: "d-created", effectTemplateId: EFFECT_ID_2, sequenceOrder: 3 },
       ]);
     });
 
@@ -199,7 +202,7 @@ describe("itemsRouter", () => {
       mockInsertFn
         .mockReturnValueOnce({ values: itemValues })
         .mockReturnValueOnce({ values: vi.fn().mockReturnValue(chainable([])) });
-      mockSelect.mockReturnValueOnce(chainable([{ spellId: SPELL_ID_1, spellName: "Fireball" }]));
+      mockSelect.mockReturnValueOnce(chainable([{ effectTemplateId: EFFECT_ID_1 }]));
 
       const caller = createCaller(gmCtx);
       await caller.items.create({
@@ -213,7 +216,7 @@ describe("itemsRouter", () => {
         criticalChance: 7.25,
         activationManaCost: 0,
         activationHealthCost: 0,
-        spellIds: [SPELL_ID_1],
+        effectIds: [EFFECT_ID_1],
       });
 
       expect(itemValues).toHaveBeenCalledWith({
@@ -245,7 +248,7 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: -1,
           activationHealthCost: 0,
-          spellIds: ["00000000-0000-4000-8000-000000000001"],
+          effectIds: ["00000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
@@ -268,16 +271,16 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: 0,
           activationHealthCost: 0,
-          spellIds: [],
+          effectIds: [],
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(mockTransaction).not.toHaveBeenCalled();
     });
 
-    it("creates an item with no linked spells", async () => {
+    it("creates an item with no linked effects", async () => {
       const created = {
-        id: "d-spell-less",
-        name: "Spell-less Item",
+        id: "d-effect-less",
+        name: "Effect-less Item",
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
@@ -294,7 +297,7 @@ describe("itemsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.create({
-        name: "Spell-less Item",
+        name: "Effect-less Item",
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
@@ -304,16 +307,16 @@ describe("itemsRouter", () => {
         criticalChance: 0,
         activationManaCost: 0,
         activationHealthCost: 0,
-        spellIds: [],
+        effectIds: [],
       });
 
       expect(result).toEqual({
         ...created,
-        spellIds: [],
+        effectIds: [],
       });
       expect(mockInsertFn).toHaveBeenCalledTimes(1);
       expect(itemValues).toHaveBeenCalledWith({
-        name: "Spell-less Item",
+        name: "Effect-less Item",
         meleeDmg: 0,
         rangedDmg: 0,
         manaRegen: 0,
@@ -328,7 +331,7 @@ describe("itemsRouter", () => {
   });
 
   describe("update", () => {
-    it("updates item fields and replaces linked spell set", async () => {
+    it("updates item fields and replaces the ordered effect sequence", async () => {
       const updated = {
         id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff Updated",
@@ -349,8 +352,9 @@ describe("itemsRouter", () => {
       mockInsertFn.mockReturnValueOnce({ values: insertLinks });
       mockSelect.mockReturnValueOnce(
         chainable([
-          { spellId: SPELL_ID_2, spellName: "Battle Cry" },
-          { spellId: SPELL_ID_1, spellName: "Fireball" },
+          { effectTemplateId: EFFECT_ID_2 },
+          { effectTemplateId: EFFECT_ID_1 },
+          { effectTemplateId: EFFECT_ID_2 },
         ]),
       );
 
@@ -367,12 +371,12 @@ describe("itemsRouter", () => {
         criticalChance: 0,
         activationManaCost: 0,
         activationHealthCost: 0,
-        spellIds: [SPELL_ID_1, SPELL_ID_2, SPELL_ID_2],
+        effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
       });
 
       expect(result).toEqual({
         ...updated,
-        spellIds: [SPELL_ID_2, SPELL_ID_1],
+        effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
       });
       expect(updateSet).toHaveBeenCalledWith({
         name: "Oak Staff Updated",
@@ -387,8 +391,9 @@ describe("itemsRouter", () => {
         activationHealthCost: 0,
       });
       expect(insertLinks).toHaveBeenCalledWith([
-        { itemId: updated.id, spellId: SPELL_ID_1 },
-        { itemId: updated.id, spellId: SPELL_ID_2 },
+        { itemId: updated.id, effectTemplateId: EFFECT_ID_2, sequenceOrder: 1 },
+        { itemId: updated.id, effectTemplateId: EFFECT_ID_1, sequenceOrder: 2 },
+        { itemId: updated.id, effectTemplateId: EFFECT_ID_2, sequenceOrder: 3 },
       ]);
     });
 
@@ -409,12 +414,12 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: 0,
           activationHealthCost: 0,
-          spellIds: ["00000000-0000-4000-8000-000000000001"],
+          effectIds: ["00000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("updates an item with no linked spells", async () => {
+    it("updates an item with no linked effects", async () => {
       const updated = {
         id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff",
@@ -446,12 +451,12 @@ describe("itemsRouter", () => {
         criticalChance: 0,
         activationManaCost: 0,
         activationHealthCost: 0,
-        spellIds: [],
+        effectIds: [],
       });
 
       expect(result).toEqual({
         ...updated,
-        spellIds: [],
+        effectIds: [],
       });
       expect(mockInsertFn).not.toHaveBeenCalled();
     });
@@ -477,7 +482,7 @@ describe("itemsRouter", () => {
           criticalChance: 0,
           activationManaCost: 0,
           activationHealthCost: 0,
-          spellIds: ["00000000-0000-4000-8000-000000000001"],
+          effectIds: ["00000000-0000-4000-8000-000000000001"],
         }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
     });

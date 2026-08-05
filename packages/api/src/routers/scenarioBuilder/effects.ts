@@ -1,12 +1,4 @@
-import {
-  db,
-  effects,
-  itemsSpells,
-  scenariosRows,
-  scenariosRowsUnits,
-  spellsEffects,
-  unitsItems,
-} from "@qd/db";
+import { db, effects, itemsEffects, scenariosRows, scenariosRowsUnits, unitsItems } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
@@ -102,15 +94,14 @@ function buildEffectLinkageCondition(filter: EntityListLinkageFilter): SQL | und
   if (filter.mode === "scenario") {
     return exists(
       db
-        .select({ id: spellsEffects.id })
-        .from(spellsEffects)
-        .innerJoin(itemsSpells, eq(itemsSpells.spellId, spellsEffects.spellId))
-        .innerJoin(unitsItems, eq(unitsItems.itemId, itemsSpells.itemId))
+        .select({ id: itemsEffects.id })
+        .from(itemsEffects)
+        .innerJoin(unitsItems, eq(unitsItems.itemId, itemsEffects.itemId))
         .innerJoin(scenariosRowsUnits, eq(scenariosRowsUnits.unitId, unitsItems.unitId))
         .innerJoin(scenariosRows, eq(scenariosRowsUnits.rowId, scenariosRows.id))
         .where(
           and(
-            eq(spellsEffects.effectTemplateId, effects.id),
+            eq(itemsEffects.effectTemplateId, effects.id),
             eq(scenariosRows.scenarioId, filter.scenarioId),
           ),
         ),
@@ -118,9 +109,9 @@ function buildEffectLinkageCondition(filter: EntityListLinkageFilter): SQL | und
   }
 
   const linkedEffectSubquery = db
-    .select({ id: spellsEffects.id })
-    .from(spellsEffects)
-    .where(eq(spellsEffects.effectTemplateId, effects.id));
+    .select({ id: itemsEffects.id })
+    .from(itemsEffects)
+    .where(eq(itemsEffects.effectTemplateId, effects.id));
 
   return filter.mode === "linked" ? exists(linkedEffectSubquery) : notExists(linkedEffectSubquery);
 }
@@ -226,7 +217,7 @@ export const effectsRouter = router({
         throw error;
       }
 
-      throwDeleteConflict(error, "Cannot delete effect while it is linked to one or more spells.");
+      throwDeleteConflict(error, "Cannot delete effect while it is linked to one or more items.");
     }
   }),
 });

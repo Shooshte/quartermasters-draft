@@ -1,4 +1,4 @@
-import { db, scenariosRows, scenariosRowsUnits, units, unitsItems } from "@qd/db";
+import { db, scenariosRows, scenariosRowsUnits, units, unitsAllowedRows, unitsItems } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
@@ -18,7 +18,9 @@ const unitListInput = createListInputSchema(
   entityListLinkageFilterSchema,
 );
 
-const unitInputBaseSchema = z.object({
+const allowedRowTypeEnum = z.enum(["support", "ranged", "melee", "tank"]);
+
+const unitInputFields = z.object({
   name: z.string().trim().min(1),
   meleeDmg: z.number(),
   health: z.number(),
@@ -30,7 +32,41 @@ const unitInputBaseSchema = z.object({
   dodge: z.number(),
   criticalChance: z.number(),
   itemIds: z.array(idSchema),
+  targetSide: z.enum(["allies", "enemies", "self"]).default("enemies"),
+  targetPolicy: z
+    .enum(["highest_health", "lowest_health", "highest_damage", "random", "self"])
+    .default("highest_health"),
+  targetRowCount: z.number().int().min(1).max(4).default(1),
+  maxTargetsPerRow: z.number().int().min(1).nullable().default(1),
+  targetOnlyAdjacent: z.boolean().default(false),
+  allowedRowTypes: z.array(allowedRowTypeEnum).default([]),
 });
+
+function validateTargetingFields(input: z.infer<typeof unitInputFields>, ctx: z.RefinementCtx) {
+  if (input.targetOnlyAdjacent && input.maxTargetsPerRow === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Target only adjacent cannot be true when targeting whole row",
+      path: ["targetOnlyAdjacent"],
+    });
+  }
+  if (input.targetOnlyAdjacent && input.maxTargetsPerRow !== null && input.maxTargetsPerRow < 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Target only adjacent needs at least 2 targets per row",
+      path: ["targetOnlyAdjacent"],
+    });
+  }
+  if (input.targetPolicy === "self" && input.targetSide === "enemies") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Self priority cannot be used when targeting enemies",
+      path: ["targetSide"],
+    });
+  }
+}
+
+const unitInputBaseSchema = unitInputFields.superRefine(validateTargetingFields);
 
 type NormalizedUnitInput = z.infer<typeof unitInputBaseSchema>;
 type UnitTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -40,6 +76,7 @@ function normalizeUnitInput(input: z.infer<typeof unitInputBaseSchema>): Normali
     ...input,
     name: input.name.trim(),
     itemIds: [...input.itemIds],
+    allowedRowTypes: [...input.allowedRowTypes],
   };
 }
 
@@ -67,6 +104,30 @@ async function getOrderedItemIdsForUnit(executor: Pick<UnitTransaction, "select"
     .orderBy(asc(unitsItems.priority));
 
   return itemLinks.map((link) => link.itemId);
+}
+
+async function insertUnitAllowedRows(
+  tx: UnitTransaction,
+  unitId: string,
+  rowTypes: NormalizedUnitInput["allowedRowTypes"],
+) {
+  if (rowTypes.length === 0) {
+    return;
+  }
+
+  await tx.insert(unitsAllowedRows).values(rowTypes.map((rowType) => ({ unitId, rowType })));
+}
+
+async function getAllowedRowTypesForUnit(
+  executor: Pick<UnitTransaction, "select">,
+  unitId: string,
+) {
+  const allowedRows = await executor
+    .select({ rowType: unitsAllowedRows.rowType })
+    .from(unitsAllowedRows)
+    .where(eq(unitsAllowedRows.unitId, unitId));
+
+  return allowedRows.map((row) => row.rowType);
 }
 
 function buildUnitLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
@@ -136,15 +197,15 @@ export const unitsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Unit not found" });
     }
 
-    const itemLinks = await db
-      .select({ itemId: unitsItems.itemId })
-      .from(unitsItems)
-      .where(eq(unitsItems.unitId, input.id))
-      .orderBy(asc(unitsItems.priority));
+    const [itemIds, allowedRowTypes] = await Promise.all([
+      getOrderedItemIdsForUnit(db, input.id),
+      getAllowedRowTypesForUnit(db, input.id),
+    ]);
 
     return {
       ...unit,
-      itemIds: itemLinks.map((i) => i.itemId),
+      itemIds,
+      allowedRowTypes,
     };
   }),
 
@@ -166,6 +227,11 @@ export const unitsRouter = router({
             speed: normalized.speed,
             dodge: normalized.dodge,
             criticalChance: normalized.criticalChance,
+            targetSide: normalized.targetSide,
+            targetPolicy: normalized.targetPolicy,
+            targetRowCount: normalized.targetRowCount,
+            maxTargetsPerRow: normalized.maxTargetsPerRow,
+            targetOnlyAdjacent: normalized.targetOnlyAdjacent,
           })
           .returning();
 
@@ -177,10 +243,12 @@ export const unitsRouter = router({
         }
 
         await insertUnitItems(tx, created.id, normalized.itemIds);
+        await insertUnitAllowedRows(tx, created.id, normalized.allowedRowTypes);
 
         return {
           ...created,
           itemIds: await getOrderedItemIdsForUnit(tx, created.id),
+          allowedRowTypes: normalized.allowedRowTypes,
         };
       });
     } catch (error) {
@@ -193,7 +261,7 @@ export const unitsRouter = router({
   }),
 
   update: gmProcedure
-    .input(z.object({ id: idSchema }).merge(unitInputBaseSchema))
+    .input(z.object({ id: idSchema }).merge(unitInputFields).superRefine(validateTargetingFields))
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeUnitInput(rest);
@@ -213,6 +281,11 @@ export const unitsRouter = router({
               speed: normalized.speed,
               dodge: normalized.dodge,
               criticalChance: normalized.criticalChance,
+              targetSide: normalized.targetSide,
+              targetPolicy: normalized.targetPolicy,
+              targetRowCount: normalized.targetRowCount,
+              maxTargetsPerRow: normalized.maxTargetsPerRow,
+              targetOnlyAdjacent: normalized.targetOnlyAdjacent,
             })
             .where(eq(units.id, id))
             .returning();
@@ -224,9 +297,13 @@ export const unitsRouter = router({
           await tx.delete(unitsItems).where(eq(unitsItems.unitId, id));
           await insertUnitItems(tx, id, normalized.itemIds);
 
+          await tx.delete(unitsAllowedRows).where(eq(unitsAllowedRows.unitId, id));
+          await insertUnitAllowedRows(tx, id, normalized.allowedRowTypes);
+
           return {
             ...updated,
             itemIds: await getOrderedItemIdsForUnit(tx, id),
+            allowedRowTypes: normalized.allowedRowTypes,
           };
         });
       } catch (error) {

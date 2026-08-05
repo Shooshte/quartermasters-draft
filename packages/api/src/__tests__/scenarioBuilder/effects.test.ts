@@ -195,7 +195,7 @@ describe("effectsRouter", () => {
       expect(result).toEqual({ success: true });
     });
 
-    it("maps linked-spell dependency failures to CONFLICT", async () => {
+    it("maps linked-item dependency failures to CONFLICT", async () => {
       mockDeleteFn.mockImplementationOnce(() => ({
         where: vi.fn().mockReturnThis(),
         returning: vi.fn().mockRejectedValue({ cause: { code: "23503" } }),
@@ -206,7 +206,7 @@ describe("effectsRouter", () => {
         caller.effects.delete({ id: "a0000000-0000-4000-8000-000000000001" }),
       ).rejects.toMatchObject({
         code: "CONFLICT",
-        message: "Cannot delete effect while it is linked to one or more spells.",
+        message: "Cannot delete effect while it is linked to one or more items.",
       });
     });
 

@@ -8,21 +8,18 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     activeTab: "Scenarios",
     perTabSelection: {
       Effects: null,
-      Spells: null,
       Items: null,
       Units: null,
       Scenarios: "sc-1",
     },
     listLoading: {
       Effects: false,
-      Spells: false,
       Items: false,
       Units: false,
       Scenarios: false,
     },
     listFetching: {
       Effects: false,
-      Spells: false,
       Items: false,
       Units: false,
       Scenarios: false,
@@ -61,21 +58,6 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onEffectPageChange: vi.fn(),
     onEffectSortChange: vi.fn(),
     onDeleteEffect: vi.fn(),
-    spellListItems: [
-      {
-        id: "sp-1",
-        name: "Battle Cry",
-        targetPolicy: "random",
-        updatedAt: new Date("2025-06-10T00:00:00Z"),
-      },
-    ],
-    spellPage: 1,
-    spellTotalPages: 1,
-    spellSortBy: "name",
-    spellSortDir: "asc",
-    onSpellPageChange: vi.fn(),
-    onSpellSortChange: vi.fn(),
-    onDeleteSpell: vi.fn(),
     itemListItems: [
       { id: "it-1", name: "Iron Sword", updatedAt: new Date("2025-06-10T00:00:00Z") },
     ],
@@ -109,6 +91,7 @@ describe("LibraryPanel", () => {
     expect(screen.getByTestId("library-panel")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Scenarios" })).toHaveAttribute("data-state", "active");
     expect(screen.getByRole("button", { name: "New Scenario" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /spell/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Effects" }));
     expect(props.onTabChange).toHaveBeenCalledWith("Effects");

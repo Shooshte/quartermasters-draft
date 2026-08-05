@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CreatePageNavigate } from "~/components/create/types";
+import type { CreatePageNavigate, CreatePageSearch } from "~/components/create/types";
 
 const { mockQuery, mockListQuery } = vi.hoisted(() => ({
   mockQuery: vi.fn(),
@@ -18,7 +18,6 @@ vi.mock("~/lib/trpc", () => {
     trpc: {
       scenarioBuilder: {
         effects: createRouterProxy(),
-        spells: createRouterProxy(),
         items: createRouterProxy(),
         units: createRouterProxy(),
         scenarios: createRouterProxy(),
@@ -56,7 +55,7 @@ describe("URL parameter sync", () => {
     });
 
     act(() => {
-      result.current.setActiveTab("Spells");
+      result.current.setActiveTab("Items");
     });
 
     expect(navigate).toHaveBeenCalledWith({
@@ -67,7 +66,7 @@ describe("URL parameter sync", () => {
     // Verify the search function produces the correct params
     const searchFn = navigate.mock.calls[0][0].search;
     const result2 = searchFn({ entity_id: "abc", scenario_id: "def" });
-    expect(result2).toEqual({ entity_id: "abc", scenario_id: "def", tab: "Spells" });
+    expect(result2).toEqual({ entity_id: "abc", scenario_id: "def", tab: "Items" });
   });
 
   it("selectRecord for entity calls navigate with entity_id", async () => {
@@ -174,26 +173,6 @@ describe("URL parameter sync", () => {
     expect(result2).toHaveProperty("scenario_id", "s1");
   });
 
-  it("createNew for spell removes spell_id from URL", () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, navigate), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.createNew("Spells");
-    });
-
-    expect(navigate).toHaveBeenCalledWith({
-      search: expect.any(Function),
-      replace: true,
-    });
-
-    const searchFn = navigate.mock.calls[0][0].search;
-    const result2 = searchFn({ tab: "Spells", spell_id: "old-id", scenario_id: "s1" });
-    expect(result2).not.toHaveProperty("spell_id");
-    expect(result2).toHaveProperty("scenario_id", "s1");
-  });
-
   it("createNew for unit removes unit_id from URL", () => {
     const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, navigate), {
       wrapper: createWrapper(),
@@ -246,5 +225,16 @@ describe("URL parameter sync", () => {
     const searchFn = navigate.mock.calls[0][0].search;
     const result2 = searchFn({ tab: "Scenarios", entity_id: "e1", scenario_id: "s1" });
     expect(result2).toEqual({ tab: "Items", entity_id: "e1", scenario_id: "s1" });
+  });
+
+  it("ignores a legacy spell_id without querying or creating a workspace", () => {
+    const legacySearch = { spell_id: "removed-id" } as CreatePageSearch;
+    const { result } = renderHook(() => useCreatePageState(legacySearch, navigate), {
+      wrapper: createWrapper(),
+    });
+
+    expect(mockQuery).not.toHaveBeenCalled();
+    expect(result.current.entityWorkspace.mode).toBe("idle");
+    expect(result.current.entityWorkspace.entityType).toBeNull();
   });
 });

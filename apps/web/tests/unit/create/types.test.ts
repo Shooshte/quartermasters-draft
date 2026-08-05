@@ -10,8 +10,8 @@ import {
 
 describe("create/types", () => {
   describe("TABS", () => {
-    it("contains all five tab names", () => {
-      expect(TABS).toEqual(["Effects", "Spells", "Items", "Units", "Scenarios"]);
+    it("contains exactly the four builder tabs", () => {
+      expect(TABS).toEqual(["Effects", "Items", "Units", "Scenarios"]);
     });
   });
 
@@ -23,18 +23,12 @@ describe("create/types", () => {
 
   describe("ENTITY_TABS", () => {
     it("contains only entity tabs (not Scenarios)", () => {
-      expect(ENTITY_TABS).toEqual(["Effects", "Spells", "Items", "Units"]);
+      expect(ENTITY_TABS).toEqual(["Effects", "Items", "Units"]);
     });
   });
 
   describe("isValidTab", () => {
-    it.each([
-      "Effects",
-      "Spells",
-      "Items",
-      "Units",
-      "Scenarios",
-    ] as const)('returns true for "%s"', (tab) => {
+    it.each(["Effects", "Items", "Units", "Scenarios"] as const)('returns true for "%s"', (tab) => {
       expect(isValidTab(tab)).toBe(true);
     });
 
@@ -50,7 +44,7 @@ describe("create/types", () => {
   });
 
   describe("isEntityTab", () => {
-    it.each(["Effects", "Spells", "Items", "Units"] as const)('returns true for "%s"', (tab) => {
+    it.each(["Effects", "Items", "Units"] as const)('returns true for "%s"', (tab) => {
       expect(isEntityTab(tab)).toBe(true);
     });
 

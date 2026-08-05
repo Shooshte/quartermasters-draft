@@ -47,14 +47,20 @@ describe("EntityWorkspace", () => {
       <EntityWorkspace
         workspace={makeWorkspace({
           mode: "create",
-          entityType: "spell",
-          formValues: { name: "", description: "", targetPolicy: "", effectIds: [] },
+          entityType: "effect",
+          formValues: {
+            name: "",
+            timingType: "instant",
+            effectType: "buff",
+            intervalTicks: null,
+            triggerCount: null,
+          },
         })}
         {...defaultProps}
       />,
     );
     expect(screen.getByTestId("entity-form")).toBeInTheDocument();
-    expect(screen.getByText("New Spell")).toBeInTheDocument();
+    expect(screen.getByText("New Effect")).toBeInTheDocument();
     expect(screen.getByTestId("entity-name-input")).toHaveValue("");
   });
 
@@ -94,13 +100,13 @@ describe("EntityWorkspace", () => {
     expect(form.className).not.toContain("duration-200");
   });
 
-  it("does not crash if a loading transition briefly carries a mismatched spell form shape", () => {
+  it("keeps the previous effect form shape during a loading transition", () => {
     expect(() =>
       render(
         <EntityWorkspace
           workspace={makeWorkspace({
             mode: "loading",
-            entityType: "spell",
+            entityType: "effect",
             data: { name: "Barbarian Roar" },
             formValues: {
               name: "Barbarian Roar",
@@ -125,10 +131,16 @@ describe("EntityWorkspace", () => {
       <EntityWorkspace
         workspace={makeWorkspace({
           mode: "edit",
-          entityType: "spell",
+          entityType: "effect",
           entityId: "123",
           data: { name: "Test" },
-          formValues: { name: "Test", description: "", targetPolicy: "", effectIds: ["eff-1"] },
+          formValues: {
+            name: "Test",
+            timingType: "instant",
+            effectType: "buff",
+            intervalTicks: null,
+            triggerCount: null,
+          },
         })}
         onFieldChange={onFieldChange}
         onSave={vi.fn()}
@@ -167,7 +179,7 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
   });
 
-  it("renders the item editor with spell picker and stat inputs", () => {
+  it("renders the item editor with effect picker and stat inputs", () => {
     render(
       <EntityWorkspace
         workspace={makeWorkspace({
@@ -183,16 +195,16 @@ describe("EntityWorkspace", () => {
             criticalChance: "0",
             activationManaCost: "0",
             activationHealthCost: "0",
-            spellIds: [],
+            effectIds: [],
           },
         })}
-        spellOptions={[{ id: "sp-1", name: "Fireball" }]}
+        effectOptions={[{ id: "eff-1", name: "Burn", effectType: "damage" }]}
         {...defaultProps}
       />,
     );
 
     expect(screen.getByText("New Item")).toBeInTheDocument();
-    expect(screen.getByTestId("item-spell-picker")).toBeInTheDocument();
+    expect(screen.getByTestId("item-effect-picker")).toBeInTheDocument();
     expect(screen.getByTestId("item-meleeDmg-input")).toBeInTheDocument();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Item");
   });
@@ -214,6 +226,12 @@ describe("EntityWorkspace", () => {
             dodge: "0",
             criticalChance: "0",
             itemIds: [],
+            targetSide: "enemies",
+            targetPolicy: "highest_health",
+            targetRowCount: 1,
+            maxTargetsPerRow: 1,
+            targetOnlyAdjacent: false,
+            allowedRowTypes: [],
           },
         })}
         itemOptions={[{ id: "it-1", name: "Iron Sword" }]}
@@ -225,6 +243,74 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("unit-item-picker")).toBeInTheDocument();
     expect(screen.getByTestId("unit-health-input")).toBeInTheDocument();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Unit");
+  });
+
+  it("routes linked item effects and unit items to their builder tabs", async () => {
+    const user = userEvent.setup();
+    const onEditLinkedEntity = vi.fn();
+    const { rerender } = render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "item",
+          entityId: "it-1",
+          data: { name: "Staff", effectIds: ["eff-1"] },
+          formValues: {
+            name: "Staff",
+            meleeDmg: "0",
+            rangedDmg: "0",
+            manaRegen: "0",
+            spellDmg: "0",
+            dodge: "0",
+            criticalChance: "0",
+            activationManaCost: "0",
+            activationHealthCost: "0",
+            effectIds: ["eff-1"],
+          },
+        })}
+        effectOptions={[{ id: "eff-1", name: "Burn", effectType: "damage" }]}
+        onEditLinkedEntity={onEditLinkedEntity}
+        {...defaultProps}
+      />,
+    );
+
+    await user.click(screen.getByTestId("item-effect-edit-0"));
+    expect(onEditLinkedEntity).toHaveBeenCalledWith("Effects", "eff-1");
+
+    rerender(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "unit",
+          entityId: "unit-1",
+          data: { name: "Guard", itemIds: ["it-1"] },
+          formValues: {
+            name: "Guard",
+            meleeDmg: "0",
+            health: "100",
+            rangedDmg: "0",
+            manaRegen: "0",
+            spellDmg: "0",
+            speed: "0",
+            dodge: "0",
+            criticalChance: "0",
+            itemIds: ["it-1"],
+            targetSide: "enemies",
+            targetPolicy: "highest_health",
+            targetRowCount: 1,
+            maxTargetsPerRow: 1,
+            targetOnlyAdjacent: false,
+            allowedRowTypes: [],
+          },
+        })}
+        itemOptions={[{ id: "it-1", name: "Staff" }]}
+        onEditLinkedEntity={onEditLinkedEntity}
+        {...defaultProps}
+      />,
+    );
+
+    await user.click(screen.getByTestId("unit-item-edit-0"));
+    expect(onEditLinkedEntity).toHaveBeenCalledWith("Items", "it-1");
   });
 
   it("forwards chip background clicks to the native select picker", async () => {

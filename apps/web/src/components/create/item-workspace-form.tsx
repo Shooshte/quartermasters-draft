@@ -29,15 +29,15 @@ interface ItemWorkspaceFormProps {
 function getEffectBadgeClass(effectType: string): string {
   switch (effectType) {
     case "damage":
-      return "spell-effect-badge spell-effect-badge-damage";
+      return "item-effect-badge item-effect-badge-damage";
     case "healing":
-      return "spell-effect-badge spell-effect-badge-healing";
+      return "item-effect-badge item-effect-badge-healing";
     case "buff":
-      return "spell-effect-badge spell-effect-badge-buff";
+      return "item-effect-badge item-effect-badge-buff";
     case "debuff":
-      return "spell-effect-badge spell-effect-badge-debuff";
+      return "item-effect-badge item-effect-badge-debuff";
     default:
-      return "spell-effect-badge";
+      return "item-effect-badge";
   }
 }
 

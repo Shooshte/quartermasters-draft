@@ -10,20 +10,18 @@ import {
 import { useDeleteDialog } from "./hooks/use-delete-dialog";
 import { useDeleteEffectDialog } from "./hooks/use-delete-effect-dialog";
 import { useDeleteItemDialog } from "./hooks/use-delete-item-dialog";
-import { useDeleteSpellDialog } from "./hooks/use-delete-spell-dialog";
 import { useDeleteUnitDialog } from "./hooks/use-delete-unit-dialog";
 import { useDiscardDialog } from "./hooks/use-discard-dialog";
 import { useEffectList } from "./hooks/use-effect-list";
 import { useItemList } from "./hooks/use-item-list";
 import { useScenarioList } from "./hooks/use-scenario-list";
-import { useSpellList } from "./hooks/use-spell-list";
 import { useUnitList } from "./hooks/use-unit-list";
 import { computeIsDirty, useWorkspaceLoader } from "./hooks/use-workspace-loader";
+import type { EffectOption } from "./item-form";
 import {
   type ItemFormValues,
   itemRecordToFormValues,
   normalizeItemFormValues,
-  type SpellOption,
   validateItemForm,
 } from "./item-form";
 import {
@@ -33,13 +31,6 @@ import {
   scenarioRecordToFormValues,
   validateScenarioForm,
 } from "./scenario-form";
-import {
-  type EffectOption,
-  normalizeSpellFormValues,
-  type SpellFormValues,
-  spellRecordToFormValues,
-  validateSpellForm,
-} from "./spell-form";
 import {
   type CreatePageNavigate,
   type CreatePageSearch,
@@ -53,8 +44,6 @@ import {
   type ScenarioLibraryLinkageFilter,
   type ScenarioSortBy,
   type ScenarioSortDir,
-  type SpellSortBy,
-  type SpellSortDir,
   type TabName,
   type UnitSortBy,
   type UnitSortDir,
@@ -129,21 +118,6 @@ export interface CreatePageState {
   requestDeleteEffect: (id: string, name: string) => void;
   confirmDeleteEffect: () => void;
   cancelDeleteEffect: () => void;
-  // Spell list specific
-  spellListItems: { id: string; name: string; targetPolicy: string; updatedAt: Date }[];
-  spellPage: number;
-  spellTotalPages: number;
-  spellSortBy: SpellSortBy;
-  spellSortDir: SpellSortDir;
-  setSpellSort: (sortBy: SpellSortBy, sortDir: SpellSortDir) => void;
-  setSpellPage: (page: number) => void;
-  // Delete spell
-  isDeleteSpellDialogOpen: boolean;
-  deleteSpellTarget: { id: string; name: string } | null;
-  deleteSpellError: string | null;
-  requestDeleteSpell: (id: string, name: string) => void;
-  confirmDeleteSpell: () => void;
-  cancelDeleteSpell: () => void;
   // Item list specific
   itemListItems: { id: string; name: string; updatedAt: Date }[];
   itemPage: number;
@@ -182,7 +156,6 @@ export interface CreatePageState {
   isEntitySaving: boolean;
   entitySaveError: string | null;
   effectOptions: EffectOption[];
-  spellOptions: SpellOption[];
   itemOptions: ItemOption[];
 }
 
@@ -322,9 +295,6 @@ export function useCreatePageState(
   // Effect list (pagination, sorting, query)
   const effectList = useEffectList(activeTab === "Effects", backgroundEnabled, linkageFilter);
 
-  // Spell list (pagination, sorting, query)
-  const spellList = useSpellList(activeTab === "Spells", backgroundEnabled, linkageFilter);
-
   // Item list (pagination, sorting, query)
   const itemList = useItemList(activeTab === "Items", backgroundEnabled, linkageFilter);
 
@@ -336,25 +306,17 @@ export function useCreatePageState(
       setLinkageFilterState(filter);
       scenarioList.setScenarioPage(1);
       effectList.setEffectPage(1);
-      spellList.setSpellPage(1);
       itemList.setItemPage(1);
       unitList.setUnitPage(1);
     },
-    [effectList, itemList, scenarioList, spellList, unitList],
+    [effectList, itemList, scenarioList, unitList],
   );
 
-  // Effect options for spell effect picker
+  // Effect options for item effect picker
   const effectOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "effects", "all-options"],
     queryFn: () =>
       loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.effects.list.query(input)),
-    enabled: entityWorkspace.entityType === "spell",
-  });
-
-  const spellOptionsQuery = useQuery({
-    queryKey: ["scenarioBuilder", "spells", "all-options"],
-    queryFn: () =>
-      loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.spells.list.query(input)),
     enabled: entityWorkspace.entityType === "item",
   });
 
@@ -384,7 +346,6 @@ export function useCreatePageState(
   // Compute combined loading and enable background after active tab settles
   const allLoading: Record<TabName, boolean> = {
     Effects: effectList.effectsList.isLoading,
-    Spells: spellList.spellsList.isLoading,
     Items: itemList.itemsList.isLoading,
     Units: unitList.unitsList.isLoading,
     Scenarios: scenarioList.scenariosList.isLoading,
@@ -392,7 +353,6 @@ export function useCreatePageState(
 
   const allFetching: Record<TabName, boolean> = {
     Effects: effectList.effectIsFetching,
-    Spells: spellList.spellIsFetching,
     Items: itemList.itemIsFetching,
     Units: unitList.unitIsFetching,
     Scenarios: scenarioList.scenarioIsFetching,
@@ -432,18 +392,6 @@ export function useCreatePageState(
     effectTotalCount: effectList.effectTotalCount,
     effectPage: effectList.effectPage,
     setEffectPage: effectList.setEffectPage,
-  });
-
-  // Delete spell dialog
-  const deleteSpellDialog = useDeleteSpellDialog({
-    entityWorkspace,
-    setEntityWorkspace,
-    setPerTabSelection,
-    skipEntityResetRef,
-    navigate,
-    spellTotalCount: spellList.spellTotalCount,
-    spellPage: spellList.spellPage,
-    setSpellPage: spellList.setSpellPage,
   });
 
   // Delete item dialog
@@ -647,78 +595,6 @@ export function useCreatePageState(
       } finally {
         setIsEntitySaving(false);
       }
-    } else if (currentEntityWorkspace.entityType === "spell") {
-      const spellValues = currentEntityWorkspace.formValues as SpellFormValues;
-      if (Object.keys(validateSpellForm(spellValues)).length > 0) return;
-      const normalized = normalizeSpellFormValues(spellValues);
-
-      try {
-        setIsEntitySaving(true);
-        setEntitySaveError(null);
-
-        if (currentEntityWorkspace.mode === "create") {
-          const created = await trpc.scenarioBuilder.spells.create.mutate(normalized);
-          const createdData = created as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(
-            ["scenarioBuilder", "spells", "get", createdData.id],
-            createdData,
-          );
-          const nextWorkspace: WorkspaceState = {
-            mode: "edit",
-            entityType: "spell",
-            entityId: createdData.id,
-            data: createdData,
-            formValues: spellRecordToFormValues(createdData),
-            isDirty: false,
-          };
-          entityWorkspaceRef.current = nextWorkspace;
-          setEntityWorkspace(nextWorkspace);
-          setPerTabSelection((prev) => ({ ...prev, Spells: createdData.id }));
-          skipEntityResetRef.current = true;
-          navigate?.({
-            search: (prev: Record<string, unknown>) => {
-              const next = { ...prev };
-              delete next.entity_id;
-              delete next.spell_id;
-              next.spell_id = createdData.id;
-              return next;
-            },
-            replace: true,
-          });
-        } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
-          const updated = await trpc.scenarioBuilder.spells.update.mutate({
-            id: currentEntityWorkspace.entityId,
-            ...normalized,
-          });
-          const updatedData = updated as { id: string; name: string; [key: string]: unknown };
-          queryClient.setQueryData(
-            ["scenarioBuilder", "spells", "get", updatedData.id],
-            updatedData,
-          );
-          const nextWorkspace: WorkspaceState = {
-            mode: "edit",
-            entityType: "spell",
-            entityId: updatedData.id,
-            data: updatedData,
-            formValues: spellRecordToFormValues(updatedData),
-            isDirty: false,
-          };
-          entityWorkspaceRef.current = nextWorkspace;
-          setEntityWorkspace(nextWorkspace);
-        }
-
-        await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "spells"] });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to save spell. Please try again.";
-        if (message.includes("already exists")) {
-          setEntitySaveError("A spell with this name already exists");
-        } else {
-          setEntitySaveError(message);
-        }
-      } finally {
-        setIsEntitySaving(false);
-      }
     } else if (currentEntityWorkspace.entityType === "item") {
       const itemValues = currentEntityWorkspace.formValues as ItemFormValues;
       if (Object.keys(validateItemForm(itemValues)).length > 0) return;
@@ -900,11 +776,6 @@ export function useCreatePageState(
       name: e.name,
       effectType: e.effectType,
     })),
-    spellOptions: (spellOptionsQuery.data ?? []).map((spell: SpellOption) => ({
-      id: spell.id,
-      name: spell.name,
-      targetPolicy: spell.targetPolicy,
-    })),
     itemOptions: (itemOptionsQuery.data ?? []).map((item: ItemOption) => ({
       id: item.id,
       name: item.name,
@@ -927,14 +798,6 @@ export function useCreatePageState(
     effectSortDir: effectList.effectSortDir,
     setEffectSort: effectList.setEffectSort,
     setEffectPage: effectList.setEffectPage,
-    // Spell list specific
-    spellListItems: spellList.spellListItems,
-    spellPage: spellList.spellPage,
-    spellTotalPages: spellList.spellTotalPages,
-    spellSortBy: spellList.spellSortBy,
-    spellSortDir: spellList.spellSortDir,
-    setSpellSort: spellList.setSpellSort,
-    setSpellPage: spellList.setSpellPage,
     // Item list specific
     itemListItems: itemList.itemListItems,
     itemPage: itemList.itemPage,
@@ -955,8 +818,6 @@ export function useCreatePageState(
     ...deleteDialog,
     // Delete effect
     ...deleteEffectDialog,
-    // Delete spell
-    ...deleteSpellDialog,
     // Delete item
     ...deleteItemDialog,
     // Delete unit

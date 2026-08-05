@@ -5,7 +5,6 @@ import { EffectLibraryList } from "~/components/create/effect-library-list";
 import { EntityLibraryList } from "~/components/create/entity-library-list";
 import { ItemLibraryList } from "~/components/create/item-library-list";
 import { ScenarioLibraryList } from "~/components/create/scenario-library-list";
-import { SpellLibraryList } from "~/components/create/spell-library-list";
 import { UnitLibraryList } from "~/components/create/unit-library-list";
 
 describe("EntityLibraryList", () => {
@@ -15,7 +14,7 @@ describe("EntityLibraryList", () => {
   ];
 
   const defaultProps = {
-    entityLabel: "spell",
+    entityLabel: "effect",
     items,
     isLoading: false,
     isFetching: false,
@@ -53,7 +52,7 @@ describe("EntityLibraryList", () => {
 
     rerender(<EntityLibraryList {...defaultProps} items={[]} />);
     expect(screen.getByTestId("empty-list")).toBeInTheDocument();
-    expect(screen.getByText("No spell records yet")).toBeInTheDocument();
+    expect(screen.getByText("No effect records yet")).toBeInTheDocument();
   });
 
   it("renders rows, sort controls, fetching dimming, and pagination", async () => {
@@ -132,7 +131,7 @@ describe("Library list wrappers", () => {
     expect(onDelete).toHaveBeenCalledWith("s1", "Ambush at Dawn");
   });
 
-  it("keeps effect, spell, item, and unit labels intact", () => {
+  it("keeps effect, item, and unit labels intact", () => {
     const { rerender } = render(
       <EffectLibraryList
         items={[{ id: "e1", name: "Arcane Damage", timingType: "instant", effectType: "damage" }]}
@@ -153,33 +152,6 @@ describe("Library list wrappers", () => {
 
     expect(screen.getByRole("button", { name: "New Effect" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Timing Type/ })).toBeInTheDocument();
-
-    rerender(
-      <SpellLibraryList
-        items={[
-          {
-            id: "sp1",
-            name: "Battle Cry",
-            targetPolicy: "random",
-            updatedAt: new Date("2025-06-10T00:00:00Z"),
-          },
-        ]}
-        isLoading={false}
-        isFetching={false}
-        selectedId={null}
-        page={1}
-        totalPages={1}
-        sortBy="name"
-        sortDir="asc"
-        onSelect={vi.fn()}
-        onCreateNew={vi.fn()}
-        onDelete={vi.fn()}
-        onPageChange={vi.fn()}
-        onSortChange={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "New Spell" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Target Policy/ })).toBeInTheDocument();
 
     rerender(
       <ItemLibraryList

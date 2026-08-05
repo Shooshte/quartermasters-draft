@@ -8,22 +8,17 @@ const _mockGetQueries: Record<string, ReturnType<typeof vi.fn>> = {};
 
 const {
   mockEffectsList,
-  mockSpellsList,
   mockItemsList,
   mockUnitsList,
   mockScenariosList,
   mockEffectsGet,
-  mockSpellsGet,
   mockItemsGet,
   mockUnitsGet,
   mockScenariosGet,
   mockScenariosDelete,
-  mockSpellsDelete,
   mockEffectsCreate,
   mockEffectsUpdate,
   mockEffectsDelete,
-  mockSpellsCreate,
-  mockSpellsUpdate,
   mockItemsCreate,
   mockItemsUpdate,
   mockItemsDelete,
@@ -34,7 +29,6 @@ const {
   mockScenariosUpdate,
 } = vi.hoisted(() => {
   const mockEffectsList = vi.fn().mockResolvedValue({ items: [] });
-  const mockSpellsList = vi.fn().mockResolvedValue({ items: [] });
   const mockItemsList = vi.fn().mockResolvedValue({ items: [] });
   const mockUnitsList = vi.fn().mockResolvedValue({ items: [] });
   const mockScenariosList = vi.fn().mockResolvedValue({ items: [] });
@@ -52,21 +46,6 @@ const {
     effectType: "buff",
   });
   const mockEffectsDelete = vi.fn().mockResolvedValue({ success: true });
-  const mockSpellsCreate = vi.fn().mockResolvedValue({
-    id: "s-new",
-    name: "New Spell",
-    description: null,
-    targetPolicy: "random",
-    effectIds: ["eff-1"],
-  });
-  const mockSpellsUpdate = vi.fn().mockResolvedValue({
-    id: "s1",
-    name: "Updated Spell",
-    description: null,
-    targetPolicy: "random",
-    effectIds: ["eff-1"],
-  });
-  const mockSpellsGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockItemsCreate = vi.fn().mockResolvedValue({
     id: "i-new",
     name: "New Item",
@@ -78,7 +57,7 @@ const {
     criticalChance: 0,
     activationManaCost: 0,
     activationHealthCost: 0,
-    spellIds: ["sp-1"],
+    effectIds: ["eff-1"],
   });
   const mockItemsUpdate = vi.fn().mockResolvedValue({
     id: "i1",
@@ -91,7 +70,7 @@ const {
     criticalChance: 0,
     activationManaCost: 0,
     activationHealthCost: 0,
-    spellIds: ["sp-1"],
+    effectIds: ["eff-1"],
   });
   const mockItemsDelete = vi.fn().mockResolvedValue({ success: true });
   const mockItemsGet = vi.fn().mockRejectedValue(new Error("not found"));
@@ -145,25 +124,19 @@ const {
   });
   const mockScenariosGet = vi.fn().mockRejectedValue(new Error("not found"));
   const mockScenariosDelete = vi.fn().mockResolvedValue({ success: true });
-  const mockSpellsDelete = vi.fn().mockResolvedValue({ success: true });
   return {
     mockEffectsList,
-    mockSpellsList,
     mockItemsList,
     mockUnitsList,
     mockScenariosList,
     mockEffectsGet,
-    mockSpellsGet,
     mockItemsGet,
     mockUnitsGet,
     mockScenariosGet,
     mockScenariosDelete,
-    mockSpellsDelete,
     mockEffectsCreate,
     mockEffectsUpdate,
     mockEffectsDelete,
-    mockSpellsCreate,
-    mockSpellsUpdate,
     mockItemsCreate,
     mockItemsUpdate,
     mockItemsDelete,
@@ -184,13 +157,6 @@ vi.mock("~/lib/trpc", () => ({
         create: { mutate: mockEffectsCreate },
         update: { mutate: mockEffectsUpdate },
         delete: { mutate: mockEffectsDelete },
-      },
-      spells: {
-        list: { query: mockSpellsList },
-        get: { query: mockSpellsGet },
-        create: { mutate: mockSpellsCreate },
-        update: { mutate: mockSpellsUpdate },
-        delete: { mutate: mockSpellsDelete },
       },
       items: {
         list: { query: mockItemsList },
@@ -240,7 +206,6 @@ function createWrapperWithClient() {
 function resetMocks() {
   vi.clearAllMocks();
   mockEffectsList.mockResolvedValue({ items: [], totalCount: 0 });
-  mockSpellsList.mockResolvedValue({ items: [], totalCount: 0 });
   mockItemsList.mockResolvedValue({ items: [], totalCount: 0 });
   mockUnitsList.mockResolvedValue({ items: [] });
   mockScenariosList.mockResolvedValue({ items: [], totalCount: 0 });
@@ -258,29 +223,6 @@ function resetMocks() {
     effectType: "buff",
   });
   mockEffectsDelete.mockResolvedValue({ success: true });
-  mockSpellsCreate.mockResolvedValue({
-    id: "s-new",
-    name: "New Spell",
-    description: null,
-    targetPolicy: "random",
-    effectIds: ["eff-1"],
-    targetRowCount: 1,
-    maxTargetsPerRow: 1,
-    targetOnlyAdjacent: false,
-    allowedRowTypes: [],
-  });
-  mockSpellsUpdate.mockResolvedValue({
-    id: "s1",
-    name: "Updated Spell",
-    description: null,
-    targetPolicy: "random",
-    effectIds: ["eff-1"],
-    targetRowCount: 1,
-    maxTargetsPerRow: 1,
-    targetOnlyAdjacent: false,
-    allowedRowTypes: [],
-  });
-  mockSpellsGet.mockRejectedValue(new Error("not found"));
   mockItemsCreate.mockResolvedValue({
     id: "i-new",
     name: "New Item",
@@ -292,7 +234,7 @@ function resetMocks() {
     criticalChance: 0,
     activationManaCost: 0,
     activationHealthCost: 0,
-    spellIds: ["sp-1"],
+    effectIds: ["eff-1"],
   });
   mockItemsUpdate.mockResolvedValue({
     id: "i1",
@@ -305,7 +247,7 @@ function resetMocks() {
     criticalChance: 0,
     activationManaCost: 0,
     activationHealthCost: 0,
-    spellIds: ["sp-1"],
+    effectIds: ["eff-1"],
   });
   mockItemsDelete.mockResolvedValue({ success: true });
   mockItemsGet.mockRejectedValue(new Error("not found"));
@@ -359,133 +301,11 @@ function resetMocks() {
   });
   mockScenariosGet.mockRejectedValue(new Error("not found"));
   mockScenariosDelete.mockResolvedValue({ success: true });
-  mockSpellsDelete.mockResolvedValue({ success: true });
 }
 
 describe("useCreatePageState — isDirty (full form surface)", () => {
   beforeEach(() => {
     resetMocks();
-  });
-
-  it("entity isDirty is false when formValues match original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({
-      id: "s1",
-      name: "Fireball",
-      description: "",
-      targetPolicy: "random",
-      effectIds: ["eff-1"],
-      damage: 50,
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
-    });
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    await act(async () => {
-      result.current.selectRecord("Spells", "s1");
-    });
-
-    expect(result.current.entityWorkspace.isDirty).toBe(false);
-  });
-
-  it("entity isDirty is true when any form field differs from original data", async () => {
-    mockSpellsGet.mockResolvedValueOnce({
-      id: "s1",
-      name: "Fireball",
-      description: "",
-      targetPolicy: "random",
-      effectIds: ["eff-1"],
-      damage: 50,
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
-    });
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    await act(async () => {
-      result.current.selectRecord("Spells", "s1");
-    });
-
-    // Change a non-name field
-    act(() => {
-      result.current.updateEntityField("damage", 100);
-    });
-
-    expect(result.current.entityWorkspace.isDirty).toBe(true);
-  });
-
-  it("entity isDirty returns to false when field is reverted to original", async () => {
-    mockSpellsGet.mockResolvedValueOnce({
-      id: "s1",
-      name: "Fireball",
-      description: "",
-      targetPolicy: "random",
-      effectIds: ["eff-1"],
-      damage: 50,
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
-    });
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    await act(async () => {
-      result.current.selectRecord("Spells", "s1");
-    });
-
-    act(() => {
-      result.current.updateEntityField("damage", 100);
-    });
-    expect(result.current.entityWorkspace.isDirty).toBe(true);
-
-    act(() => {
-      result.current.updateEntityField("damage", 50);
-    });
-    expect(result.current.entityWorkspace.isDirty).toBe(false);
-  });
-
-  it("spell isDirty returns to false after reverting a name change when original description is null", async () => {
-    mockSpellsGet.mockResolvedValueOnce({
-      id: "s1",
-      name: "Fireball",
-      description: null,
-      targetPolicy: "random",
-      targetScope: "self_and_others",
-      effectIds: ["eff-1"],
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
-    });
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    await act(async () => {
-      result.current.selectRecord("Spells", "s1");
-    });
-
-    act(() => {
-      result.current.updateEntityField("name", "Fireball Updated");
-    });
-    expect(result.current.entityWorkspace.isDirty).toBe(true);
-
-    act(() => {
-      result.current.updateEntityField("name", "Fireball");
-    });
-    expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
 
   it("scenario isDirty is true when any form field differs from original", async () => {
@@ -564,35 +384,12 @@ describe("useCreatePageState — lazy loading", () => {
     expect(mockScenariosList).toHaveBeenCalled();
     // Other tabs should NOT have been called yet
     expect(mockEffectsList).not.toHaveBeenCalled();
-    expect(mockSpellsList).not.toHaveBeenCalled();
     expect(mockItemsList).not.toHaveBeenCalled();
     expect(mockUnitsList).not.toHaveBeenCalled();
 
     // Resolve the active tab query
     await act(async () => {
       resolveScenarios({ items: [] });
-    });
-  });
-
-  it("on cold load with Spells tab, only spells list query fires initially", async () => {
-    let resolveSpells!: (v: { items: never[] }) => void;
-    mockSpellsList.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveSpells = resolve;
-        }),
-    );
-
-    renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), { wrapper: createWrapper() });
-
-    expect(mockSpellsList).toHaveBeenCalled();
-    expect(mockEffectsList).not.toHaveBeenCalled();
-    expect(mockItemsList).not.toHaveBeenCalled();
-    expect(mockUnitsList).not.toHaveBeenCalled();
-    expect(mockScenariosList).not.toHaveBeenCalled();
-
-    await act(async () => {
-      resolveSpells({ items: [] });
     });
   });
 
@@ -609,7 +406,6 @@ describe("useCreatePageState — lazy loading", () => {
     // Now the background queries should have fired
     await waitFor(() => {
       expect(mockEffectsList).toHaveBeenCalled();
-      expect(mockSpellsList).toHaveBeenCalled();
       expect(mockItemsList).toHaveBeenCalled();
       expect(mockUnitsList).toHaveBeenCalled();
     });
@@ -621,14 +417,14 @@ describe("useCreatePageState — listFetching field", () => {
     resetMocks();
   });
 
-  it("exposes listFetching with boolean values for all 5 tabs", async () => {
+  it("exposes listFetching with boolean values for all four tabs", async () => {
     const { result } = renderHook(() => useCreatePageState({ tab: "Scenarios" }, vi.fn()), {
       wrapper: createWrapper(),
     });
 
     const { listFetching } = result.current;
     expect(listFetching).toBeDefined();
-    const tabs = ["Effects", "Spells", "Items", "Units", "Scenarios"] as const;
+    const tabs = ["Effects", "Items", "Units", "Scenarios"] as const;
     for (const tab of tabs) {
       expect(tab in listFetching).toBe(true);
       expect(typeof listFetching[tab]).toBe("boolean");
@@ -643,19 +439,19 @@ describe("useCreatePageState — loading state", () => {
 
   it("entity workspace enters loading mode while fetching", async () => {
     let resolveGet!: (v: Record<string, unknown>) => void;
-    mockSpellsGet.mockImplementation(
+    mockItemsGet.mockImplementation(
       () =>
         new Promise((resolve) => {
           resolveGet = resolve;
         }),
     );
 
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
+    const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
       wrapper: createWrapper(),
     });
 
     act(() => {
-      result.current.selectRecord("Spells", "s1");
+      result.current.selectRecord("Items", "i1");
     });
 
     // Workspace should be in loading mode while the request is in flight
@@ -663,7 +459,7 @@ describe("useCreatePageState — loading state", () => {
 
     // Resolve and verify it transitions to edit
     await act(async () => {
-      resolveGet({ id: "s1", name: "Fireball", damage: 50 });
+      resolveGet({ id: "i1", name: "Oak Staff", effectIds: [] });
     });
 
     expect(result.current.entityWorkspace.mode).toBe("edit");
@@ -702,7 +498,7 @@ describe("useCreatePageState — race condition protection", () => {
   });
 
   it("keeps the previous entity type and form while a cross-type record load is in flight", async () => {
-    let resolveSpell!: (value: Record<string, unknown>) => void;
+    let resolveItem!: (value: Record<string, unknown>) => void;
 
     mockEffectsGet.mockResolvedValueOnce({
       id: "e1",
@@ -712,10 +508,10 @@ describe("useCreatePageState — race condition protection", () => {
       intervalTicks: null,
       triggerCount: null,
     });
-    mockSpellsGet.mockImplementationOnce(
+    mockItemsGet.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
-          resolveSpell = resolve;
+          resolveItem = resolve;
         }),
     );
 
@@ -728,12 +524,12 @@ describe("useCreatePageState — race condition protection", () => {
     });
 
     act(() => {
-      result.current.selectRecord("Spells", "s1");
+      result.current.selectRecord("Items", "i1");
     });
 
     expect(result.current.entityWorkspace.mode).toBe("loading");
     expect(result.current.entityWorkspace.entityType).toBe("effect");
-    expect(result.current.entityWorkspace.entityId).toBe("s1");
+    expect(result.current.entityWorkspace.entityId).toBe("i1");
     expect(result.current.entityWorkspace.data).toEqual({
       id: "e1",
       name: "Barbarian Roar",
@@ -749,20 +545,13 @@ describe("useCreatePageState — race condition protection", () => {
     });
 
     await act(async () => {
-      resolveSpell({
-        id: "s1",
-        name: "Fireball",
-        description: null,
-        targetPolicy: "random",
-        effectIds: ["eff-1"],
-      });
+      resolveItem({ id: "i1", name: "Oak Staff", effectIds: ["eff-1"] });
     });
 
     expect(result.current.entityWorkspace.mode).toBe("edit");
-    expect(result.current.entityWorkspace.entityType).toBe("spell");
+    expect(result.current.entityWorkspace.entityType).toBe("item");
     expect(result.current.entityWorkspace.formValues).toMatchObject({
-      name: "Fireball",
-      targetPolicy: "random",
+      name: "Oak Staff",
       effectIds: ["eff-1"],
     });
   });
@@ -771,7 +560,7 @@ describe("useCreatePageState — race condition protection", () => {
     let resolveFirst!: (v: Record<string, unknown>) => void;
     let resolveSecond!: (v: Record<string, unknown>) => void;
 
-    mockSpellsGet
+    mockItemsGet
       .mockImplementationOnce(
         () =>
           new Promise((resolve) => {
@@ -785,36 +574,36 @@ describe("useCreatePageState — race condition protection", () => {
           }),
       );
 
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
+    const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
       wrapper: createWrapper(),
     });
 
     // Select record A
     act(() => {
-      result.current.selectRecord("Spells", "s1");
+      result.current.selectRecord("Items", "i1");
     });
 
     // Immediately select record B (before A resolves)
     act(() => {
-      result.current.selectRecord("Spells", "s2");
+      result.current.selectRecord("Items", "i2");
     });
 
     // B resolves first
     await act(async () => {
-      resolveSecond({ id: "s2", name: "Ice Bolt", damage: 30 });
+      resolveSecond({ id: "i2", name: "Iron Sword", effectIds: [] });
     });
 
-    expect(result.current.entityWorkspace.entityId).toBe("s2");
+    expect(result.current.entityWorkspace.entityId).toBe("i2");
 
     // A resolves late — should be discarded
     await act(async () => {
-      resolveFirst({ id: "s1", name: "Fireball", damage: 50 });
+      resolveFirst({ id: "i1", name: "Oak Staff", effectIds: [] });
     });
 
     // Workspace should still show B, not A
-    expect(result.current.entityWorkspace.entityId).toBe("s2");
+    expect(result.current.entityWorkspace.entityId).toBe("i2");
     expect((result.current.entityWorkspace.formValues as Record<string, unknown>).name).toBe(
-      "Ice Bolt",
+      "Iron Sword",
     );
   });
 
@@ -875,12 +664,12 @@ describe("useCreatePageState — URL param change resets", () => {
   });
 
   it("does not reset or refetch entity workspace when internal selection syncs the URL", async () => {
-    mockSpellsGet
-      .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })
-      .mockResolvedValueOnce({ id: "s2", name: "Ice Bolt", damage: 30 });
+    mockItemsGet
+      .mockResolvedValueOnce({ id: "i1", name: "Oak Staff", effectIds: [] })
+      .mockResolvedValueOnce({ id: "i2", name: "Iron Sword", effectIds: [] });
 
-    let currentSearch: { tab?: string; spell_id?: string } = { tab: "Spells", spell_id: "s1" };
-    let rerenderHook!: (props: { search: { tab?: string; spell_id?: string } }) => void;
+    let currentSearch: { tab?: string; item_id?: string } = { tab: "Items", item_id: "i1" };
+    let rerenderHook!: (props: { search: { tab?: string; item_id?: string } }) => void;
     const navigate = vi.fn(
       ({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
         currentSearch = search(currentSearch) as typeof currentSearch;
@@ -889,7 +678,7 @@ describe("useCreatePageState — URL param change resets", () => {
     );
 
     const { result, rerender } = renderHook(
-      (props: { search: { tab?: string; spell_id?: string } }) =>
+      (props: { search: { tab?: string; item_id?: string } }) =>
         useCreatePageState(props.search, navigate),
       { wrapper: createWrapper(), initialProps: { search: currentSearch } },
     );
@@ -897,37 +686,51 @@ describe("useCreatePageState — URL param change resets", () => {
 
     await waitFor(() => {
       expect(result.current.entityWorkspace.mode).toBe("edit");
-      expect(result.current.entityWorkspace.entityId).toBe("s1");
+      expect(result.current.entityWorkspace.entityId).toBe("i1");
     });
 
     act(() => {
-      result.current.selectRecord("Spells", "s2");
+      result.current.selectRecord("Items", "i2");
     });
 
     expect(result.current.entityWorkspace.mode).toBe("loading");
-    expect(result.current.entityWorkspace.data).toEqual({ id: "s1", name: "Fireball", damage: 50 });
+    expect(result.current.entityWorkspace.data).toEqual({
+      id: "i1",
+      name: "Oak Staff",
+      effectIds: [],
+    });
 
     await waitFor(() => {
       expect(result.current.entityWorkspace.mode).toBe("edit");
-      expect(result.current.entityWorkspace.entityId).toBe("s2");
+      expect(result.current.entityWorkspace.entityId).toBe("i2");
       expect(result.current.entityWorkspace.data).toEqual({
-        id: "s2",
-        name: "Ice Bolt",
-        damage: 30,
+        id: "i2",
+        name: "Iron Sword",
+        effectIds: [],
       });
     });
 
-    expect(mockSpellsGet).toHaveBeenCalledTimes(2);
+    expect(mockItemsGet).toHaveBeenCalledTimes(2);
   });
 
   it("reloads entity when entity_id URL param changes", async () => {
-    mockSpellsGet
-      .mockResolvedValueOnce({ id: "s1", name: "Fireball", damage: 50 })
-      .mockResolvedValueOnce({ id: "s2", name: "Ice Bolt", damage: 30 });
+    mockEffectsGet
+      .mockResolvedValueOnce({
+        id: "e1",
+        name: "Burn",
+        timingType: "instant",
+        effectType: "damage",
+      })
+      .mockResolvedValueOnce({
+        id: "e2",
+        name: "Freeze",
+        timingType: "instant",
+        effectType: "debuff",
+      });
 
     const search: { tab?: string; entity_id?: string; scenario_id?: string } = {
-      tab: "Spells",
-      entity_id: "s1",
+      tab: "Effects",
+      entity_id: "e1",
     };
     const { result, rerender } = renderHook(
       (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
@@ -938,34 +741,28 @@ describe("useCreatePageState — URL param change resets", () => {
     // Wait for entity A to load
     await waitFor(() => {
       expect(result.current.entityWorkspace.mode).toBe("edit");
-      expect(result.current.entityWorkspace.entityId).toBe("s1");
+      expect(result.current.entityWorkspace.entityId).toBe("e1");
     });
 
     // Navigate to a different entity_id
-    rerender({ search: { tab: "Spells", entity_id: "s2" } });
+    rerender({ search: { tab: "Effects", entity_id: "e2" } });
 
     // Entity B should load
     await waitFor(() => {
-      expect(result.current.entityWorkspace.entityId).toBe("s2");
+      expect(result.current.entityWorkspace.entityId).toBe("e2");
       expect(result.current.entityWorkspace.mode).toBe("edit");
     });
   });
 
   it("resets entity workspace to idle when entity_id is removed", async () => {
-    mockSpellsGet.mockResolvedValueOnce({
-      id: "s1",
-      name: "Fireball",
-      description: "",
-      targetPolicy: "random",
-      effectIds: ["eff-1"],
-      damage: 50,
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+    mockEffectsGet.mockResolvedValueOnce({
+      id: "e1",
+      name: "Burn",
+      timingType: "instant",
+      effectType: "damage",
     });
 
-    const search = { tab: "Spells" as const, entity_id: "s1" };
+    const search = { tab: "Effects" as const, entity_id: "e1" };
     const { result, rerender } = renderHook(
       (props: { search: { tab?: string; entity_id?: string; scenario_id?: string } }) =>
         useCreatePageState(props.search, vi.fn()),
@@ -977,7 +774,7 @@ describe("useCreatePageState — URL param change resets", () => {
     });
 
     // Remove entity_id from URL
-    rerender({ search: { tab: "Spells" } as typeof search });
+    rerender({ search: { tab: "Effects" } as typeof search });
 
     await waitFor(() => {
       expect(result.current.entityWorkspace.mode).toBe("idle");
@@ -1186,7 +983,7 @@ describe("useCreatePageState — linked entity navigation", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: [],
+      effectIds: [],
     });
 
     let currentSearch: Record<string, unknown> = {
@@ -1553,89 +1350,6 @@ describe("useCreatePageState — effect save flows", () => {
   });
 });
 
-describe("useCreatePageState — spell save flows", () => {
-  beforeEach(() => {
-    resetMocks();
-  });
-
-  it("successful create switches to edit mode and syncs spell_id", async () => {
-    let currentSearch: { tab?: string; spell_id?: string } = { tab: "Spells" };
-    let rerenderHook!: (props: { search: { tab?: string; spell_id?: string } }) => void;
-    const navigate = vi.fn(
-      ({ search }: { search: (prev: Record<string, unknown>) => Record<string, unknown> }) => {
-        currentSearch = search(currentSearch) as typeof currentSearch;
-        rerenderHook({ search: currentSearch });
-      },
-    );
-
-    mockSpellsCreate.mockResolvedValueOnce({
-      id: "s-created",
-      name: "Arcane Volley",
-      description: null,
-      targetPolicy: "random",
-      targetScope: "self_and_others",
-      effectIds: ["eff-1"],
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
-    });
-
-    const { result, rerender } = renderHook(
-      (props: { search: { tab?: string; spell_id?: string } }) =>
-        useCreatePageState(props.search, navigate),
-      { wrapper: createWrapper(), initialProps: { search: currentSearch } },
-    );
-    rerenderHook = rerender;
-
-    act(() => {
-      result.current.createNew("Spells");
-      result.current.updateEntityField("name", "Arcane Volley");
-      result.current.updateEntityField("targetPolicy", "random");
-      result.current.updateEntityField("effectIds", ["eff-1"]);
-    });
-
-    await act(async () => {
-      await result.current.saveEntity();
-    });
-
-    expect(mockSpellsCreate).toHaveBeenCalledWith({
-      name: "Arcane Volley",
-      description: null,
-      targetPolicy: "random",
-      targetScope: "self_and_others",
-      effectIds: ["eff-1"],
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
-    });
-    expect(result.current.entityWorkspace.mode).toBe("edit");
-    expect(result.current.entityWorkspace.entityId).toBe("s-created");
-    expect(currentSearch.spell_id).toBe("s-created");
-  });
-
-  it("does not attempt to save a spell without linked effects", async () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.createNew("Spells");
-      result.current.updateEntityField("name", "Arcane Volley");
-      result.current.updateEntityField("targetPolicy", "random");
-      result.current.updateEntityField("effectIds", []);
-    });
-
-    await act(async () => {
-      await result.current.saveEntity();
-    });
-
-    expect(mockSpellsCreate).not.toHaveBeenCalled();
-    expect(mockSpellsUpdate).not.toHaveBeenCalled();
-  });
-});
-
 describe("useCreatePageState — item save flows", () => {
   beforeEach(() => {
     resetMocks();
@@ -1663,7 +1377,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
 
     const { result, rerender } = renderHook(
@@ -1677,7 +1391,7 @@ describe("useCreatePageState — item save flows", () => {
       result.current.createNew("Items");
       result.current.updateEntityField("name", "Bronze Buckler");
       result.current.updateEntityField("meleeDmg", "12.5");
-      result.current.updateEntityField("spellIds", ["sp-1"]);
+      result.current.updateEntityField("effectIds", ["sp-1"]);
     });
 
     await act(async () => {
@@ -1695,7 +1409,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
     expect(result.current.entityWorkspace.mode).toBe("edit");
     expect(result.current.entityWorkspace.entityId).toBe("i-created");
@@ -1715,7 +1429,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
     mockItemsUpdate.mockResolvedValueOnce({
       id: "i1",
@@ -1729,7 +1443,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1760,15 +1474,15 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
     expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
 
-  it("saves a new item without linked spells", async () => {
+  it("saves a new item without linked effects", async () => {
     mockItemsCreate.mockResolvedValueOnce({
-      id: "i-spell-less",
-      name: "Spell-less Relic",
+      id: "i-effect-less",
+      name: "Plain Relic",
       meleeDmg: 0,
       rangedDmg: 0,
       manaRegen: 0,
@@ -1778,7 +1492,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: [],
+      effectIds: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1787,8 +1501,8 @@ describe("useCreatePageState — item save flows", () => {
 
     act(() => {
       result.current.createNew("Items");
-      result.current.updateEntityField("name", "Spell-less Relic");
-      result.current.updateEntityField("spellIds", []);
+      result.current.updateEntityField("name", "Plain Relic");
+      result.current.updateEntityField("effectIds", []);
     });
 
     await act(async () => {
@@ -1796,7 +1510,7 @@ describe("useCreatePageState — item save flows", () => {
     });
 
     expect(mockItemsCreate).toHaveBeenCalledWith({
-      name: "Spell-less Relic",
+      name: "Plain Relic",
       meleeDmg: 0,
       rangedDmg: 0,
       manaRegen: 0,
@@ -1806,12 +1520,12 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: [],
+      effectIds: [],
     });
     expect(mockItemsUpdate).not.toHaveBeenCalled();
   });
 
-  it("updates an existing item to remove its final linked spell", async () => {
+  it("updates an existing item to remove its final linked effect", async () => {
     mockItemsGet.mockResolvedValueOnce({
       id: "i1",
       name: "Oak Staff",
@@ -1824,7 +1538,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
     mockItemsUpdate.mockResolvedValueOnce({
       id: "i1",
@@ -1838,7 +1552,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: [],
+      effectIds: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1850,7 +1564,7 @@ describe("useCreatePageState — item save flows", () => {
     });
 
     act(() => {
-      result.current.updateEntityField("spellIds", []);
+      result.current.updateEntityField("effectIds", []);
     });
 
     await act(async () => {
@@ -1869,7 +1583,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: [],
+      effectIds: [],
     });
   });
 
@@ -1881,13 +1595,13 @@ describe("useCreatePageState — item save flows", () => {
     act(() => {
       result.current.createNew("Items");
       result.current.updateEntityField("name", "Bronze Buckler");
-      result.current.updateEntityField("spellIds", ["sp-1"]);
+      result.current.updateEntityField("effectIds", ["sp-1"]);
     });
 
     expect(result.current.entityWorkspace.isDirty).toBe(true);
   });
 
-  it("treats linked spell ids as an unordered set for dirty checks", async () => {
+  it("treats linked effect ids as ordered for dirty checks", async () => {
     mockItemsGet.mockResolvedValueOnce({
       id: "i1",
       name: "Oak Staff",
@@ -1900,7 +1614,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1", "sp-2"],
+      effectIds: ["sp-1", "sp-2"],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1912,27 +1626,27 @@ describe("useCreatePageState — item save flows", () => {
     });
 
     act(() => {
-      result.current.updateEntityField("spellIds", ["sp-2", "sp-1"]);
+      result.current.updateEntityField("effectIds", ["sp-2", "sp-1"]);
     });
 
-    expect(result.current.entityWorkspace.isDirty).toBe(false);
+    expect(result.current.entityWorkspace.isDirty).toBe(true);
   });
 
-  it("loads spell options across multiple list pages for the item workspace", async () => {
-    mockSpellsList.mockImplementation(({ page, limit }: { page: number; limit: number }) => {
+  it("loads effect options across multiple list pages for the item workspace", async () => {
+    mockEffectsList.mockImplementation(({ page, limit }: { page: number; limit: number }) => {
       if (page === 1) {
         return Promise.resolve({
           items: Array.from({ length: limit }, (_, index) => ({
-            id: `sp-${index + 1}`,
-            name: `Spell ${index + 1}`,
-            targetPolicy: "random",
+            id: `eff-${index + 1}`,
+            name: `Effect ${index + 1}`,
+            effectType: "damage",
           })),
           totalCount: limit + 1,
         });
       }
 
       return Promise.resolve({
-        items: [{ id: "sp-101", name: "Spell 101", targetPolicy: "random" }],
+        items: [{ id: "eff-101", name: "Effect 101", effectType: "damage" }],
         totalCount: limit + 1,
       });
     });
@@ -1946,16 +1660,16 @@ describe("useCreatePageState — item save flows", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.spellOptions).toHaveLength(101);
+      expect(result.current.effectOptions).toHaveLength(101);
     });
 
-    expect(mockSpellsList).toHaveBeenNthCalledWith(1, {
+    expect(mockEffectsList).toHaveBeenNthCalledWith(1, {
       limit: 100,
       page: 1,
       sortBy: "name",
       sortDir: "asc",
     });
-    expect(mockSpellsList).toHaveBeenNthCalledWith(2, {
+    expect(mockEffectsList).toHaveBeenNthCalledWith(2, {
       limit: 100,
       page: 2,
       sortBy: "name",
@@ -1976,7 +1690,7 @@ describe("useCreatePageState — item save flows", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1"],
+      effectIds: ["sp-1"],
     });
     mockItemsUpdate.mockRejectedValueOnce(new Error("An item with this name already exists."));
 
@@ -2029,6 +1743,12 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: ["it-1"],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
 
     const { result, rerender } = renderHook(
@@ -2060,6 +1780,12 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: ["it-1"],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
     expect(result.current.entityWorkspace.mode).toBe("edit");
     expect(result.current.entityWorkspace.entityId).toBe("u-created");
@@ -2094,6 +1820,12 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 5,
       criticalChance: 10,
       itemIds: ["it-3", "it-1"],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
@@ -2126,6 +1858,12 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 5,
       criticalChance: 10,
       itemIds: ["it-3", "it-1"],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
     expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
@@ -2144,6 +1882,12 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: [],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
@@ -2172,6 +1916,12 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: [],
+      targetSide: "enemies",
+      targetPolicy: "highest_health",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
     });
   });
 
@@ -2415,233 +2165,12 @@ describe("useCreatePageState — delete scenario", () => {
   });
 });
 
-describe("useCreatePageState — spell list features", () => {
-  beforeEach(() => {
-    resetMocks();
-  });
-
-  it("exposes spell sort and page state with defaults", async () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    expect(result.current.spellSortBy).toBe("name");
-    expect(result.current.spellSortDir).toBe("asc");
-    expect(result.current.spellPage).toBe(1);
-  });
-
-  it("setSpellSort updates sort and resets page to 1", async () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.setSpellPage(2);
-    });
-    expect(result.current.spellPage).toBe(2);
-
-    act(() => {
-      result.current.setSpellSort("targetPolicy", "desc");
-    });
-    expect(result.current.spellSortBy).toBe("targetPolicy");
-    expect(result.current.spellSortDir).toBe("desc");
-    expect(result.current.spellPage).toBe(1);
-  });
-
-  it("setSpellPage updates page", () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.setSpellPage(3);
-    });
-    expect(result.current.spellPage).toBe(3);
-  });
-
-  it("spellTotalPages is computed from totalCount", async () => {
-    mockSpellsList.mockResolvedValue({
-      items: Array.from({ length: 10 }, (_, i) => ({
-        id: `sp${i}`,
-        name: `Spell ${i}`,
-        description: `Desc ${i}`,
-        targetPolicy: "random",
-        updatedAt: new Date(),
-      })),
-      totalCount: 25,
-    });
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    await waitFor(() => {
-      expect(result.current.spellTotalPages).toBe(2);
-    });
-  });
-});
-
-describe("useCreatePageState — delete spell", () => {
-  beforeEach(() => {
-    resetMocks();
-  });
-
-  it("requestDeleteSpell opens delete dialog", () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
-    expect(result.current.deleteSpellTarget).toEqual({ id: "sp1", name: "Fireball" });
-  });
-
-  it("cancelDeleteSpell closes delete dialog", () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
-
-    act(() => {
-      result.current.cancelDeleteSpell();
-    });
-    expect(result.current.isDeleteSpellDialogOpen).toBe(false);
-    expect(result.current.deleteSpellTarget).toBeNull();
-  });
-
-  it("confirmDeleteSpell calls delete and closes dialog", async () => {
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    await act(async () => {
-      await result.current.confirmDeleteSpell();
-    });
-
-    expect(mockSpellsDelete).toHaveBeenCalledWith({ id: "sp1" });
-    expect(result.current.isDeleteSpellDialogOpen).toBe(false);
-    expect(result.current.deleteSpellTarget).toBeNull();
-  });
-
-  it("confirmDeleteSpell sets deleteError on mutation failure", async () => {
-    mockSpellsDelete.mockRejectedValueOnce(new Error("Network error"));
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    await act(async () => {
-      await result.current.confirmDeleteSpell();
-    });
-
-    expect(result.current.deleteSpellError).toBe("Failed to delete spell. Please try again.");
-    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
-    expect(result.current.deleteSpellTarget).toEqual({ id: "sp1", name: "Fireball" });
-  });
-
-  it("surfaces linked-item dependency errors without closing the dialog", async () => {
-    mockSpellsDelete.mockRejectedValueOnce({
-      data: { code: "CONFLICT" },
-      shape: { data: { code: "CONFLICT" } },
-    });
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    await act(async () => {
-      await result.current.confirmDeleteSpell();
-    });
-
-    expect(result.current.isDeleteSpellDialogOpen).toBe(true);
-    expect(result.current.deleteSpellError).toBe(
-      "Cannot delete spell while it is linked to one or more items.",
-    );
-  });
-
-  it("deleteError is cleared when cancel is called", async () => {
-    mockSpellsDelete.mockRejectedValueOnce(new Error("Network error"));
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper: createWrapper(),
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    await act(async () => {
-      await result.current.confirmDeleteSpell();
-    });
-
-    expect(result.current.deleteSpellError).toBe("Failed to delete spell. Please try again.");
-
-    act(() => {
-      result.current.cancelDeleteSpell();
-    });
-
-    expect(result.current.deleteSpellError).toBeNull();
-  });
-
-  it("deleting the open spell clears workspace", async () => {
-    mockSpellsGet.mockResolvedValueOnce({
-      id: "sp1",
-      name: "Fireball",
-      targetPolicy: "highest_health",
-    });
-    const mockNavigate = vi.fn();
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, mockNavigate), {
-      wrapper: createWrapper(),
-    });
-
-    // Load a spell
-    await act(async () => {
-      result.current.selectRecord("Spells", "sp1");
-    });
-
-    expect(result.current.entityWorkspace.entityId).toBe("sp1");
-
-    // Request delete
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    // Confirm
-    await act(async () => {
-      await result.current.confirmDeleteSpell();
-    });
-
-    expect(result.current.entityWorkspace.mode).toBe("idle");
-    expect(result.current.entityWorkspace.entityId).toBeNull();
-  });
-});
-
 describe("useCreatePageState — delete effect", () => {
   beforeEach(() => {
     resetMocks();
   });
 
-  it("surfaces linked-spell dependency errors without closing the dialog", async () => {
+  it("surfaces linked-item dependency errors without closing the dialog", async () => {
     mockEffectsDelete.mockRejectedValueOnce({
       data: { code: "CONFLICT" },
       shape: { data: { code: "CONFLICT" } },
@@ -2661,7 +2190,7 @@ describe("useCreatePageState — delete effect", () => {
 
     expect(result.current.isDeleteEffectDialogOpen).toBe(true);
     expect(result.current.deleteEffectError).toBe(
-      "Cannot delete effect while it is linked to one or more spells.",
+      "Cannot delete effect while it is linked to one or more items.",
     );
   });
 });
@@ -2786,7 +2315,7 @@ describe("useCreatePageState — scenario save flow", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-1", "sp-2"],
+      effectIds: ["sp-1", "sp-2"],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -2800,7 +2329,7 @@ describe("useCreatePageState — scenario save flow", () => {
     const staleSaveEntity = result.current.saveEntity;
 
     act(() => {
-      result.current.updateEntityField("spellIds", ["sp-2"]);
+      result.current.updateEntityField("effectIds", ["sp-2"]);
     });
 
     await act(async () => {
@@ -2819,7 +2348,7 @@ describe("useCreatePageState — scenario save flow", () => {
       criticalChance: 0,
       activationManaCost: 0,
       activationHealthCost: 0,
-      spellIds: ["sp-2"],
+      effectIds: ["sp-2"],
     });
   });
 
@@ -2942,30 +2471,6 @@ describe("useCreatePageState — query invalidation after save", () => {
     });
   });
 
-  it("invalidates all spell queries after creating a spell", async () => {
-    const { queryClient, wrapper } = createWrapperWithClient();
-    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper,
-    });
-
-    act(() => {
-      result.current.createNew("Spells");
-      result.current.updateEntityField("name", "New Spell");
-      result.current.updateEntityField("targetPolicy", "random");
-      result.current.updateEntityField("effectIds", ["eff-1"]);
-    });
-
-    await act(async () => {
-      await result.current.saveEntity();
-    });
-
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ["scenarioBuilder", "spells"],
-    });
-  });
-
   it("invalidates all item queries after creating an item", async () => {
     const { queryClient, wrapper } = createWrapperWithClient();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -3052,27 +2557,6 @@ describe("useCreatePageState — query invalidation after delete", () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["scenarioBuilder", "effects"],
-    });
-  });
-
-  it("invalidates all spell queries after deleting a spell", async () => {
-    const { queryClient, wrapper } = createWrapperWithClient();
-    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
-
-    const { result } = renderHook(() => useCreatePageState({ tab: "Spells" }, vi.fn()), {
-      wrapper,
-    });
-
-    act(() => {
-      result.current.requestDeleteSpell("sp1", "Fireball");
-    });
-
-    await act(async () => {
-      await result.current.confirmDeleteSpell();
-    });
-
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ["scenarioBuilder", "spells"],
     });
   });
 

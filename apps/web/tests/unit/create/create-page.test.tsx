@@ -29,7 +29,7 @@ describe("CreatePage", () => {
     expect(screen.getByTestId("entity-workspace")).toBeInTheDocument();
     expect(screen.getByTestId("workspace-divider")).toBeInTheDocument();
     expect(screen.getByTestId("unsaved-changes-dialog")).toBeInTheDocument();
-    expect(screen.getAllByTestId("delete-confirm-dialog")).toHaveLength(5);
+    expect(screen.getAllByTestId("delete-confirm-dialog")).toHaveLength(4);
     expect(screen.getByText("scenario delete error")).toBeInTheDocument();
     expect(screen.getByText("effect delete error")).toBeInTheDocument();
   });

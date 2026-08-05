@@ -5,7 +5,6 @@ import type {
   ItemInput,
   RowType,
   ScenarioInput,
-  SpellInput,
   StatKey,
   TargetPolicy,
   UnitInput,
@@ -53,22 +52,6 @@ export function createEffect(
   };
 }
 
-export function createSpell(
-  overrides: Partial<SpellInput> & Pick<SpellInput, "name" | "targetPolicy">,
-): SpellInput {
-  return {
-    id: overrides.id ?? overrides.name.toLowerCase().replace(/\s+/g, "-"),
-    description: null,
-    targetScope: "self_and_others",
-    targetRowCount: 1,
-    maxTargetsPerRow: 1,
-    targetOnlyAdjacent: false,
-    allowedRowTypes: [],
-    effects: [],
-    ...overrides,
-  };
-}
-
 export function createItem(
   overrides: Partial<ItemInput> & Pick<ItemInput, "name">,
 ): BattleItemState {
@@ -83,7 +66,7 @@ export function createItem(
     criticalChance: 0,
     activationManaCost: 0,
     activationHealthCost: 0,
-    linkedSpells: [],
+    effects: [],
     ...overrides,
   };
 }
@@ -94,7 +77,12 @@ export function createUnit(name: string, overrides: Partial<UnitInput> = {}): Un
     name,
     stats: createStats(),
     items: [],
-    targetPolicy: undefined,
+    targetSide: "enemies",
+    targetPolicy: "highest_health",
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
+    allowedRowTypes: [],
     ...overrides,
   };
 }
@@ -132,7 +120,9 @@ export function createBattleInputWithSeed(seed: number | string): BattleInput {
   );
 }
 
-export function effectSequence(...effects: EffectTemplateInput[]): SpellInput["effects"] {
+export function effectSequence(
+  ...effects: EffectTemplateInput[]
+): NonNullable<ItemInput["effects"]> {
   return effects.map((effect, index) => ({
     sequenceOrder: index + 1,
     effect,
@@ -154,6 +144,6 @@ export function statBuff(
   });
 }
 
-export function namedPolicy(name: string, targetPolicy: TargetPolicy): SpellInput {
-  return createSpell({ name, targetPolicy });
+export function namedPolicy(name: string, targetPolicy: TargetPolicy): UnitInput {
+  return createUnit(name, { targetPolicy });
 }

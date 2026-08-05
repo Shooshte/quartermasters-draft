@@ -1,20 +1,22 @@
 import { getUnitEffectiveStats } from "./math";
 import { compareRowOrder, ROW_ORDER } from "./rows";
 import { findScenario, getScenarioOrderIndex, nextRandom } from "./state";
-import type { BattleState, BattleUnitState, RowType, SpellInput } from "./types";
+import type { BattleState, BattleUnitState, RowType, TargetPolicy, TargetSide } from "./types";
 import { InvalidBattleStateError } from "./validation";
 
-function spellTargetsAllies(spell: SpellInput): boolean {
-  const firstEffect = spell.effects
-    ?.slice()
-    .sort((left, right) => left.sequenceOrder - right.sequenceOrder)[0]?.effect;
-  return firstEffect?.effectType === "healing" || firstEffect?.effectType === "buff";
+export interface UnitTargetingInput {
+  targetSide: TargetSide;
+  targetPolicy: TargetPolicy;
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
+  allowedRowTypes: RowType[];
 }
 
 function candidateUnits(
   state: BattleState,
   caster: BattleUnitState,
-  spell: SpellInput,
+  targeting: UnitTargetingInput,
 ): BattleUnitState[] {
   const casterScenario = findScenario(state, caster.scenarioId);
   if (!casterScenario) {
@@ -24,34 +26,29 @@ function candidateUnits(
     );
   }
 
-  const targetScope = spell.targetScope ?? "self_and_others";
-  const allowedRows = spell.allowedRowTypes ?? [];
-  const isEligible = (unit: BattleUnitState) => {
-    if (unit.currentHealth <= 0) return false;
-    if (allowedRows.length > 0 && !allowedRows.includes(unit.rowType)) return false;
-    return true;
-  };
+  const isEligible = (unit: BattleUnitState) =>
+    unit.currentHealth > 0 &&
+    (targeting.allowedRowTypes.length === 0 || targeting.allowedRowTypes.includes(unit.rowType));
 
-  if (targetScope === "self") {
+  if (targeting.targetSide === "self") {
     return isEligible(caster) ? [caster] : [];
   }
 
-  const scenario = spellTargetsAllies(spell)
-    ? casterScenario
-    : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId);
+  const scenario =
+    targeting.targetSide === "allies"
+      ? casterScenario
+      : state.scenarios.find((candidate) => candidate.id !== caster.scenarioId);
   if (!scenario) {
     throw new InvalidBattleStateError(
       "OPPOSING_SCENARIO_NOT_FOUND",
       `No opposing scenario was found for caster scenario ${caster.scenarioId}.`,
     );
   }
-  return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter((unit) => {
-    if (!isEligible(unit)) return false;
-    return targetScope !== "others" || unit.instanceId !== caster.instanceId;
-  });
+
+  return ROW_ORDER.flatMap((rowType) => scenario.rows[rowType]).filter(isEligible);
 }
 
-function policyValue(unit: BattleUnitState, policy: SpellInput["targetPolicy"]) {
+function policyValue(unit: BattleUnitState, policy: TargetPolicy) {
   const stats = getUnitEffectiveStats(unit);
   switch (policy) {
     case "highest_health":
@@ -82,7 +79,7 @@ function compareTargetFallback(
 function sortCandidates(
   state: BattleState,
   units: BattleUnitState[],
-  policy: SpellInput["targetPolicy"],
+  policy: TargetPolicy,
   caster: BattleUnitState,
 ): BattleUnitState[] {
   if (policy === "random") {
@@ -134,19 +131,15 @@ function selectAdjacent(
 export function selectTargets(
   state: BattleState,
   caster: BattleUnitState,
-  spell: SpellInput,
+  targeting: UnitTargetingInput,
 ): BattleUnitState[] {
-  const policy =
-    caster.targetPolicyOverride ?? spell.targetPolicy ?? caster.targetPolicy ?? "highest_health";
-  const candidates = candidateUnits(state, caster, spell);
-  if (candidates.length === 0) {
-    return [];
+  const policy = caster.targetPolicyOverride ?? targeting.targetPolicy;
+  const candidates = candidateUnits(state, caster, targeting);
+  if (candidates.length === 0 || targeting.targetSide === "self") {
+    return candidates;
   }
 
-  const maxTargetsPerRow = spell.maxTargetsPerRow ?? 1;
-  const targetRowCount = spell.targetRowCount ?? 1;
-
-  if (maxTargetsPerRow === 1) {
+  if (targeting.maxTargetsPerRow === 1) {
     const sorted = sortCandidates(state, candidates, policy, caster);
     const selected: BattleUnitState[] = [];
     const rowSet = new Set<RowType>();
@@ -154,28 +147,28 @@ export function selectTargets(
       if (rowSet.has(unit.rowType)) continue;
       rowSet.add(unit.rowType);
       selected.push(unit);
-      if (selected.length === targetRowCount) break;
+      if (selected.length === targeting.targetRowCount) break;
     }
     return selected;
   }
 
-  const eligibleRows = frontmostOccupiedRows(candidates).slice(0, targetRowCount);
+  const eligibleRows = frontmostOccupiedRows(candidates).slice(0, targeting.targetRowCount);
   const selected: BattleUnitState[] = [];
 
   for (const rowType of eligibleRows) {
     const rowCandidates = candidates.filter((unit) => unit.rowType === rowType);
-    if (spell.maxTargetsPerRow == null) {
+    if (targeting.maxTargetsPerRow == null) {
       selected.push(...rowCandidates.sort((left, right) => left.slot - right.slot));
       continue;
     }
 
     const ordered = sortCandidates(state, rowCandidates, policy, caster);
-    if (spell.targetOnlyAdjacent) {
+    if (targeting.targetOnlyAdjacent) {
       const primary = ordered[0];
       if (!primary) continue;
-      selected.push(...selectAdjacent(rowCandidates, primary, maxTargetsPerRow));
+      selected.push(...selectAdjacent(rowCandidates, primary, targeting.maxTargetsPerRow));
     } else {
-      selected.push(...ordered.slice(0, maxTargetsPerRow));
+      selected.push(...ordered.slice(0, targeting.maxTargetsPerRow));
     }
   }
 

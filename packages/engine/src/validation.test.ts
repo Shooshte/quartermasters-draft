@@ -104,4 +104,22 @@ describe("battle input validation", () => {
       ),
     ).not.toThrow();
   });
+
+  it("rejects self targeting policy for the enemy target side", () => {
+    expect(() =>
+      validateBattleInput(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("Invalid Targeter", {
+                targetSide: "enemies",
+                targetPolicy: "self",
+              }),
+            ],
+          }),
+          createScenario("B", { tank: [createUnit("B")] }),
+        ]),
+      ),
+    ).toThrow(/self targeting policy.*enemy target side/i);
+  });
 });

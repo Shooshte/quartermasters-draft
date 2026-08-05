@@ -194,7 +194,7 @@ describe("action bar", () => {
       if (entry.type === "attack") {
         attackNames.push(entry.attacker);
       }
-      if (entry.type === "spell-cast") {
+      if (entry.type === "item-activation") {
         attackNames.push(entry.caster);
       }
     }

@@ -12,9 +12,9 @@ export const TARGET_POLICIES = [
 
 export type TargetPolicy = (typeof TARGET_POLICIES)[number];
 
-export const TARGET_SCOPES = ["self", "self_and_others", "others"] as const;
+export const TARGET_SIDES = ["allies", "enemies", "self"] as const;
 
-export type TargetScope = (typeof TARGET_SCOPES)[number];
+export type TargetSide = (typeof TARGET_SIDES)[number];
 
 export const STAT_KEYS = [
   "health",
@@ -58,20 +58,9 @@ export interface EffectTemplateInput {
   directSpellDmg?: number | null;
 }
 
-export interface SpellInput {
-  id?: string;
-  name: string;
-  description?: string | null;
-  targetPolicy: TargetPolicy;
-  targetScope?: TargetScope;
-  targetRowCount?: number;
-  maxTargetsPerRow?: number | null;
-  targetOnlyAdjacent?: boolean;
-  allowedRowTypes?: RowType[];
-  effects?: Array<{
-    sequenceOrder: number;
-    effect: EffectTemplateInput;
-  }>;
+export interface ItemEffectInput {
+  sequenceOrder: number;
+  effect: EffectTemplateInput;
 }
 
 export interface ItemInput {
@@ -86,7 +75,7 @@ export interface ItemInput {
   criticalChance?: number;
   activationManaCost?: number;
   activationHealthCost?: number;
-  linkedSpells?: SpellInput[];
+  effects?: ItemEffectInput[];
 }
 
 export interface UnitInput {
@@ -94,7 +83,12 @@ export interface UnitInput {
   name: string;
   stats: UnitStats;
   items?: ItemInput[];
+  targetSide?: TargetSide;
   targetPolicy?: TargetPolicy;
+  targetRowCount?: number;
+  maxTargetsPerRow?: number | null;
+  targetOnlyAdjacent?: boolean;
+  allowedRowTypes?: RowType[];
   currentHealth?: number;
   startingActionBar?: number;
 }
@@ -138,7 +132,7 @@ export interface BattleItemState {
   criticalChance: number;
   activationManaCost: number;
   activationHealthCost: number;
-  linkedSpells: SpellInput[];
+  effects: ItemEffectInput[];
 }
 
 export interface ActiveEffectState {
@@ -171,7 +165,12 @@ export interface BattleUnitState {
   mana: number;
   actionBar: number;
   items: BattleItemState[];
-  targetPolicy: TargetPolicy | null;
+  targetSide: TargetSide;
+  targetPolicy: TargetPolicy;
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
+  allowedRowTypes: RowType[];
   targetPolicyOverride: TargetPolicy | null;
   activeEffects: ActiveEffectState[];
   actedCount: number;
@@ -208,7 +207,7 @@ export interface ActionContext {
 
 export type BattleLogEntry =
   | AttackLogEntry
-  | SpellCastLogEntry
+  | ItemActivationLogEntry
   | EffectApplyLogEntry
   | EffectExpireLogEntry
   | DamageLogEntry
@@ -232,11 +231,10 @@ export interface BattleLogSourceRef {
 }
 
 export interface BattleLogOrigin {
-  kind: "basic-attack" | "spell-effect" | "fatigue";
+  kind: "basic-attack" | "item-effect" | "fatigue";
   actionId?: string;
   sourceUnitId?: string;
   item?: BattleLogSourceRef;
-  spell?: BattleLogSourceRef;
   effect?: BattleLogSourceRef;
 }
 
@@ -249,11 +247,11 @@ export interface AttackLogEntry extends BaseLogEntry {
   damage: number;
 }
 
-export interface SpellCastLogEntry extends BaseLogEntry {
-  type: "spell-cast";
+export interface ItemActivationLogEntry extends BaseLogEntry {
+  type: "item-activation";
   caster: string;
   casterId: string;
-  spell: string;
+  item: string;
   targets: string[];
   targetIds: string[];
   effects: string[];

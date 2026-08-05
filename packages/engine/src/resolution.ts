@@ -1,4 +1,4 @@
-import { applySpellToTargets } from "./effects";
+import { applyItemEffectsToTargets } from "./effects";
 import { pushLog } from "./logging";
 import {
   computeBasicAttackDamage,
@@ -7,25 +7,24 @@ import {
 } from "./math";
 import { compareUnitOrder } from "./rows";
 import { findScenario } from "./state";
+import type { UnitTargetingInput } from "./targeting";
 import { selectTargets } from "./targeting";
-import type { BattleLogOrigin, BattleState, BattleUnitState, SpellInput } from "./types";
+import type { BattleLogOrigin, BattleState, BattleUnitState } from "./types";
 
 export type ActionOutcome = {
   usedBasicAttack: boolean;
   totalDamage: number;
-  castSpellNames: string[];
+  activatedItemNames: string[];
 };
 
-function basicAttackPolicySpell(unit: BattleUnitState): SpellInput {
+function basicAttackTargeting(unit: BattleUnitState): UnitTargetingInput {
   return {
-    name: "Basic Attack",
+    targetSide: "enemies",
     targetPolicy: unit.targetPolicyOverride ?? unit.targetPolicy ?? "highest_health",
-    targetScope: "others",
     targetRowCount: 1,
     maxTargetsPerRow: 1,
     targetOnlyAdjacent: false,
     allowedRowTypes: [],
-    effects: [],
   };
 }
 
@@ -35,7 +34,7 @@ export function performBasicAttack(
   tick = state.tick,
   actionId = `${tick}:${attacker.instanceId}:${attacker.actedCount + 1}`,
 ): number {
-  const targets = selectTargets(state, attacker, basicAttackPolicySpell(attacker));
+  const targets = selectTargets(state, attacker, basicAttackTargeting(attacker));
   const target = targets[0];
   if (!target) return 0;
 
@@ -100,76 +99,62 @@ export function resolveUnitAction(
   unit: BattleUnitState,
   tick = state.tick,
 ): ActionOutcome {
-  const castSpellNames: string[] = [];
+  const activatedItemNames: string[] = [];
   let totalDamage = 0;
   const actionId = `${tick}:${unit.instanceId}:${unit.actedCount + 1}`;
 
   const items = [...unit.items];
 
   for (const [itemIndex, item] of items.entries()) {
-    if (item.linkedSpells.length === 0) continue;
+    if (item.effects.length === 0) continue;
     if (unit.mana < item.activationManaCost) continue;
     if (unit.currentHealth < item.activationHealthCost) continue;
 
-    const castableSpells = item.linkedSpells;
-    if (castableSpells.length === 0) continue;
+    const targets = selectTargets(state, unit, unit);
+    if (targets.length === 0) continue;
 
-    let itemActivated = false;
+    unit.mana -= item.activationManaCost;
+    unit.currentHealth -= item.activationHealthCost;
 
-    for (const [spellIndex, spell] of [...castableSpells]
-      .sort((left, right) => left.name.localeCompare(right.name))
-      .entries()) {
-      const targets = selectTargets(state, unit, spell);
-      if (targets.length === 0) continue;
-
-      if (!itemActivated) {
-        unit.mana -= item.activationManaCost;
-        unit.currentHealth -= item.activationHealthCost;
-        itemActivated = true;
-      }
-
-      const startingHealthByTarget = new Map(
-        targets.map((target) => [target.instanceId, target.currentHealth]),
-      );
-      const origin: BattleLogOrigin = {
-        kind: "spell-effect",
-        actionId,
-        sourceUnitId: unit.instanceId,
-        item: { id: item.id, name: item.name, position: itemIndex + 1 },
-        spell: { id: spell.id, name: spell.name, position: spellIndex + 1 },
-      };
-      const result = applySpellToTargets(state, unit, spell, targets, tick, origin);
-      castSpellNames.push(spell.name);
-      totalDamage += result.targets.reduce((sum, target) => {
-        // biome-ignore lint/style/noNonNullAssertion: applySpellToTargets only receives targets from battle state.
-        const scenario = findScenario(state, target.scenarioId)!;
-        // biome-ignore lint/style/noNonNullAssertion: applySpellToTargets preserves targets in their row.
-        const updated = scenario.rows[target.rowType].find(
-          (candidate) => candidate.instanceId === target.instanceId,
-        )!;
-        const startingHealth =
-          startingHealthByTarget.get(target.instanceId) ?? updated.currentHealth;
-        return sum + Math.max(0, startingHealth - updated.currentHealth);
-      }, 0);
-    }
+    const startingHealthByTarget = new Map(
+      targets.map((target) => [target.instanceId, target.currentHealth]),
+    );
+    const origin: BattleLogOrigin = {
+      kind: "item-effect",
+      actionId,
+      sourceUnitId: unit.instanceId,
+      item: { id: item.id, name: item.name, position: itemIndex + 1 },
+    };
+    const result = applyItemEffectsToTargets(state, unit, item, targets, tick, origin);
+    activatedItemNames.push(item.name);
+    totalDamage += result.targets.reduce((sum, target) => {
+      // biome-ignore lint/style/noNonNullAssertion: item effects only receive targets from battle state.
+      const scenario = findScenario(state, target.scenarioId)!;
+      // biome-ignore lint/style/noNonNullAssertion: item effects preserve targets in their row.
+      const updated = scenario.rows[target.rowType].find(
+        (candidate) => candidate.instanceId === target.instanceId,
+      )!;
+      const startingHealth = startingHealthByTarget.get(target.instanceId) ?? updated.currentHealth;
+      return sum + Math.max(0, startingHealth - updated.currentHealth);
+    }, 0);
 
     if (unit.currentHealth <= 0) {
       break;
     }
   }
 
-  if (castSpellNames.length > 0) {
+  if (activatedItemNames.length > 0) {
     return {
       usedBasicAttack: false,
       totalDamage,
-      castSpellNames,
+      activatedItemNames,
     };
   }
 
   return {
     usedBasicAttack: true,
     totalDamage: performBasicAttack(state, unit, tick, actionId),
-    castSpellNames,
+    activatedItemNames,
   };
 }
 

@@ -219,10 +219,6 @@ function applyEffectTemplate(
   origin: BattleLogOrigin | undefined,
   effectPosition: number,
 ): string[] {
-  if (target.currentHealth <= 0) {
-    return [];
-  }
-
   if (effect.timingType === "interval") {
     target.activeEffects.push(
       ...queueIntervalEffect(
@@ -259,6 +255,8 @@ export function applyItemEffectsToTargets(
   const orderedEffects = [...item.effects].sort(
     (left, right) => left.sequenceOrder - right.sequenceOrder,
   );
+  const targetIds = Object.freeze(targets.map((target) => target.instanceId));
+  const targetsById = new Map(targets.map((target) => [target.instanceId, target]));
   const activationEntry: ItemActivationLogEntry = {
     tick,
     type: "item-activation",
@@ -266,7 +264,7 @@ export function applyItemEffectsToTargets(
     casterId: caster.instanceId,
     item: item.name,
     targets: targets.map((target) => target.name),
-    targetIds: targets.map((target) => target.instanceId),
+    targetIds: [...targetIds],
     effects: orderedEffects.map((effect) => effect.effect.name ?? "Effect"),
     actionId: origin?.actionId,
     origin,
@@ -277,11 +275,12 @@ export function applyItemEffectsToTargets(
   const appliedEffectNames: string[] = [];
 
   for (const [effectIndex, effect] of orderedEffects.entries()) {
-    const livingTargets = targets.filter((target) => target.currentHealth > 0);
-    if (livingTargets.length === 0) break;
-
     let applied = false;
-    for (const target of livingTargets) {
+    for (const targetId of targetIds) {
+      const target = targetsById.get(targetId);
+      if (!target) {
+        throw new Error(`Selected target ${targetId} was not found while resolving item effects.`);
+      }
       const targetResult = applyEffectTemplate(
         state,
         tick,

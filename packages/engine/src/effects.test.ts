@@ -310,7 +310,7 @@ describe("effects", () => {
     ).toBe(true);
   });
 
-  it("supports buff and debuff stat modifiers across supported stats and stops dead-target sequences", () => {
+  it("applies every ordered effect to the initially selected target after it dies", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
@@ -341,7 +341,7 @@ describe("effects", () => {
     });
 
     const result = applyItemEffects(state, mage, item);
-    expect(result.appliedEffectNames).toEqual(["One", "Two"]);
+    expect(result.appliedEffectNames).toEqual(["One", "Two", "Three"]);
     expect(warrior.currentHealth).toBe(0);
   });
 

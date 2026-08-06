@@ -220,26 +220,50 @@ describe("action resolution", () => {
     expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("stops an ordered effect sequence after its final selected target dies", () => {
-    const state = makeStateWithWarrior("melee", [
-      createItem({
-        name: "Finisher",
-        activationManaCost: 10,
-        effects: effectSequence(damageEffect("Alpha Blast", 200), damageEffect("Beta Follow-up")),
-      }),
-    ]);
-    const warrior = state.scenarios[0].rows.melee[0]!;
-    warrior.mana = 50;
+  it("gives later effects the original target IDs after a lethal first effect", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
+            createUnit("Warrior", {
+              targetCount: 2,
+              items: [
+                createItem({
+                  name: "Finisher",
+                  effects: effectSequence(
+                    damageEffect("Alpha Blast", 200),
+                    damageEffect("Beta Follow-up"),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Dummy A", { stats: createStats({ health: 200 }) }),
+            createUnit("Dummy B", { stats: createStats({ health: 200 }) }),
+          ],
+        }),
+      ]),
+    );
+    const warrior = state.scenarios[0].rows.ranged[0]!;
 
     const outcome = resolveUnitAction(state, warrior);
-    const effectNames = state.log
-      .filter((entry) => entry.type === "damage" && entry.origin?.kind === "item-effect")
-      .map((entry) => entry.origin?.effect?.name);
+    const damageEntries = state.log.filter(
+      (entry) => entry.type === "damage" && entry.origin?.kind === "item-effect",
+    );
+    const targetIdsFor = (effectName: string) =>
+      damageEntries
+        .filter((entry) => entry.origin?.effect?.name === effectName)
+        .map((entry) => (entry.type === "damage" ? entry.targetId : "unexpected"));
+    const alphaTargetIds = targetIdsFor("Alpha Blast");
+    const betaTargetIds = targetIdsFor("Beta Follow-up");
 
     expect(outcome.activatedItemNames).toEqual(["Finisher"]);
-    expect(outcome.totalDamage).toBe(200);
-    expect(warrior.mana).toBe(40);
-    expect(effectNames).toEqual(["Alpha Blast"]);
+    expect(outcome.totalDamage).toBe(400);
+    expect(alphaTargetIds).toHaveLength(2);
+    expect(betaTargetIds).toEqual(alphaTargetIds);
   });
 
   it("reports only damage dealt during the current action", () => {

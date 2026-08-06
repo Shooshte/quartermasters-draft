@@ -14,11 +14,9 @@ export type {
   RowType,
   ScenarioInput,
   StatKey,
-  TargetPolicy,
   TargetPriority,
   TargetScope,
   TargetSelectionShape,
-  TargetSide,
   UnitInput,
   UnitStats,
 } from "./types";

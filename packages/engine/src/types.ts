@@ -27,17 +27,6 @@ export const TARGET_SELECTION_SHAPES = ["individual", "adjacent"] as const;
 
 export type TargetSelectionShape = (typeof TARGET_SELECTION_SHAPES)[number];
 
-/** @deprecated Temporary input compatibility until persisted targeting is migrated. */
-export type TargetPolicy =
-  | "highest_health"
-  | "lowest_health"
-  | "highest_damage"
-  | "random"
-  | "self";
-
-/** @deprecated Temporary input compatibility until persisted targeting is migrated. */
-export type TargetSide = "allies" | "enemies" | "self";
-
 export const STAT_KEYS = [
   "health",
   "mana",
@@ -106,22 +95,10 @@ export interface UnitInput {
   name: string;
   stats: UnitStats;
   items?: ItemInput[];
-  /** @deprecated Ignored by the engine; use targetScope. */
-  targetSide?: TargetSide;
-  /** @deprecated Ignored by the engine; use targetPriority. */
-  targetPolicy?: TargetPolicy;
-  /** @deprecated Ignored by the engine; use targetCount. */
-  targetRowCount?: number;
-  /** @deprecated Ignored by the engine; use targetCount. */
-  maxTargetsPerRow?: number | null;
-  /** @deprecated Ignored by the engine; use selectionShape. */
-  targetOnlyAdjacent?: boolean;
   targetScope?: TargetScope;
   targetPriority?: TargetPriority;
   targetCount?: number;
   selectionShape?: TargetSelectionShape;
-  /** @deprecated Ignored by the engine; deployment rows belong to items. */
-  allowedRowTypes?: RowType[];
   currentHealth?: number;
   startingActionBar?: number;
 }

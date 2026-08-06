@@ -1,11 +1,11 @@
 import {
+  type EffectOption,
   getItemFieldLabel,
   hasItemFormErrors,
   ITEM_ACTIVATION_FIELDS,
   ITEM_COMBAT_FIELDS,
   ITEM_UTILITY_FIELDS,
   type ItemFormValues,
-  type SpellOption,
   validateItemForm,
 } from "./item-form";
 import type { LinkedEntityOption } from "./linked-entity-picker";
@@ -18,44 +18,47 @@ import { WorkspaceSection } from "./workspace-section";
 interface ItemWorkspaceFormProps {
   mode: "create" | "edit" | "loading";
   formValues: ItemFormValues;
-  spellOptions: SpellOption[];
+  effectOptions: EffectOption[];
   onFieldChange: (field: string, value: unknown) => void;
   onSave: () => void;
-  onEditSpell?: (spellId: string) => void;
+  onEditEffect?: (effectId: string) => void;
   isSaving: boolean;
   saveError: string | null;
 }
 
-function sortSpellIdsByName(spellIds: string[], spellOptions: SpellOption[]) {
-  const nameMap = new Map(spellOptions.map((spell) => [spell.id, spell.name.toLowerCase()]));
-
-  return [...spellIds].sort((left, right) => {
-    const leftName = nameMap.get(left) ?? left;
-    const rightName = nameMap.get(right) ?? right;
-    return leftName.localeCompare(rightName);
-  });
+function getEffectBadgeClass(effectType: string): string {
+  switch (effectType) {
+    case "damage":
+      return "item-effect-badge item-effect-badge-damage";
+    case "healing":
+      return "item-effect-badge item-effect-badge-healing";
+    case "buff":
+      return "item-effect-badge item-effect-badge-buff";
+    case "debuff":
+      return "item-effect-badge item-effect-badge-debuff";
+    default:
+      return "item-effect-badge";
+  }
 }
 
 export function ItemWorkspaceForm({
   mode,
   formValues,
-  spellOptions,
+  effectOptions,
   onFieldChange,
   onSave,
-  onEditSpell = () => {},
+  onEditEffect = () => {},
   isSaving,
   saveError,
 }: ItemWorkspaceFormProps) {
   const errors = validateItemForm(formValues);
   const saveLabel = mode === "create" ? "Create Item" : "Save Changes";
-  const linkedSpellOptions: LinkedEntityOption[] = spellOptions.map((spell) => ({
-    id: spell.id,
-    name: spell.name,
+  const linkedEffectOptions: LinkedEntityOption[] = effectOptions.map((effect) => ({
+    id: effect.id,
+    name: effect.name,
+    badgeText: effect.effectType,
+    badgeClassName: getEffectBadgeClass(effect.effectType),
   }));
-
-  const handleSpellIdsChange = (nextSpellIds: string[]) => {
-    onFieldChange("spellIds", sortSpellIdsByName(nextSpellIds, spellOptions));
-  };
 
   return (
     <div className="flex flex-col gap-4" data-testid="item-form-fields">
@@ -66,26 +69,30 @@ export function ItemWorkspaceForm({
       />
 
       <LinkedEntitySection
-        title="Linked Spells"
-        options={linkedSpellOptions}
-        linkedIds={formValues.spellIds}
-        allowDuplicates={false}
-        searchPlaceholder="Search spells..."
-        triggerPlaceholder="Select spell"
-        listboxLabel="Item spell options"
-        emptyMessage="No spells found."
+        title="Linked Effects"
+        options={linkedEffectOptions}
+        linkedIds={formValues.effectIds}
+        allowDuplicates
+        searchPlaceholder="Search effects..."
+        triggerPlaceholder="Select effect"
+        listboxLabel="Item effect options"
+        emptyMessage="No effects found."
         addButtonLabel="+ Add"
-        error={errors.spellIds}
-        onChange={handleSpellIdsChange}
-        pickerTestId="item-spell-picker"
-        searchTestId="item-spell-picker-search"
-        addButtonTestId="item-add-spell-button"
-        emptyTestId="item-spell-picker-empty"
-        optionTestIdPrefix="item-spell-picker-option"
-        rowTestIdPrefix="item-spell-row"
-        removeTestIdPrefix="item-spell-remove"
-        editTestIdPrefix="item-spell-edit"
-        onEdit={onEditSpell}
+        error={errors.effectIds}
+        onChange={(nextIds) => onFieldChange("effectIds", nextIds)}
+        pickerTestId="item-effect-picker"
+        searchTestId="item-effect-picker-search"
+        addButtonTestId="item-add-effect-button"
+        emptyTestId="item-effect-picker-empty"
+        optionTestIdPrefix="item-effect-picker-option"
+        rowTestIdPrefix="item-effect-row"
+        removeTestIdPrefix="item-effect-remove"
+        moveUpTestIdPrefix="item-effect-move-up"
+        moveDownTestIdPrefix="item-effect-move-down"
+        editTestIdPrefix="item-effect-edit"
+        showSequence
+        allowReorder
+        onEdit={onEditEffect}
       />
 
       <WorkspaceSection title="Combat Stats">

@@ -11,14 +11,6 @@ export const EFFECTS_TAB: LibraryTabConfig = {
   idleTestId: "entity-idle",
 };
 
-export const SPELLS_TAB: LibraryTabConfig = {
-  tabName: "Spells",
-  entityType: "spells",
-  idParamName: "spell_id",
-  nameInputTestId: "entity-name-input",
-  idleTestId: "entity-idle",
-};
-
 export const ITEMS_TAB: LibraryTabConfig = {
   tabName: "Items",
   entityType: "items",

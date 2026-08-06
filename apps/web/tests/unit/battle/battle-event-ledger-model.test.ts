@@ -54,7 +54,7 @@ describe("buildBattleEventGroups", () => {
       tick: 18,
       actionId: undefined,
       origin: {
-        kind: "spell-effect" as const,
+        kind: "item-effect" as const,
         actionId: "11:alpha:tank:1:1",
         sourceUnitId: "alpha:tank:1",
         effect: { name: "Burning", position: 1 },

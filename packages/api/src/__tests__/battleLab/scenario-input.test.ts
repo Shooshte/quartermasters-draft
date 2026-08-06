@@ -16,6 +16,11 @@ const mage = {
   speed: 1,
   dodge: 8,
   criticalChance: 6,
+  targetSide: "allies" as const,
+  targetPolicy: "lowest_health" as const,
+  targetRowCount: 2,
+  maxTargetsPerRow: 3,
+  targetOnlyAdjacent: true,
 };
 
 const oakStaff = {
@@ -44,16 +49,6 @@ const crystal = {
   criticalChance: 1,
   activationManaCost: 0,
   activationHealthCost: 0,
-};
-
-const fireball = {
-  id: "spell-1",
-  name: "Fireball",
-  description: "A bright projectile",
-  targetPolicy: "lowest_health" as const,
-  targetRowCount: 2,
-  maxTargetsPerRow: 3,
-  targetOnlyAdjacent: true,
 };
 
 const burn = {
@@ -110,14 +105,13 @@ function buildRecords(): BattleScenarioRecords {
       { unitId: mage.id, priority: 20, item: crystal },
       { unitId: mage.id, priority: 10, item: oakStaff },
     ],
-    itemSpells: [{ itemId: oakStaff.id, spell: fireball }],
-    spellAllowedRows: [
-      { spellId: fireball.id, rowType: "support" },
-      { spellId: fireball.id, rowType: "ranged" },
+    unitAllowedRows: [
+      { unitId: mage.id, rowType: "support" },
+      { unitId: mage.id, rowType: "ranged" },
     ],
-    spellEffects: [
-      { spellId: fireball.id, sequenceOrder: 2, effect: burn },
-      { spellId: fireball.id, sequenceOrder: 1, effect: scorch },
+    itemEffects: [
+      { itemId: oakStaff.id, sequenceOrder: 2, effect: burn },
+      { itemId: oakStaff.id, sequenceOrder: 1, effect: scorch },
     ],
   };
 }
@@ -147,22 +141,21 @@ describe("toScenarioInput", () => {
               dodge: 8,
               criticalChance: 6,
             },
+            targetSide: "allies",
+            targetPolicy: "lowest_health",
+            targetRowCount: 2,
+            maxTargetsPerRow: 3,
+            targetOnlyAdjacent: true,
+            allowedRowTypes: ["ranged", "support"],
             items: [
               {
                 ...oakStaff,
-                linkedSpells: [
-                  {
-                    ...fireball,
-                    targetScope: "self_and_others",
-                    allowedRowTypes: ["ranged", "support"],
-                    effects: [
-                      { sequenceOrder: 1, effect: scorch },
-                      { sequenceOrder: 2, effect: burn },
-                    ],
-                  },
+                effects: [
+                  { sequenceOrder: 1, effect: scorch },
+                  { sequenceOrder: 2, effect: burn },
                 ],
               },
-              { ...crystal, linkedSpells: [] },
+              { ...crystal, effects: [] },
             ],
           },
         ],
@@ -196,9 +189,8 @@ describe("toScenarioInput", () => {
     const records = buildRecords();
     records.assignments = [];
     records.unitItems = [];
-    records.itemSpells = [];
-    records.spellAllowedRows = [];
-    records.spellEffects = [];
+    records.unitAllowedRows = [];
+    records.itemEffects = [];
 
     expect(toScenarioInput(records)).toEqual({
       id: "scenario-a",

@@ -6,7 +6,7 @@ import type { APIRequestContext, APIResponse } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { TRPC_BASE } from "./seed-constants";
 
-export type EntityType = "effects" | "spells" | "items" | "units" | "scenarios";
+export type EntityType = "effects" | "items" | "units" | "scenarios";
 
 // ─── Response Parsing ────────────────────────────────────────────────────────
 

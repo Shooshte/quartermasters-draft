@@ -55,15 +55,15 @@ describe("computeIsDirty", () => {
   });
 
   it("normalizes null/undefined to empty string for comparison", () => {
-    expect(compute({ description: undefined }, { name: "Spell", description: null })).toBe(false);
+    expect(compute({ description: undefined }, { name: "Effect", description: null })).toBe(false);
   });
 
   it("returns true when an array field differs in length", () => {
-    expect(compute({ effectIds: ["a"] }, { name: "Spell", effectIds: ["a", "b"] })).toBe(true);
+    expect(compute({ effectIds: ["a"] }, { name: "Item", effectIds: ["a", "b"] })).toBe(true);
   });
 
   it("returns true when an array field differs in content", () => {
-    expect(compute({ effectIds: ["a", "c"] }, { name: "Spell", effectIds: ["a", "b"] })).toBe(true);
+    expect(compute({ effectIds: ["a", "c"] }, { name: "Item", effectIds: ["a", "b"] })).toBe(true);
   });
 
   it("returns false for new entity form matching defaults (null original)", () => {

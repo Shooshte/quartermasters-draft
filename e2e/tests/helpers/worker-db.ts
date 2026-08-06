@@ -5,14 +5,12 @@ import * as schema from "../../../packages/db/src/schema";
 import {
   effectSeedData,
   itemSeedData,
-  itemsSpellsSeedData,
+  itemsEffectsSeedData,
   scenarioSeedData,
   scenariosRowsSeedData,
   scenariosRowsUnitsSeedData,
-  spellSeedData,
-  spellsAllowedRowsSeedData,
-  spellsEffectsSeedData,
   unitSeedData,
+  unitsAllowedRowsSeedData,
   unitsItemsSeedData,
 } from "../../../packages/db/src/seed-data";
 
@@ -27,12 +25,10 @@ const TRUNCATE_APP_TABLES_SQL = `
     scenarios_rows,
     scenarios,
     units_items,
+    units_allowed_rows,
     units,
-    items_spells,
+    items_effects,
     items,
-    spells_allowed_rows,
-    spells_effects,
-    spells,
     effects
   RESTART IDENTITY CASCADE
 `;
@@ -70,12 +66,10 @@ export async function resetWorkerDb(dbName: string) {
   await db.transaction(async (tx) => {
     await tx.execute(sql.raw(TRUNCATE_APP_TABLES_SQL));
     await tx.insert(schema.effects).values(effectSeedData);
-    await tx.insert(schema.spells).values(spellSeedData);
-    await tx.insert(schema.spellsEffects).values(spellsEffectsSeedData);
-    await tx.insert(schema.spellsAllowedRows).values(spellsAllowedRowsSeedData);
     await tx.insert(schema.items).values(itemSeedData);
-    await tx.insert(schema.itemsSpells).values(itemsSpellsSeedData);
+    await tx.insert(schema.itemsEffects).values(itemsEffectsSeedData);
     await tx.insert(schema.units).values(unitSeedData);
+    await tx.insert(schema.unitsAllowedRows).values(unitsAllowedRowsSeedData);
     await tx.insert(schema.unitsItems).values(unitsItemsSeedData);
     await tx.insert(schema.scenarios).values(scenarioSeedData);
     await tx.insert(schema.scenariosRows).values(scenariosRowsSeedData);

@@ -50,8 +50,8 @@ function normalizeItem(item: ItemInput): BattleItemState {
     criticalChance: item.criticalChance ?? 0,
     activationManaCost: item.activationManaCost ?? 0,
     activationHealthCost: item.activationHealthCost ?? 0,
-    linkedSpells: [...(item.linkedSpells ?? [])].sort((left, right) =>
-      left.name.localeCompare(right.name),
+    effects: [...(item.effects ?? [])].sort(
+      (left, right) => left.sequenceOrder - right.sequenceOrder,
     ),
   };
 }
@@ -91,7 +91,12 @@ function createUnitState(
     mana: Math.max(0, unit.stats.mana + bonuses.mana),
     actionBar: unit.startingActionBar ?? 0,
     items,
-    targetPolicy: unit.targetPolicy ?? null,
+    targetSide: unit.targetSide ?? "enemies",
+    targetPolicy: unit.targetPolicy ?? "highest_health",
+    targetRowCount: unit.targetRowCount ?? 1,
+    maxTargetsPerRow: unit.maxTargetsPerRow ?? 1,
+    targetOnlyAdjacent: unit.targetOnlyAdjacent ?? false,
+    allowedRowTypes: [...(unit.allowedRowTypes ?? [])],
     targetPolicyOverride: null,
     activeEffects: [],
     actedCount: 0,

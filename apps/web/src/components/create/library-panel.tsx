@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { EffectLibraryList } from "./effect-library-list";
 import { ItemLibraryList } from "./item-library-list";
 import { ScenarioLibraryList } from "./scenario-library-list";
-import { SpellLibraryList } from "./spell-library-list";
 import {
   type EffectSortBy,
   type EffectSortDir,
@@ -14,8 +13,6 @@ import {
   type LibraryLinkageFilter,
   type ScenarioSortBy,
   type ScenarioSortDir,
-  type SpellSortBy,
-  type SpellSortDir,
   TABS,
   type TabName,
   type UnitSortBy,
@@ -52,15 +49,6 @@ interface LibraryPanelProps {
   onEffectPageChange: (page: number) => void;
   onEffectSortChange: (sortBy: EffectSortBy, sortDir: EffectSortDir) => void;
   onDeleteEffect: (id: string, name: string) => void;
-  // Spell-specific props
-  spellListItems: { id: string; name: string; targetPolicy: string; updatedAt: Date }[];
-  spellPage: number;
-  spellTotalPages: number;
-  spellSortBy: SpellSortBy;
-  spellSortDir: SpellSortDir;
-  onSpellPageChange: (page: number) => void;
-  onSpellSortChange: (sortBy: SpellSortBy, sortDir: SpellSortDir) => void;
-  onDeleteSpell: (id: string, name: string) => void;
   // Item-specific props
   itemListItems: { id: string; name: string; updatedAt: Date }[];
   itemPage: number;
@@ -168,14 +156,6 @@ export function LibraryPanel({
   onEffectPageChange,
   onEffectSortChange,
   onDeleteEffect,
-  spellListItems,
-  spellPage,
-  spellTotalPages,
-  spellSortBy,
-  spellSortDir,
-  onSpellPageChange,
-  onSpellSortChange,
-  onDeleteSpell,
   itemListItems,
   itemPage,
   itemTotalPages,
@@ -209,23 +189,6 @@ export function LibraryPanel({
         onDelete={onDeleteEffect}
         onPageChange={onEffectPageChange}
         onSortChange={onEffectSortChange}
-      />
-    ),
-    Spells: (
-      <SpellLibraryList
-        items={spellListItems}
-        isLoading={listLoading.Spells}
-        isFetching={listFetching.Spells}
-        selectedId={perTabSelection.Spells}
-        page={spellPage}
-        totalPages={spellTotalPages}
-        sortBy={spellSortBy}
-        sortDir={spellSortDir}
-        onSelect={(id) => onSelectRecord("Spells", id)}
-        onCreateNew={() => onCreateNew("Spells")}
-        onDelete={onDeleteSpell}
-        onPageChange={onSpellPageChange}
-        onSortChange={onSpellSortChange}
       />
     ),
     Items: (

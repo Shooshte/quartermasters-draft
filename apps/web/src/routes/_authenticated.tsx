@@ -110,7 +110,6 @@ function AuthenticatedLayout() {
                   scenario_id: undefined,
                   entity_id: undefined,
                   effect_id: undefined,
-                  spell_id: undefined,
                   item_id: undefined,
                   unit_id: undefined,
                   tab: undefined,

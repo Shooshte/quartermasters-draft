@@ -26,7 +26,7 @@ export function useDeleteEffectDialog({
   setEffectPage,
 }: UseDeleteEffectDialogOptions) {
   const queryClient = useQueryClient();
-  const isLinkedSpellConflict = (error: unknown) => {
+  const isLinkedItemConflict = (error: unknown) => {
     if (
       error instanceof Error &&
       error.message.includes("Cannot delete effect while it is linked")
@@ -72,8 +72,8 @@ export function useDeleteEffectDialog({
     },
     fallbackError: "Failed to delete effect. Please try again.",
     mapError: (error) =>
-      isLinkedSpellConflict(error)
-        ? "Cannot delete effect while it is linked to one or more spells."
+      isLinkedItemConflict(error)
+        ? "Cannot delete effect while it is linked to one or more items."
         : null,
   });
 

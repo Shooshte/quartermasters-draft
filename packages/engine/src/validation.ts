@@ -30,11 +30,17 @@ export function validateBattleInput(input: BattleInput): void {
     throw new InvalidBattleInputError("Battle seed must not be blank.");
   }
 
-  const livingUnits = input.scenarios.flatMap((scenario) =>
-    Object.values(scenario.rows ?? {})
-      .flat()
-      .filter((unit) => (unit.currentHealth ?? unit.stats.health) > 0),
+  const units = input.scenarios.flatMap((scenario) => Object.values(scenario.rows ?? {}).flat());
+  const invalidSelfTargeter = units.find(
+    (unit) => (unit.targetSide ?? "enemies") === "enemies" && unit.targetPolicy === "self",
   );
+  if (invalidSelfTargeter) {
+    throw new InvalidBattleInputError(
+      `Self targeting policy is invalid for the enemy target side on unit ${invalidSelfTargeter.name}.`,
+    );
+  }
+
+  const livingUnits = units.filter((unit) => (unit.currentHealth ?? unit.stats.health) > 0);
 
   if (livingUnits.length === 0) {
     throw new InvalidBattleInputError("Battle initialization requires at least one living unit.");

@@ -21,20 +21,20 @@ export class ItemWorkspacePage {
     return this.page.getByTestId("entity-save-error");
   }
 
-  get spellRows() {
-    return this.page.locator('[data-testid^="item-spell-row-"]');
+  get effectRows() {
+    return this.page.locator('[data-testid^="item-effect-row-"]');
   }
 
   get formFields() {
     return this.page.getByTestId("item-form-fields");
   }
 
-  get spellPicker() {
-    return this.page.getByTestId("item-spell-picker");
+  get effectPicker() {
+    return this.page.getByTestId("item-effect-picker");
   }
 
-  get spellPickerSearch() {
-    return this.page.getByTestId("item-spell-picker-search");
+  get effectPickerSearch() {
+    return this.page.getByTestId("item-effect-picker-search");
   }
 
   async openNew() {
@@ -55,23 +55,35 @@ export class ItemWorkspacePage {
     }
   }
 
-  async linkSpell(name: string, search?: string) {
+  effectRow(index: number) {
+    return this.page.getByTestId(`item-effect-row-${index}`);
+  }
+
+  async linkEffect(name: string, search?: string) {
     await addLinkedEntity(
       this.page,
-      "item-spell-picker",
-      "item-spell-picker-search",
-      "item-add-spell-button",
+      "item-effect-picker",
+      "item-effect-picker-search",
+      "item-add-effect-button",
       name,
       search,
     );
   }
 
-  async removeSpell(index: number) {
-    await this.page.getByTestId(`item-spell-remove-${index}`).click();
+  async removeEffect(index: number) {
+    await this.page.getByTestId(`item-effect-remove-${index}`).click();
   }
 
-  async editSpell(index: number) {
-    await this.page.getByTestId(`item-spell-edit-${index}`).click();
+  async editEffect(index: number) {
+    await this.page.getByTestId(`item-effect-edit-${index}`).click();
+  }
+
+  async moveEffectDown(index: number) {
+    await this.page.getByTestId(`item-effect-move-down-${index}`).click();
+  }
+
+  async moveEffectUp(index: number) {
+    await this.page.getByTestId(`item-effect-move-up-${index}`).click();
   }
 
   async saveCreate() {

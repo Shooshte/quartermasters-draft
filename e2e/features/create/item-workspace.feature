@@ -1,15 +1,14 @@
 Feature: Item workspace create and edit
   As a game master
-  I want to create and edit items inside the entity builder on the "/create" page
-  So that item records and their linked spells can be managed without leaving the builder workflow
+  I want to create and edit items with ordered reusable effects
+  So that item activations can be managed without leaving the builder workflow
 
   Background:
     Given I am authenticated as a game master
     And I am on the "/create" page
     And I have opened the "Items" tab
 
-  # Linked spells on items are treated as an unordered set.
-  # Scenarios that assert multiple linked spells verify membership only, not sequence.
+  # Linked effects are ordered and may repeat. An item with no effects is stat-only.
 
   Scenario: Create a new item with default stats
     When I create a new item named "Bronze Buckler"
@@ -45,17 +44,13 @@ Feature: Item workspace create and edit
       | activationHealthCost | 3 |
     Then reloading the item by URL should show the saved stat values
 
-  Scenario: Stat fields accept decimal values
-    When I create a new item named "Precise Blade" with the following stats:
+  Scenario: Stat fields accept decimal and negative values
+    When I create a new item named "Cursed Precision Blade" with the following stats:
       | meleeDmg       | 12.5 |
       | criticalChance | 7.25 |
-    Then reloading the item by URL should show the saved decimal values
-
-  Scenario: Stat fields accept negative values
-    When I create a new item named "Cursed Sigil" with the following stats:
-      | spellDmg | -3.5 |
-      | dodge    | -1   |
-    Then reloading the item by URL should show the saved negative stat values
+      | spellDmg       | -3.5 |
+      | dodge          | -1   |
+    Then reloading the item by URL should show the saved stat values
 
   Scenario: Edit an existing item
     Given I have loaded the item "Oak Staff" in the item workspace
@@ -67,21 +62,15 @@ Feature: Item workspace create and edit
     When I update the item spellDmg to 20
     Then reloading the item by URL should show spellDmg as 20
 
-  Scenario: Open a spell linked to an item
-    Given I have loaded the item "Oak Staff" in the item workspace
-    When I edit linked spell at position 1
-    Then the "Spells" tab should be active
-    And spell "Fireball" should be open in the spell workspace
-
   Scenario: Duplicate name shows a save error
     Given I have loaded the item "Oak Staff" in the item workspace
     When I rename the item to "Iron Sword"
     Then I should see a duplicate-name save error
 
-  Scenario: Linked spells are optional on create
-    When I create a new item named "Spell-less Relic" without linking any spells
+  Scenario: A stat-only item is valid
+    When I create a new item named "Stat-only Relic" without linking any effects
     Then the item workspace should save the item in edit mode
-    And reloading the item by URL should show no linked spells
+    And reloading the item by URL should show no linked effects
 
   Scenario: Activation costs cannot be negative
     When I start creating a new item named "Broken Relay" with the following stats:
@@ -89,52 +78,60 @@ Feature: Item workspace create and edit
       | activationHealthCost | -2 |
     Then saving should remain blocked
 
-  Scenario: Add a spell to an item
+  Scenario: Add an effect to an item
     When I create a new item named "Flame Rod"
-    And I link spell "Fireball" to the item
+    And I link effect "Arcane Damage" to the item at sequence position 1
     And I save the item
-    Then reloading the item by URL should show spell "Fireball" linked
+    Then reloading the item by URL should show effect "Arcane Damage" at position 1
 
-  Scenario: Add multiple spells to an item
+  Scenario: Effects execute in the linked order
     When I create a new item named "Arcane Focus"
-    And I link spell "Fireball" to the item
-    And I link spell "Healing Touch" to the item
+    And I link effect "Arcane Damage" to the item at sequence position 1
+    And I link effect "Sizzling Flesh" to the item at sequence position 2
     And I save the item
-    Then reloading the item by URL should show spells "Fireball" and "Healing Touch" linked
+    Then reloading the item by URL should show effects "Arcane Damage" and "Sizzling Flesh" in order
 
-  Scenario: Remove a linked spell while at least one remains
-    Given I have loaded the item "Oak Staff" in the item workspace
-    And I link spell "Healing Touch" to the item
-    And I save the item
-    When I remove the linked spell "Fireball"
-    And I save the item
-    Then reloading the item by URL should show only spell "Healing Touch" linked
-
-  Scenario: Removing the final linked spell is allowed on edit
-    Given I have loaded the item "Oak Staff" in the item workspace
-    When I remove the linked spell "Fireball"
-    And I save the item
-    Then reloading the item by URL should show no linked spells
-
-  Scenario: Edit linked spells on an existing item
-    Given I have loaded the item "Oak Staff" in the item workspace
-    When I link spell "Battle Cry" to the item
-    And I save the item
-    Then reloading the item by URL should show spells "Fireball" and "Battle Cry" linked
-
-  Scenario: Search for a specific spell before linking it
+  Scenario: Search for a specific effect before linking it
     When I start creating a new item
-    Then the link-spell picker should allow searching for "Fireball"
+    Then the link-effect picker should allow searching for "Tectonic Pulse"
 
-  Scenario: Link-spell picker shows at most five options
+  Scenario: Link-effect picker shows at most five options
     When I start creating a new item
-    Then opening the link-spell picker should show no more than 5 spells
+    Then opening the link-effect picker should show no more than 5 effects
 
-  Scenario: Link-spell picker does not include the search prompt as an option
+  Scenario: Link-effect picker does not include the search prompt as an option
     When I start creating a new item
-    Then the link-spell picker should use "Search spells..." as input placeholder only
+    Then the link-effect picker should use "Search effects..." as input placeholder only
 
-  Scenario: Duplicate spell links are not allowed
+  Scenario: Open an effect linked to an item
+    Given I have loaded the item "Iron Sword" in the item workspace
+    When I edit linked effect at position 1
+    Then the "Effects" tab should be active
+    And effect "Arcane Damage" should be open in the effect workspace
+
+  Scenario: Reorder linked effects
+    Given I have loaded the item "Iron Sword" in the item workspace
+    When I reorder the linked effects so that position 1 becomes position 2 and position 2 becomes position 1
+    And I save the item
+    Then reloading the item by URL should show the effects in the new order
+
+  Scenario: Remove a linked effect while another remains
+    Given I have loaded the item "Oak Staff" in the item workspace
+    And I link effect "Sizzling Flesh" to the item at sequence position 2
+    And I save the item
+    When I remove the effect at position 1
+    And I save the item
+    Then reloading the item by URL should show only effect "Sizzling Flesh"
+
+  Scenario: Removing the final linked effect leaves a valid stat-only item
+    Given I have loaded the item "Oak Staff" in the item workspace
+    When I remove the effect at position 1
+    And I save the item
+    Then reloading the item by URL should show no linked effects
+
+  Scenario: Duplicate effect links are allowed
     When I create a new item named "Echo Crystal"
-    And I link spell "Fireball" to the item
-    Then the link-spell picker should not offer "Fireball" as an option
+    And I link effect "Arcane Damage" to the item at sequence position 1
+    And I link effect "Arcane Damage" to the item at sequence position 2
+    And I save the item
+    Then reloading the item by URL should show "Arcane Damage" at both positions

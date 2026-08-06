@@ -1,7 +1,7 @@
 /**
  * Page Object Model for library tab interactions on the /create page.
  *
- * All 5 entity library tabs (Effects, Spells, Items, Units, Scenarios) share
+ * All four library tabs (Effects, Items, Units, Scenarios) share
  * identical UI interaction patterns for pagination, sorting, selection,
  * unsaved changes, and deletion. This page object encapsulates those shared
  * interactions, parameterized by a LibraryTabConfig.
@@ -145,9 +145,9 @@ export class LibraryTabPage {
   /** Show entities linked to a selected scenario */
   async filterToScenario(scenarioName: string): Promise<void> {
     await this.waitForActiveTab();
-    await this.waitForListRefetch(() =>
-      this.page.getByLabel("Filter by scenario").selectOption({ label: scenarioName }),
-    );
+    await this.waitForListRefetch(async () => {
+      await this.page.getByLabel("Filter by scenario").selectOption({ label: scenarioName });
+    });
   }
 
   // ─── Selection ───────────────────────────────────────────────────────────

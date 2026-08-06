@@ -4,17 +4,17 @@ import { clampHealth, findUnitById, nextEffectId, reconcileManaForCapacityChange
 import { selectTargets } from "./targeting";
 import type {
   ActiveEffectState,
+  BattleItemState,
   BattleLogEntry,
   BattleLogOrigin,
   BattleState,
   BattleUnitState,
   EffectTemplateInput,
-  SpellCastLogEntry,
-  SpellInput,
+  ItemActivationLogEntry,
   StatKey,
 } from "./types";
 
-type ApplySpellResult = {
+type ApplyItemEffectsResult = {
   targets: BattleUnitState[];
   appliedEffectNames: string[];
 };
@@ -102,7 +102,7 @@ function effectOrigin(
   position: number,
 ): BattleLogOrigin {
   return {
-    kind: "spell-effect",
+    kind: "item-effect",
     ...origin,
     effect: { id: effect.id, name: effect.name ?? "Effect", position },
   };
@@ -248,40 +248,53 @@ function applyEffectTemplate(
   return [effect.name ?? "Effect"];
 }
 
-export function applySpellToTargets(
+export function applyItemEffectsToTargets(
   state: BattleState,
   caster: BattleUnitState,
-  spell: SpellInput,
+  item: BattleItemState,
   targets: BattleUnitState[],
   tick = state.tick,
   origin?: BattleLogOrigin,
-): ApplySpellResult {
-  const spellEntry: SpellCastLogEntry = {
-    tick,
-    type: "spell-cast",
-    caster: caster.name,
-    casterId: caster.instanceId,
-    spell: spell.name,
-    targets: targets.map((target) => target.name),
-    targetIds: targets.map((target) => target.instanceId),
-    effects: (spell.effects ?? []).map((effect) => effect.effect.name ?? "Effect"),
-    actionId: origin?.actionId,
-    origin,
-    message: `Tick ${tick}: ${caster.name} casts ${spell.name} on ${targets.map((target) => target.name).join(", ")}`,
-  };
-  pushLog(state, spellEntry);
-
-  const appliedEffectNames: string[] = [];
-  const orderedEffects = [...(spell.effects ?? [])].sort(
+): ApplyItemEffectsResult {
+  const orderedEffects = [...item.effects].sort(
     (left, right) => left.sequenceOrder - right.sequenceOrder,
   );
+  const activationEntry: ItemActivationLogEntry = {
+    tick,
+    type: "item-activation",
+    caster: caster.name,
+    casterId: caster.instanceId,
+    item: item.name,
+    targets: targets.map((target) => target.name),
+    targetIds: targets.map((target) => target.instanceId),
+    effects: orderedEffects.map((effect) => effect.effect.name ?? "Effect"),
+    actionId: origin?.actionId,
+    origin,
+    message: `Tick ${tick}: ${caster.name} activates ${item.name} on ${targets.map((target) => target.name).join(", ")}`,
+  };
+  pushLog(state, activationEntry);
 
-  for (const target of targets) {
-    for (const [effectIndex, effect] of orderedEffects.entries()) {
-      if (target.currentHealth <= 0) break;
-      appliedEffectNames.push(
-        ...applyEffectTemplate(state, tick, caster, target, effect.effect, origin, effectIndex + 1),
+  const appliedEffectNames: string[] = [];
+
+  for (const [effectIndex, effect] of orderedEffects.entries()) {
+    const livingTargets = targets.filter((target) => target.currentHealth > 0);
+    if (livingTargets.length === 0) break;
+
+    let applied = false;
+    for (const target of livingTargets) {
+      const targetResult = applyEffectTemplate(
+        state,
+        tick,
+        caster,
+        target,
+        effect.effect,
+        origin,
+        effectIndex + 1,
       );
+      applied ||= targetResult.length > 0;
+    }
+    if (applied) {
+      appliedEffectNames.push(effect.effect.name ?? "Effect");
     }
   }
 
@@ -291,13 +304,32 @@ export function applySpellToTargets(
   };
 }
 
-export function applySpell(
+export function applyItemEffects(
   state: BattleState,
   caster: BattleUnitState,
-  spell: SpellInput,
+  item: BattleItemState,
   tick = state.tick,
-): ApplySpellResult {
-  return applySpellToTargets(state, caster, spell, selectTargets(state, caster, spell), tick);
+): ApplyItemEffectsResult {
+  const equippedIndex = caster.items.findIndex(
+    (candidate) => candidate === item || (item.id != null && candidate.id === item.id),
+  );
+  const origin: BattleLogOrigin = {
+    kind: "item-effect",
+    sourceUnitId: caster.instanceId,
+    item: {
+      id: item.id,
+      name: item.name,
+      position: equippedIndex >= 0 ? equippedIndex + 1 : 1,
+    },
+  };
+  return applyItemEffectsToTargets(
+    state,
+    caster,
+    item,
+    selectTargets(state, caster, caster),
+    tick,
+    origin,
+  );
 }
 
 export function processOngoingEffects(state: BattleState, elapsedTicks: number): void {
@@ -336,7 +368,7 @@ export function processCurrentTickEffects(state: BattleState): void {
               unit,
               effect.value,
               effect.origin ?? {
-                kind: "spell-effect",
+                kind: "item-effect",
               },
             );
           } else {
@@ -353,7 +385,7 @@ export function processCurrentTickEffects(state: BattleState): void {
               unit,
               modifiedDamage,
               effect.origin ?? {
-                kind: "spell-effect",
+                kind: "item-effect",
               },
             );
             if (unit.currentHealth === 0) {

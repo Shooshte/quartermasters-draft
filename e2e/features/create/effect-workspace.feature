@@ -1,7 +1,7 @@
 Feature: Effect workspace CRUD
   As a game master
-  I want to create and edit effects inside the entity builder on the "/create" page
-  So that effect records can be managed without leaving the builder workflow
+  I want to create and edit reusable effects inside the entity builder
+  So that items can activate them in ordered sequences
 
   Background:
     Given I am authenticated as a game master
@@ -40,12 +40,12 @@ Feature: Effect workspace CRUD
     When I rename the effect to "Exhaust"
     Then I should see a duplicate-name save error
 
-  Scenario: Cannot delete an effect that is linked to a spell
-    Given effect "Barbarian Roar" is linked to at least one spell
+  Scenario: Cannot delete an effect that is linked to an item
+    Given effect "Barbarian Roar" is linked to at least one item
     When I try to delete the effect "Barbarian Roar"
-    Then I should see a linked-spell dependency delete error
+    Then I should see a linked-item dependency delete error
 
-  Scenario: Deleting an unlinked effect still succeeds
-    Given effect "Zodiac Burst" is not linked to any spells
+  Scenario: Deleting an effect with no item links succeeds
+    Given effect "Zodiac Burst" is not linked to any items
     When I delete the effect "Zodiac Burst"
     Then the effect should be removed from the library

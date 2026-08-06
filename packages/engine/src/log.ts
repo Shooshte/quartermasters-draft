@@ -8,5 +8,5 @@ export type {
   EffectExpireLogEntry,
   FatigueLogEntry,
   HealLogEntry,
-  SpellCastLogEntry,
+  ItemActivationLogEntry,
 } from "./types";

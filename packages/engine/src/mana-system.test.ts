@@ -3,12 +3,24 @@ import { BattleEngine } from "./battle-engine";
 import { reconcileManaForCapacityChange } from "./state";
 import {
   createBattleInput,
+  createEffect,
   createItem,
   createScenario,
-  createSpell,
   createStats,
   createUnit,
+  effectSequence,
 } from "./test-helpers";
+
+function activationEffects(name: string) {
+  return effectSequence(
+    createEffect({
+      name,
+      effectType: "damage",
+      timingType: "instant",
+      directSpellDmg: 0,
+    }),
+  );
+}
 
 function makeManaEngine() {
   return new BattleEngine(
@@ -107,8 +119,6 @@ describe("mana system", () => {
   });
 
   it("deducts mana and health per affordable item in action order", () => {
-    const fireball = createSpell({ name: "Fireball", targetPolicy: "highest_health" });
-    const iceShard = createSpell({ name: "Ice Shard", targetPolicy: "highest_health" });
     const engine = new BattleEngine(
       createBattleInput([
         createScenario("A", {
@@ -121,13 +131,13 @@ describe("mana system", () => {
                   name: "Blood Hex",
                   activationManaCost: 20,
                   activationHealthCost: 15,
-                  linkedSpells: [fireball],
+                  effects: activationEffects("Blood Hex Strike"),
                 }),
                 createItem({
                   name: "Ice Focus",
                   activationManaCost: 10,
                   activationHealthCost: 0,
-                  linkedSpells: [iceShard],
+                  effects: activationEffects("Ice Focus Strike"),
                 }),
               ],
             }),
@@ -157,14 +167,12 @@ describe("mana system", () => {
                 createItem({
                   name: "Fireball",
                   activationManaCost: 25,
-                  linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })],
+                  effects: activationEffects("Fireball"),
                 }),
                 createItem({
                   name: "Ice Shard",
                   activationManaCost: 10,
-                  linkedSpells: [
-                    createSpell({ name: "Ice Shard", targetPolicy: "highest_health" }),
-                  ],
+                  effects: activationEffects("Ice Shard"),
                 }),
               ],
             }),
@@ -177,13 +185,15 @@ describe("mana system", () => {
     );
 
     engine.tick(1);
-    const spellLogs = engine.getState().log.filter((entry) => entry.type === "spell-cast");
-    expect(spellLogs).toHaveLength(1);
-    expect(spellLogs[0]?.message).toContain("Fireball");
+    const activationLogs = engine
+      .getState()
+      .log.filter((entry) => entry.type === "item-activation");
+    expect(activationLogs).toHaveLength(1);
+    expect(activationLogs[0]?.item).toBe("Fireball");
     expect(Object.values(engine.getState().scenarios[0].rows).flat()[0]?.mana).toBe(5);
   });
 
-  it("does not charge a targetless item before casting a valid later item", () => {
+  it("does not charge an effect-bearing item when unit targeting finds no targets", () => {
     const engine = new BattleEngine(
       createBattleInput([
         createScenario("A", {
@@ -196,21 +206,10 @@ describe("mana system", () => {
                   name: "Sniper Bow",
                   activationManaCost: 25,
                   activationHealthCost: 35,
-                  linkedSpells: [
-                    createSpell({
-                      name: "Aimed Shot",
-                      targetPolicy: "highest_health",
-                      allowedRowTypes: ["ranged"],
-                    }),
-                  ],
-                }),
-                createItem({
-                  name: "Fire Sword",
-                  activationManaCost: 10,
-                  activationHealthCost: 15,
-                  linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })],
+                  effects: activationEffects("Aimed Shot"),
                 }),
               ],
+              allowedRowTypes: ["ranged"],
             }),
           ],
         }),
@@ -223,10 +222,11 @@ describe("mana system", () => {
     engine.tick(1);
 
     const after = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
-    expect(after.mana).toBe(20);
-    expect(after.currentHealth).toBe(85);
-    const spellLogs = engine.getState().log.filter((entry) => entry.type === "spell-cast");
-    expect(spellLogs).toHaveLength(1);
-    expect(spellLogs[0]?.spell).toBe("Fireball");
+    expect(after.mana).toBe(30);
+    expect(after.currentHealth).toBe(100);
+    const activationLogs = engine
+      .getState()
+      .log.filter((entry) => entry.type === "item-activation");
+    expect(activationLogs).toHaveLength(0);
   });
 });

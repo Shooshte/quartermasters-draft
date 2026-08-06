@@ -9,6 +9,7 @@ import {
   type UnitFormValues,
   validateUnitForm,
 } from "./unit-form";
+import { UnitTargetingCard } from "./unit-targeting-card";
 import { WorkspaceNameField } from "./workspace-name-field";
 import { WorkspaceNumericField } from "./workspace-numeric-field";
 import { WorkspaceSaveFooter } from "./workspace-save-footer";
@@ -49,6 +50,8 @@ export function UnitWorkspaceForm({
         error={errors.name}
         onChange={(value) => onFieldChange("name", value)}
       />
+
+      <UnitTargetingCard formValues={formValues} errors={errors} onFieldChange={onFieldChange} />
 
       <LinkedEntitySection
         title="Linked Items"

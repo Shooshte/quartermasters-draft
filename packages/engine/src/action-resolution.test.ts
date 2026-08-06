@@ -6,15 +6,24 @@ import {
   createEffect,
   createItem,
   createScenario,
-  createSpell,
   createStats,
   createUnit,
   effectSequence,
 } from "./test-helpers";
 
+function damageEffect(name: string, damage = 10) {
+  return createEffect({
+    name,
+    effectType: "damage",
+    timingType: "instant",
+    directSpellDmg: damage,
+  });
+}
+
 function makeStateWithWarrior(
   row: "tank" | "melee" | "ranged" | "support",
   items = [] as ReturnType<typeof createItem>[],
+  unitOverrides: Partial<ReturnType<typeof createUnit>> = {},
 ) {
   return initializeBattleState(
     createBattleInput([
@@ -30,6 +39,7 @@ function makeStateWithWarrior(
               spellDmg: 0,
             }),
             items,
+            ...unitOverrides,
           }),
         ],
       }),
@@ -45,27 +55,28 @@ function makeStateWithWarrior(
 }
 
 describe("action resolution", () => {
-  it("falls back to a basic attack when no item spells are available", () => {
-    const tankState = makeStateWithWarrior("tank");
-    const tankWarrior = tankState.scenarios[0].rows.tank[0]!;
-    const tankOutcome = resolveUnitAction(tankState, tankWarrior);
+  it("falls back to a basic attack when no effect-bearing items are available", () => {
+    const state = makeStateWithWarrior("tank", [createItem({ name: "Steel Gauntlet" })]);
+    const warrior = state.scenarios[0].rows.tank[0]!;
 
-    expect(tankOutcome.usedBasicAttack).toBe(true);
-    expect(tankOutcome.totalDamage).toBe(15);
+    expect(resolveUnitAction(state, warrior)).toEqual({
+      usedBasicAttack: true,
+      totalDamage: 15,
+      activatedItemNames: [],
+    });
+    expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("uses ranged stat with row distance penalty for ranged-row attackers", () => {
-    const rangedState = makeStateWithWarrior("ranged");
-    const rangedWarrior = rangedState.scenarios[0].rows.ranged[0]!;
-    const rangedOutcome = resolveUnitAction(rangedState, rangedWarrior);
+  it("uses ranged damage with row distance for ranged-row basic attackers", () => {
+    const state = makeStateWithWarrior("ranged");
+    const outcome = resolveUnitAction(state, state.scenarios[0].rows.ranged[0]!);
 
-    expect(rangedOutcome.usedBasicAttack).toBe(true);
-    // rangedDmg=5, ranged->tank multiplier=0.5, no crit/dodge => round(5 * 0.5) = 3.
-    expect(rangedOutcome.totalDamage).toBe(3);
+    expect(outcome.usedBasicAttack).toBe(true);
+    expect(outcome.totalDamage).toBe(3);
   });
 
   it("applies crit and dodge modifiers multiplicatively to basic attack damage", () => {
-    const critState = initializeBattleState(
+    const state = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
           tank: [
@@ -77,233 +88,168 @@ describe("action resolution", () => {
         }),
       ]),
     );
-    const critOutcome = resolveUnitAction(critState, critState.scenarios[0].rows.tank[0]!);
 
-    // meleeDmg=20, tank->tank multiplier=1.0, crit=50%, dodge=20% => round(20 * 1.5 * 0.8) = 24.
-    expect(critOutcome.totalDamage).toBe(24);
+    expect(resolveUnitAction(state, state.scenarios[0].rows.tank[0]!).totalDamage).toBe(24);
   });
 
-  it("casts affordable item spells in priority order and skips unaffordable or stat-only items", () => {
+  it("pays exactly once and selects one target set for multiple ordered item effects", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          melee: [
+            createUnit("Warrior", {
+              stats: createStats({ health: 100, mana: 50 }),
+              targetPolicy: "random",
+              items: [
+                createItem({
+                  name: "Runed Blade",
+                  activationManaCost: 10,
+                  activationHealthCost: 15,
+                  effects: effectSequence(damageEffect("Burn"), damageEffect("Weaken")),
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Dummy A", { stats: createStats({ health: 200 }) })],
+          melee: [createUnit("Dummy B", { stats: createStats({ health: 200 }) })],
+        }),
+      ]),
+    );
+    const warrior = state.scenarios[0].rows.melee[0]!;
+
+    const outcome = resolveUnitAction(state, warrior);
+    const damageEntries = state.log.filter(
+      (entry) => entry.type === "damage" && entry.origin?.kind === "item-effect",
+    );
+
+    expect(outcome).toMatchObject({
+      usedBasicAttack: false,
+      totalDamage: 20,
+      activatedItemNames: ["Runed Blade"],
+    });
+    expect(warrior.mana).toBe(40);
+    expect(warrior.currentHealth).toBe(85);
+    expect(damageEntries.map((entry) => entry.origin?.effect?.name)).toEqual(["Burn", "Weaken"]);
+    expect(
+      new Set(
+        damageEntries.map((entry) => (entry.type === "damage" ? entry.targetId : "unexpected")),
+      ).size,
+    ).toBe(1);
+    expect(state.log.filter((entry) => entry.type === "item-activation")).toHaveLength(1);
+  });
+
+  it("activates affordable items in priority order and skips later unaffordable items", () => {
     const state = makeStateWithWarrior("melee", [
       createItem({ name: "Steel Gauntlet" }),
       createItem({
         name: "Fire Sword",
-        activationManaCost: 10,
-        linkedSpells: [
-          createSpell({
-            name: "Flame Strike",
-            targetPolicy: "highest_health",
-            effects: effectSequence(
-              createEffect({
-                name: "Flame",
-                effectType: "damage",
-                timingType: "instant",
-                directSpellDmg: 10,
-              }),
-            ),
-          }),
-        ],
+        activationManaCost: 30,
+        effects: effectSequence(damageEffect("Flame Strike")),
       }),
       createItem({
-        name: "Arcane Staff",
-        activationManaCost: 999,
-        linkedSpells: [createSpell({ name: "Arcane Blast", targetPolicy: "highest_health" })],
+        name: "Ice Dagger",
+        activationManaCost: 25,
+        effects: effectSequence(damageEffect("Frost Bite")),
       }),
     ]);
     const warrior = state.scenarios[0].rows.melee[0]!;
     warrior.mana = 50;
 
     const outcome = resolveUnitAction(state, warrior);
-    expect(outcome.usedBasicAttack).toBe(false);
-    expect(outcome.castSpellNames).toEqual(["Flame Strike"]);
-    expect(warrior.mana).toBe(40);
+
+    expect(outcome.activatedItemNames).toEqual(["Fire Sword"]);
+    expect(warrior.mana).toBe(20);
   });
 
-  it("skips a targetless item spell without consuming costs and falls back to a basic attack", () => {
-    const state = makeStateWithWarrior("melee", [
-      createItem({
-        name: "Sniper Bow",
-        activationManaCost: 10,
-        activationHealthCost: 20,
-        linkedSpells: [
-          createSpell({
-            name: "Aimed Shot",
-            targetPolicy: "highest_health",
-            allowedRowTypes: ["ranged"],
-          }),
-        ],
-      }),
-    ]);
+  it("skips an item with no valid unit-selected targets without consuming costs", () => {
+    const state = makeStateWithWarrior(
+      "melee",
+      [
+        createItem({
+          name: "Sniper Bow",
+          activationManaCost: 10,
+          activationHealthCost: 20,
+          effects: effectSequence(damageEffect("Aimed Shot")),
+        }),
+      ],
+      { allowedRowTypes: ["ranged"] },
+    );
     const warrior = state.scenarios[0].rows.melee[0]!;
     warrior.mana = 50;
 
-    const outcome = resolveUnitAction(state, warrior);
-
-    expect(outcome).toEqual({
+    expect(resolveUnitAction(state, warrior)).toEqual({
       usedBasicAttack: true,
       totalDamage: 11,
-      castSpellNames: [],
+      activatedItemNames: [],
     });
     expect(warrior.mana).toBe(50);
     expect(warrior.currentHealth).toBe(100);
-    expect(state.log.some((entry) => entry.type === "spell-cast")).toBe(false);
+    expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("charges an item once when a later spell has valid targets", () => {
+  it("stops an ordered effect sequence after its final selected target dies", () => {
     const state = makeStateWithWarrior("melee", [
       createItem({
-        name: "Versatile Focus",
+        name: "Finisher",
         activationManaCost: 10,
-        activationHealthCost: 15,
-        linkedSpells: [
-          createSpell({
-            name: "Aimed Shot",
-            targetPolicy: "highest_health",
-            allowedRowTypes: ["ranged"],
-          }),
-          createSpell({
-            name: "Fireball",
-            targetPolicy: "highest_health",
-            effects: effectSequence(
-              createEffect({
-                name: "Flame",
-                effectType: "damage",
-                timingType: "instant",
-                directSpellDmg: 10,
-              }),
-            ),
-          }),
-        ],
+        effects: effectSequence(damageEffect("Alpha Blast", 200), damageEffect("Beta Follow-up")),
       }),
     ]);
     const warrior = state.scenarios[0].rows.melee[0]!;
     warrior.mana = 50;
 
     const outcome = resolveUnitAction(state, warrior);
+    const effectNames = state.log
+      .filter((entry) => entry.type === "damage" && entry.origin?.kind === "item-effect")
+      .map((entry) => entry.origin?.effect?.name);
 
-    expect(outcome.usedBasicAttack).toBe(false);
-    expect(outcome.castSpellNames).toEqual(["Fireball"]);
-    expect(outcome.totalDamage).toBe(10);
-    expect(warrior.mana).toBe(40);
-    expect(warrior.currentHealth).toBe(85);
-    expect(state.log.filter((entry) => entry.type === "spell-cast")).toHaveLength(1);
-  });
-
-  it("preserves a targetless item cost for a valid later item", () => {
-    const state = makeStateWithWarrior("melee", [
-      createItem({
-        name: "Sniper Bow",
-        activationManaCost: 25,
-        activationHealthCost: 35,
-        linkedSpells: [
-          createSpell({
-            name: "Aimed Shot",
-            targetPolicy: "highest_health",
-            allowedRowTypes: ["ranged"],
-          }),
-        ],
-      }),
-      createItem({
-        name: "Fire Sword",
-        activationManaCost: 10,
-        activationHealthCost: 15,
-        linkedSpells: [createSpell({ name: "Fireball", targetPolicy: "highest_health" })],
-      }),
-    ]);
-    const warrior = state.scenarios[0].rows.melee[0]!;
-    warrior.mana = 30;
-
-    const outcome = resolveUnitAction(state, warrior);
-
-    expect(outcome.usedBasicAttack).toBe(false);
-    expect(outcome.castSpellNames).toEqual(["Fireball"]);
-    expect(warrior.mana).toBe(20);
-    expect(warrior.currentHealth).toBe(85);
-    expect(state.log.filter((entry) => entry.type === "spell-cast")).toHaveLength(1);
-  });
-
-  it("skips a later spell that loses its final target during the same item activation", () => {
-    const state = makeStateWithWarrior("melee", [
-      createItem({
-        name: "Execution Focus",
-        activationManaCost: 10,
-        linkedSpells: [
-          createSpell({
-            name: "Alpha Blast",
-            targetPolicy: "highest_health",
-            effects: effectSequence(
-              createEffect({
-                name: "Execute",
-                effectType: "damage",
-                timingType: "instant",
-                directSpellDmg: 200,
-              }),
-            ),
-          }),
-          createSpell({ name: "Beta Follow-up", targetPolicy: "highest_health" }),
-        ],
-      }),
-    ]);
-    const warrior = state.scenarios[0].rows.melee[0]!;
-    warrior.mana = 50;
-
-    const outcome = resolveUnitAction(state, warrior);
-
-    expect(outcome.usedBasicAttack).toBe(false);
-    expect(outcome.castSpellNames).toEqual(["Alpha Blast"]);
+    expect(outcome.activatedItemNames).toEqual(["Finisher"]);
     expect(outcome.totalDamage).toBe(200);
     expect(warrior.mana).toBe(40);
-    const spellLogs = state.log.filter((entry) => entry.type === "spell-cast");
-    expect(spellLogs).toHaveLength(1);
-    expect(spellLogs[0]?.spell).toBe("Alpha Blast");
+    expect(effectNames).toEqual(["Alpha Blast"]);
   });
 
-  it("reports only the damage dealt during the current action", () => {
+  it("reports only damage dealt during the current action", () => {
     const state = makeStateWithWarrior("melee", [
       createItem({
         name: "Fire Sword",
-        linkedSpells: [
-          createSpell({
-            name: "Flame Strike",
-            targetPolicy: "highest_health",
-            effects: effectSequence(
-              createEffect({
-                name: "Flame",
-                effectType: "damage",
-                timingType: "instant",
-                directSpellDmg: 10,
-              }),
-            ),
-          }),
-        ],
+        effects: effectSequence(damageEffect("Flame Strike")),
       }),
     ]);
     const warrior = state.scenarios[0].rows.melee[0]!;
-    const dummy = state.scenarios[1].rows.tank[0]!;
-    dummy.currentHealth = 150;
+    state.scenarios[1].rows.tank[0]!.currentHealth = 150;
 
-    const outcome = resolveUnitAction(state, warrior);
-    expect(outcome.totalDamage).toBe(10);
-    expect(dummy.currentHealth).toBe(140);
+    expect(resolveUnitAction(state, warrior).totalDamage).toBe(10);
+    expect(state.scenarios[1].rows.tank[0]!.currentHealth).toBe(140);
   });
 
-  it("deducts health costs and blocks unaffordable items", () => {
-    const aimedShot = createSpell({
-      name: "Aimed Shot",
-      targetPolicy: "highest_health",
-      allowedRowTypes: ["tank"],
-    });
-    const flameStrike = createSpell({ name: "Flame Strike", targetPolicy: "highest_health" });
+  it("deducts health costs and blocks items that become unaffordable", () => {
+    const effect = damageEffect("Strike");
     const state = makeStateWithWarrior("melee", [
-      createItem({ name: "Blood Blade", activationHealthCost: 20, linkedSpells: [flameStrike] }),
-      createItem({ name: "Sniper Bow", activationManaCost: 10, linkedSpells: [aimedShot] }),
-      createItem({ name: "Fire Sword", activationManaCost: 10, linkedSpells: [flameStrike] }),
+      createItem({
+        name: "Blood Blade",
+        activationHealthCost: 20,
+        effects: effectSequence(effect),
+      }),
+      createItem({
+        name: "Fire Sword",
+        activationManaCost: 10,
+        effects: effectSequence(effect),
+      }),
+      createItem({
+        name: "Ice Sword",
+        activationManaCost: 10,
+        effects: effectSequence(effect),
+      }),
     ]);
     const warrior = state.scenarios[0].rows.melee[0]!;
     warrior.mana = 10;
 
     const outcome = resolveUnitAction(state, warrior);
-    expect(outcome.castSpellNames).toEqual(["Flame Strike", "Aimed Shot"]);
+
+    expect(outcome.activatedItemNames).toEqual(["Blood Blade", "Fire Sword"]);
     expect(warrior.currentHealth).toBe(80);
     expect(warrior.mana).toBe(0);
   });

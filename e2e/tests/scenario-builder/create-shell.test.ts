@@ -5,8 +5,6 @@ import {
   AMBUSH_AT_DAWN_ID,
   BARBARIAN_ID,
   BARBARIAN_ROAR_ID,
-  BATTLE_CRY_ID,
-  FIREBALL_ID,
   generateEntityIds,
   IRON_SWORD_ID,
   UNKNOWN_UUID,
@@ -26,7 +24,8 @@ test.describe("Create Shell — Layout", () => {
     await expect(entityWorkspace).toBeVisible();
     await expect(divider).toBeVisible();
     await expect(gmPage.getByTestId("library-panel")).toBeVisible();
-    for (const tab of ["Effects", "Spells", "Items", "Units", "Scenarios"]) {
+    await expect(gmPage.getByRole("tab")).toHaveCount(4);
+    for (const tab of ["Effects", "Items", "Units", "Scenarios"]) {
       await expect(gmPage.getByRole("tab", { name: tab })).toBeVisible();
     }
 
@@ -201,9 +200,9 @@ test.describe("Create Shell — URL Parameters", () => {
     await expect(selectedRows).toHaveCount(0);
   });
 
-  test("tab=Spells: Spells tab selected", async ({ gmPage }) => {
-    await gmPage.goto("/create?tab=Spells");
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+  test("tab=Units: Units tab selected", async ({ gmPage }) => {
+    await gmPage.goto("/create?tab=Units");
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
       "data-state",
       "active",
     );
@@ -243,19 +242,6 @@ test.describe("Create Shell — URL Parameters", () => {
     await expect(gmPage.getByTestId("scenario-idle")).toBeVisible();
   });
 
-  test("entity_id (spell): auto-selects Spells tab and loads entity", async ({ gmPage }) => {
-    await gmPage.goto(`/create?entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
-      "data-state",
-      "active",
-    );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
-    await expect(gmPage.getByRole("row", { name: "Fireball" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-  });
-
   test("item_id: auto-selects Items tab and loads entity", async ({ gmPage }) => {
     await gmPage.goto(`/create?item_id=${IRON_SWORD_ID}`);
     await expect(gmPage.getByRole("tab", { name: "Items" })).toHaveAttribute(
@@ -282,15 +268,15 @@ test.describe("Create Shell — URL Parameters", () => {
     );
   });
 
-  test("tab=Spells + scenario_id: Spells tab with scenario loaded", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&scenario_id=${AMBUSH_AT_DAWN_ID}`);
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+  test("tab=Units + scenario_id: Units tab with scenario loaded", async ({ gmPage }) => {
+    await gmPage.goto(`/create?tab=Units&scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
       "data-state",
       "active",
     );
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
     await expect(gmPage.getByTestId("entity-idle")).toBeVisible();
-    // No record should be selected in the Spells library
+    // No record should be selected in the Units library
     const selectedRows = gmPage.locator('tr[aria-selected="true"]');
     await expect(selectedRows).toHaveCount(0);
 
@@ -301,14 +287,14 @@ test.describe("Create Shell — URL Parameters", () => {
     );
   });
 
-  test("tab + matching entity_id: correct tab and entity loaded", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+  test("tab + matching unit_id: correct tab and entity loaded", async ({ gmPage }) => {
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
       "data-state",
       "active",
     );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
-    await expect(gmPage.getByRole("row", { name: "Fireball" })).toHaveAttribute(
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
+    await expect(gmPage.getByRole("row", { name: "Barbarian" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -337,12 +323,12 @@ test.describe("Create Shell — URL Parameters", () => {
   });
 
   test("tab mismatch: entity loaded but not selected in library", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Items&entity_id=${BATTLE_CRY_ID}`);
+    await gmPage.goto(`/create?tab=Items&unit_id=${BARBARIAN_ID}`);
     await expect(gmPage.getByRole("tab", { name: "Items" })).toHaveAttribute(
       "data-state",
       "active",
     );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Battle Cry");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
     // No item should be selected
     const rows = gmPage.locator("tr[aria-selected]");
     const count = await rows.count();
@@ -359,9 +345,9 @@ test.describe("Create Shell — URL Parameters", () => {
     );
   });
 
-  test("unknown entity_id shows not-found", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${UNKNOWN_UUID}`);
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+  test("unknown unit_id shows not-found", async ({ gmPage }) => {
+    await gmPage.goto(`/create?tab=Units&unit_id=${UNKNOWN_UUID}`);
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
       "data-state",
       "active",
     );
@@ -388,19 +374,6 @@ test.describe("Create Shell — Browsing by Tab", () => {
       await expect(gmPage.getByRole("row", { name })).toBeVisible();
     }
     await expect(gmPage.getByRole("button", { name: "New Effect" })).toBeVisible();
-  });
-
-  test("Spells tab shows records and New button", async ({ gmPage }) => {
-    await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
-      "data-state",
-      "active",
-    );
-    for (const name of ["Battle Cry", "Fireball"]) {
-      await expect(gmPage.getByRole("row", { name })).toBeVisible();
-    }
-    await expect(gmPage.getByRole("button", { name: "New Spell" })).toBeVisible();
   });
 
   const entityTabTests = [
@@ -445,12 +418,6 @@ dbTest.describe("Create Shell — Empty Tab State", () => {
         expect(response.ok()).toBeTruthy();
       }
 
-      const spellIds = generateEntityIds("spells", 21);
-      for (const id of spellIds) {
-        const response = await deleteEntityViaApi(gmPage.request, "spells", id);
-        expect(response.ok()).toBeTruthy();
-      }
-
       const effectIds = generateEntityIds("effects", 21);
       for (const id of effectIds) {
         const response = await deleteEntityViaApi(gmPage.request, "effects", id);
@@ -478,11 +445,11 @@ test.describe("Create Shell — Tab Switching Memory", () => {
   test("switching back to a tab restores the selected record", async ({ gmPage }) => {
     await gmPage.goto("/create");
 
-    // Select Fireball on Spells tab
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
-    await fireballRow.getByRole("button", { name: /Edit/ }).click();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    // Select Barbarian on Units tab
+    await gmPage.getByRole("tab", { name: "Units" }).click();
+    const barbarianRow = gmPage.getByRole("row", { name: "Barbarian" });
+    await barbarianRow.getByRole("button", { name: /Edit/ }).click();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
     // Select Iron Sword on Items tab
     await gmPage.getByRole("tab", { name: "Items" }).click();
@@ -492,19 +459,17 @@ test.describe("Create Shell — Tab Switching Memory", () => {
       .click();
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
 
-    // Switch back to Spells
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await expect(gmPage.getByRole("row", { name: "Fireball" })).toHaveAttribute(
+    // Switch back to Units
+    await gmPage.getByRole("tab", { name: "Units" }).click();
+    await expect(gmPage.getByRole("row", { name: "Barbarian" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
   });
 
   test("switching tabs does not clear loaded workspaces", async ({ gmPage }) => {
-    await gmPage.goto(
-      `/create?tab=Spells&entity_id=${FIREBALL_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`,
-    );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
 
     // Switch to Items tab
@@ -514,18 +479,18 @@ test.describe("Create Shell — Tab Switching Memory", () => {
       "active",
     );
     // Workspaces should still show the loaded data
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
   });
 
   test("switching back to a second tab restores the selected record", async ({ gmPage }) => {
     await gmPage.goto("/create");
 
-    // Select Fireball on Spells tab
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
-    await fireballRow.getByRole("button", { name: /Edit/ }).click();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    // Select Barbarian on Units tab
+    await gmPage.getByRole("tab", { name: "Units" }).click();
+    const barbarianRow = gmPage.getByRole("row", { name: "Barbarian" });
+    await barbarianRow.getByRole("button", { name: /Edit/ }).click();
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
     // Select Iron Sword on Items tab
     await gmPage.getByRole("tab", { name: "Items" }).click();
@@ -535,8 +500,8 @@ test.describe("Create Shell — Tab Switching Memory", () => {
       .click();
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
 
-    // Switch to Spells tab (away from Items)
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    // Switch to Units tab (away from Items)
+    await gmPage.getByRole("tab", { name: "Units" }).click();
 
     // Switch back to Items
     await gmPage.getByRole("tab", { name: "Items" }).click();
@@ -571,23 +536,6 @@ test.describe("Create Shell — Record Selection", () => {
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
   });
 
-  test("selecting Fireball on Spells tab loads entity workspace", async ({ gmPage }) => {
-    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
-
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
-    await fireballRow.getByRole("button", { name: /Edit/ }).click();
-
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
-    await expect(gmPage.getByRole("row", { name: "Fireball" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    // Scenario workspace unchanged
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
-  });
-
   const entityTests = [
     { tab: "Items", name: "Iron Sword" },
     { tab: "Units", name: "Barbarian" },
@@ -610,8 +558,8 @@ test.describe("Create Shell — Record Selection", () => {
   }
 
   test("selecting a scenario loads scenario workspace only", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Items&item_id=${IRON_SWORD_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
 
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
     const ambushRow = gmPage.getByRole("row", { name: "Ambush at Dawn" });
@@ -619,7 +567,7 @@ test.describe("Create Shell — Record Selection", () => {
 
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
     // Entity workspace unchanged
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
   });
 });
 
@@ -636,28 +584,6 @@ test.describe("Create Shell — Create Actions", () => {
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Roar");
 
     await gmPage.getByRole("button", { name: "New Effect" }).click();
-    // Selection cleared
-    const rows = gmPage.locator("tr[aria-selected]");
-    const count = await rows.count();
-    for (let i = 0; i < count; i++) {
-      await expect(rows.nth(i)).toHaveAttribute("aria-selected", "false");
-    }
-    // Entity workspace in create mode with empty name
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("");
-    // Scenario workspace unchanged
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
-  });
-
-  test("New Spell clears selection and opens create mode", async ({ gmPage }) => {
-    await gmPage.goto(`/create?scenario_id=${AMBUSH_AT_DAWN_ID}`);
-    await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
-
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    const fireballRow = gmPage.getByRole("row", { name: "Fireball" });
-    await fireballRow.getByRole("button", { name: /Edit/ }).click();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
-
-    await gmPage.getByRole("button", { name: "New Spell" }).click();
     // Selection cleared
     const rows = gmPage.locator("tr[aria-selected]");
     const count = await rows.count();
@@ -699,8 +625,8 @@ test.describe("Create Shell — Create Actions", () => {
   }
 
   test("New Scenario clears selection and opens create mode with 4 rows", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Items&item_id=${IRON_SWORD_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
 
     await gmPage.getByRole("tab", { name: "Scenarios" }).click();
     const ambushRow2 = gmPage.getByRole("row", { name: "Ambush at Dawn" });
@@ -714,7 +640,7 @@ test.describe("Create Shell — Create Actions", () => {
     await expect(gmPage.getByTestId("scenario-row-ranged")).toBeVisible();
     await expect(gmPage.getByTestId("scenario-row-support")).toBeVisible();
     // Entity workspace unchanged
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Iron Sword");
   });
 });
 
@@ -722,10 +648,10 @@ test.describe("Create Shell — Create Actions", () => {
 
 test.describe("Create Shell — Unsaved Changes", () => {
   test("switching tabs does NOT warn on unsaved entity changes", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
-    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
+    await gmPage.getByTestId("entity-name-input").fill("Barbarian Updated");
     await gmPage.getByRole("tab", { name: "Items" }).click();
 
     // No dialog
@@ -734,7 +660,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
       "data-state",
       "active",
     );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball Updated");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Updated");
   });
 
   test("switching tabs does NOT warn on unsaved scenario changes", async ({ gmPage }) => {
@@ -742,7 +668,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
 
     await gmPage.getByTestId("scenario-name-input").fill("Ambush at Dawn Updated");
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("tab", { name: "Units" }).click();
 
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn Updated");
@@ -751,12 +677,12 @@ test.describe("Create Shell — Unsaved Changes", () => {
   test("warn before selecting different entity with unsaved changes, cancel preserves", async ({
     gmPage,
   }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
-    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
-    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
-    await battleCryRow.getByRole("button", { name: /Edit/ }).click();
+    await gmPage.getByTestId("entity-name-input").fill("Barbarian Updated");
+    const mageRow = gmPage.getByRole("row", { name: "Mage" });
+    await mageRow.getByRole("button", { name: /Edit/ }).click();
 
     // Dialog appears
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
@@ -764,50 +690,50 @@ test.describe("Create Shell — Unsaved Changes", () => {
     // Cancel
     await gmPage.getByRole("button", { name: "Cancel" }).click();
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball Updated");
-    await expect(gmPage.getByRole("row", { name: "Fireball" })).toHaveAttribute(
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Updated");
+    await expect(gmPage.getByRole("row", { name: "Barbarian" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
   });
 
   test("discard unsaved entity changes and load different entity", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
-    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
-    const battleCryRow = gmPage.getByRole("row", { name: "Battle Cry" });
-    await battleCryRow.getByRole("button", { name: /Edit/ }).click();
+    await gmPage.getByTestId("entity-name-input").fill("Barbarian Updated");
+    const mageRow = gmPage.getByRole("row", { name: "Mage" });
+    await mageRow.getByRole("button", { name: /Edit/ }).click();
 
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
     await gmPage.getByRole("button", { name: "Discard" }).click();
 
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Battle Cry");
-    await expect(gmPage.getByRole("row", { name: "Battle Cry" })).toHaveAttribute(
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Mage");
+    await expect(gmPage.getByRole("row", { name: "Mage" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
   });
 
-  test("warn before New Spell with unsaved changes", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+  test("warn before New Unit with unsaved changes", async ({ gmPage }) => {
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
-    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
-    await gmPage.getByRole("button", { name: "New Spell" }).click();
+    await gmPage.getByTestId("entity-name-input").fill("Barbarian Updated");
+    await gmPage.getByRole("button", { name: "New Unit" }).click();
 
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).toBeVisible();
 
     // Cancel preserves
     await gmPage.getByRole("button", { name: "Cancel" }).click();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball Updated");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Updated");
   });
 
   test("warn before New Item (different type) with unsaved entity changes", async ({ gmPage }) => {
-    await gmPage.goto(`/create?tab=Spells&entity_id=${FIREBALL_ID}`);
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
-    await gmPage.getByTestId("entity-name-input").fill("Fireball Updated");
+    await gmPage.getByTestId("entity-name-input").fill("Barbarian Updated");
     // Switch to Items tab (no warning)
     await gmPage.getByRole("tab", { name: "Items" }).click();
     await expect(gmPage.getByTestId("unsaved-changes-dialog")).not.toBeVisible();
@@ -818,7 +744,7 @@ test.describe("Create Shell — Unsaved Changes", () => {
 
     // Cancel preserves
     await gmPage.getByRole("button", { name: "Cancel" }).click();
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball Updated");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian Updated");
   });
 
   test("warn before selecting different scenario with unsaved changes, cancel preserves", async ({
@@ -878,14 +804,14 @@ test.describe("Create Shell — Unsaved Changes", () => {
 test.describe("Create Shell — URL Updates", () => {
   test("tab click updates URL param", async ({ gmPage }) => {
     await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+    await gmPage.getByRole("tab", { name: "Units" }).click();
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
       "data-state",
       "active",
     );
 
     const url = new URL(gmPage.url());
-    expect(url.searchParams.get("tab")).toBe("Spells");
+    expect(url.searchParams.get("tab")).toBe("Units");
   });
 
   const entityUrlTests = [
@@ -895,13 +821,6 @@ test.describe("Create Shell — URL Updates", () => {
       recordName: "Barbarian Roar",
       urlParam: "effect_id",
       id: BARBARIAN_ROAR_ID,
-    },
-    {
-      tab: "Spells",
-      entityType: "spell",
-      recordName: "Fireball",
-      urlParam: "spell_id",
-      id: FIREBALL_ID,
     },
     {
       tab: "Items",
@@ -955,27 +874,27 @@ test.describe("Create Shell — URL Updates", () => {
 
   test("new entity removes ID from URL", async ({ gmPage }) => {
     await gmPage.goto("/create");
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
+    await gmPage.getByRole("tab", { name: "Units" }).click();
     await gmPage
-      .getByRole("row", { name: "Fireball" })
+      .getByRole("row", { name: "Barbarian" })
       .getByRole("button", { name: /Edit/ })
       .click();
 
     // Wait for entity to load
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
 
-    // Confirm spell_id is in URL
+    // Confirm unit_id is in URL
     let url = new URL(gmPage.url());
-    expect(url.searchParams.has("spell_id")).toBe(true);
+    expect(url.searchParams.has("unit_id")).toBe(true);
 
-    // Click New Spell
-    await gmPage.getByRole("button", { name: "New Spell" }).click();
+    // Click New Unit
+    await gmPage.getByRole("button", { name: "New Unit" }).click();
 
     // Wait for create mode
     await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("");
 
     url = new URL(gmPage.url());
-    expect(url.searchParams.has("spell_id")).toBe(false);
+    expect(url.searchParams.has("unit_id")).toBe(false);
   });
 
   test("new scenario removes scenario_id from URL", async ({ gmPage }) => {
@@ -1004,10 +923,8 @@ test.describe("Create Shell — URL Updates", () => {
   });
 
   test("tab change preserves existing entity and scenario params", async ({ gmPage }) => {
-    await gmPage.goto(
-      `/create?tab=Spells&spell_id=${FIREBALL_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`,
-    );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
+    await gmPage.goto(`/create?tab=Units&unit_id=${BARBARIAN_ID}&scenario_id=${AMBUSH_AT_DAWN_ID}`);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Barbarian");
     await expect(gmPage.getByTestId("scenario-name-input")).toHaveValue("Ambush at Dawn");
 
     // Switch to Items tab
@@ -1015,8 +932,8 @@ test.describe("Create Shell — URL Updates", () => {
 
     const url = new URL(gmPage.url());
     expect(url.searchParams.get("tab")).toBe("Items");
-    // Spell ID param should still be present
-    expect(url.searchParams.has("spell_id")).toBe(true);
+    // Unit ID param should still be present
+    expect(url.searchParams.has("unit_id")).toBe(true);
     // Scenario ID param should still be present
     expect(url.searchParams.has("scenario_id")).toBe(true);
     expect(url.searchParams.get("scenario_id")).toBe(AMBUSH_AT_DAWN_ID);
@@ -1037,9 +954,9 @@ test.describe("Create Shell — URL Updates", () => {
       "active",
     );
 
-    // Click Spells tab (should use replaceState, NOT pushState)
-    await gmPage.getByRole("tab", { name: "Spells" }).click();
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+    // Click Units tab (should use replaceState, NOT pushState)
+    await gmPage.getByRole("tab", { name: "Units" }).click();
+    await expect(gmPage.getByRole("tab", { name: "Units" })).toHaveAttribute(
       "data-state",
       "active",
     );

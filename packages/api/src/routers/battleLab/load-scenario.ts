@@ -2,14 +2,12 @@ import {
   type db,
   effects,
   items,
-  itemsSpells,
+  itemsEffects,
   scenarios,
   scenariosRows,
   scenariosRowsUnits,
-  spells,
-  spellsAllowedRows,
-  spellsEffects,
   units,
+  unitsAllowedRows,
   unitsItems,
 } from "@qd/db";
 import type { ScenarioInput } from "@qd/engine";
@@ -49,6 +47,11 @@ export async function loadBattleScenario(
         speed: units.speed,
         dodge: units.dodge,
         criticalChance: units.criticalChance,
+        targetSide: units.targetSide,
+        targetPolicy: units.targetPolicy,
+        targetRowCount: units.targetRowCount,
+        maxTargetsPerRow: units.maxTargetsPerRow,
+        targetOnlyAdjacent: units.targetOnlyAdjacent,
       },
     })
     .from(scenariosRows)
@@ -58,6 +61,14 @@ export async function loadBattleScenario(
     .orderBy(asc(scenariosRowsUnits.slot));
 
   const unitIds = [...new Set(assignments.map((assignment) => assignment.unit.id))];
+  const unitAllowedRows =
+    unitIds.length === 0
+      ? []
+      : await executor
+          .select({ unitId: unitsAllowedRows.unitId, rowType: unitsAllowedRows.rowType })
+          .from(unitsAllowedRows)
+          .where(inArray(unitsAllowedRows.unitId, unitIds));
+
   const unitItems =
     unitIds.length === 0
       ? []
@@ -85,43 +96,13 @@ export async function loadBattleScenario(
           .orderBy(asc(unitsItems.priority));
 
   const itemIds = [...new Set(unitItems.map((link) => link.item.id))];
-  const itemSpells =
+  const itemEffects =
     itemIds.length === 0
       ? []
       : await executor
           .select({
-            itemId: itemsSpells.itemId,
-            spell: {
-              id: spells.id,
-              name: spells.name,
-              description: spells.description,
-              targetPolicy: spells.targetPolicy,
-              targetScope: spells.targetScope,
-              targetRowCount: spells.targetRowCount,
-              maxTargetsPerRow: spells.maxTargetsPerRow,
-              targetOnlyAdjacent: spells.targetOnlyAdjacent,
-            },
-          })
-          .from(itemsSpells)
-          .innerJoin(spells, eq(spells.id, itemsSpells.spellId))
-          .where(inArray(itemsSpells.itemId, itemIds));
-
-  const spellIds = [...new Set(itemSpells.map((link) => link.spell.id))];
-  const spellAllowedRows =
-    spellIds.length === 0
-      ? []
-      : await executor
-          .select({ spellId: spellsAllowedRows.spellId, rowType: spellsAllowedRows.rowType })
-          .from(spellsAllowedRows)
-          .where(inArray(spellsAllowedRows.spellId, spellIds));
-
-  const spellEffects =
-    spellIds.length === 0
-      ? []
-      : await executor
-          .select({
-            spellId: spellsEffects.spellId,
-            sequenceOrder: spellsEffects.sequenceOrder,
+            itemId: itemsEffects.itemId,
+            sequenceOrder: itemsEffects.sequenceOrder,
             effect: {
               id: effects.id,
               name: effects.name,
@@ -145,17 +126,16 @@ export async function loadBattleScenario(
               directSpellDmg: effects.directSpellDmg,
             },
           })
-          .from(spellsEffects)
-          .innerJoin(effects, eq(effects.id, spellsEffects.effectTemplateId))
-          .where(inArray(spellsEffects.spellId, spellIds))
-          .orderBy(asc(spellsEffects.sequenceOrder));
+          .from(itemsEffects)
+          .innerJoin(effects, eq(effects.id, itemsEffects.effectTemplateId))
+          .where(inArray(itemsEffects.itemId, itemIds))
+          .orderBy(asc(itemsEffects.sequenceOrder));
 
   return toScenarioInput({
     scenario,
     assignments,
+    unitAllowedRows,
     unitItems,
-    itemSpells,
-    spellAllowedRows,
-    spellEffects,
+    itemEffects,
   });
 }

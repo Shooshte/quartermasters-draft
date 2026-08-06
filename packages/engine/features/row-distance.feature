@@ -1,6 +1,6 @@
 Feature: Row distance damage penalty
   Basic attacks suffer a distance penalty based on how far apart the
-  attacker and target rows are. Spells are unaffected by distance.
+  attacker and target rows are. Item effects are unaffected by distance.
 
   Row depths:
     tank    = 0
@@ -42,8 +42,8 @@ Feature: Row distance damage penalty
     Then the attack should deal 0 damage
     And no damage event is emitted
 
-  Scenario: Spells ignore row distance entirely
-    Given a spell that deals 100 damage before distance modifiers
-    When the unit in the support row casts a spell on a target in the support row
-    Then the spell should deal 100 damage
-    And row distance should not reduce spell damage
+  Scenario: Item effects ignore row distance entirely
+    Given an item effect that deals 100 damage before distance modifiers
+    When the unit in the support row activates the item against a target in the support row
+    Then the item effect should deal 100 damage
+    And row distance should not reduce item-effect damage

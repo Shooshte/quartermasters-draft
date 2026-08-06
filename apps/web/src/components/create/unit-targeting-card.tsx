@@ -1,27 +1,20 @@
-import type { RowType, SpellFieldErrors, SpellFormValues } from "./spell-form";
+import type { RowType, UnitFieldErrors, UnitFormValues } from "./unit-form";
 import {
   getEffectiveAllowedRows,
   TARGET_ROW_TYPES_IN_COMBAT_ORDER,
-  type TargetingEffectSummary,
-  TargetingRuleSummary,
-} from "./targeting-rule-summary";
+  UnitTargetingSummary,
+} from "./unit-targeting-summary";
 import { WorkspaceRowTypePill } from "./workspace-row-type-pill";
 import { WorkspaceSegmentToggle } from "./workspace-segment-toggle";
 import { WorkspaceSelectChip } from "./workspace-select-chip";
 
-interface TargetingCardProps {
-  formValues: SpellFormValues;
-  errors: SpellFieldErrors;
-  linkedEffects: readonly (TargetingEffectSummary | null)[];
+interface UnitTargetingCardProps {
+  formValues: UnitFormValues;
+  errors: UnitFieldErrors;
   onFieldChange: (field: string, value: unknown) => void;
 }
 
-export function TargetingCard({
-  formValues,
-  errors,
-  linkedEffects,
-  onFieldChange,
-}: TargetingCardProps) {
+export function UnitTargetingCard({ formValues, errors, onFieldChange }: UnitTargetingCardProps) {
   const perRowMode = formValues.maxTargetsPerRow === null ? "all" : "limit";
   const adjacentDisabled = formValues.maxTargetsPerRow === null || formValues.maxTargetsPerRow < 2;
   const effectiveAllowedRows = getEffectiveAllowedRows(formValues.allowedRowTypes);
@@ -52,15 +45,32 @@ export function TargetingCard({
   };
 
   return (
-    <div>
+    <div data-testid="unit-targeting-card">
       <div className="ws-section-header">Targeting</div>
       <div className="targeting-card">
-        {/* Policy row */}
+        <div className="targeting-card-policy-row">
+          <span className="targeting-card-policy-label">Side</span>
+          <WorkspaceSelectChip
+            chipTestId="unit-target-side-chip"
+            selectTestId="unit-target-side-select"
+            className="ws-chip"
+            value={formValues.targetSide}
+            includeEmptyOption
+            options={[{ value: "allies" }, { value: "enemies" }, { value: "self" }]}
+            onChange={(value) => onFieldChange("targetSide", value)}
+          />
+        </div>
+        {errors.targetSide ? (
+          <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
+            {errors.targetSide}
+          </p>
+        ) : null}
+
         <div className="targeting-card-policy-row">
           <span className="targeting-card-policy-label">Priority</span>
           <WorkspaceSelectChip
-            chipTestId="spell-target-policy-chip"
-            selectTestId="spell-target-policy-select"
+            chipTestId="unit-target-policy-chip"
+            selectTestId="unit-target-policy-select"
             className="ws-chip"
             style={{
               background: "oklch(0.78 0.15 75 / 12%)",
@@ -85,37 +95,19 @@ export function TargetingCard({
           </p>
         ) : null}
 
-        <div className="targeting-card-policy-row">
-          <span className="targeting-card-policy-label">Scope</span>
-          <WorkspaceSelectChip
-            chipTestId="spell-target-scope-chip"
-            selectTestId="spell-target-scope-select"
-            className="ws-chip"
-            value={formValues.targetScope}
-            options={[{ value: "self" }, { value: "self_and_others" }, { value: "others" }]}
-            onChange={(value) => onFieldChange("targetScope", value)}
-          />
-        </div>
-        {errors.targetScope ? (
-          <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
-            {errors.targetScope}
-          </p>
-        ) : null}
-
-        <TargetingRuleSummary
+        <UnitTargetingSummary
+          targetSide={formValues.targetSide}
           targetPolicy={formValues.targetPolicy}
-          targetScope={formValues.targetScope}
           targetRowCount={formValues.targetRowCount}
           maxTargetsPerRow={formValues.maxTargetsPerRow}
           targetOnlyAdjacent={formValues.targetOnlyAdjacent}
           allowedRowTypes={formValues.allowedRowTypes}
-          linkedEffects={linkedEffects}
         />
 
         <div className="targeting-card-body">
           <div className="targeting-controls">
             <div className="targeting-ctrl-block">
-              <span className="targeting-ctrl-section-label">Rows hit per cast</span>
+              <span className="targeting-ctrl-section-label">Rows hit per activation</span>
               <WorkspaceSegmentToggle
                 options={[1, 2, 3, 4].map((count) => ({
                   value: String(count),
@@ -123,8 +115,8 @@ export function TargetingCard({
                 }))}
                 value={String(formValues.targetRowCount)}
                 onChange={(value) => onFieldChange("targetRowCount", Number(value))}
-                testId="spell-target-row-count-toggle"
-                ariaLabel="Rows hit per cast"
+                testId="unit-target-row-count-toggle"
+                ariaLabel="Rows hit per activation"
               />
               {errors.targetRowCount ? (
                 <p className="text-sm text-destructive">{errors.targetRowCount}</p>
@@ -150,24 +142,24 @@ export function TargetingCard({
                       onFieldChange("maxTargetsPerRow", 1);
                     }
                   }}
-                  testId="per-row-toggle"
+                  testId="unit-target-per-row-toggle"
                   ariaLabel="Targets in each row"
                 />
                 {perRowMode === "limit" ? (
                   <input
                     aria-label="Maximum targets in each row"
-                    data-testid="spell-max-targets-per-row-input"
+                    data-testid="unit-target-max-targets-per-row-input"
                     type="number"
                     min={1}
                     className="targeting-ctrl-input"
                     value={formValues.maxTargetsPerRow ?? 1}
                     onChange={(event) => {
-                      const val = parseInt(event.target.value, 10);
-                      if (Number.isNaN(val)) return;
-                      if (val < 2 && formValues.targetOnlyAdjacent) {
+                      const value = Number.parseInt(event.target.value, 10);
+                      if (Number.isNaN(value)) return;
+                      if (value < 2 && formValues.targetOnlyAdjacent) {
                         onFieldChange("targetOnlyAdjacent", false);
                       }
-                      onFieldChange("maxTargetsPerRow", val);
+                      onFieldChange("maxTargetsPerRow", value);
                     }}
                   />
                 ) : null}
@@ -186,7 +178,7 @@ export function TargetingCard({
                 ]}
                 value={formValues.targetOnlyAdjacent ? "adjacent" : "any"}
                 onChange={(value) => onFieldChange("targetOnlyAdjacent", value === "adjacent")}
-                testId="spell-target-position-toggle"
+                testId="unit-target-position-toggle"
                 ariaLabel="Position rule"
               />
               {adjacentDisabledReason ? (
@@ -208,7 +200,7 @@ export function TargetingCard({
                       rowType={rowType}
                       active={active}
                       disabled={active && effectiveAllowedRows.length === 1}
-                      testId={`spell-allowed-row-${rowType}`}
+                      testId={`unit-target-allowed-row-${rowType}`}
                       onClick={() => toggleAllowedRow(rowType)}
                     />
                   );

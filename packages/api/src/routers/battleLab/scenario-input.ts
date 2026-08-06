@@ -3,9 +3,8 @@ import type {
   ItemInput,
   RowType,
   ScenarioInput,
-  SpellInput,
   TargetPolicy,
-  TargetScope,
+  TargetSide,
 } from "@qd/engine";
 
 type ScenarioRecord = {
@@ -25,6 +24,11 @@ type UnitRecord = {
   speed: number;
   dodge: number;
   criticalChance: number;
+  targetSide: TargetSide;
+  targetPolicy: TargetPolicy;
+  targetRowCount: number;
+  maxTargetsPerRow: number | null;
+  targetOnlyAdjacent: boolean;
 };
 
 type ItemRecord = {
@@ -39,17 +43,6 @@ type ItemRecord = {
   criticalChance: number;
   activationManaCost: number;
   activationHealthCost: number;
-};
-
-type SpellRecord = {
-  id: string;
-  name: string;
-  description: string | null;
-  targetPolicy: TargetPolicy;
-  targetScope?: TargetScope;
-  targetRowCount: number;
-  maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
 };
 
 type EffectRecord = {
@@ -87,16 +80,12 @@ export interface BattleScenarioRecords {
     priority: number;
     item: ItemRecord;
   }>;
-  itemSpells: Array<{
-    itemId: string;
-    spell: SpellRecord;
-  }>;
-  spellAllowedRows: Array<{
-    spellId: string;
+  unitAllowedRows: Array<{
+    unitId: string;
     rowType: RowType;
   }>;
-  spellEffects: Array<{
-    spellId: string;
+  itemEffects: Array<{
+    itemId: string;
     sequenceOrder: number;
     effect: EffectRecord;
   }>;
@@ -124,23 +113,18 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
     appendToMap(unitItemsByUnitId, link.unitId, link);
   }
 
-  const itemSpellsByItemId = new Map<string, BattleScenarioRecords["itemSpells"]>();
-  for (const link of records.itemSpells) {
-    appendToMap(itemSpellsByItemId, link.itemId, link);
+  const allowedRowsByUnitId = new Map<string, RowType[]>();
+  for (const link of records.unitAllowedRows) {
+    appendToMap(allowedRowsByUnitId, link.unitId, link.rowType);
   }
 
-  const allowedRowsBySpellId = new Map<string, RowType[]>();
-  for (const link of records.spellAllowedRows) {
-    appendToMap(allowedRowsBySpellId, link.spellId, link.rowType);
+  const effectsByItemId = new Map<string, BattleScenarioRecords["itemEffects"]>();
+  for (const link of records.itemEffects) {
+    appendToMap(effectsByItemId, link.itemId, link);
   }
 
-  const effectsBySpellId = new Map<string, BattleScenarioRecords["spellEffects"]>();
-  for (const link of records.spellEffects) {
-    appendToMap(effectsBySpellId, link.spellId, link);
-  }
-
-  function buildEffectsForSpell(spellId: string): NonNullable<SpellInput["effects"]> {
-    return [...(effectsBySpellId.get(spellId) ?? [])]
+  function buildEffectsForItem(itemId: string): NonNullable<ItemInput["effects"]> {
+    return [...(effectsByItemId.get(itemId) ?? [])]
       .sort((left, right) => left.sequenceOrder - right.sequenceOrder)
       .map(({ sequenceOrder, effect }) => ({
         sequenceOrder,
@@ -169,23 +153,6 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
       }));
   }
 
-  function buildSpellsForItem(itemId: string): SpellInput[] {
-    return (itemSpellsByItemId.get(itemId) ?? []).map(({ spell }) => ({
-      id: spell.id,
-      name: spell.name,
-      description: spell.description,
-      targetPolicy: spell.targetPolicy,
-      targetScope: spell.targetScope ?? "self_and_others",
-      targetRowCount: spell.targetRowCount,
-      maxTargetsPerRow: spell.maxTargetsPerRow,
-      targetOnlyAdjacent: spell.targetOnlyAdjacent,
-      allowedRowTypes: [...(allowedRowsBySpellId.get(spell.id) ?? [])].sort(
-        (left, right) => ROW_ORDER[left] - ROW_ORDER[right],
-      ),
-      effects: buildEffectsForSpell(spell.id),
-    }));
-  }
-
   function buildItemsForUnit(unitId: string): ItemInput[] {
     return [...(unitItemsByUnitId.get(unitId) ?? [])]
       .sort((left, right) => left.priority - right.priority)
@@ -201,7 +168,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
         criticalChance: item.criticalChance,
         activationManaCost: item.activationManaCost,
         activationHealthCost: item.activationHealthCost,
-        linkedSpells: buildSpellsForItem(item.id),
+        effects: buildEffectsForItem(item.id),
       }));
   }
 
@@ -227,6 +194,14 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
         dodge: assignment.unit.dodge,
         criticalChance: assignment.unit.criticalChance,
       },
+      targetSide: assignment.unit.targetSide,
+      targetPolicy: assignment.unit.targetPolicy,
+      targetRowCount: assignment.unit.targetRowCount,
+      maxTargetsPerRow: assignment.unit.maxTargetsPerRow,
+      targetOnlyAdjacent: assignment.unit.targetOnlyAdjacent,
+      allowedRowTypes: [...(allowedRowsByUnitId.get(assignment.unit.id) ?? [])].sort(
+        (left, right) => ROW_ORDER[left] - ROW_ORDER[right],
+      ),
       items: buildItemsForUnit(assignment.unit.id),
     });
   }

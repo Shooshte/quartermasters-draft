@@ -1,12 +1,4 @@
-import {
-  db,
-  items,
-  itemsSpells,
-  scenariosRows,
-  scenariosRowsUnits,
-  spells,
-  unitsItems,
-} from "@qd/db";
+import { db, items, itemsEffects, scenariosRows, scenariosRowsUnits, unitsItems } from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
@@ -37,7 +29,7 @@ const itemInputBaseSchema = z.object({
   criticalChance: z.number(),
   activationManaCost: z.number().min(0),
   activationHealthCost: z.number().min(0),
-  spellIds: z.array(idSchema),
+  effectIds: z.array(idSchema),
 });
 
 type NormalizedItemInput = z.infer<typeof itemInputBaseSchema>;
@@ -47,34 +39,37 @@ function normalizeItemInput(input: z.infer<typeof itemInputBaseSchema>): Normali
   return {
     ...input,
     name: input.name.trim(),
-    spellIds: [...new Set(input.spellIds)],
+    effectIds: [...input.effectIds],
   };
 }
 
-function buildItemSpellRows(itemId: string, spellIds: string[]) {
-  return spellIds.map((spellId) => ({
+function buildItemEffectRows(itemId: string, effectIds: string[]) {
+  return effectIds.map((effectTemplateId, index) => ({
     itemId,
-    spellId,
+    effectTemplateId,
+    sequenceOrder: index + 1,
   }));
 }
 
-async function insertItemSpells(tx: ItemTransaction, itemId: string, spellIds: string[]) {
-  if (spellIds.length === 0) {
+async function insertItemEffects(tx: ItemTransaction, itemId: string, effectIds: string[]) {
+  if (effectIds.length === 0) {
     return;
   }
 
-  await tx.insert(itemsSpells).values(buildItemSpellRows(itemId, spellIds));
+  await tx.insert(itemsEffects).values(buildItemEffectRows(itemId, effectIds));
 }
 
-async function getSortedSpellIdsForItem(executor: Pick<ItemTransaction, "select">, itemId: string) {
-  const spellLinks = await executor
-    .select({ spellId: itemsSpells.spellId, spellName: spells.name })
-    .from(itemsSpells)
-    .innerJoin(spells, eq(itemsSpells.spellId, spells.id))
-    .where(eq(itemsSpells.itemId, itemId))
-    .orderBy(asc(spells.name));
+async function getOrderedEffectIdsForItem(
+  executor: Pick<ItemTransaction, "select">,
+  itemId: string,
+) {
+  const effectLinks = await executor
+    .select({ effectTemplateId: itemsEffects.effectTemplateId })
+    .from(itemsEffects)
+    .where(eq(itemsEffects.itemId, itemId))
+    .orderBy(asc(itemsEffects.sequenceOrder));
 
-  return spellLinks.map((link) => link.spellId);
+  return effectLinks.map((link) => link.effectTemplateId);
 }
 
 function buildItemLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
@@ -142,11 +137,11 @@ export const itemsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
     }
 
-    const spellIds = await getSortedSpellIdsForItem(db, input.id);
+    const effectIds = await getOrderedEffectIdsForItem(db, input.id);
 
     return {
       ...item,
-      spellIds,
+      effectIds,
     };
   }),
 
@@ -178,11 +173,11 @@ export const itemsRouter = router({
           });
         }
 
-        await insertItemSpells(tx, created.id, normalized.spellIds);
+        await insertItemEffects(tx, created.id, normalized.effectIds);
 
         return {
           ...created,
-          spellIds: await getSortedSpellIdsForItem(tx, created.id),
+          effectIds: await getOrderedEffectIdsForItem(tx, created.id),
         };
       });
     } catch (error) {
@@ -223,12 +218,12 @@ export const itemsRouter = router({
             throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
           }
 
-          await tx.delete(itemsSpells).where(eq(itemsSpells.itemId, id));
-          await insertItemSpells(tx, id, normalized.spellIds);
+          await tx.delete(itemsEffects).where(eq(itemsEffects.itemId, id));
+          await insertItemEffects(tx, id, normalized.effectIds);
 
           return {
             ...updated,
-            spellIds: await getSortedSpellIdsForItem(tx, id),
+            effectIds: await getOrderedEffectIdsForItem(tx, id),
           };
         });
       } catch (error) {

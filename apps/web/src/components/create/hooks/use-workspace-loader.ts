@@ -14,7 +14,6 @@ import {
   type ScenarioFormValues,
   scenarioRecordToFormValues,
 } from "../scenario-form";
-import { createDefaultSpellFormValues, spellRecordToFormValues } from "../spell-form";
 import {
   type CreatePageNavigate,
   createIdleWorkspace,
@@ -38,7 +37,6 @@ interface UseWorkspaceLoaderOptions {
     tab?: string;
     entity_id?: string;
     effect_id?: string;
-    spell_id?: string;
     item_id?: string;
     unit_id?: string;
     scenario_id?: string;
@@ -84,14 +82,10 @@ export function computeIsDirty(
   return Object.keys(formValues).some((key) => {
     const current = formValues[key];
     const original = originalData ? originalData[key] : "";
-    const compatibilityDefault =
-      entityType === "spell" && key === "targetScope" && original === undefined
-        ? "self_and_others"
-        : original;
     if (Array.isArray(current) && Array.isArray(original)) {
       return current.length !== original.length || current.some((v, i) => v !== original[i]);
     }
-    return normalise(current) !== normalise(compatibilityDefault);
+    return normalise(current) !== normalise(original);
   });
 }
 
@@ -104,7 +98,6 @@ export function useWorkspaceLoader({
   const [scenarioWorkspace, setScenarioWorkspace] = useState<WorkspaceState>(createIdleWorkspace());
   const [perTabSelection, setPerTabSelection] = useState<Record<TabName, string | null>>({
     Effects: null,
-    Spells: null,
     Items: null,
     Units: null,
     Scenarios: null,
@@ -136,28 +129,44 @@ export function useWorkspaceLoader({
     enabled: !!search.entity_id && !entityInitRef.current,
     retry: false,
   });
-  const entityDetectSpells = useQuery({
-    queryKey: ["scenarioBuilder", "spells", "get", search.entity_id],
+  const entityDetectItems = useQuery({
+    queryKey: ["scenarioBuilder", "items", "get", search.entity_id],
     queryFn: () =>
-      trpc.scenarioBuilder.spells.get.query({
+      trpc.scenarioBuilder.items.get.query({
         id: getRequiredSearchId(search.entity_id, "entity_id"),
       }),
     enabled: !!search.entity_id && !entityInitRef.current,
     retry: false,
   });
-
+  const entityDetectUnits = useQuery({
+    queryKey: ["scenarioBuilder", "units", "get", search.entity_id],
+    queryFn: () =>
+      trpc.scenarioBuilder.units.get.query({
+        id: getRequiredSearchId(search.entity_id, "entity_id"),
+      }),
+    enabled: !!search.entity_id && !entityInitRef.current,
+    retry: false,
+  });
   useEffect(() => {
     const entityId = search.entity_id;
     if (!entityId || entityInitRef.current) return;
-    if (!entityDetectEffects.isFetched || !entityDetectSpells.isFetched) return;
+    if (
+      !entityDetectEffects.isFetched ||
+      !entityDetectItems.isFetched ||
+      !entityDetectUnits.isFetched
+    ) {
+      return;
+    }
 
     entityInitRef.current = true;
 
     const found = entityDetectEffects.data
       ? { type: "effect" as EntityType, data: entityDetectEffects.data }
-      : entityDetectSpells.data
-        ? { type: "spell" as EntityType, data: entityDetectSpells.data }
-        : null;
+      : entityDetectItems.data
+        ? { type: "item" as EntityType, data: entityDetectItems.data }
+        : entityDetectUnits.data
+          ? { type: "unit" as EntityType, data: entityDetectUnits.data }
+          : null;
     if (found) {
       const entityData = found.data as { name: string; [key: string]: unknown };
       const entityTab = ENTITY_TYPE_TO_TAB[found.type];
@@ -172,13 +181,11 @@ export function useWorkspaceLoader({
         formValues:
           found.type === "effect"
             ? effectRecordToFormValues(entityData)
-            : found.type === "spell"
-              ? spellRecordToFormValues(entityData)
-              : found.type === "item"
-                ? itemRecordToFormValues(entityData)
-                : found.type === "unit"
-                  ? unitRecordToFormValues(entityData)
-                  : { name: entityData.name },
+            : found.type === "item"
+              ? itemRecordToFormValues(entityData)
+              : found.type === "unit"
+                ? unitRecordToFormValues(entityData)
+                : { name: entityData.name },
         isDirty: false,
       });
       setPerTabSelection((prev) => ({ ...prev, [entityTab]: entityId }));
@@ -198,8 +205,10 @@ export function useWorkspaceLoader({
     setActiveTabState,
     entityDetectEffects.isFetched,
     entityDetectEffects.data,
-    entityDetectSpells.isFetched,
-    entityDetectSpells.data,
+    entityDetectItems.isFetched,
+    entityDetectItems.data,
+    entityDetectUnits.isFetched,
+    entityDetectUnits.data,
   ]);
 
   // URL-driven initialization for effect_id
@@ -260,65 +269,6 @@ export function useWorkspaceLoader({
       });
     }
   }, [search.effect_id, search.tab, setActiveTabState, effectQuery.isFetched, effectQuery.data]);
-
-  // URL-driven initialization for spell_id
-  const spellInitRef = useRef(false);
-  const prevSpellIdRef = useRef(search.spell_id);
-
-  useEffect(() => {
-    if (search.spell_id !== prevSpellIdRef.current) {
-      prevSpellIdRef.current = search.spell_id;
-      if (skipEntityResetRef.current) {
-        skipEntityResetRef.current = false;
-        return;
-      }
-      spellInitRef.current = false;
-      setEntityWorkspace(createIdleWorkspace());
-    }
-  }, [search.spell_id]);
-
-  const spellQuery = useQuery({
-    queryKey: ["scenarioBuilder", "spells", "get", search.spell_id],
-    queryFn: () =>
-      trpc.scenarioBuilder.spells.get.query({
-        id: getRequiredSearchId(search.spell_id, "spell_id"),
-      }),
-    enabled: !!search.spell_id && !spellInitRef.current,
-    retry: false,
-  });
-
-  useEffect(() => {
-    const spellId = search.spell_id;
-    if (!spellId || spellInitRef.current) return;
-    if (!spellQuery.isFetched) return;
-
-    spellInitRef.current = true;
-
-    if (spellQuery.data) {
-      const entityData = spellQuery.data as { name: string; [key: string]: unknown };
-      if (!search.tab) {
-        setActiveTabState("Spells");
-      }
-      setEntityWorkspace({
-        mode: "edit",
-        entityType: "spell",
-        entityId: spellId,
-        data: entityData,
-        formValues: spellRecordToFormValues(entityData),
-        isDirty: false,
-      });
-      setPerTabSelection((prev) => ({ ...prev, Spells: spellId }));
-    } else {
-      setEntityWorkspace({
-        mode: "not-found",
-        entityType: "spell",
-        entityId: spellId,
-        data: null,
-        formValues: {},
-        isDirty: false,
-      });
-    }
-  }, [search.spell_id, search.tab, setActiveTabState, spellQuery.isFetched, spellQuery.data]);
 
   // URL-driven initialization for item_id
   const itemInitRef = useRef(false);
@@ -528,31 +478,26 @@ export function useWorkspaceLoader({
           formValues:
             requestedEntityType === "effect"
               ? effectRecordToFormValues(entityData)
-              : requestedEntityType === "spell"
-                ? spellRecordToFormValues(entityData)
-                : requestedEntityType === "item"
-                  ? itemRecordToFormValues(entityData)
-                  : requestedEntityType === "unit"
-                    ? unitRecordToFormValues(entityData)
-                    : { name: entityData.name },
+              : requestedEntityType === "item"
+                ? itemRecordToFormValues(entityData)
+                : requestedEntityType === "unit"
+                  ? unitRecordToFormValues(entityData)
+                  : { name: entityData.name },
           isDirty: false,
         });
         setPerTabSelection((prev) => ({ ...prev, [tab]: id }));
         const urlParam =
           tab === "Effects"
             ? "effect_id"
-            : tab === "Spells"
-              ? "spell_id"
-              : tab === "Items"
-                ? "item_id"
-                : tab === "Units"
-                  ? "unit_id"
-                  : "entity_id";
+            : tab === "Items"
+              ? "item_id"
+              : tab === "Units"
+                ? "unit_id"
+                : "entity_id";
 
         // Sync prev-refs and init-refs so URL-driven effects don't reset/refetch
         const paramRefs = {
           effect_id: { prev: prevEffectIdRef, init: effectInitRef },
-          spell_id: { prev: prevSpellIdRef, init: spellInitRef },
           item_id: { prev: prevItemIdRef, init: itemInitRef },
           unit_id: { prev: prevUnitIdRef, init: unitInitRef },
           entity_id: { prev: prevEntityIdRef, init: entityInitRef },
@@ -568,7 +513,6 @@ export function useWorkspaceLoader({
           search: (prev: Record<string, unknown>) => {
             const next = { ...prev };
             delete next.effect_id;
-            delete next.spell_id;
             delete next.item_id;
             delete next.unit_id;
             delete next.entity_id;
@@ -676,13 +620,11 @@ export function useWorkspaceLoader({
             formValues:
               entityType === "effect"
                 ? createDefaultEffectFormValues()
-                : entityType === "spell"
-                  ? createDefaultSpellFormValues()
-                  : entityType === "item"
-                    ? createDefaultItemFormValues()
-                    : entityType === "unit"
-                      ? createDefaultUnitFormValues()
-                      : { name: "" },
+                : entityType === "item"
+                  ? createDefaultItemFormValues()
+                  : entityType === "unit"
+                    ? createDefaultUnitFormValues()
+                    : { name: "" },
             isDirty: false,
           });
           setPerTabSelection((prev) => ({ ...prev, [action.tab]: null }));
@@ -690,13 +632,11 @@ export function useWorkspaceLoader({
           const paramToRemove =
             action.tab === "Effects"
               ? "effect_id"
-              : action.tab === "Spells"
-                ? "spell_id"
-                : action.tab === "Items"
-                  ? "item_id"
-                  : action.tab === "Units"
-                    ? "unit_id"
-                    : "entity_id";
+              : action.tab === "Items"
+                ? "item_id"
+                : action.tab === "Units"
+                  ? "unit_id"
+                  : "entity_id";
           navigate?.({
             search: (prev: Record<string, unknown>) => {
               const next = { ...prev };

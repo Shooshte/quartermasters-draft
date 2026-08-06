@@ -45,7 +45,12 @@ function unit(overrides: Partial<BattleUnit>): BattleUnit {
     mana: 34,
     actionBar: 61,
     items: [],
+    targetSide: "enemies",
     targetPolicy: "lowest_health",
+    targetRowCount: 1,
+    maxTargetsPerRow: 1,
+    targetOnlyAdjacent: false,
+    allowedRowTypes: [],
     targetPolicyOverride: null,
     activeEffects: [],
     actedCount: 7,
@@ -231,30 +236,29 @@ describe("BattleResultView", () => {
     expect(within(events).queryByText("Tick 11", { exact: false })).not.toBeInTheDocument();
   });
 
-  it("shows spell-effect attribution on immediate and delayed outcomes", () => {
+  it("shows item-effect attribution on immediate and delayed outcomes", () => {
     const actionId = "11:scenario-a:tank:1:8";
-    const spellOrigin = {
-      kind: "spell-effect",
+    const itemOrigin = {
+      kind: "item-effect",
       actionId,
       sourceUnitId: attackLog.attackerId,
-      item: { name: "Fire Staff", position: 1 },
-      spell: { name: "Fireball", position: 1 },
+      item: { name: "Oak Staff", position: 1 },
     };
     const result = {
       ...fixture.result,
       log: [
         {
           tick: 11,
-          type: "spell-cast",
+          type: "item-activation",
           caster: attackLog.attacker,
           casterId: attackLog.attackerId,
-          spell: "Fireball",
+          item: "Oak Staff",
           targets: [attackLog.target],
           targetIds: [attackLog.targetId],
           effects: ["Impact", "Burning"],
           actionId,
-          origin: spellOrigin,
-          message: "Tick 11: Dawn Warden casts Fireball on Iron Guard",
+          origin: itemOrigin,
+          message: "Tick 11: Dawn Warden activates Oak Staff on Iron Guard",
         },
         {
           tick: 11,
@@ -265,7 +269,7 @@ describe("BattleResultView", () => {
           targetId: attackLog.targetId,
           damage: 20,
           actionId,
-          origin: { ...spellOrigin, effect: { name: "Impact", position: 1 } },
+          origin: { ...itemOrigin, effect: { name: "Impact", position: 1 } },
           message: "Tick 11: Dawn Warden hits Iron Guard for 20 damage",
         },
         {
@@ -276,7 +280,7 @@ describe("BattleResultView", () => {
           target: attackLog.target,
           targetId: attackLog.targetId,
           damage: 8,
-          origin: { ...spellOrigin, effect: { name: "Burning", position: 2 } },
+          origin: { ...itemOrigin, effect: { name: "Burning", position: 2 } },
           message: "Tick 19: Dawn Warden hits Iron Guard for 8 damage",
         },
       ],
@@ -285,13 +289,11 @@ describe("BattleResultView", () => {
     render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
 
     const events = screen.getByRole("list", { name: "Battle events" });
-    expect(within(events).getByText("Fire Staff › Fireball")).toBeVisible();
+    expect(within(events).getByText("Oak Staff")).toBeVisible();
     expect(within(events).getByText(/Impact dealt 20 damage/)).toBeVisible();
     expect(within(events).getByText(/Burning dealt 8 damage/)).toBeVisible();
     expect(
-      within(events).getByText(
-        "From Dawn Warden · Ambush at Dawn / Tank 1 · Fire Staff › Fireball",
-      ),
+      within(events).getByText("From Dawn Warden · Ambush at Dawn / Tank 1 · Oak Staff"),
     ).toBeVisible();
   });
 });

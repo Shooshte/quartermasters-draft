@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { applySpell, processOngoingEffects } from "./effects";
+import { applyItemEffects, processOngoingEffects } from "./effects";
 import { getUnitEffectiveStats } from "./math";
 import { initializeBattleState } from "./state";
 import {
   createBattleInput,
   createEffect,
+  createItem,
   createScenario,
-  createSpell,
   createStats,
   createUnit,
   effectSequence,
@@ -33,6 +33,7 @@ function createEffectState() {
         ],
         support: [
           createUnit("cleric", {
+            targetSide: "allies",
             stats: createStats({
               health: 150,
               meleeDmg: 5,
@@ -73,12 +74,11 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     mage.mana = 70;
 
-    applySpell(
+    applyItemEffects(
       state,
       cleric,
-      createSpell({
+      createItem({
         name: "Arcane Well",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Expanded Mind",
@@ -102,12 +102,11 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     mage.mana = 70;
 
-    applySpell(
+    applyItemEffects(
       state,
       cleric,
-      createSpell({
+      createItem({
         name: "Mana Seal",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Restricted Mind",
@@ -133,12 +132,11 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     mage.mana = 10;
 
-    applySpell(
+    applyItemEffects(
       state,
       cleric,
-      createSpell({
+      createItem({
         name: "Unstable Reservoir",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Expanded Mind",
@@ -171,12 +169,11 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(
+    applyItemEffects(
       state,
       mage,
-      createSpell({
+      createItem({
         name: "Blast",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Arcane Damage",
@@ -190,12 +187,11 @@ describe("effects", () => {
     expect(warrior.currentHealth).toBe(250);
 
     mage.currentHealth = 190;
-    applySpell(
+    applyItemEffects(
       state,
       cleric,
-      createSpell({
+      createItem({
         name: "Heal",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Mend",
@@ -215,12 +211,11 @@ describe("effects", () => {
     const cleric = state.scenarios[0].rows.support[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(
+    applyItemEffects(
       state,
       mage,
-      createSpell({
+      createItem({
         name: "Burn",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Burning",
@@ -237,12 +232,11 @@ describe("effects", () => {
     // interval 20 dmg * 3 triggers, crit=5%, dodge=5% => round(20 * 1.05 * 0.95) = 20 per trigger, so 300 - 60 = 240.
     expect(warrior.currentHealth).toBe(240);
 
-    applySpell(
+    applyItemEffects(
       state,
       cleric,
-      createSpell({
+      createItem({
         name: "Haste",
-        targetPolicy: "highest_health",
         effects: effectSequence(statBuff("speed", 3, 2000)),
       }),
     );
@@ -256,12 +250,11 @@ describe("effects", () => {
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(
+    applyItemEffects(
       state,
       mage,
-      createSpell({
+      createItem({
         name: "Delayed Burn",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Delayed Burning",
@@ -290,12 +283,11 @@ describe("effects", () => {
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(
+    applyItemEffects(
       state,
       mage,
-      createSpell({
+      createItem({
         name: "Burn",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Burning",
@@ -324,9 +316,8 @@ describe("effects", () => {
     const warrior = state.scenarios[1].rows.tank[0]!;
     warrior.currentHealth = 40;
 
-    const spell = createSpell({
+    const item = createItem({
       name: "Combo",
-      targetPolicy: "highest_health",
       effects: effectSequence(
         createEffect({
           name: "One",
@@ -349,7 +340,7 @@ describe("effects", () => {
       ),
     });
 
-    const result = applySpell(state, mage, spell);
+    const result = applyItemEffects(state, mage, item);
     expect(result.appliedEffectNames).toEqual(["One", "Two"]);
     expect(warrior.currentHealth).toBe(0);
   });
@@ -376,12 +367,11 @@ describe("effects", () => {
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
 
-    applySpell(
+    applyItemEffects(
       state,
       mage,
-      createSpell({
+      createItem({
         name: "Blast",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Arcane Damage",
@@ -395,12 +385,11 @@ describe("effects", () => {
     // directSpellDmg=40, crit=50%, dodge=20% => round(40 * 1.5 * 0.8) = 48, so 300 - 48 = 252.
     expect(warrior.currentHealth).toBe(252);
 
-    applySpell(
+    applyItemEffects(
       state,
       mage,
-      createSpell({
+      createItem({
         name: "Burn",
-        targetPolicy: "highest_health",
         effects: effectSequence(
           createEffect({
             name: "Burning",
@@ -416,5 +405,39 @@ describe("effects", () => {
     processOngoingEffects(state, 2);
     // interval 20 dmg * 2 triggers with same modifiers => 24 * 2 = 48, then 252 - 48 = 204.
     expect(warrior.currentHealth).toBe(204);
+  });
+
+  it("attributes direct item-effect application to the source item and effect", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const item = createItem({
+      name: "Runed Wand",
+      effects: effectSequence(
+        createEffect({
+          name: "Spark",
+          effectType: "damage",
+          timingType: "instant",
+          directSpellDmg: 5,
+        }),
+      ),
+    });
+
+    applyItemEffects(state, mage, item);
+
+    expect(state.log.find((entry) => entry.type === "item-activation")).toMatchObject({
+      origin: {
+        kind: "item-effect",
+        item: { name: "Runed Wand", position: 1 },
+      },
+    });
+    expect(
+      state.log.find((entry) => entry.type === "damage" && entry.origin?.effect?.name === "Spark"),
+    ).toMatchObject({
+      origin: {
+        kind: "item-effect",
+        item: { name: "Runed Wand", position: 1 },
+        effect: { name: "Spark", position: 1 },
+      },
+    });
   });
 });

@@ -5,15 +5,15 @@ Feature: Scenario builder page shell
   So that I can manage reusable entities and scenarios from one place
 
   The "/create" route accepts the optional query parameters "scenario_id",
-  "entity_id", "effect_id", "spell_id", "item_id", "unit_id", and "tab".
-  The "scenario_id", "entity_id", "effect_id", "spell_id", "item_id", and
+  "entity_id", "effect_id", "item_id", "unit_id", and "tab".
+  The "scenario_id", "entity_id", "effect_id", "item_id", and
   "unit_id" parameters are UUIDs.
   The "entity_id" parameter is supported for generic entity selection and
-  chooses the matching entity tab for effects and spells.
-  The "effect_id", "spell_id", "item_id", and "unit_id" parameters directly
+  chooses the matching entity tab for effects, items, and units.
+  The "effect_id", "item_id", and "unit_id" parameters directly
   load the matching entity type.
-  The "tab" parameter accepts the exact tab labels "Effects", "Spells",
-  "Items", "Units", and "Scenarios".
+  The "tab" parameter accepts the exact tab labels "Effects", "Items",
+  "Units", and "Scenarios".
 
   "Visible library" refers to the list displayed under the currently active tab.
 
@@ -29,7 +29,7 @@ Feature: Scenario builder page shell
       And the scenario workspace should be above the entity workspace
       And the scenario workspace should size to its content
       And I should see a tabbed library
-      And the library should contain tabs for "Effects", "Spells", "Items", "Units", and "Scenarios"
+      And the library should contain tabs for "Effects", "Items", "Units", and "Scenarios"
 
   Rule: URL parameters determine the initial page state
 
@@ -43,8 +43,8 @@ Feature: Scenario builder page shell
       And the scenario fields should be empty
 
     Scenario: Open the page with only a tab parameter
-      When I navigate to "/create" with the "tab" parameter "Spells"
-      Then the "Spells" tab should be selected
+      When I navigate to "/create" with the "tab" parameter "Units"
+      Then the "Units" tab should be selected
       And no record should be selected in the visible library
       And no entity should be loaded in the entity workspace
       And no scenario should be loaded in the scenario workspace
@@ -68,7 +68,8 @@ Feature: Scenario builder page shell
       Examples:
         | tab_name | entity_type | record_name    |
         | Effects  | effect      | Barbarian Roar |
-        | Spells   | spell       | Fireball       |
+        | Items    | item        | Iron Sword     |
+        | Units    | unit        | Mage           |
 
     Scenario Outline: Open the page with only a type-specific entity parameter
       Given a <entity_type> named "<record_name>" exists
@@ -85,8 +86,8 @@ Feature: Scenario builder page shell
 
     Scenario: Open the page with a tab parameter and a scenario_id parameter
       Given a scenario named "Ambush at Dawn" exists
-      When I navigate to "/create" with the "tab" parameter "Spells" and the "scenario_id" parameter for the scenario "Ambush at Dawn"
-      Then the "Spells" tab should be selected
+      When I navigate to "/create" with the "tab" parameter "Units" and the "scenario_id" parameter for the scenario "Ambush at Dawn"
+      Then the "Units" tab should be selected
       And no record should be selected in the visible library
       And the scenario workspace should load the scenario "Ambush at Dawn" in edit mode
       And no entity should be loaded in the entity workspace
@@ -102,7 +103,7 @@ Feature: Scenario builder page shell
       Examples:
         | tab_name | entity_type | record_name    |
         | Effects  | effect      | Barbarian Roar |
-        | Spells   | spell       | Fireball       |
+        | Units   | unit       | Mage       |
 
     Scenario Outline: Open the page with matching tab and a type-specific entity parameter
       Given a <entity_type> named "<record_name>" exists
@@ -128,16 +129,16 @@ Feature: Scenario builder page shell
 
       Examples:
         | tab_name | url_param | entity_type | record_name |
-        | Spells   | entity_id | spell       | Fireball    |
-        | Spells   | spell_id  | spell       | Fireball    |
+        | Units   | entity_id | unit       | Mage    |
+        | Units   | unit_id  | unit       | Mage    |
         | Items    | item_id   | item        | Iron Sword  |
 
     Scenario: Open the page with a tab that does not match the entity type
-      Given a spell named "Battle Cry" exists
-      When I navigate to "/create" with the "tab" parameter "Items" and the "entity_id" parameter for the spell "Battle Cry"
+      Given a unit named "Barbarian" exists
+      When I navigate to "/create" with the "tab" parameter "Items" and the "entity_id" parameter for the unit "Barbarian"
       Then the "Items" tab should be selected
       And no record should be selected in the visible library
-      And the entity workspace should load the spell "Battle Cry" in edit mode
+      And the entity workspace should load the unit "Barbarian" in edit mode
 
     Scenario: Invalid tab parameter falls back to the default tab
       When I navigate to "/create" with the "tab" parameter "Unknown"
@@ -147,8 +148,8 @@ Feature: Scenario builder page shell
       And no scenario should be loaded in the scenario workspace
 
     Scenario: Unknown entity_id leaves the entity workspace empty
-      When I navigate to "/create" with the "tab" parameter "Spells" and an unknown "entity_id" parameter
-      Then the "Spells" tab should be selected
+      When I navigate to "/create" with the "tab" parameter "Units" and an unknown "entity_id" parameter
+      Then the "Units" tab should be selected
       And no record should be selected in the visible library
       And no entity should be loaded in the entity workspace
       And I should see an entity not-found state
@@ -178,7 +179,6 @@ Feature: Scenario builder page shell
       Examples:
         | tab_name  | record_type | record_type_singular | first_name     | second_name    |
         | Effects   | effect      | effect               | Barbarian Roar | Rage           |
-        | Spells    | spell       | spell                | Fireball       | Battle Cry     |
         | Items     | item        | item                 | Iron Sword     | Oak Staff      |
         | Units     | unit        | unit                 | Barbarian      | Mage           |
         | Scenarios | scenario    | scenario             | Ambush at Dawn | Castle Siege   |
@@ -193,23 +193,23 @@ Feature: Scenario builder page shell
       And no record should be selected in the visible library
 
     Scenario: Switching back to a tab restores the previously selected record
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And an item named "Iron Sword" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I select the spell "Fireball"
+      And I have opened the "Units" tab
+      And I select the unit "Mage"
       And I have opened the "Items" tab
       And I select the item "Iron Sword"
-      When I click the "Spells" tab
-      Then the "Spells" tab should be selected
-      And the "Fireball" record should be selected in the visible library
+      When I click the "Units" tab
+      Then the "Units" tab should be selected
+      And the "Mage" record should be selected in the visible library
 
     Scenario: Switching back to a second tab restores the previously selected record
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And an item named "Iron Sword" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I select the spell "Fireball"
+      And I have opened the "Units" tab
+      And I select the unit "Mage"
       And I have opened the "Items" tab
       And I select the item "Iron Sword"
       When I click the "Items" tab
@@ -217,15 +217,15 @@ Feature: Scenario builder page shell
       And the "Iron Sword" record should be selected in the visible library
 
     Scenario: Switching tabs does not clear loaded workspaces
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And a scenario named "Ambush at Dawn" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I have loaded the spell "Fireball" in the entity workspace
+      And I have opened the "Units" tab
+      And I have loaded the unit "Mage" in the entity workspace
       And I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I click the "Items" tab
       Then the "Items" tab should be selected
-      And the entity workspace should continue showing the spell "Fireball"
+      And the entity workspace should continue showing the unit "Mage"
       And the scenario workspace should continue showing the scenario "Ambush at Dawn"
 
   Rule: Selecting a record loads it into the correct workspace only
@@ -244,20 +244,19 @@ Feature: Scenario builder page shell
       Examples:
         | tab_name | entity_type | record_name    |
         | Effects  | effect      | Barbarian Roar |
-        | Spells   | spell       | Fireball       |
         | Items    | item        | Iron Sword     |
         | Units    | unit        | Barbarian      |
 
     Scenario: Select a scenario record for editing
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And a scenario named "Ambush at Dawn" exists
       And I am on the "/create" page
-      And I have loaded the spell "Fireball" in the entity workspace
+      And I have loaded the unit "Mage" in the entity workspace
       And I have opened the "Scenarios" tab
       When I click the edit button for the scenario "Ambush at Dawn"
       Then the "Ambush at Dawn" record should be selected in the visible library
       And the scenario workspace should load the scenario "Ambush at Dawn" in edit mode
-      And the entity workspace should continue showing the spell "Fireball"
+      And the entity workspace should continue showing the unit "Mage"
 
   Rule: Create actions open the correct workspace and clear the visible selection
 
@@ -277,15 +276,14 @@ Feature: Scenario builder page shell
       Examples:
         | tab_name | entity_label | entity_type | record_name    |
         | Effects  | Effect       | effect      | Barbarian Roar |
-        | Spells   | Spell        | spell       | Fireball       |
         | Items    | Item         | item        | Iron Sword     |
         | Units    | Unit         | unit        | Barbarian      |
 
     Scenario: Start creating a new scenario
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And a scenario named "Ambush at Dawn" exists
       And I am on the "/create" page
-      And I have loaded the spell "Fireball" in the entity workspace
+      And I have loaded the unit "Mage" in the entity workspace
       And I have opened the "Scenarios" tab
       And I click the edit button for the scenario "Ambush at Dawn"
       When I click "New Scenario"
@@ -293,20 +291,20 @@ Feature: Scenario builder page shell
       And the scenario workspace should open in create mode for a new scenario
       And the scenario fields should be empty
       And the scenario workspace should display 4 empty rows
-      And the entity workspace should continue showing the spell "Fireball"
+      And the entity workspace should continue showing the unit "Mage"
 
   Rule: Unsaved changes are protected only when a workspace would be replaced
 
     Scenario: Switching tabs does not warn when entity changes are unsaved
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I have loaded the spell "Fireball" in the entity workspace
-      When I change the entity name field to "Fireball Updated"
+      And I have opened the "Units" tab
+      And I have loaded the unit "Mage" in the entity workspace
+      When I change the entity name field to "Mage Updated"
       And I click the "Items" tab
       Then I should not be warned about unsaved changes
       And the "Items" tab should be selected
-      And the entity workspace should continue showing "Fireball Updated"
+      And the entity workspace should continue showing "Mage Updated"
 
     Scenario: Switching tabs does not warn when scenario changes are unsaved
       Given a scenario named "Ambush at Dawn" exists
@@ -314,57 +312,57 @@ Feature: Scenario builder page shell
       And I have opened the "Scenarios" tab
       And I have loaded the scenario "Ambush at Dawn" in the scenario workspace
       When I change the scenario name field to "Ambush at Dawn Updated"
-      And I click the "Spells" tab
+      And I click the "Units" tab
       Then I should not be warned about unsaved changes
-      And the "Spells" tab should be selected
+      And the "Units" tab should be selected
       And the scenario workspace should continue showing "Ambush at Dawn Updated"
 
     Scenario: Warn before selecting a different entity with unsaved changes
-      Given spells named "Fireball" and "Battle Cry" exist
+      Given units named "Mage" and "Barbarian" exist
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I have loaded the spell "Fireball" in the entity workspace
-      When I change the entity name field to "Fireball Updated"
-      And I select the spell "Battle Cry"
+      And I have opened the "Units" tab
+      And I have loaded the unit "Mage" in the entity workspace
+      When I change the entity name field to "Mage Updated"
+      And I select the unit "Barbarian"
       Then I should be warned about unsaved changes
-      And I should be able to cancel loading the different spell
-      And the "Fireball" record should remain selected in the visible library
-      And the entity workspace should continue showing "Fireball Updated"
+      And I should be able to cancel loading the different unit
+      And the "Mage" record should remain selected in the visible library
+      And the entity workspace should continue showing "Mage Updated"
 
     Scenario: Discard unsaved entity changes and load a different entity
-      Given spells named "Fireball" and "Battle Cry" exist
+      Given units named "Mage" and "Barbarian" exist
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I have loaded the spell "Fireball" in the entity workspace
-      When I change the entity name field to "Fireball Updated"
-      And I select the spell "Battle Cry"
+      And I have opened the "Units" tab
+      And I have loaded the unit "Mage" in the entity workspace
+      When I change the entity name field to "Mage Updated"
+      And I select the unit "Barbarian"
       And I choose to discard my unsaved changes
-      Then the "Battle Cry" record should be selected in the visible library
-      And the entity workspace should load the spell "Battle Cry" in edit mode
+      Then the "Barbarian" record should be selected in the visible library
+      And the entity workspace should load the unit "Barbarian" in edit mode
 
     Scenario: Warn before starting a new entity with unsaved changes
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I have loaded the spell "Fireball" in the entity workspace
-      When I change the entity name field to "Fireball Updated"
-      And I click "New Spell"
+      And I have opened the "Units" tab
+      And I have loaded the unit "Mage" in the entity workspace
+      When I change the entity name field to "Mage Updated"
+      And I click "New Unit"
       Then I should be warned about unsaved changes
-      And I should be able to cancel creating a new spell
-      And the "Fireball" record should remain selected in the visible library
-      And the entity workspace should continue showing "Fireball Updated"
+      And I should be able to cancel creating a new unit
+      And the "Mage" record should remain selected in the visible library
+      And the entity workspace should continue showing "Mage Updated"
 
     Scenario: Warn before starting a different entity type with unsaved changes
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I have loaded the spell "Fireball" in the entity workspace
-      When I change the entity name field to "Fireball Updated"
+      And I have opened the "Units" tab
+      And I have loaded the unit "Mage" in the entity workspace
+      When I change the entity name field to "Mage Updated"
       And I click the "Items" tab
       And I click "New Item"
       Then I should be warned about unsaved changes
       And I should be able to cancel creating a new item
-      And the entity workspace should continue showing "Fireball Updated"
+      And the entity workspace should continue showing "Mage Updated"
 
     Scenario: Warn before selecting a different scenario with unsaved changes
       Given scenarios named "Ambush at Dawn" and "Castle Siege" exist
@@ -413,8 +411,8 @@ Feature: Scenario builder page shell
 
     Scenario: Changing the active tab updates the tab URL parameter
       Given I am on the "/create" page
-      When I click the "Spells" tab
-      Then the URL should contain "tab=Spells"
+      When I click the "Units" tab
+      Then the URL should contain "tab=Units"
 
     Scenario Outline: Selecting an entity updates the URL with the type-specific ID parameter
       Given a <entity_type> named "<record_name>" exists
@@ -426,7 +424,6 @@ Feature: Scenario builder page shell
       Examples:
         | tab_name | entity_type | record_name    | url_param |
         | Effects  | effect      | Barbarian Roar | effect_id |
-        | Spells   | spell       | Fireball       | spell_id  |
         | Items    | item        | Iron Sword     | item_id   |
         | Units    | unit        | Barbarian      | unit_id   |
 
@@ -438,12 +435,12 @@ Feature: Scenario builder page shell
       Then the URL should contain "scenario_id=" followed by the scenario "Ambush at Dawn" id
 
     Scenario: Creating a new entity removes the entity ID parameter from the URL
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And I am on the "/create" page
-      And I have opened the "Spells" tab
-      And I select the spell "Fireball"
-      When I click "New Spell"
-      Then the URL should not contain "spell_id"
+      And I have opened the "Units" tab
+      And I select the unit "Mage"
+      When I click "New Unit"
+      Then the URL should not contain "unit_id"
 
     Scenario: Creating a new scenario removes scenario_id from the URL
       Given a scenario named "Ambush at Dawn" exists
@@ -454,9 +451,9 @@ Feature: Scenario builder page shell
       Then the URL should not contain "scenario_id"
 
     Scenario: Tab changes preserve existing entity ID and scenario_id parameters
-      Given a spell named "Fireball" exists
+      Given a unit named "Mage" exists
       And a scenario named "Ambush at Dawn" exists
-      And I am on the "/create" page with the spell "Fireball" and scenario "Ambush at Dawn" loaded via entity_id
+      And I am on the "/create" page with the unit "Mage" and scenario "Ambush at Dawn" loaded via entity_id
       When I click the "Items" tab
       Then the URL should contain "tab=Items"
       And the URL should still contain the entity ID parameter
@@ -464,5 +461,5 @@ Feature: Scenario builder page shell
 
     Scenario: URL parameters are updated without adding browser history entries
       Given I am on the "/create" page
-      When I click the "Spells" tab
+      When I click the "Units" tab
       Then the URL should be updated using replace (no new history entry)

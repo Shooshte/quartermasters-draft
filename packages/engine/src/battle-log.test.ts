@@ -5,24 +5,14 @@ import {
   createEffect,
   createItem,
   createScenario,
-  createSpell,
   createStats,
   createUnit,
   effectSequence,
 } from "./test-helpers";
 
 function createLoggedBattle() {
-  const burning = createEffect({
-    name: "Burning",
-    effectType: "damage",
-    timingType: "interval",
-    intervalTicks: 3,
-    triggerCount: 1,
-    directSpellDmg: 10,
-  });
-  const fireball = createSpell({
-    name: "Fireball",
-    targetPolicy: "highest_health",
+  const fireStaff = createItem({
+    name: "Fire Staff",
     effects: effectSequence(
       createEffect({
         name: "Impact",
@@ -30,7 +20,14 @@ function createLoggedBattle() {
         timingType: "instant",
         directSpellDmg: 20,
       }),
-      burning,
+      createEffect({
+        name: "Burning",
+        effectType: "damage",
+        timingType: "interval",
+        intervalTicks: 3,
+        triggerCount: 1,
+        directSpellDmg: 10,
+      }),
     ),
   });
 
@@ -45,7 +42,7 @@ function createLoggedBattle() {
         ranged: [
           createUnit("alpha-2", {
             stats: createStats({ health: 100, rangedDmg: 25, speed: 15, manaRegen: 5 }),
-            items: [createItem({ name: "Fire Staff", linkedSpells: [fireball] })],
+            items: [fireStaff],
           }),
         ],
       }),
@@ -66,29 +63,35 @@ function createLoggedBattle() {
 }
 
 describe("battle log", () => {
-  it("attributes immediate spell damage to its action, item, spell, and effect", () => {
+  it("attributes an item activation and immediate effect without a spell origin", () => {
     const log = createLoggedBattle().resolve().log;
-    const cast = log.find((entry) => entry.type === "spell-cast");
-    const damage = log.find((entry) => entry.type === "damage");
+    const activation = log.find((entry) => entry.type === "item-activation");
+    const damage = log.find(
+      (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Impact",
+    );
 
-    expect(cast).toMatchObject({
+    expect(activation).toMatchObject({
       actionId: expect.any(String),
+      item: "Fire Staff",
+      effects: ["Impact", "Burning"],
       origin: {
-        kind: "spell-effect",
+        kind: "item-effect",
         item: { name: "Fire Staff", position: 1 },
-        spell: { name: "Fireball", position: 1 },
       },
     });
+    expect(activation?.origin).not.toHaveProperty("spell");
     expect(damage).toMatchObject({
-      actionId: cast && (cast as { actionId?: string }).actionId,
+      actionId: activation?.actionId,
       origin: {
-        kind: "spell-effect",
+        kind: "item-effect",
+        item: { name: "Fire Staff", position: 1 },
         effect: { name: "Impact", position: 1 },
       },
     });
+    expect(damage?.origin).not.toHaveProperty("spell");
   });
 
-  it("keeps interval effect attribution without grouping it into the original action", () => {
+  it("keeps interval effect item/effect attribution without grouping it into the original action", () => {
     const log = createLoggedBattle().resolve().log;
     const delayedDamage = log.find(
       (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Burning",
@@ -97,30 +100,27 @@ describe("battle log", () => {
     expect(delayedDamage).toMatchObject({
       actionId: undefined,
       origin: {
-        kind: "spell-effect",
+        kind: "item-effect",
         item: { name: "Fire Staff", position: 1 },
-        spell: { name: "Fireball", position: 1 },
         effect: { name: "Burning", position: 2 },
       },
     });
+    expect(delayedDamage?.origin).not.toHaveProperty("spell");
   });
 
   it("produces structured chronological log entries and ends with a battle outcome", () => {
     const result = createLoggedBattle().resolve();
-    expect(Array.isArray(result.log)).toBe(true);
     expect(result.log.length).toBeGreaterThan(0);
     expect(result.log.some((entry) => entry.type === "attack")).toBe(true);
-    expect(result.log.some((entry) => entry.type === "spell-cast")).toBe(true);
+    expect(result.log.some((entry) => entry.type === "item-activation")).toBe(true);
     expect(result.log.some((entry) => entry.type === "death")).toBe(true);
     expect(result.log.at(-1)?.type).toBe("battle-end");
 
     const ticks = result.log.map((entry) => entry.tick);
-    expect(ticks).toEqual([...ticks].sort((a, b) => a - b));
+    expect(ticks).toEqual([...ticks].sort((left, right) => left - right));
   });
 
   it("is deterministic for identical inputs and seed", () => {
-    const run1 = createLoggedBattle().resolve().log;
-    const run2 = createLoggedBattle().resolve().log;
-    expect(run1).toEqual(run2);
+    expect(createLoggedBattle().resolve().log).toEqual(createLoggedBattle().resolve().log);
   });
 });

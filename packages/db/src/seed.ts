@@ -9,14 +9,12 @@ import {
   buildSeedData,
   effectSeedData,
   itemSeedData,
-  itemsSpellsSeedData,
+  itemsEffectsSeedData,
   scenarioSeedData,
   scenariosRowsSeedData,
   scenariosRowsUnitsSeedData,
-  spellSeedData,
-  spellsAllowedRowsSeedData,
-  spellsEffectsSeedData,
   unitSeedData,
+  unitsAllowedRowsSeedData,
   unitsItemsSeedData,
 } from "./seed-data";
 
@@ -34,12 +32,10 @@ try {
     await db.insert(schema.account).values(account).onConflictDoNothing();
   }
   await db.insert(schema.effects).values(effectSeedData).onConflictDoNothing();
-  await db.insert(schema.spells).values(spellSeedData).onConflictDoNothing();
-  await db.insert(schema.spellsEffects).values(spellsEffectsSeedData).onConflictDoNothing();
-  await db.insert(schema.spellsAllowedRows).values(spellsAllowedRowsSeedData).onConflictDoNothing();
   await db.insert(schema.items).values(itemSeedData).onConflictDoNothing();
-  await db.insert(schema.itemsSpells).values(itemsSpellsSeedData).onConflictDoNothing();
+  await db.insert(schema.itemsEffects).values(itemsEffectsSeedData).onConflictDoNothing();
   await db.insert(schema.units).values(unitSeedData).onConflictDoNothing();
+  await db.insert(schema.unitsAllowedRows).values(unitsAllowedRowsSeedData).onConflictDoNothing();
   await db.insert(schema.unitsItems).values(unitsItemsSeedData).onConflictDoNothing();
   await db.insert(schema.scenarios).values(scenarioSeedData).onConflictDoNothing();
   await db.insert(schema.scenariosRows).values(scenariosRowsSeedData).onConflictDoNothing();
@@ -49,7 +45,7 @@ try {
     .onConflictDoNothing();
 
   console.log(
-    "Seeded users, accounts, effects, spells, spells_effects, spells_allowed_rows, items, items_spells, units, units_items, scenarios, scenarios_rows, and scenarios_rows_units",
+    "Seeded users, accounts, effects, items, items_effects, units, units_allowed_rows, units_items, scenarios, scenarios_rows, and scenarios_rows_units",
   );
   await client.end();
   process.exit(0);

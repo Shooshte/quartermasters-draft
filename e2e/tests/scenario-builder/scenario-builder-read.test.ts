@@ -1,5 +1,10 @@
 import { expect, test } from "../db-reset.fixture";
-import { TRPC_BASE } from "../helpers/seed-constants";
+import {
+  ARCANE_DAMAGE_ID,
+  IRON_SWORD_ID,
+  SIZZLING_FLESH_ID,
+  TRPC_BASE,
+} from "../helpers/seed-constants";
 import { parseTrpcResponse } from "../helpers/trpc-api";
 import { test as base } from "../worker-base.fixture";
 
@@ -40,34 +45,6 @@ test.describe("Scenario Builder Read API — GM access", () => {
     expect(data.timingType).toBe("instant");
   });
 
-  // ── Spells ───────────────────────────────────────────────────────
-
-  test("GM can list spells (20 per page, alphabetical)", async ({ gmPage }) => {
-    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.spells.list`);
-    expect(res.ok()).toBe(true);
-    const data = await parseTrpcResponse(res);
-    expect(data.items).toHaveLength(20);
-    expect(data.page).toBe(1);
-    expect(data.limit).toBe(20);
-    const names = data.items.map((s: { name: string }) => s.name);
-    expect(names).toEqual([...names].sort());
-  });
-
-  test("GM can get spell with effectIds (Fireball)", async ({ gmPage }) => {
-    const input = encodeURIComponent(
-      JSON.stringify({ json: { id: "b0000000-0000-0000-0000-000000000001" } }),
-    );
-    const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.spells.get?input=${input}`);
-    expect(res.ok()).toBe(true);
-    const data = await parseTrpcResponse(res);
-    expect(data.name).toBe("Fireball");
-    // Fireball has Arcane Damage (seq 1) then Sizzling Flesh (seq 2)
-    expect(data.effectIds).toEqual([
-      "a0000000-0000-0000-0000-000000000006",
-      "a0000000-0000-0000-0000-000000000007",
-    ]);
-  });
-
   // ── Items ────────────────────────────────────────────────────────
 
   test("GM can list items (21 records, 20 per page, alphabetical)", async ({ gmPage }) => {
@@ -81,15 +58,13 @@ test.describe("Scenario Builder Read API — GM access", () => {
     expect(names).toEqual([...names].sort());
   });
 
-  test("GM can get item with spellIds (Oak Staff)", async ({ gmPage }) => {
-    const input = encodeURIComponent(
-      JSON.stringify({ json: { id: "d0000000-0000-0000-0000-000000000002" } }),
-    );
+  test("GM can get item with ordered effectIds (Iron Sword)", async ({ gmPage }) => {
+    const input = encodeURIComponent(JSON.stringify({ json: { id: IRON_SWORD_ID } }));
     const res = await gmPage.request.get(`${TRPC_BASE}/scenarioBuilder.items.get?input=${input}`);
     expect(res.ok()).toBe(true);
     const data = await parseTrpcResponse(res);
-    expect(data.name).toBe("Oak Staff");
-    expect(data.spellIds).toEqual(["b0000000-0000-0000-0000-000000000001"]);
+    expect(data.name).toBe("Iron Sword");
+    expect(data.effectIds).toEqual([ARCANE_DAMAGE_ID, SIZZLING_FLESH_ID]);
   });
 
   // ── Units ────────────────────────────────────────────────────────
@@ -114,6 +89,14 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Barbarian");
     expect(data.itemIds).toEqual(["d0000000-0000-0000-0000-000000000001"]);
+    expect(data).toMatchObject({
+      targetSide: "enemies",
+      targetPolicy: "random",
+      targetRowCount: 1,
+      maxTargetsPerRow: 1,
+      targetOnlyAdjacent: false,
+      allowedRowTypes: [],
+    });
   });
 
   // ── Scenarios ────────────────────────────────────────────────────

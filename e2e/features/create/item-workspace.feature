@@ -116,7 +116,7 @@ Feature: Item workspace create and edit
     Then reloading the item by URL should show the effects in the new order
 
   Scenario: Remove a linked effect while another remains
-    Given I have loaded the item "Iron Sword" in the item workspace
+    Given I have loaded the item "Oak Staff" in the item workspace
     And I link effect "Sizzling Flesh" to the item at sequence position 2
     And I save the item
     When I remove the effect at position 1

@@ -16,8 +16,6 @@ ALTER TABLE "spells_allowed_rows" ADD CONSTRAINT "spells_allowed_rows_spell_id_s
 CREATE INDEX "spells_allowed_rows_spell_id_idx" ON "spells_allowed_rows" USING btree ("spell_id");--> statement-breakpoint
 ALTER TABLE "items_spells" ADD CONSTRAINT "items_spells_spell_id_spells_id_fk" FOREIGN KEY ("spell_id") REFERENCES "public"."spells"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "spells_effects" ADD CONSTRAINT "spells_effects_effect_template_id_effects_id_fk" FOREIGN KEY ("effect_template_id") REFERENCES "public"."effects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "items" ADD CONSTRAINT "items_activation_mana_cost_nonnegative" CHECK ("items"."activation_mana_cost" >= 0);--> statement-breakpoint
-ALTER TABLE "items" ADD CONSTRAINT "items_activation_health_cost_nonnegative" CHECK ("items"."activation_health_cost" >= 0);--> statement-breakpoint
 ALTER TABLE "spells" ADD CONSTRAINT "target_row_count_positive" CHECK ("spells"."target_row_count" >= 1);--> statement-breakpoint
 ALTER TABLE "spells" ADD CONSTRAINT "max_targets_per_row_positive" CHECK ("spells"."max_targets_per_row" IS NULL OR "spells"."max_targets_per_row" >= 1);--> statement-breakpoint
 ALTER TABLE "spells" ADD CONSTRAINT "requires_adjacent_whole_row" CHECK ("spells"."max_targets_per_row" IS NOT NULL OR "spells"."requires_adjacent" = false);--> statement-breakpoint

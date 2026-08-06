@@ -132,7 +132,6 @@ describe("effectSeedData", () => {
   });
 });
 
-
 describe("itemSeedData", () => {
   it("has 21 item records", () => {
     expect(itemSeedData).toHaveLength(21);
@@ -190,9 +189,9 @@ describe("itemSeedData", () => {
 describe("itemsEffectsSeedData", () => {
   it("uses positive, unique sequence orders per item", () => {
     expect(itemsEffectsSeedData.every((link) => link.sequenceOrder > 0)).toBe(true);
-    expect(new Set(itemsEffectsSeedData.map((link) => `${link.itemId}:${link.sequenceOrder}`)).size).toBe(
-      itemsEffectsSeedData.length,
-    );
+    expect(
+      new Set(itemsEffectsSeedData.map((link) => `${link.itemId}:${link.sequenceOrder}`)).size,
+    ).toBe(itemsEffectsSeedData.length);
   });
 
   it("references seeded items and effects", () => {

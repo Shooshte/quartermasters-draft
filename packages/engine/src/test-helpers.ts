@@ -82,6 +82,10 @@ export function createUnit(name: string, overrides: Partial<UnitInput> = {}): Un
     targetRowCount: 1,
     maxTargetsPerRow: 1,
     targetOnlyAdjacent: false,
+    targetScope: "enemies",
+    targetPriority: "highest_health",
+    targetCount: 1,
+    selectionShape: "individual",
     allowedRowTypes: [],
     ...overrides,
   };

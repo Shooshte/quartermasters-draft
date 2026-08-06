@@ -38,6 +38,28 @@ describe("battle setup", () => {
     expect(getUnitByName(engine, "A", "Mage").mana).toBe(225);
   });
 
+  it("defaults and preserves the targeting and item placement contracts", () => {
+    const engine = new BattleEngine(
+      createBattleInput([
+        createScenario("A", {
+          support: [
+            createUnit("Mage", {
+              items: [createItem({ name: "Focus", allowedRowTypes: ["support"] })],
+            }),
+          ],
+        }),
+        createScenario("B", { tank: [createUnit("Dummy")] }),
+      ]),
+    );
+
+    const mage = getUnitByName(engine, "A", "Mage");
+    expect(mage.targetScope).toBe("enemies");
+    expect(mage.targetPriority).toBe("highest_health");
+    expect(mage.targetCount).toBe(1);
+    expect(mage.selectionShape).toBe("individual");
+    expect(mage.items[0]?.allowedRowTypes).toEqual(["support"]);
+  });
+
   it("initializes battle state with fixed row order, zero action bar, full mana, and base health", () => {
     const alpha = createScenario("Alpha", {
       tank: [

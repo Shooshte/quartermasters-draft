@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   createBattleInput,
   createBattleInputWithSeed,
+  createItem,
   createScenario,
   createStats,
   createUnit,
 } from "./test-helpers";
+import { initializeBattleState } from "./state";
 import type { BattleInput } from "./types";
 import { InvalidBattleInputError, validateBattleInput } from "./validation";
 
@@ -121,5 +123,81 @@ describe("battle input validation", () => {
         ]),
       ),
     ).toThrow(/self targeting policy.*enemy target side/i);
+  });
+
+  it("rejects a unit with a non-positive target count", () => {
+    expect(() =>
+      initializeBattleState(
+        createBattleInput([
+          createScenario("A", { tank: [createUnit("Caster", { targetCount: 0 })] }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Target count must be a positive integer");
+  });
+
+  it("rejects a unit with a non-integer target count", () => {
+    expect(() =>
+      validateBattleInput(
+        createBattleInput([
+          createScenario("A", { tank: [createUnit("Caster", { targetCount: 1.5 })] }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Target count must be a positive integer");
+  });
+
+  it("rejects an item that repeats an allowed row", () => {
+    expect(() =>
+      validateBattleInput(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("Caster", {
+                items: [createItem({ name: "Bow", allowedRowTypes: ["ranged", "ranged"] })],
+              }),
+            ],
+          }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Bow has duplicate allowed row types");
+  });
+
+  it("rejects items with no shared allowed rows", () => {
+    expect(() =>
+      validateBattleInput(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("Caster", {
+                items: [
+                  createItem({ name: "Bow", allowedRowTypes: ["ranged"] }),
+                  createItem({ name: "Shield", allowedRowTypes: ["tank"] }),
+                ],
+              }),
+            ],
+          }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Caster has no shared allowed item rows");
+  });
+
+  it("rejects a unit deployed outside an equipped item's allowed rows", () => {
+    expect(() =>
+      initializeBattleState(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("Caster", {
+                items: [createItem({ name: "Bow", allowedRowTypes: ["ranged"] })],
+              }),
+            ],
+          }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Caster cannot be deployed in tank");
   });
 });

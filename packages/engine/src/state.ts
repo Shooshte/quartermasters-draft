@@ -50,6 +50,7 @@ function normalizeItem(item: ItemInput): BattleItemState {
     criticalChance: item.criticalChance ?? 0,
     activationManaCost: item.activationManaCost ?? 0,
     activationHealthCost: item.activationHealthCost ?? 0,
+    allowedRowTypes: item.allowedRowTypes ? [...item.allowedRowTypes] : undefined,
     effects: [...(item.effects ?? [])].sort(
       (left, right) => left.sequenceOrder - right.sequenceOrder,
     ),
@@ -96,6 +97,10 @@ function createUnitState(
     targetRowCount: unit.targetRowCount ?? 1,
     maxTargetsPerRow: unit.maxTargetsPerRow ?? 1,
     targetOnlyAdjacent: unit.targetOnlyAdjacent ?? false,
+    targetScope: unit.targetScope ?? "enemies",
+    targetPriority: unit.targetPriority ?? "highest_health",
+    targetCount: unit.targetCount ?? 1,
+    selectionShape: unit.selectionShape ?? "individual",
     allowedRowTypes: [...(unit.allowedRowTypes ?? [])],
     targetPolicyOverride: null,
     activeEffects: [],

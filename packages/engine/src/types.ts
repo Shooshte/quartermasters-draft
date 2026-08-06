@@ -2,6 +2,31 @@ export const ROW_TYPES = ["tank", "melee", "ranged", "support"] as const;
 
 export type RowType = (typeof ROW_TYPES)[number];
 
+export const TARGET_SCOPES = [
+  "self",
+  "self_allies",
+  "self_enemies",
+  "allies",
+  "enemies",
+  "both",
+] as const;
+
+export type TargetScope = (typeof TARGET_SCOPES)[number];
+
+export const TARGET_PRIORITIES = [
+  "highest_health",
+  "lowest_health",
+  "highest_damage",
+  "support",
+  "random",
+] as const;
+
+export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
+
+export const TARGET_SELECTION_SHAPES = ["individual", "adjacent"] as const;
+
+export type TargetSelectionShape = (typeof TARGET_SELECTION_SHAPES)[number];
+
 export const TARGET_POLICIES = [
   "highest_health",
   "lowest_health",
@@ -75,6 +100,7 @@ export interface ItemInput {
   criticalChance?: number;
   activationManaCost?: number;
   activationHealthCost?: number;
+  allowedRowTypes?: RowType[];
   effects?: ItemEffectInput[];
 }
 
@@ -88,6 +114,10 @@ export interface UnitInput {
   targetRowCount?: number;
   maxTargetsPerRow?: number | null;
   targetOnlyAdjacent?: boolean;
+  targetScope?: TargetScope;
+  targetPriority?: TargetPriority;
+  targetCount?: number;
+  selectionShape?: TargetSelectionShape;
   allowedRowTypes?: RowType[];
   currentHealth?: number;
   startingActionBar?: number;
@@ -132,6 +162,7 @@ export interface BattleItemState {
   criticalChance: number;
   activationManaCost: number;
   activationHealthCost: number;
+  allowedRowTypes?: RowType[];
   effects: ItemEffectInput[];
 }
 
@@ -170,6 +201,10 @@ export interface BattleUnitState {
   targetRowCount: number;
   maxTargetsPerRow: number | null;
   targetOnlyAdjacent: boolean;
+  targetScope: TargetScope;
+  targetPriority: TargetPriority;
+  targetCount: number;
+  selectionShape: TargetSelectionShape;
   allowedRowTypes: RowType[];
   targetPolicyOverride: TargetPolicy | null;
   activeEffects: ActiveEffectState[];

@@ -709,6 +709,72 @@ describe("useCreatePageState — URL param change resets", () => {
     });
   });
 
+  it("keeps a newer generic entity_id selection when older detectors resolve late", async () => {
+    let resolveOlderEffect!: (value: Record<string, unknown>) => void;
+    let resolveOlderItem!: (value: Record<string, unknown>) => void;
+    let resolveOlderUnit!: (value: Record<string, unknown>) => void;
+
+    mockEffectsGet.mockImplementation(({ id }: { id: string }) => {
+      if (id === "older") {
+        return new Promise((resolve) => {
+          resolveOlderEffect = resolve;
+        });
+      }
+      return Promise.reject(new Error("not found"));
+    });
+    mockItemsGet.mockImplementation(({ id }: { id: string }) => {
+      if (id === "older") {
+        return new Promise((resolve) => {
+          resolveOlderItem = resolve;
+        });
+      }
+      return Promise.resolve({ id: "newer", name: "Iron Sword", effectIds: [] });
+    });
+    mockUnitsGet.mockImplementation(({ id }: { id: string }) => {
+      if (id === "older") {
+        return new Promise((resolve) => {
+          resolveOlderUnit = resolve;
+        });
+      }
+      return Promise.reject(new Error("not found"));
+    });
+
+    const { result, rerender } = renderHook(
+      (props: { search: { entity_id?: string } }) => useCreatePageState(props.search, vi.fn()),
+      { wrapper: createWrapper(), initialProps: { search: { entity_id: "older" } } },
+    );
+
+    await waitFor(() => {
+      expect(mockEffectsGet).toHaveBeenCalledWith({ id: "older" });
+      expect(mockItemsGet).toHaveBeenCalledWith({ id: "older" });
+      expect(mockUnitsGet).toHaveBeenCalledWith({ id: "older" });
+    });
+
+    rerender({ search: { entity_id: "newer" } });
+
+    await waitFor(() => {
+      expect(result.current.entityWorkspace).toMatchObject({
+        mode: "edit",
+        entityType: "item",
+        entityId: "newer",
+      });
+    });
+
+    await act(async () => {
+      resolveOlderEffect({ id: "older", name: "Old Effect" });
+      resolveOlderItem({ id: "older", name: "Old Item", effectIds: [] });
+      resolveOlderUnit({ id: "older", name: "Old Unit", itemIds: [] });
+    });
+
+    expect(result.current.activeTab).toBe("Items");
+    expect(result.current.entityWorkspace).toMatchObject({
+      mode: "edit",
+      entityType: "item",
+      entityId: "newer",
+    });
+    expect(result.current.perTabSelection.Items).toBe("newer");
+  });
+
   it("does not reset or refetch entity workspace when internal selection syncs the URL", async () => {
     mockItemsGet
       .mockResolvedValueOnce({ id: "i1", name: "Oak Staff", effectIds: [] })

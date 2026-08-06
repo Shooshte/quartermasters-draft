@@ -463,6 +463,30 @@ describe("unitsRouter", () => {
       expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
     });
 
+    it("rejects invalid targeting with duplicate allowed row types before a transaction", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.units.create({
+          name: "Invalid Duplicate Targeting Unit",
+          meleeDmg: 0,
+          health: 100,
+          mana: 100,
+          rangedDmg: 0,
+          manaRegen: 0,
+          spellDmg: 0,
+          speed: 1,
+          dodge: 0,
+          criticalChance: 0,
+          itemIds: [],
+          maxTargetsPerRow: null,
+          targetOnlyAdjacent: true,
+          allowedRowTypes: ["melee", "melee"],
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
     it.each([
       { maxTargetsPerRow: null, label: "whole-row targeting" },
       { maxTargetsPerRow: 1, label: "a single target per row" },

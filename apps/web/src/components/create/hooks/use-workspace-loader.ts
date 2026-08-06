@@ -129,16 +129,44 @@ export function useWorkspaceLoader({
     enabled: !!search.entity_id && !entityInitRef.current,
     retry: false,
   });
+  const entityDetectItems = useQuery({
+    queryKey: ["scenarioBuilder", "items", "get", search.entity_id],
+    queryFn: () =>
+      trpc.scenarioBuilder.items.get.query({
+        id: getRequiredSearchId(search.entity_id, "entity_id"),
+      }),
+    enabled: !!search.entity_id && !entityInitRef.current,
+    retry: false,
+  });
+  const entityDetectUnits = useQuery({
+    queryKey: ["scenarioBuilder", "units", "get", search.entity_id],
+    queryFn: () =>
+      trpc.scenarioBuilder.units.get.query({
+        id: getRequiredSearchId(search.entity_id, "entity_id"),
+      }),
+    enabled: !!search.entity_id && !entityInitRef.current,
+    retry: false,
+  });
   useEffect(() => {
     const entityId = search.entity_id;
     if (!entityId || entityInitRef.current) return;
-    if (!entityDetectEffects.isFetched) return;
+    if (
+      !entityDetectEffects.isFetched ||
+      !entityDetectItems.isFetched ||
+      !entityDetectUnits.isFetched
+    ) {
+      return;
+    }
 
     entityInitRef.current = true;
 
     const found = entityDetectEffects.data
       ? { type: "effect" as EntityType, data: entityDetectEffects.data }
-      : null;
+      : entityDetectItems.data
+        ? { type: "item" as EntityType, data: entityDetectItems.data }
+        : entityDetectUnits.data
+          ? { type: "unit" as EntityType, data: entityDetectUnits.data }
+          : null;
     if (found) {
       const entityData = found.data as { name: string; [key: string]: unknown };
       const entityTab = ENTITY_TYPE_TO_TAB[found.type];
@@ -177,6 +205,10 @@ export function useWorkspaceLoader({
     setActiveTabState,
     entityDetectEffects.isFetched,
     entityDetectEffects.data,
+    entityDetectItems.isFetched,
+    entityDetectItems.data,
+    entityDetectUnits.isFetched,
+    entityDetectUnits.data,
   ]);
 
   // URL-driven initialization for effect_id

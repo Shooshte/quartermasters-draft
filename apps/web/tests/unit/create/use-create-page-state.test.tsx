@@ -663,6 +663,52 @@ describe("useCreatePageState — URL param change resets", () => {
     resetMocks();
   });
 
+  it("detects and loads an item from a generic entity_id", async () => {
+    mockItemsGet.mockResolvedValue({
+      id: "i1",
+      name: "Iron Sword",
+      effectIds: [],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ entity_id: "i1" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.activeTab).toBe("Items");
+      expect(result.current.entityWorkspace).toMatchObject({
+        mode: "edit",
+        entityType: "item",
+        entityId: "i1",
+      });
+      expect(result.current.perTabSelection.Items).toBe("i1");
+    });
+  });
+
+  it("detects and loads a unit from a generic entity_id", async () => {
+    mockUnitsGet.mockResolvedValue({
+      id: "u1",
+      name: "Mage",
+      itemIds: [],
+    });
+
+    const { result } = renderHook(
+      () => useCreatePageState({ entity_id: "u1" }, vi.fn()),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(result.current.activeTab).toBe("Units");
+      expect(result.current.entityWorkspace).toMatchObject({
+        mode: "edit",
+        entityType: "unit",
+        entityId: "u1",
+      });
+      expect(result.current.perTabSelection.Units).toBe("u1");
+    });
+  });
+
   it("does not reset or refetch entity workspace when internal selection syncs the URL", async () => {
     mockItemsGet
       .mockResolvedValueOnce({ id: "i1", name: "Oak Staff", effectIds: [] })

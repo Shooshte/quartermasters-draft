@@ -414,6 +414,55 @@ describe("unitsRouter", () => {
       ]);
     });
 
+    it("normalizes duplicate allowed row types before insertion", async () => {
+      const created = {
+        id: "u-targeting",
+        name: "Targeting Adept",
+        meleeDmg: 0,
+        health: 100,
+        mana: 100,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 1,
+        dodge: 0,
+        criticalChance: 0,
+        targetSide: "enemies",
+        targetPolicy: "highest_health",
+        targetRowCount: 1,
+        maxTargetsPerRow: 1,
+        targetOnlyAdjacent: false,
+      };
+      const unitValues = vi.fn().mockReturnValue(chainable([created]));
+      const insertAllowedRows = vi.fn().mockReturnValue(chainable([]));
+      mockInsertFn
+        .mockReturnValueOnce({ values: unitValues })
+        .mockReturnValueOnce({ values: insertAllowedRows });
+      mockSelect.mockReturnValueOnce(chainable([]));
+
+      const caller = createCaller(gmCtx);
+      const result = await caller.units.create({
+        name: "Targeting Adept",
+        meleeDmg: 0,
+        health: 100,
+        mana: 100,
+        rangedDmg: 0,
+        manaRegen: 0,
+        spellDmg: 0,
+        speed: 1,
+        dodge: 0,
+        criticalChance: 0,
+        itemIds: [],
+        allowedRowTypes: ["melee", "melee", "tank"],
+      });
+
+      expect(insertAllowedRows).toHaveBeenCalledWith([
+        { unitId: "u-targeting", rowType: "melee" },
+        { unitId: "u-targeting", rowType: "tank" },
+      ]);
+      expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
+    });
+
     it.each([
       { maxTargetsPerRow: null, label: "whole-row targeting" },
       { maxTargetsPerRow: 1, label: "a single target per row" },

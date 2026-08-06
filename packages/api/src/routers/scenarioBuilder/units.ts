@@ -76,7 +76,7 @@ function normalizeUnitInput(input: z.infer<typeof unitInputBaseSchema>): Normali
     ...input,
     name: input.name.trim(),
     itemIds: [...input.itemIds],
-    allowedRowTypes: [...input.allowedRowTypes],
+    allowedRowTypes: [...new Set(input.allowedRowTypes)],
   };
 }
 

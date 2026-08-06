@@ -670,10 +670,9 @@ describe("useCreatePageState — URL param change resets", () => {
       effectIds: [],
     });
 
-    const { result } = renderHook(
-      () => useCreatePageState({ entity_id: "i1" }, vi.fn()),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ entity_id: "i1" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.activeTab).toBe("Items");
@@ -693,10 +692,9 @@ describe("useCreatePageState — URL param change resets", () => {
       itemIds: [],
     });
 
-    const { result } = renderHook(
-      () => useCreatePageState({ entity_id: "u1" }, vi.fn()),
-      { wrapper: createWrapper() },
-    );
+    const { result } = renderHook(() => useCreatePageState({ entity_id: "u1" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.activeTab).toBe("Units");

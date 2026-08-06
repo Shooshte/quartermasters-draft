@@ -79,15 +79,15 @@ Feature: Unit workspace create and edit
 
   Scenario: Damage effects can apply to allies
     Given unit "Barbarian" targets "allies" using "highest_health"
-    And item "Fire Sword" has damage effect "Flame Strike"
-    When "Barbarian" activates item "Fire Sword"
-    Then "Flame Strike" should apply to an ally
+    And item "Iron Sword" has damage effect "Arcane Damage"
+    When "Barbarian" activates item "Iron Sword"
+    Then "Arcane Damage" should apply to a distinct ally
 
   Scenario: Healing effects can apply to enemies
-    Given unit "Barbarian" targets "enemies" using "lowest_health"
-    And item "Mercy Staff" has healing effect "Restoration"
-    When "Barbarian" activates item "Mercy Staff"
-    Then "Restoration" should apply to an enemy
+    Given unit "Ranger" targets "enemies" using "lowest_health"
+    And item "Leather Shield" has healing effect "Mend"
+    When "Ranger" activates item "Leather Shield"
+    Then "Mend" should apply to an enemy
 
   Scenario: Target row count supports one through four rows
     When I start creating a new unit

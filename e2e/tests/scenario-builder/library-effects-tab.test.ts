@@ -38,12 +38,6 @@ test.describe("Effects Library Tab — Display", () => {
       expect(response.ok()).toBeTruthy();
     }
 
-    const spellIds = await listEntityIdsViaApi(gmPage.request, "spells");
-    for (const id of spellIds) {
-      const response = await deleteEntityViaApi(gmPage.request, "spells", id);
-      expect(response.ok()).toBeTruthy();
-    }
-
     const effectIds = await listEntityIdsViaApi(gmPage.request, "effects");
     for (const id of effectIds) {
       const response = await deleteEntityViaApi(gmPage.request, "effects", id);
@@ -361,7 +355,7 @@ test.describe("Effects Library Tab — Deletion", () => {
     await expect(lib.getRow("Zodiac Burst")).toBeVisible();
   });
 
-  test("cannot delete an effect that is linked to a spell", async ({ gmPage }) => {
+  test("cannot delete an effect that is linked to an item", async ({ gmPage }) => {
     const lib = new LibraryTabPage(gmPage, EFFECTS_TAB);
     await lib.navigateWithEntity(BARBARIAN_ROAR_ID);
     await expect(lib.nameInput).toHaveValue("Barbarian Roar");
@@ -372,7 +366,7 @@ test.describe("Effects Library Tab — Deletion", () => {
 
     await expect(lib.deleteConfirmDialog).toBeVisible();
     await expect(
-      gmPage.getByText("Cannot delete effect while it is linked to one or more spells."),
+      gmPage.getByText("Cannot delete effect while it is linked to one or more items."),
     ).toBeVisible();
     await expect(lib.nameInput).toHaveValue("Barbarian Roar");
     expect(gmPage.url()).toContain(`effect_id=${BARBARIAN_ROAR_ID}`);

@@ -87,9 +87,9 @@ Feature: Item workspace create and edit
   Scenario: Effects execute in the linked order
     When I create a new item named "Arcane Focus"
     And I link effect "Arcane Damage" to the item at sequence position 1
-    And I link effect "Burn" to the item at sequence position 2
+    And I link effect "Sizzling Flesh" to the item at sequence position 2
     And I save the item
-    Then reloading the item by URL should show effects "Arcane Damage" and "Burn" in order
+    Then reloading the item by URL should show effects "Arcane Damage" and "Sizzling Flesh" in order
 
   Scenario: Search for a specific effect before linking it
     When I start creating a new item
@@ -104,24 +104,24 @@ Feature: Item workspace create and edit
     Then the link-effect picker should use "Search effects..." as input placeholder only
 
   Scenario: Open an effect linked to an item
-    Given I have loaded the item "Oak Staff" in the item workspace
+    Given I have loaded the item "Iron Sword" in the item workspace
     When I edit linked effect at position 1
     Then the "Effects" tab should be active
     And effect "Arcane Damage" should be open in the effect workspace
 
   Scenario: Reorder linked effects
-    Given I have loaded the item "Oak Staff" in the item workspace
+    Given I have loaded the item "Iron Sword" in the item workspace
     When I reorder the linked effects so that position 1 becomes position 2 and position 2 becomes position 1
     And I save the item
     Then reloading the item by URL should show the effects in the new order
 
   Scenario: Remove a linked effect while another remains
-    Given I have loaded the item "Oak Staff" in the item workspace
-    And I link effect "Burn" to the item at sequence position 2
+    Given I have loaded the item "Iron Sword" in the item workspace
+    And I link effect "Sizzling Flesh" to the item at sequence position 2
     And I save the item
     When I remove the effect at position 1
     And I save the item
-    Then reloading the item by URL should show only effect "Burn"
+    Then reloading the item by URL should show only effect "Sizzling Flesh"
 
   Scenario: Removing the final linked effect leaves a valid stat-only item
     Given I have loaded the item "Oak Staff" in the item workspace

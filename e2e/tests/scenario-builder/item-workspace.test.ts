@@ -1,6 +1,6 @@
 // Source of truth: e2e/features/create/item-workspace.feature
 import { expect, test } from "../db-reset.fixture";
-import { OAK_STAFF_ID } from "../helpers/seed-constants";
+import { IRON_SWORD_ID, OAK_STAFF_ID } from "../helpers/seed-constants";
 import { expectAllStats } from "../helpers/workspace-helpers";
 import { ItemWorkspacePage } from "../pages/item-workspace.page";
 
@@ -169,19 +169,19 @@ test.describe("Item Workspace", () => {
     await expect(gmPage.getByTestId("item-spellDmg-input")).toHaveValue("20");
   });
 
-  test("edit a linked spell", async ({ gmPage }) => {
+  test("open a linked effect in the effect workspace", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
-    await item.openById(OAK_STAFF_ID);
+    await item.openById(IRON_SWORD_ID);
 
-    await item.editSpell(0);
+    await item.editEffect(0);
 
-    await expect(gmPage.getByRole("tab", { name: "Spells" })).toHaveAttribute(
+    await expect(gmPage.getByRole("tab", { name: "Effects" })).toHaveAttribute(
       "data-state",
       "active",
     );
-    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Fireball");
-    await expect(gmPage).toHaveURL(/tab=Spells/);
-    await expect(gmPage).toHaveURL(/spell_id=/);
+    await expect(gmPage.getByTestId("entity-name-input")).toHaveValue("Arcane Damage");
+    await expect(gmPage).toHaveURL(/tab=Effects/);
+    await expect(gmPage).toHaveURL(/effect_id=/);
     await expect(gmPage).not.toHaveURL(/item_id=/);
   });
 
@@ -196,15 +196,15 @@ test.describe("Item Workspace", () => {
     await expect(item.nameInput).toHaveValue("Iron Sword");
   });
 
-  test("linked spells are optional on create", async ({ gmPage }) => {
+  test("a stat-only item is valid", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
-    await item.fillName("Spell-less Relic");
+    await item.fillName("Stat-only Relic");
     await item.saveCreate();
 
     await gmPage.reload();
-    await expect(item.spellRows).toHaveCount(0);
+    await expect(item.effectRows).toHaveCount(0);
   });
 
   test("activation costs cannot be negative", async ({ gmPage }) => {
@@ -221,110 +221,118 @@ test.describe("Item Workspace", () => {
     await expect(gmPage.getByText("Must be zero or greater")).toHaveCount(2);
   });
 
-  test("add a spell to an item", async ({ gmPage }) => {
+  test("add an effect to an item", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
     await item.fillName("Flame Rod");
-    await item.linkSpell("Fireball");
+    await item.linkEffect("Arcane Damage");
     await item.saveCreate();
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Fireball");
+    await expect(item.effectRow(0)).toContainText("Arcane Damage");
+    await expect(item.effectRow(0)).toContainText("1");
   });
 
-  test("add multiple spells to an item", async ({ gmPage }) => {
+  test("effects persist in linked order", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
     await item.fillName("Arcane Focus");
-    await item.linkSpell("Fireball");
-    await item.linkSpell("Healing Touch");
+    await item.linkEffect("Arcane Damage");
+    await item.linkEffect("Sizzling Flesh");
     await item.saveCreate();
 
     await gmPage.reload();
-    await expect(item.formFields).toContainText("Fireball");
-    await expect(item.formFields).toContainText("Healing Touch");
-    await expect(item.spellRows).toHaveCount(2);
+    await expect(item.effectRows).toHaveCount(2);
+    await expect(item.effectRow(0)).toContainText("Arcane Damage");
+    await expect(item.effectRow(1)).toContainText("Sizzling Flesh");
   });
 
-  test("remove a linked spell while at least one remains", async ({ gmPage }) => {
+  test("reorder linked effects and persist the new order", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
-    await item.openById(OAK_STAFF_ID);
+    await item.openById(IRON_SWORD_ID);
 
-    await item.linkSpell("Healing Touch");
-    await item.saveUpdate();
-
-    await item.removeSpell(0);
-    await expect(item.spellRows).toHaveCount(1);
-    await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Healing Touch");
+    await expect(item.effectRow(0)).toContainText("Arcane Damage");
+    await expect(item.effectRow(1)).toContainText("Sizzling Flesh");
+    await item.moveEffectDown(0);
+    await expect(item.effectRow(0)).toContainText("Sizzling Flesh");
+    await expect(item.effectRow(1)).toContainText("Arcane Damage");
     await item.saveUpdate();
 
     await gmPage.reload();
-    await expect(item.spellRows).toHaveCount(1);
-    await expect(gmPage.getByTestId("item-spell-row-0")).toContainText("Healing Touch");
+    await expect(item.effectRow(0)).toContainText("Sizzling Flesh");
+    await expect(item.effectRow(1)).toContainText("Arcane Damage");
   });
 
-  test("removing the final linked spell is allowed on edit", async ({ gmPage }) => {
+  test("remove a linked effect while at least one remains", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openById(OAK_STAFF_ID);
 
-    await item.removeSpell(0);
+    await item.linkEffect("Sizzling Flesh");
+    await item.saveUpdate();
+
+    await item.removeEffect(0);
+    await expect(item.effectRows).toHaveCount(1);
+    await expect(item.effectRow(0)).toContainText("Sizzling Flesh");
     await item.saveUpdate();
 
     await gmPage.reload();
-    await expect(item.spellRows).toHaveCount(0);
+    await expect(item.effectRows).toHaveCount(1);
+    await expect(item.effectRow(0)).toContainText("Sizzling Flesh");
   });
 
-  test("edit linked spells on an existing item", async ({ gmPage }) => {
+  test("removing the final linked effect leaves a valid stat-only item", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openById(OAK_STAFF_ID);
 
-    await item.linkSpell("Battle Cry");
+    await item.removeEffect(0);
     await item.saveUpdate();
 
     await gmPage.reload();
-    await expect(item.formFields).toContainText("Fireball");
-    await expect(item.formFields).toContainText("Battle Cry");
-    await expect(item.spellRows).toHaveCount(2);
+    await expect(item.effectRows).toHaveCount(0);
   });
 
-  test("search for a specific spell before linking it", async ({ gmPage }) => {
+  test("search for a specific effect before linking it", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
-    await item.spellPicker.click();
-    await item.spellPickerSearch.fill("fire");
-    await expect(gmPage.getByRole("option", { name: "Fireball" })).toBeVisible();
+    await item.effectPicker.click();
+    await item.effectPickerSearch.fill("Tectonic Pulse");
+    await expect(gmPage.getByRole("option", { name: "Tectonic Pulse" })).toBeVisible();
   });
 
-  test("link-spell picker shows at most five options", async ({ gmPage }) => {
+  test("link-effect picker shows at most five options", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
-    await item.spellPicker.click();
+    await item.effectPicker.click();
     await expect(gmPage.locator('[role="listbox"] [role="option"]')).toHaveCount(5);
   });
 
-  test("link-spell picker does not include the search prompt as an option", async ({ gmPage }) => {
+  test("link-effect picker uses the search prompt as a placeholder only", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
-    await item.spellPicker.click();
-    await expect(item.spellPickerSearch).toHaveAttribute("placeholder", "Search spells...");
+    await item.effectPicker.click();
+    await expect(item.effectPickerSearch).toHaveAttribute("placeholder", "Search effects...");
     await expect(
-      gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search spells..." }),
+      gmPage.locator('[role="listbox"] [role="option"]', { hasText: "Search effects..." }),
     ).toHaveCount(0);
   });
 
-  test("duplicate spell links are not allowed", async ({ gmPage }) => {
+  test("duplicate effect links are allowed and persist", async ({ gmPage }) => {
     const item = new ItemWorkspacePage(gmPage);
     await item.openNew();
 
     await item.fillName("Echo Crystal");
-    await item.linkSpell("Fireball");
+    await item.linkEffect("Arcane Damage");
+    await item.linkEffect("Arcane Damage");
+    await item.saveCreate();
 
-    await item.spellPicker.click();
-    await expect(gmPage.getByRole("option", { name: "Fireball" })).toHaveCount(0);
+    await gmPage.reload();
+    await expect(item.effectRows).toHaveCount(2);
+    await expect(item.effectRow(0)).toContainText("Arcane Damage");
+    await expect(item.effectRow(1)).toContainText("Arcane Damage");
   });
 });

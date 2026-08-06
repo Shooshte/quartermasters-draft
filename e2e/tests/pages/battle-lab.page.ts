@@ -33,7 +33,19 @@ interface ExpectedBattleReplay {
         rows: Record<ScenarioRowType, ExpectedBattleUnit[]>;
       }[];
     };
-    log: { tick: number; type: string; message: string }[];
+    log: {
+      tick: number;
+      type: string;
+      message: string;
+      actionId?: string;
+      item?: string;
+      effects?: string[];
+      origin?: {
+        kind?: string;
+        item?: { name: string; position?: number };
+        effect?: { name: string; position?: number };
+      };
+    }[];
   };
 }
 
@@ -172,16 +184,41 @@ export class BattleLabPage {
     await expect(eventLedger.getByText(/Tick \d+/)).toHaveCount(0);
     await expect(eventEntries.last()).toContainText("Battle ended:");
 
-    const attributedSpell = expected.result.log.find(
-      (entry) => entry.origin?.item?.name && entry.origin.spell?.name,
+    const multiEffectActivation = expected.result.log.find(
+      (entry) =>
+        entry.type === "item-activation" &&
+        entry.origin?.item?.name &&
+        entry.effects &&
+        entry.effects.length > 1,
     );
-    if (attributedSpell?.origin?.item && attributedSpell.origin.spell) {
-      await expect(
-        eventLedger.getByText(
-          `${attributedSpell.origin.item.name} › ${attributedSpell.origin.spell.name}`,
-        ),
-      ).toBeVisible();
+    if (!multiEffectActivation?.origin?.item || !multiEffectActivation.actionId) {
+      throw new Error("Expected a multi-effect item activation with item-only attribution");
     }
+
+    expect(multiEffectActivation.origin).not.toHaveProperty("spell");
+    expect(
+      expected.result.log.filter(
+        (entry) =>
+          entry.actionId === multiEffectActivation.actionId && entry.type === "item-activation",
+      ),
+    ).toHaveLength(1);
+
+    expect(multiEffectActivation.effects?.length ?? 0).toBeGreaterThan(1);
+
+    const attributedOutcomes = expected.result.log.filter(
+      (entry) =>
+        entry.actionId === multiEffectActivation.actionId &&
+        entry.origin?.item?.name === multiEffectActivation.origin?.item?.name &&
+        entry.origin?.effect,
+    );
+    expect(attributedOutcomes.length).toBeGreaterThan(0);
+    for (const outcome of attributedOutcomes) {
+      expect(outcome.origin).not.toHaveProperty("spell");
+    }
+
+    const itemName = multiEffectActivation.origin.item.name;
+    await expect(eventLedger.getByText(itemName, { exact: true }).first()).toBeVisible();
+    await expect(eventLedger.getByText(new RegExp(`${itemName}\\s*›`))).toHaveCount(0);
   }
 
   get replayId() {

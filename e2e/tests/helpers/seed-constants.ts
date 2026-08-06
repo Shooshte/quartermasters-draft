@@ -10,6 +10,8 @@ export const TRPC_BASE = "/api/trpc";
 // ─── Effect IDs ──────────────────────────────────────────────────────────────
 
 export const BARBARIAN_ROAR_ID = "a0000000-0000-0000-0000-000000000001";
+export const ARCANE_DAMAGE_ID = "a0000000-0000-0000-0000-000000000006";
+export const SIZZLING_FLESH_ID = "a0000000-0000-0000-0000-000000000007";
 export const ZODIAC_BURST_ID = "a0000000-0000-0000-0000-000000000021";
 
 // ─── Item IDs ────────────────────────────────────────────────────────────────

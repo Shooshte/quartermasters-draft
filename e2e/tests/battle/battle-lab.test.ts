@@ -3,13 +3,18 @@ import { expect, test } from "../db-reset.fixture";
 import {
   AMBUSH_AT_DAWN_ID,
   AMBUSH_AT_DAWN_NAME,
+  BARBARIAN_ID,
   BATTLE_LAB_SEED,
   CASTLE_SIEGE_ID,
   CASTLE_SIEGE_NAME,
+  LEATHER_SHIELD_ID,
+  MAGE_ID,
+  RANGER_ID,
   TEMPLAR_ID,
   TRPC_BASE,
 } from "../helpers/seed-constants";
 import { parseTrpcResponse } from "../helpers/trpc-api";
+import { runWorkerSql } from "../helpers/worker-db";
 import { BattleLabPage } from "../pages/battle-lab.page";
 
 type ScenarioRowType = "ranged" | "support" | "melee" | "tank";
@@ -49,9 +54,16 @@ interface BattleReplayResponse {
       type: string;
       message: string;
       actionId?: string;
+      caster?: string;
+      casterId?: string;
+      item?: string;
+      effects?: string[];
+      source?: string;
+      sourceId?: string;
+      target?: string;
+      targetId?: string;
       origin?: {
         item?: { name: string };
-        spell?: { name: string };
         effect?: { name: string };
       };
     }[];
@@ -153,12 +165,53 @@ async function runSavedBattle(page: Page) {
   return battleLab;
 }
 
+async function configureUnitTargeting(
+  parallelIndex: number,
+  unitId: string,
+  side: "allies" | "enemies",
+  policy: "highest_health" | "lowest_health",
+) {
+  await runWorkerSql(
+    parallelIndex,
+    `UPDATE units SET target_side = '${side}', target_policy = '${policy}' WHERE id = '${unitId}'`,
+  );
+}
+
 test.describe("Battle Lab", () => {
-  test("game master runs two living scenarios with a named seed", async ({ gmPage }) => {
+  test("a multi-effect item charges exactly one nonzero cost per activation", async ({
+    gmPage,
+  }, testInfo) => {
+    const activationManaCost = 40;
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE items SET activation_mana_cost = ${activationManaCost} WHERE id = '${LEATHER_SHIELD_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET mana = 50, mana_regen = 0 WHERE id = '${RANGER_ID}'`,
+    );
+
     const battleLab = await runSavedBattle(gmPage);
 
     expect(battleLab.replayId).toMatch(/^[0-9a-f-]{36}$/);
     const replay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    const shieldActivations = replay.result.log.filter(
+      (entry) =>
+        entry.type === "item-activation" &&
+        entry.origin?.item?.name === "Leather Shield" &&
+        entry.effects?.length === 2,
+    );
+    expect(shieldActivations).toHaveLength(1);
+    expect(shieldActivations[0]?.effects).toEqual(["Mend", "Bandage"]);
+
+    const ranger = replay.result.finalState.scenarios
+      .flatMap((scenario) => Object.values(scenario.rows).flat())
+      .find((unit) => unit.name === "Ranger");
+    expect(ranger).toBeDefined();
+    expect(ranger?.mana).toBe(
+      (ranger?.baseStats.mana ?? 0) + (ranger?.itemBonusStats.mana ?? 0) - activationManaCost,
+    );
+
     for (const unit of replay.result.finalState.scenarios.flatMap((scenario) =>
       Object.values(scenario.rows).flat(),
     )) {
@@ -172,6 +225,51 @@ test.describe("Battle Lab", () => {
       expect(unit.mana).toBeGreaterThanOrEqual(0);
       expect(unit.mana).toBeLessThanOrEqual(effectiveMaximum);
     }
+  });
+
+  test("a damage effect can target an ally", async ({ gmPage }, testInfo) => {
+    await configureUnitTargeting(testInfo.parallelIndex, BARBARIAN_ID, "allies", "highest_health");
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET health = 121 WHERE id = '${MAGE_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET speed = 10 WHERE id = '${BARBARIAN_ID}'`,
+    );
+
+    const battleLab = await runSavedBattle(gmPage);
+    const replay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    const alliedDamage = replay.result.log.find(
+      (entry) =>
+        entry.type === "damage" &&
+        entry.origin?.item?.name === "Iron Sword" &&
+        entry.origin.effect?.name === "Arcane Damage",
+    );
+
+    expect(alliedDamage).toBeDefined();
+    expect(alliedDamage?.sourceId?.startsWith(`${AMBUSH_AT_DAWN_ID}:`)).toBe(true);
+    expect(alliedDamage?.targetId?.startsWith(`${AMBUSH_AT_DAWN_ID}:`)).toBe(true);
+    expect(alliedDamage?.target).toBe("Mage");
+    expect(alliedDamage?.targetId).not.toBe(alliedDamage?.sourceId);
+  });
+
+  test("a healing effect can target an enemy", async ({ gmPage }, testInfo) => {
+    await configureUnitTargeting(testInfo.parallelIndex, RANGER_ID, "enemies", "lowest_health");
+
+    const battleLab = await runSavedBattle(gmPage);
+    const replay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    const enemyHealing = replay.result.log.find(
+      (entry) =>
+        entry.type === "heal" &&
+        entry.source === "Ranger" &&
+        entry.origin?.item?.name === "Leather Shield" &&
+        entry.origin.effect?.name === "Mend",
+    );
+
+    expect(enemyHealing).toBeDefined();
+    expect(enemyHealing?.sourceId?.startsWith(`${AMBUSH_AT_DAWN_ID}:`)).toBe(true);
+    expect(enemyHealing?.targetId?.startsWith(`${CASTLE_SIEGE_ID}:`)).toBe(true);
   });
 
   test("saved replay keeps its setup and result after refresh", async ({ gmPage }) => {

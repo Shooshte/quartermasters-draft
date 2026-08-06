@@ -27,19 +27,16 @@ export const TARGET_SELECTION_SHAPES = ["individual", "adjacent"] as const;
 
 export type TargetSelectionShape = (typeof TARGET_SELECTION_SHAPES)[number];
 
-export const TARGET_POLICIES = [
-  "highest_health",
-  "lowest_health",
-  "highest_damage",
-  "random",
-  "self",
-] as const;
+/** @deprecated Temporary input compatibility until persisted targeting is migrated. */
+export type TargetPolicy =
+  | "highest_health"
+  | "lowest_health"
+  | "highest_damage"
+  | "random"
+  | "self";
 
-export type TargetPolicy = (typeof TARGET_POLICIES)[number];
-
-export const TARGET_SIDES = ["allies", "enemies", "self"] as const;
-
-export type TargetSide = (typeof TARGET_SIDES)[number];
+/** @deprecated Temporary input compatibility until persisted targeting is migrated. */
+export type TargetSide = "allies" | "enemies" | "self";
 
 export const STAT_KEYS = [
   "health",
@@ -109,15 +106,21 @@ export interface UnitInput {
   name: string;
   stats: UnitStats;
   items?: ItemInput[];
+  /** @deprecated Ignored by the engine; use targetScope. */
   targetSide?: TargetSide;
+  /** @deprecated Ignored by the engine; use targetPriority. */
   targetPolicy?: TargetPolicy;
+  /** @deprecated Ignored by the engine; use targetCount. */
   targetRowCount?: number;
+  /** @deprecated Ignored by the engine; use targetCount. */
   maxTargetsPerRow?: number | null;
+  /** @deprecated Ignored by the engine; use selectionShape. */
   targetOnlyAdjacent?: boolean;
   targetScope?: TargetScope;
   targetPriority?: TargetPriority;
   targetCount?: number;
   selectionShape?: TargetSelectionShape;
+  /** @deprecated Ignored by the engine; deployment rows belong to items. */
   allowedRowTypes?: RowType[];
   currentHealth?: number;
   startingActionBar?: number;
@@ -129,19 +132,11 @@ export interface ScenarioInput {
   rows?: Partial<Record<RowType, UnitInput[]>>;
 }
 
-export interface TargetingOverrideInput {
-  scenarioId: string;
-  rowType: RowType;
-  slot: number;
-  policy: TargetPolicy;
-}
-
 export type BattleSeed = number | string;
 
 export interface BattleInput {
   scenarios: [ScenarioInput, ScenarioInput];
   seed: BattleSeed;
-  targetingOverrides?: TargetingOverrideInput[];
 }
 
 export interface BattleOptions {
@@ -196,17 +191,10 @@ export interface BattleUnitState {
   mana: number;
   actionBar: number;
   items: BattleItemState[];
-  targetSide: TargetSide;
-  targetPolicy: TargetPolicy;
-  targetRowCount: number;
-  maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
   targetScope: TargetScope;
   targetPriority: TargetPriority;
   targetCount: number;
   selectionShape: TargetSelectionShape;
-  allowedRowTypes: RowType[];
-  targetPolicyOverride: TargetPolicy | null;
   activeEffects: ActiveEffectState[];
   actedCount: number;
 }

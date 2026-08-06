@@ -1,4 +1,4 @@
-import { ROW_TYPES, type BattleInput, type RowType, type UnitInput } from "./types";
+import { type BattleInput, ROW_TYPES, type RowType, type UnitInput } from "./types";
 
 export class InvalidBattleInputError extends Error {
   constructor(message: string) {
@@ -35,22 +35,14 @@ export function validateBattleInput(input: BattleInput): void {
       (scenario.rows?.[rowType] ?? []).map((unit) => ({ rowType, unit })),
     ),
   );
-  const units = deployedUnits.map(({ unit }) => unit);
-  const invalidSelfTargeter = units.find(
-    (unit) => (unit.targetSide ?? "enemies") === "enemies" && unit.targetPolicy === "self",
-  );
-  if (invalidSelfTargeter) {
-    throw new InvalidBattleInputError(
-      `Self targeting policy is invalid for the enemy target side on unit ${invalidSelfTargeter.name}.`,
-    );
-  }
-
   for (const { rowType, unit } of deployedUnits) {
     validateTargetCount(unit);
     validateItemRows(unit, rowType);
   }
 
-  const livingUnits = units.filter((unit) => (unit.currentHealth ?? unit.stats.health) > 0);
+  const livingUnits = deployedUnits
+    .map(({ unit }) => unit)
+    .filter((unit) => (unit.currentHealth ?? unit.stats.health) > 0);
 
   if (livingUnits.length === 0) {
     throw new InvalidBattleInputError("Battle initialization requires at least one living unit.");

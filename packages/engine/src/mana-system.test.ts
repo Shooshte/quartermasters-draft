@@ -209,7 +209,7 @@ describe("mana system", () => {
                   effects: activationEffects("Aimed Shot"),
                 }),
               ],
-              allowedRowTypes: ["ranged"],
+              targetScope: "allies",
             }),
           ],
         }),

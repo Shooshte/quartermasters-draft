@@ -1,72 +1,74 @@
 Feature: Unit target selection
-  A unit supplies targeting for every effect-bearing item it activates.
+  A unit supplies one scope, priority, count, and shape for every effect-bearing item it activates.
 
-  Scenario: Target side selects allies, enemies, or only self
-    Given "Knight" targets allies using "lowest_health"
+  Scenario Outline: Target scope determines which living units are candidates
+    Given a ranged "Knight" and living units on both sides
+    And "Knight" has target scope "<scope>"
     When "Knight" selects targets
-    Then all selected targets are allies
-    Given "Knight" targets enemies using "highest_health"
-    When "Knight" selects targets
-    Then all selected targets are enemies
-    Given "Knight" targets self using "self"
-    When "Knight" selects targets
-    Then the only selected target is "Knight"
-
-  Scenario Outline: Each target side accepts only its valid target policies
-    Given "Knight" targets <target_side> using "<policy>"
-    When "Knight" selects targets with seed 42
-    Then targets follow the "<policy>" policy
+    Then only units admitted by "<scope>" are candidates
 
     Examples:
-      | target_side | policy         |
-      | allies      | highest_health |
-      | allies      | lowest_health  |
-      | allies      | highest_damage |
-      | allies      | random         |
-      | enemies     | highest_health |
-      | enemies     | lowest_health  |
-      | enemies     | highest_damage |
-      | enemies     | random         |
-      | self        | self           |
+      | scope        |
+      | self         |
+      | self_allies  |
+      | self_enemies |
+      | allies       |
+      | enemies      |
+      | both         |
 
-  Scenario: Self policy is not valid for enemy targeting
-    Given "Knight" targets enemies using "self"
-    Then the targeting configuration is invalid
+  Scenario Outline: Target priority ranks all reachable candidates
+    Given a ranged "Knight" can reach candidates with different health, damage, and rows
+    And "Knight" uses "<priority>" priority
+    When "Knight" selects a target
+    Then the selected target follows "<priority>" with deterministic fallback ordering
 
-  Scenario: Target rows are selected front to back and skip empty rows
-    Given "Knight" targets enemies using "highest_health" across 2 rows
-    When "Knight" selects targets
-    Then targets come from the two frontmost occupied eligible rows
+    Examples:
+      | priority       |
+      | highest_health |
+      | lowest_health  |
+      | highest_damage |
+      | support        |
+      | random         |
 
-  Scenario: A whole-row policy selects every living unit in each selected row
-    Given "Knight" targets enemies using "highest_health" across 2 rows with no per-row limit
-    When "Knight" selects targets
-    Then every living unit in the selected rows is targeted
+  Scenario Outline: Front-line reach uses the globally nearest occupied eligible row
+    Given a <caster_row> caster can target an allied <caster_row> row and an enemy ranged row
+    And a nearer enemy tank row contains only dead units
+    When the caster selects targets
+    Then only the allied <caster_row> row is reachable
 
-  Scenario: A limited per-row policy selects only its allowed count
-    Given "Knight" targets enemies using "highest_health" across 2 rows with 1 target per row
-    When "Knight" selects targets
-    Then exactly one target is selected from each selected row
+    Examples:
+      | caster_row |
+      | tank       |
+      | melee      |
 
-  Scenario: Adjacent targeting selects contiguous positions around the primary target
-    Given "Knight" targets enemies using "highest_health" with 3 adjacent targets per row
-    When "Knight" selects targets
-    Then targets are contiguous around the primary target
+  Scenario: Equal-distance sides use a reproducible seeded tie break
+    Given a melee caster can target allied and enemy tank rows
+    When the caster selects targets twice with the same seed
+    Then both selections choose the same single side
 
-  Scenario: Allowed rows restrict selection and an empty allowed-row list means all rows
-    Given "Knight" targets enemies using "highest_health" with only "tank" and "melee" eligible
-    When "Knight" selects targets
-    Then every selected target is in an eligible row
-    Given "Knight" has no allowed-row restrictions
-    When "Knight" selects targets
-    Then every row is eligible
+  Scenario Outline: Back-row casters can reach every eligible row
+    Given a caster is deployed in the "<caster_row>" row
+    When the caster selects the highest-health enemy
+    Then an enemy support can be selected over an enemy tank
 
-  Scenario: Dead units are never eligible targets
-    Given a dead enemy is in an otherwise eligible row
-    When "Knight" selects targets
-    Then the dead enemy is not selected
+    Examples:
+      | caster_row |
+      | ranged     |
+      | support    |
 
-  Scenario: Random targeting is reproducible for the same seed
-    Given "Knight" targets enemies using "random"
-    When "Knight" selects targets twice with seed 42
-    Then both selections are identical
+  Scenario: Individual random selection returns multiple unique targets
+    Given a ranged caster selects 3 individual random enemies
+    When the caster selects targets twice with the same seed
+    Then each selection contains the same 3 distinct targets
+
+  Scenario: Adjacent selection stays contiguous around one primary target
+    Given a ranged caster selects 3 adjacent enemies by highest health
+    When the caster selects targets
+    Then the primary target and its contiguous row neighbors are selected
+    And no selected target is from another row or side
+
+  Scenario: Every item effect receives the same selected target group
+    Given an item has multiple ordered effects
+    And its owner selects 2 targets
+    When the item activates
+    Then every effect receives the identical 2 target IDs

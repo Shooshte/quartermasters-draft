@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { initializeBattleState } from "./state";
 import {
   createBattleInput,
   createBattleInputWithSeed,
@@ -7,7 +8,6 @@ import {
   createStats,
   createUnit,
 } from "./test-helpers";
-import { initializeBattleState } from "./state";
 import type { BattleInput } from "./types";
 import { InvalidBattleInputError, validateBattleInput } from "./validation";
 
@@ -105,24 +105,6 @@ describe("battle input validation", () => {
         ]),
       ),
     ).not.toThrow();
-  });
-
-  it("rejects self targeting policy for the enemy target side", () => {
-    expect(() =>
-      validateBattleInput(
-        createBattleInput([
-          createScenario("A", {
-            tank: [
-              createUnit("Invalid Targeter", {
-                targetSide: "enemies",
-                targetPolicy: "self",
-              }),
-            ],
-          }),
-          createScenario("B", { tank: [createUnit("B")] }),
-        ]),
-      ),
-    ).toThrow(/self targeting policy.*enemy target side/i);
   });
 
   it("rejects a unit with a non-positive target count", () => {

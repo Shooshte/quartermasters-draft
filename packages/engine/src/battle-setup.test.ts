@@ -164,28 +164,6 @@ describe("battle setup", () => {
     expect(mageB.itemBonusStats).toMatchObject({ spellDmg: 12, manaRegen: 3, criticalChance: 2 });
   });
 
-  it("stores targeting overrides by scenario row and slot", () => {
-    const input = createBattleInput(
-      [
-        createScenario("Alpha", { ranged: [createUnit("Archer"), createUnit("Archer Two")] }),
-        createScenario("Bravo", { melee: [createUnit("Barbarian")] }),
-      ],
-      33,
-      [
-        { scenarioId: "Alpha", rowType: "ranged", slot: 1, policy: "highest_health" },
-        { scenarioId: "Alpha", rowType: "ranged", slot: 2, policy: "highest_damage" },
-        { scenarioId: "Bravo", rowType: "melee", slot: 1, policy: "random" },
-      ],
-    );
-
-    const engine = new BattleEngine(input);
-    expect(getUnitByName(engine, "Alpha", "Archer").targetPolicyOverride).toBe("highest_health");
-    expect(getUnitByName(engine, "Alpha", "Archer Two").targetPolicyOverride).toBe(
-      "highest_damage",
-    );
-    expect(getUnitByName(engine, "Bravo", "Barbarian").targetPolicyOverride).toBe("random");
-  });
-
   it("rejects non-finite seeds and battles where both scenarios are empty", () => {
     expect(
       () =>

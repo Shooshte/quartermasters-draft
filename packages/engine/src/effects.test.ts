@@ -33,7 +33,7 @@ function createEffectState() {
         ],
         support: [
           createUnit("cleric", {
-            targetSide: "allies",
+            targetScope: "allies",
             stats: createStats({
               health: 150,
               meleeDmg: 5,

@@ -6,7 +6,6 @@ import type {
   RowType,
   ScenarioInput,
   StatKey,
-  TargetPolicy,
   UnitInput,
   UnitStats,
 } from "./types";
@@ -77,16 +76,10 @@ export function createUnit(name: string, overrides: Partial<UnitInput> = {}): Un
     name,
     stats: createStats(),
     items: [],
-    targetSide: "enemies",
-    targetPolicy: "highest_health",
-    targetRowCount: 1,
-    maxTargetsPerRow: 1,
-    targetOnlyAdjacent: false,
     targetScope: "enemies",
     targetPriority: "highest_health",
     targetCount: 1,
     selectionShape: "individual",
-    allowedRowTypes: [],
     ...overrides,
   };
 }
@@ -105,12 +98,10 @@ export function createScenario(
 export function createBattleInput(
   scenarios: [ScenarioInput, ScenarioInput],
   seed: number | string = 42,
-  targetingOverrides?: BattleInput["targetingOverrides"],
 ): BattleInput {
   return {
     scenarios,
     seed,
-    targetingOverrides,
   };
 }
 
@@ -146,8 +137,4 @@ export function statBuff(
     durationTicks,
     [statKey]: value,
   });
-}
-
-export function namedPolicy(name: string, targetPolicy: TargetPolicy): UnitInput {
-  return createUnit(name, { targetPolicy });
 }

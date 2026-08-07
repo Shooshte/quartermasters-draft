@@ -211,6 +211,36 @@ describe("UnitWorkspaceForm", () => {
     expect(summary).toHaveTextContent("Prioritizes support units");
   });
 
+  it("renders self-only targeting copy for individual selection", () => {
+    renderForm({
+      formValues: {
+        name: "Self Heal",
+        targetScope: "self",
+        targetPriority: "lowest_health",
+        targetCount: 3,
+        selectionShape: "individual",
+      },
+    });
+
+    expect(screen.getByTestId("unit-targeting-summary")).toHaveTextContent("Targets the caster");
+    expect(screen.getByTestId("unit-targeting-summary")).not.toHaveTextContent("up to 3");
+  });
+
+  it("renders self-only targeting copy for adjacent selection", () => {
+    renderForm({
+      formValues: {
+        name: "Self Guard",
+        targetScope: "self",
+        targetPriority: "highest_health",
+        targetCount: 2,
+        selectionShape: "adjacent",
+      },
+    });
+
+    expect(screen.getByTestId("unit-targeting-summary")).toHaveTextContent("Targets the caster");
+    expect(screen.getByTestId("unit-targeting-summary")).not.toHaveTextContent("adjacent group");
+  });
+
   it("changes target scope and priority through explicit selectors", async () => {
     const user = userEvent.setup();
     const onFieldChange = vi.fn();

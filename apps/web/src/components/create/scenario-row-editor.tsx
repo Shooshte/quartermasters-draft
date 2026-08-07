@@ -1,5 +1,5 @@
 import { Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { type EntityPickerOption, EntityPickerPopover } from "./entity-picker-popover";
 import type { ScenarioRowType } from "./scenario-form";
@@ -40,6 +40,13 @@ export function ScenarioRowEditor({
   const unitNameById = new Map(unitOptions.map((option) => [option.id, option.name]));
   const unitById = new Map(unitOptions.map((option) => [option.id, option]));
   const eligibleUnitOptions = unitOptions.filter((option) => canDeployInRow(option, rowType));
+  const selectedUnitIsEligible = eligibleUnitOptions.some((option) => option.id === selectedUnitId);
+
+  useEffect(() => {
+    if (selectedUnitId && !selectedUnitIsEligible) {
+      setSelectedUnitId("");
+    }
+  }, [selectedUnitId, selectedUnitIsEligible]);
 
   const handleMove = (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -53,7 +60,7 @@ export function ScenarioRowEditor({
   };
 
   const handleAdd = () => {
-    if (!selectedUnitId) {
+    if (!selectedUnitId || !selectedUnitIsEligible) {
       return;
     }
 
@@ -164,7 +171,7 @@ export function ScenarioRowEditor({
             size="sm"
             data-testid={`scenario-row-${rowType}-picker-add`}
             className="sw-picker-add"
-            disabled={!selectedUnitId}
+            disabled={!selectedUnitId || !selectedUnitIsEligible}
             onClick={handleAdd}
           >
             Add

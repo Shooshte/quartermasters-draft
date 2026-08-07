@@ -313,6 +313,42 @@ describe("ScenarioWorkspace", () => {
     expect(screen.queryByTestId("scenario-row-tank-picker-option-u-3")).not.toBeInTheDocument();
   });
 
+  it("clears a selected unit when refreshed options make it ineligible for the row", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+    const workspace = makeWorkspace({
+      mode: "create",
+      entityType: "scenario",
+      formValues: { name: "Deployment", rows: [] },
+    });
+    const props = {
+      workspace,
+      onFieldChange,
+      onSave: vi.fn(),
+      isSaving: false,
+      saveError: null,
+      unitOptions,
+    };
+    const { rerender } = render(<ScenarioWorkspace {...props} />);
+
+    await user.click(screen.getByTestId("scenario-row-tank-picker"));
+    await user.click(screen.getByTestId("scenario-row-tank-picker-option-u-1"));
+    expect(screen.getByTestId("scenario-row-tank-picker-add")).toBeEnabled();
+
+    rerender(
+      <ScenarioWorkspace
+        {...props}
+        unitOptions={unitOptions.map((option) =>
+          option.id === "u-1" ? { ...option, itemAllowedRowTypes: [["ranged"]] } : option,
+        )}
+      />,
+    );
+
+    expect(screen.getByTestId("scenario-row-tank-picker-add")).toBeDisabled();
+    await user.click(screen.getByTestId("scenario-row-tank-picker-add"));
+    expect(onFieldChange).not.toHaveBeenCalledWith("rows", expect.anything());
+  });
+
   it("offers no row when equipped item restrictions have an empty intersection", async () => {
     const user = userEvent.setup();
     render(

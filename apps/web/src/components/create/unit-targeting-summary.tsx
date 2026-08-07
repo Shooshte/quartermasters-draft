@@ -33,7 +33,9 @@ export function buildUnitTargetingSummary(config: UnitTargetingConfig): UnitTarg
   const count = Math.max(1, config.targetCount);
   const scope = config.targetScope ? SCOPE_LABELS[config.targetScope] : "the selected scope";
   const selection =
-    config.selectionShape === "adjacent"
+    config.targetScope === "self"
+      ? "Targets the caster."
+      : config.selectionShape === "adjacent"
       ? `Targets one adjacent group of up to ${count} units among ${scope}.`
       : `Targets up to ${count} ${scope} individually.`;
   const priority = config.targetPriority

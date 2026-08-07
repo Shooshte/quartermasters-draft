@@ -1,6 +1,7 @@
 import { expect, test } from "../db-reset.fixture";
 import { IRON_SWORD_ID } from "../helpers/seed-constants";
 import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
+import { ItemWorkspacePage } from "../pages/item-workspace.page";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { ITEMS_TAB } from "../pages/library-tab-configs";
 
@@ -211,6 +212,22 @@ test.describe("Items Library Tab — Selection", () => {
     await expect(lib.getRow("Iron Sword")).toHaveAttribute("aria-selected", "true");
     await expect(lib.nameInput).toHaveValue("Iron Sword");
     await expect(gmPage).toHaveURL(new RegExp(`item_id=${IRON_SWORD_ID}`));
+  });
+
+  test("allowed deployment rows persist from the item workspace", async ({ gmPage }) => {
+    const lib = new LibraryTabPage(gmPage, ITEMS_TAB);
+    const item = new ItemWorkspacePage(gmPage);
+    await lib.navigateToTab();
+    await lib.editEntity("Iron Sword");
+
+    await item.setAllowedRows(["ranged"]);
+    await item.saveUpdate();
+    await gmPage.reload();
+
+    await expect(item.allowedRowButton("tank")).toHaveAttribute("aria-pressed", "false");
+    await expect(item.allowedRowButton("melee")).toHaveAttribute("aria-pressed", "false");
+    await expect(item.allowedRowButton("ranged")).toHaveAttribute("aria-pressed", "true");
+    await expect(item.allowedRowButton("support")).toHaveAttribute("aria-pressed", "false");
   });
 });
 

@@ -65,6 +65,7 @@ test.describe("Scenario Builder Read API — GM access", () => {
     const data = await parseTrpcResponse(res);
     expect(data.name).toBe("Iron Sword");
     expect(data.effectIds).toEqual([ARCANE_DAMAGE_ID, SIZZLING_FLESH_ID]);
+    expect(data.allowedRowTypes).toEqual(["tank", "melee", "ranged", "support"]);
   });
 
   // ── Units ────────────────────────────────────────────────────────
@@ -90,12 +91,10 @@ test.describe("Scenario Builder Read API — GM access", () => {
     expect(data.name).toBe("Barbarian");
     expect(data.itemIds).toEqual(["d0000000-0000-0000-0000-000000000001"]);
     expect(data).toMatchObject({
-      targetSide: "enemies",
-      targetPolicy: "random",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "random",
+      targetCount: 1,
+      selectionShape: "individual",
     });
   });
 

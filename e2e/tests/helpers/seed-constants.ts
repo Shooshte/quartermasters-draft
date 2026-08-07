@@ -20,6 +20,7 @@ export const IRON_SWORD_ID = "d0000000-0000-0000-0000-000000000001";
 export const OAK_STAFF_ID = "d0000000-0000-0000-0000-000000000002";
 export const LEATHER_SHIELD_ID = "d0000000-0000-0000-0000-000000000003";
 export const WYRM_SCALE_ID = "d0000000-0000-0000-0000-000000000011";
+export const YEW_LONGBOW_ID = "d0000000-0000-0000-0000-000000000020";
 
 // ─── Unit IDs ────────────────────────────────────────────────────────────────
 

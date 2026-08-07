@@ -1,10 +1,5 @@
 import type { items, units } from "@qd/db";
-import type {
-  EffectTemplateInput,
-  ItemInput,
-  RowType,
-  ScenarioInput,
-} from "@qd/engine";
+import type { EffectTemplateInput, ItemInput, RowType, ScenarioInput } from "@qd/engine";
 
 type ScenarioRecord = {
   id: string;

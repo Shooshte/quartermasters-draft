@@ -36,8 +36,8 @@ export function buildUnitTargetingSummary(config: UnitTargetingConfig): UnitTarg
     config.targetScope === "self"
       ? "Targets the caster."
       : config.selectionShape === "adjacent"
-      ? `Targets one adjacent group of up to ${count} units among ${scope}.`
-      : `Targets up to ${count} ${scope} individually.`;
+        ? `Targets one adjacent group of up to ${count} units among ${scope}.`
+        : `Targets up to ${count} ${scope} individually.`;
   const priority = config.targetPriority
     ? `Prioritizes ${PRIORITY_LABELS[config.targetPriority]}.`
     : "Select a target priority.";

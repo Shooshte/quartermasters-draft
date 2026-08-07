@@ -22,14 +22,10 @@ test.describe("Unit Workspace", () => {
     );
 
     await gmPage.reload();
-    await expect(unit.targetSideSelect).toHaveValue("enemies");
-    await expect(unit.targetPolicySelect).toHaveValue("highest_health");
-    await expect(unit.targetRowCountButton(1)).toHaveAttribute("aria-pressed", "true");
-    await expect(unit.maxTargetsPerRowInput).toHaveValue("1");
-    await expect(unit.positionRuleButton("any")).toHaveAttribute("aria-pressed", "true");
-    for (const row of ["tank", "melee", "ranged", "support"] as const) {
-      await expect(unit.allowedRowButton(row)).toHaveAttribute("aria-pressed", "true");
-    }
+    await expect(unit.targetScopeSelect).toHaveValue("enemies");
+    await expect(unit.targetPrioritySelect).toHaveValue("highest_health");
+    await expect(unit.targetCountInput).toHaveValue("1");
+    await expect(unit.selectionShapeButton("individual")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("name is required", async ({ gmPage }) => {
@@ -134,47 +130,59 @@ test.describe("Unit Workspace", () => {
     await expect(gmPage.getByTestId("unit-health-input")).toHaveValue("120");
   });
 
-  for (const { name, side, policy } of [
-    { name: "Ally Vanguard", side: "allies", policy: "lowest_health" },
-    { name: "Enemy Hunter", side: "enemies", policy: "highest_damage" },
-    { name: "Self Warder", side: "self", policy: "self" },
+  for (const { name, scope, priority } of [
+    { name: "Ally Vanguard", scope: "self_allies", priority: "lowest_health" },
+    { name: "Enemy Hunter", scope: "enemies", priority: "highest_damage" },
+    { name: "Battle Oracle", scope: "both", priority: "support" },
   ] as const) {
-    test(`explicit ${side} targeting persists`, async ({ gmPage }) => {
+    test(`explicit ${scope} targeting persists`, async ({ gmPage }) => {
       const unit = new UnitWorkspacePage(gmPage);
       await unit.openNew();
       await unit.fillName(name);
-      await unit.setTargeting(side, policy);
+      await unit.setTargeting(scope, priority);
       await unit.saveCreate();
 
       await gmPage.reload();
-      await expect(unit.targetSideSelect).toHaveValue(side);
-      await expect(unit.targetPolicySelect).toHaveValue(policy);
+      await expect(unit.targetScopeSelect).toHaveValue(scope);
+      await expect(unit.targetPrioritySelect).toHaveValue(priority);
     });
   }
 
-  test("target policy offers all five options", async ({ gmPage }) => {
+  test("target scope offers all six options", async ({ gmPage }) => {
     const unit = new UnitWorkspacePage(gmPage);
     await unit.openNew();
 
-    await expect(unit.targetPolicySelect.locator('option:not([value=""])')).toHaveText([
-      "highest_health",
-      "lowest_health",
-      "highest_damage",
-      "random",
-      "self",
+    await expect(unit.targetScopeSelect.locator('option:not([value=""])')).toHaveText([
+      "Self",
+      "Self + allies",
+      "Self + enemies",
+      "Allies",
+      "Enemies",
+      "Allies + enemies",
     ]);
   });
 
-  test("self policy is invalid for enemies", async ({ gmPage }) => {
+  test("target priority offers all five options", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
+
+    await expect(unit.targetPrioritySelect.locator('option:not([value=""])')).toHaveText([
+      "Highest health",
+      "Lowest health",
+      "Highest damage",
+      "Support",
+      "Random",
+    ]);
+  });
+
+  test("target count must be positive", async ({ gmPage }) => {
     const unit = new UnitWorkspacePage(gmPage);
     await unit.openNew();
     await unit.fillName("Confused Duelist");
-    await unit.setTargeting("enemies", "self");
+    await unit.setTargetCount(0);
 
     await expect(unit.saveButton).toBeDisabled();
-    await expect(
-      gmPage.getByText("Self priority cannot be used when targeting enemies"),
-    ).toBeVisible();
+    await expect(gmPage.getByText("Target count must be at least 1")).toBeVisible();
   });
 
   test("targeting summary comes only from the unit configuration", async ({ gmPage }) => {
@@ -182,73 +190,27 @@ test.describe("Unit Workspace", () => {
     await unit.openById(BARBARIAN_ID);
     await unit.setTargeting("allies", "lowest_health");
 
-    await expect(unit.targetingSummary).toContainText("Target side: Allies.");
-    await expect(unit.targetingSummary).toContainText("Lowest health");
+    await expect(unit.targetingSummary).toContainText("Targets up to 1 allies individually.");
+    await expect(unit.targetingSummary).toContainText("Prioritizes lowest health.");
     await expect(unit.targetingSummary).not.toContainText(/first (linked )?effect/i);
     await expect(unit.targetingSummary).not.toContainText(/effect.*determine/i);
   });
 
-  test("target row count offers one through four rows", async ({ gmPage }) => {
+  test("target count and adjacent selection persist", async ({ gmPage }) => {
     const unit = new UnitWorkspacePage(gmPage);
     await unit.openNew();
-
-    for (const count of [1, 2, 3, 4] as const) {
-      await expect(unit.targetRowCountButton(count)).toBeVisible();
-    }
-  });
-
-  test("whole-row targeting persists", async ({ gmPage }) => {
-    const unit = new UnitWorkspacePage(gmPage);
-    await unit.openNew();
-    await unit.fillName("Formation Breaker");
-    await unit.setTargeting("enemies", "random");
-    await unit.setTargetRowCount(2);
-    await unit.setPerRowMode("all");
+    await unit.fillName("Chain Lightning Adept");
+    await unit.setTargeting("enemies", "highest_damage");
+    await unit.setTargetCount(3);
+    await unit.setSelectionShape("adjacent");
     await unit.saveCreate();
 
     await gmPage.reload();
-    await expect(unit.targetRowCountButton(2)).toHaveAttribute("aria-pressed", "true");
-    await expect(unit.perRowModeButton("all")).toHaveAttribute("aria-pressed", "true");
-    await expect(unit.maxTargetsPerRowInput).toHaveCount(0);
-  });
-
-  test("adjacent targeting requires a limited count of at least two", async ({ gmPage }) => {
-    const unit = new UnitWorkspacePage(gmPage);
-    await unit.openNew();
-
-    await unit.setMaxTargetsPerRow(1);
-    await expect(unit.positionRuleButton("adjacent")).toBeDisabled();
-    await unit.setMaxTargetsPerRow(3);
-    await expect(unit.positionRuleButton("adjacent")).toBeEnabled();
-    await unit.setPositionRule("adjacent");
-    await expect(unit.positionRuleButton("adjacent")).toHaveAttribute("aria-pressed", "true");
-    await unit.setPerRowMode("all");
-    await expect(unit.positionRuleButton("adjacent")).toBeDisabled();
-    await expect(unit.positionRuleButton("any")).toHaveAttribute("aria-pressed", "true");
-  });
-
-  test("allowed rows default to all and persist restrictions", async ({ gmPage }) => {
-    const unit = new UnitWorkspacePage(gmPage);
-    await unit.openNew();
-
-    for (const row of ["tank", "melee", "ranged", "support"] as const) {
-      await expect(unit.allowedRowButton(row)).toHaveAttribute("aria-pressed", "true");
-    }
+    await expect(unit.targetCountInput).toHaveValue("3");
+    await expect(unit.selectionShapeButton("adjacent")).toHaveAttribute("aria-pressed", "true");
     await expect(unit.targetingSummary).toContainText(
-      "Eligible rows: Tank, Melee, Ranged, and Support.",
+      "Targets one adjacent group of up to 3 units among enemies.",
     );
-
-    await unit.fillName("Tank Buster");
-    await unit.setTargeting("enemies", "highest_health");
-    await unit.setAllowedRows(["tank", "melee"]);
-    await unit.saveCreate();
-
-    await gmPage.reload();
-    await expect(unit.allowedRowButton("tank")).toHaveAttribute("aria-pressed", "true");
-    await expect(unit.allowedRowButton("melee")).toHaveAttribute("aria-pressed", "true");
-    await expect(unit.allowedRowButton("ranged")).toHaveAttribute("aria-pressed", "false");
-    await expect(unit.allowedRowButton("support")).toHaveAttribute("aria-pressed", "false");
-    await expect(unit.targetingSummary).toContainText("Eligible rows: Tank and Melee.");
   });
 
   test("edit a linked item", async ({ gmPage }) => {

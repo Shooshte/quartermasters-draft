@@ -1,6 +1,13 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
-import { AMBUSH_AT_DAWN_ID, BARBARIAN_ID, CASTLE_SIEGE_ID } from "../helpers/seed-constants";
+import {
+  AMBUSH_AT_DAWN_ID,
+  BARBARIAN_ID,
+  CASTLE_SIEGE_ID,
+  YEW_LONGBOW_ID,
+  ZEPHYR_MONK_ID,
+} from "../helpers/seed-constants";
+import { runWorkerSql } from "../helpers/worker-db";
 import { saveEntityAndWait } from "../helpers/workspace-helpers";
 import { ScenarioWorkspacePage } from "../pages/scenario-workspace.page";
 
@@ -225,6 +232,39 @@ test.describe("Scenario Workspace", () => {
 
     await scenario.pickerSearch("melee").fill("sam");
     await expect(gmPage.getByRole("option", { name: "Samurai" })).toBeVisible();
+  });
+
+  test("a ranged-only item restricts its owner's scenario row", async ({ gmPage }, testInfo) => {
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE items SET name = 'Longbow' WHERE id = '${YEW_LONGBOW_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `DELETE FROM items_allowed_rows WHERE item_id = '${YEW_LONGBOW_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `INSERT INTO items_allowed_rows (id, item_id, row_type) VALUES ('e2000000-0000-0000-0000-000000000001', '${YEW_LONGBOW_ID}', 'ranged')`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET name = 'Archer' WHERE id = '${ZEPHYR_MONK_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `INSERT INTO units_items (id, unit_id, item_id, priority) VALUES ('a1000000-0000-0000-0000-000000000099', '${ZEPHYR_MONK_ID}', '${YEW_LONGBOW_ID}', 1)`,
+    );
+
+    const scenario = new ScenarioWorkspacePage(gmPage);
+    await scenario.openById(AMBUSH_AT_DAWN_ID);
+
+    await scenario.searchRowPicker("ranged", "Archer");
+    await expect(scenario.pickerOption("ranged", ZEPHYR_MONK_ID)).toHaveText("Archer");
+    await gmPage.keyboard.press("Escape");
+
+    await scenario.searchRowPicker("tank", "Archer");
+    await expect(scenario.pickerOption("tank", ZEPHYR_MONK_ID)).toHaveCount(0);
   });
 
   test("loading an existing scenario from the library preserves the create workspace flow", async ({

@@ -27,6 +27,7 @@ const itemListInput = createListInputSchema(
 );
 
 const rowTypeSchema = z.enum(["tank", "melee", "ranged", "support"]);
+const combatRowTypes = ["tank", "melee", "ranged", "support"] as const;
 
 const itemInputFields = z.object({
   name: z.string().trim().min(1),
@@ -117,7 +118,9 @@ async function getAllowedRowTypesForItem(
     .from(itemsAllowedRows)
     .where(eq(itemsAllowedRows.itemId, itemId));
 
-  return allowedRows.map((row) => row.rowType);
+  return allowedRows
+    .map((row) => row.rowType)
+    .sort((left, right) => combatRowTypes.indexOf(left) - combatRowTypes.indexOf(right));
 }
 
 function buildItemLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {

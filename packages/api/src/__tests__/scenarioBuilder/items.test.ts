@@ -82,7 +82,7 @@ describe("itemsRouter", () => {
   });
 
   describe("get", () => {
-    it("returns item with ordered effectIds and allowed row types", async () => {
+    it("returns item with ordered effectIds and combat-ordered allowed row types", async () => {
       const mockItem = {
         id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff",
@@ -101,7 +101,12 @@ describe("itemsRouter", () => {
         { effectTemplateId: EFFECT_ID_1 },
         { effectTemplateId: EFFECT_ID_2 },
       ];
-      const mockAllowedRows = [{ rowType: "support" }, { rowType: "ranged" }];
+      const mockAllowedRows = [
+        { rowType: "support" },
+        { rowType: "tank" },
+        { rowType: "ranged" },
+        { rowType: "melee" },
+      ];
 
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -122,7 +127,7 @@ describe("itemsRouter", () => {
       expect(result).toEqual({
         ...mockItem,
         effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
-        allowedRowTypes: ["support", "ranged"],
+        allowedRowTypes: ["tank", "melee", "ranged", "support"],
       });
     });
 
@@ -373,6 +378,29 @@ describe("itemsRouter", () => {
   });
 
   describe("update", () => {
+    it("rejects duplicate allowed row types with BAD_REQUEST before a transaction", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.items.update({
+          id: "d0000000-0000-4000-8000-000000000002",
+          name: "Duplicate Rows",
+          meleeDmg: 0,
+          rangedDmg: 0,
+          manaRegen: 0,
+          mana: 0,
+          spellDmg: 0,
+          dodge: 0,
+          criticalChance: 0,
+          activationManaCost: 0,
+          activationHealthCost: 0,
+          effectIds: [],
+          allowedRowTypes: ["support", "support"],
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
     it("updates item fields and replaces ordered effects and allowed rows", async () => {
       const updated = {
         id: "d0000000-0000-4000-8000-000000000002",

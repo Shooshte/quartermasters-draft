@@ -16,11 +16,10 @@ const mage = {
   speed: 1,
   dodge: 8,
   criticalChance: 6,
-  targetSide: "allies" as const,
-  targetPolicy: "lowest_health" as const,
-  targetRowCount: 2,
-  maxTargetsPerRow: 3,
-  targetOnlyAdjacent: true,
+  targetScope: "self_allies" as const,
+  targetPriority: "support" as const,
+  targetCount: 3,
+  selectionShape: "adjacent" as const,
 };
 
 const oakStaff = {
@@ -105,9 +104,9 @@ function buildRecords(): BattleScenarioRecords {
       { unitId: mage.id, priority: 20, item: crystal },
       { unitId: mage.id, priority: 10, item: oakStaff },
     ],
-    unitAllowedRows: [
-      { unitId: mage.id, rowType: "support" },
-      { unitId: mage.id, rowType: "ranged" },
+    itemAllowedRows: [
+      { itemId: oakStaff.id, rowType: "support" },
+      { itemId: oakStaff.id, rowType: "ranged" },
     ],
     itemEffects: [
       { itemId: oakStaff.id, sequenceOrder: 2, effect: burn },
@@ -141,21 +140,20 @@ describe("toScenarioInput", () => {
               dodge: 8,
               criticalChance: 6,
             },
-            targetSide: "allies",
-            targetPolicy: "lowest_health",
-            targetRowCount: 2,
-            maxTargetsPerRow: 3,
-            targetOnlyAdjacent: true,
-            allowedRowTypes: ["ranged", "support"],
+            targetScope: "self_allies",
+            targetPriority: "support",
+            targetCount: 3,
+            selectionShape: "adjacent",
             items: [
               {
                 ...oakStaff,
+                allowedRowTypes: ["ranged", "support"],
                 effects: [
                   { sequenceOrder: 1, effect: scorch },
                   { sequenceOrder: 2, effect: burn },
                 ],
               },
-              { ...crystal, effects: [] },
+              { ...crystal, allowedRowTypes: [], effects: [] },
             ],
           },
         ],
@@ -189,7 +187,7 @@ describe("toScenarioInput", () => {
     const records = buildRecords();
     records.assignments = [];
     records.unitItems = [];
-    records.unitAllowedRows = [];
+    records.itemAllowedRows = [];
     records.itemEffects = [];
 
     expect(toScenarioInput(records)).toEqual({

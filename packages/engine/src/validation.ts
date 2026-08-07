@@ -1,4 +1,12 @@
-import { type BattleInput, ROW_TYPES, type RowType, type UnitInput } from "./types";
+import {
+  type BattleInput,
+  ROW_TYPES,
+  type RowType,
+  TARGET_PRIORITIES,
+  TARGET_SCOPES,
+  TARGET_SELECTION_SHAPES,
+  type UnitInput,
+} from "./types";
 
 export class InvalidBattleInputError extends Error {
   constructor(message: string) {
@@ -36,6 +44,7 @@ export function validateBattleInput(input: BattleInput): void {
     ),
   );
   for (const { rowType, unit } of deployedUnits) {
+    validateTargetingConfiguration(unit);
     validateTargetCount(unit);
     validateItemRows(unit, rowType);
   }
@@ -46,6 +55,33 @@ export function validateBattleInput(input: BattleInput): void {
 
   if (livingUnits.length === 0) {
     throw new InvalidBattleInputError("Battle initialization requires at least one living unit.");
+  }
+}
+
+function validateTargetingConfiguration(unit: UnitInput): void {
+  if (
+    unit.targetScope !== undefined &&
+    !TARGET_SCOPES.some((targetScope) => targetScope === unit.targetScope)
+  ) {
+    throw new InvalidBattleInputError(
+      `Invalid target scope "${String(unit.targetScope)}" for ${unit.name}.`,
+    );
+  }
+  if (
+    unit.targetPriority !== undefined &&
+    !TARGET_PRIORITIES.some((targetPriority) => targetPriority === unit.targetPriority)
+  ) {
+    throw new InvalidBattleInputError(
+      `Invalid target priority "${String(unit.targetPriority)}" for ${unit.name}.`,
+    );
+  }
+  if (
+    unit.selectionShape !== undefined &&
+    !TARGET_SELECTION_SHAPES.some((selectionShape) => selectionShape === unit.selectionShape)
+  ) {
+    throw new InvalidBattleInputError(
+      `Invalid selection shape "${String(unit.selectionShape)}" for ${unit.name}.`,
+    );
   }
 }
 

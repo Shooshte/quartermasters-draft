@@ -100,6 +100,9 @@ describe("unit targeting schema", () => {
     expect(updatePosition).toBeGreaterThan(-1);
     expect(updatePosition).toBeLessThan(firstLegacyColumnDropPosition);
     expect(migrationSql).toContain("\"target_policy\"::text = 'self'");
+    expect(migrationSql).toContain(
+      "WHEN \"target_side\"::text = 'allies' THEN 'self_allies'::\"target_scope\"",
+    );
     expect(migrationSql).toContain('COALESCE("max_targets_per_row", 1)');
     expect(migrationSql).toContain(
       'CASE WHEN "target_only_adjacent" THEN \'adjacent\'::"target_selection_shape"',

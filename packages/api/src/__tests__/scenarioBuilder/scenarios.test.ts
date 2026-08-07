@@ -495,7 +495,45 @@ describe("scenariosRouter", () => {
         code: "BAD_REQUEST",
         message: "Ranged-only unit cannot be deployed in tank.",
       });
-      expect(tx.insert).toHaveBeenCalledTimes(2);
+      expect(tx.insert).not.toHaveBeenCalled();
+    });
+
+    it("rejects every non-existent unit ID before inserting assignments", async () => {
+      const createdScenario = {
+        id: "a2000000-0000-4000-8000-000000000103",
+        name: "Missing units",
+      };
+      const missingUnitIds = [
+        "f0000000-0000-4000-8000-000000000091",
+        "f0000000-0000-4000-8000-000000000092",
+      ];
+      const tx = { insert: vi.fn(), select: vi.fn(), delete: vi.fn(), update: vi.fn() };
+      tx.insert.mockReturnValueOnce(chainable([createdScenario])).mockReturnValueOnce(
+        chainable([
+          { id: "r1", rowType: "tank" },
+          { id: "r2", rowType: "melee" },
+          { id: "r3", rowType: "ranged" },
+          { id: "r4", rowType: "support" },
+        ]),
+      );
+      tx.select.mockReturnValueOnce(chainable([]));
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      await expect(
+        createCaller(gmCtx).scenarios.create({
+          name: createdScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: missingUnitIds },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: `Scenario references non-existent unit IDs: ${missingUnitIds.join(", ")}.`,
+      });
+      expect(tx.insert).not.toHaveBeenCalled();
     });
 
     it("throws CONFLICT for duplicate scenario names", async () => {
@@ -738,6 +776,51 @@ describe("scenariosRouter", () => {
       });
       expect(tx.delete).not.toHaveBeenCalled();
       expect(tx.insert).not.toHaveBeenCalled();
+      expect(tx.update).not.toHaveBeenCalled();
+    });
+
+    it("rejects non-existent unit IDs before replacing assignments", async () => {
+      const updatedScenario = {
+        id: "a2000000-0000-4000-8000-000000000005",
+        name: "Missing Unit Update",
+      };
+      const missingUnitId = "f0000000-0000-4000-8000-000000000093";
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn().mockReturnValue(chainable([])),
+        update: vi.fn().mockReturnValue(chainable([updatedScenario])),
+      };
+      tx.select
+        .mockReturnValueOnce(
+          chainable([
+            { id: "r1", rowType: "tank" },
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+          ]),
+        )
+        .mockReturnValueOnce(chainable([]));
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      await expect(
+        createCaller(gmCtx).scenarios.update({
+          id: updatedScenario.id,
+          name: updatedScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: [missingUnitId] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: `Scenario references non-existent unit IDs: ${missingUnitId}.`,
+      });
+      expect(tx.delete).not.toHaveBeenCalled();
+      expect(tx.insert).not.toHaveBeenCalled();
+      expect(tx.update).not.toHaveBeenCalled();
     });
 
     it("throws INTERNAL_SERVER_ERROR when persisted scenario rows are invalid", async () => {
@@ -786,7 +869,7 @@ describe("scenariosRouter", () => {
     it("throws NOT_FOUND when updating a missing scenario", async () => {
       const tx = {
         insert: vi.fn(),
-        select: vi.fn(),
+        select: vi.fn().mockReturnValue(chainable([])),
         delete: vi.fn(),
         update: vi.fn().mockReturnValue(chainable([])),
       };

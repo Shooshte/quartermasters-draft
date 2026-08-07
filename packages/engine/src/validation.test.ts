@@ -129,6 +129,22 @@ describe("battle input validation", () => {
     ).toThrowError("Target count must be a positive integer");
   });
 
+  it.each([
+    ["targetScope", "nearby", 'Invalid target scope "nearby" for Caster.'],
+    ["targetPriority", "weakest", 'Invalid target priority "weakest" for Caster.'],
+    ["selectionShape", "cone", 'Invalid selection shape "cone" for Caster.'],
+  ] as const)("rejects an unknown serialized %s", (field, value, message) => {
+    const caster = createUnit("Caster");
+    (caster as unknown as Record<string, unknown>)[field] = value;
+    const input = createBattleInput([
+      createScenario("A", { tank: [caster] }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => validateBattleInput(input)).toThrowError(InvalidBattleInputError);
+    expect(() => validateBattleInput(input)).toThrowError(message);
+  });
+
   it("rejects an item that repeats an allowed row", () => {
     expect(() =>
       validateBattleInput(

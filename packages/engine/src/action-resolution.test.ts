@@ -220,12 +220,13 @@ describe("action resolution", () => {
     expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("gives later effects the original target IDs after a lethal first effect", () => {
+  it("gives later effects only the surviving members of the original target group", () => {
     const state = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
           ranged: [
             createUnit("Warrior", {
+              targetPriority: "lowest_health",
               targetCount: 2,
               items: [
                 createItem({
@@ -241,8 +242,9 @@ describe("action resolution", () => {
         }),
         createScenario("Bravo", {
           tank: [
-            createUnit("Dummy A", { stats: createStats({ health: 200 }) }),
-            createUnit("Dummy B", { stats: createStats({ health: 200 }) }),
+            createUnit("Dummy A", { stats: createStats({ health: 100 }) }),
+            createUnit("Dummy B", { stats: createStats({ health: 250 }) }),
+            createUnit("Unselected Dummy", { stats: createStats({ health: 300 }) }),
           ],
         }),
       ]),
@@ -261,9 +263,11 @@ describe("action resolution", () => {
     const betaTargetIds = targetIdsFor("Beta Follow-up");
 
     expect(outcome.activatedItemNames).toEqual(["Finisher"]);
-    expect(outcome.totalDamage).toBe(400);
+    expect(outcome.totalDamage).toBe(310);
     expect(alphaTargetIds).toHaveLength(2);
-    expect(betaTargetIds).toEqual(alphaTargetIds);
+    expect(betaTargetIds).toEqual([state.scenarios[1].rows.tank[1]!.instanceId]);
+    expect(alphaTargetIds).toContain(betaTargetIds[0]);
+    expect(state.scenarios[1].rows.tank[2]!.currentHealth).toBe(300);
   });
 
   it("reports only damage dealt during the current action", () => {

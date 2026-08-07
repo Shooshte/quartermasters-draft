@@ -21,6 +21,7 @@ UPDATE "units"
 SET
 	"target_scope" = CASE
 		WHEN "target_policy"::text = 'self' THEN 'self'::"target_scope"
+		WHEN "target_side"::text = 'allies' THEN 'self_allies'::"target_scope"
 		ELSE ("target_side"::text)::"target_scope"
 	END,
 	"target_priority" = CASE

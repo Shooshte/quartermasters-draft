@@ -1,6 +1,6 @@
 Feature: Battle initialization and validation
   As the battle engine
-  I want to correctly initialize battle state from two scenarios, a seed, and optional targeting overrides
+  I want to correctly initialize battle state from two scenarios and a seed
   So that every battle starts with a consistent, predictable, and valid game state
 
   Background:
@@ -268,48 +268,6 @@ Feature: Battle initialization and validation
       And "Mage" in scenario "Alpha" should have effective criticalChance equal to 8
       And "Mage" in scenario "Bravo" should have effective spellDmg equal to 42
       And "Mage" in scenario "Bravo" should have effective manaRegen equal to 8
-
-  # ── Per-unit targeting overrides ────────────────────────────────────
-
-  Rule: Per-unit targeting policy overrides are stored at initialization
-
-    Scenario: Targeting override is stored for a specific unit
-      Given scenario "Alpha" with rows:
-        | row    | slot | unit   |
-        | ranged | 1    | Archer |
-      And scenario "Bravo" with rows:
-        | row   | slot | unit      |
-        | melee | 1    | Barbarian |
-      And a targeting override for "Archer" in scenario "Alpha" row "ranged" slot 1 with policy "lowest_health"
-      When the battle is initialized with seed 10
-      Then "Archer" at row "ranged" slot 1 in scenario "Alpha" should have targetingOverride "lowest_health"
-
-    Scenario: Units without targeting overrides use no override
-      Given scenario "Alpha" with rows:
-        | row    | slot | unit   |
-        | ranged | 1    | Archer |
-      And scenario "Bravo" with rows:
-        | row   | slot | unit      |
-        | melee | 1    | Barbarian |
-      When the battle is initialized with seed 10
-      Then "Archer" at row "ranged" slot 1 in scenario "Alpha" should have no targetingOverride
-      And "Barbarian" at row "melee" slot 1 in scenario "Bravo" should have no targetingOverride
-
-    Scenario: Multiple targeting overrides across both scenarios
-      Given scenario "Alpha" with rows:
-        | row    | slot | unit   |
-        | ranged | 1    | Archer |
-        | ranged | 2    | Archer |
-      And scenario "Bravo" with rows:
-        | row   | slot | unit      |
-        | melee | 1    | Barbarian |
-      And a targeting override for "Archer" in scenario "Alpha" row "ranged" slot 1 with policy "highest_health"
-      And a targeting override for "Archer" in scenario "Alpha" row "ranged" slot 2 with policy "highest_damage"
-      And a targeting override for "Barbarian" in scenario "Bravo" row "melee" slot 1 with policy "random"
-      When the battle is initialized with seed 33
-      Then "Archer" at row "ranged" slot 1 in scenario "Alpha" should have targetingOverride "highest_health"
-      And "Archer" at row "ranged" slot 2 in scenario "Alpha" should have targetingOverride "highest_damage"
-      And "Barbarian" at row "melee" slot 1 in scenario "Bravo" should have targetingOverride "random"
 
   # ── Validation: at least one living unit ────────────────────────────
 

@@ -105,6 +105,15 @@ async function validateScenarioPlacements(
     .leftJoin(itemsAllowedRows, eq(itemsAllowedRows.itemId, unitsItems.itemId))
     .where(inArray(units.id, unitIds));
 
+  const foundUnitIds = new Set(placementRows.map((placement) => placement.unitId));
+  const missingUnitIds = unitIds.filter((unitId) => !foundUnitIds.has(unitId));
+  if (missingUnitIds.length > 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Scenario references non-existent unit IDs: ${missingUnitIds.join(", ")}.`,
+    });
+  }
+
   const placementByUnitId = new Map<
     string,
     { name: string; rowsByItemId: Map<string, RowType[]> }
@@ -130,7 +139,10 @@ async function validateScenarioPlacements(
     for (const unitId of row.unitIds) {
       const unitPlacement = placementByUnitId.get(unitId);
       if (!unitPlacement) {
-        continue;
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Scenario references non-existent unit ID: ${unitId}.`,
+        });
       }
 
       const allowedRows = allowedDeploymentRows([...unitPlacement.rowsByItemId.values()]);
@@ -263,6 +275,8 @@ export const scenariosRouter = router({
 
     try {
       return await db.transaction(async (tx) => {
+        await validateScenarioPlacements(tx, normalized.rows);
+
         const [created] = await tx.insert(scenarios).values({ name: normalized.name }).returning();
 
         if (!created) {
@@ -281,8 +295,6 @@ export const scenariosRouter = router({
             })),
           )
           .returning({ id: scenariosRows.id, rowType: scenariosRows.rowType });
-
-        await validateScenarioPlacements(tx, normalized.rows);
 
         const rowIdByType = new Map(createdRows.map((row) => [row.rowType, row.id]));
         const assignmentRows = normalized.rows.flatMap((row) =>
@@ -318,20 +330,20 @@ export const scenariosRouter = router({
 
       try {
         return await db.transaction(async (tx) => {
-          const [updated] = await tx
-            .update(scenarios)
-            .set({ name: normalized.name })
-            .where(eq(scenarios.id, id))
-            .returning();
-
-          if (!updated) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
-          }
-
           const existingRows = await tx
             .select({ id: scenariosRows.id, rowType: scenariosRows.rowType })
             .from(scenariosRows)
             .where(eq(scenariosRows.scenarioId, id));
+
+          if (existingRows.length === 0) {
+            const [existingScenario] = await tx
+              .select({ id: scenarios.id })
+              .from(scenarios)
+              .where(eq(scenarios.id, id));
+            if (!existingScenario) {
+              throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
+            }
+          }
 
           ensureFixedRows(existingRows, {
             code: "INTERNAL_SERVER_ERROR",
@@ -342,6 +354,16 @@ export const scenariosRouter = router({
           const rowIds = existingRows.map((row) => row.id);
 
           await validateScenarioPlacements(tx, normalized.rows);
+
+          const [updated] = await tx
+            .update(scenarios)
+            .set({ name: normalized.name })
+            .where(eq(scenarios.id, id))
+            .returning();
+
+          if (!updated) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
+          }
 
           await tx.delete(scenariosRowsUnits).where(inArray(scenariosRowsUnits.rowId, rowIds));
 

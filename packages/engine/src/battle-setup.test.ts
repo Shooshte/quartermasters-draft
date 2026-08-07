@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { BattleEngine } from "./battle-engine";
 import {
@@ -20,6 +21,15 @@ function getUnitByName(engine: BattleEngine, scenarioId: string, name: string) {
 }
 
 describe("battle setup", () => {
+  it("keeps acceptance criteria free of removed per-battle targeting overrides", () => {
+    const feature = readFileSync(
+      new URL("../features/battle-setup.feature", import.meta.url),
+      "utf8",
+    );
+
+    expect(feature).not.toMatch(/targeting overrides?|targetingOverride/i);
+  });
+
   it("initializes current mana at effective base plus item capacity", () => {
     const engine = new BattleEngine(
       createBattleInput([

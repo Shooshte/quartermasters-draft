@@ -41,7 +41,15 @@ Feature: Item activation action resolution
     And "Warrior" mana is not reduced
     And "Warrior" performs a basic attack
 
-  Scenario: An effect sequence stops after its final target dies
+  Scenario: Later effects stay within the surviving original target group
+    Given "Warrior" has item "Finisher" with effects "Alpha Blast" then "Beta Follow-up"
+    And "Warrior" originally selects "Guard" and "Knight"
+    And "Alpha Blast" eliminates "Guard" but "Knight" survives
+    When "Warrior" acts
+    Then "Beta Follow-up" applies only to "Knight"
+    And "Warrior" does not retarget another unit
+
+  Scenario: An effect sequence stops after its final original target dies
     Given "Warrior" has item "Finisher" with effects "Alpha Blast" then "Beta Follow-up"
     And "Alpha Blast" eliminates the only selected target
     When "Warrior" acts

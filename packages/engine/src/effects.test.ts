@@ -310,7 +310,7 @@ describe("effects", () => {
     ).toBe(true);
   });
 
-  it("applies every ordered effect to the initially selected target after it dies", () => {
+  it("stops an ordered effect sequence once every original target is dead", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
@@ -323,26 +323,74 @@ describe("effects", () => {
           name: "One",
           effectType: "damage",
           timingType: "instant",
-          directSpellDmg: 30,
+          directSpellDmg: 50,
         }),
         createEffect({
           name: "Two",
-          effectType: "damage",
+          effectType: "healing",
           timingType: "instant",
-          directSpellDmg: 25,
+          directHealing: 25,
         }),
         createEffect({
           name: "Three",
           effectType: "damage",
-          timingType: "instant",
+          timingType: "interval",
           directSpellDmg: 20,
+          intervalTicks: 1,
+          triggerCount: 1,
         }),
       ),
     });
 
     const result = applyItemEffects(state, mage, item);
-    expect(result.appliedEffectNames).toEqual(["One", "Two", "Three"]);
+    expect(result.appliedEffectNames).toEqual(["One"]);
     expect(warrior.currentHealth).toBe(0);
+    expect(warrior.activeEffects).toHaveLength(0);
+    expect(state.log.filter((entry) => entry.type === "heal")).toHaveLength(0);
+    expect(
+      state.log.filter((entry) => entry.type === "damage" && entry.origin?.effect?.name !== "One"),
+    ).toHaveLength(0);
+  });
+
+  it("discards an interval effect when its target dies before the first trigger", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.currentHealth = 40;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Delayed Combo",
+        effects: effectSequence(
+          createEffect({
+            name: "Delayed Burn",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+          createEffect({
+            name: "Execution",
+            effectType: "damage",
+            timingType: "instant",
+            directSpellDmg: 50,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(0);
+    expect(warrior.activeEffects).toHaveLength(0);
+    expect(
+      state.log.filter(
+        (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Delayed Burn",
+      ),
+    ).toHaveLength(0);
   });
 
   it("applies crit and dodge modifiers to instant and interval damage effects", () => {

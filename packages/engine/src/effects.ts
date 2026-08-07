@@ -275,12 +275,23 @@ export function applyItemEffectsToTargets(
   const appliedEffectNames: string[] = [];
 
   for (const [effectIndex, effect] of orderedEffects.entries()) {
+    const livingTargets = targetIds
+      .map((targetId) => {
+        const target = targetsById.get(targetId);
+        if (!target) {
+          throw new Error(
+            `Selected target ${targetId} was not found while resolving item effects.`,
+          );
+        }
+        return target;
+      })
+      .filter((target) => target.currentHealth > 0);
+    if (livingTargets.length === 0) {
+      break;
+    }
+
     let applied = false;
-    for (const targetId of targetIds) {
-      const target = targetsById.get(targetId);
-      if (!target) {
-        throw new Error(`Selected target ${targetId} was not found while resolving item effects.`);
-      }
+    for (const target of livingTargets) {
       const targetResult = applyEffectTemplate(
         state,
         tick,
@@ -344,6 +355,10 @@ export function processCurrentTickEffects(state: BattleState): void {
     const oldMaximumMana = getUnitEffectiveStats(unit).mana;
     const remaining: ActiveEffectState[] = [];
     for (const effect of unit.activeEffects) {
+      if (effect.timingType === "interval" && unit.currentHealth <= 0) {
+        continue;
+      }
+
       if (
         effect.timingType === "interval" &&
         effect.nextTriggerTick != null &&

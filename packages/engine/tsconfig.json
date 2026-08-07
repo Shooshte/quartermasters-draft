@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"],
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist",

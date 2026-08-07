@@ -30,8 +30,11 @@ candidates. For `adjacent`, it selects the priority-selected primary target and
 then a contiguous group of `targetCount` living units around that target in its
 row. Adjacent selection never spans rows.
 
-Every effect on an activated item receives the same target group selected from
-its owner's targeting definition.
+An item activation records the original selected target IDs once. Every ordered
+effect shares those IDs for targeting and activation purposes. As earlier
+effects may kill members of that group, each later effect applies only to the
+living members of the original group; it never selects replacement targets or
+retargets.
 
 ## Reach rules
 

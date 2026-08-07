@@ -146,7 +146,7 @@ it("selects multiple seeded-random candidates without duplicates", () => { /* ta
 it("selects a contiguous adjacent group around the primary target", () => { /* targetCount: 3, selectionShape: adjacent */ });
 ```
 
-Update the feature file to specify all six scopes, each priority, row-derived reach, seeded equal-distance ties, individual multi-target random selection, and adjacent groups. Add an action-resolution test proving every effect on an activated item receives the identical `targetIds` group.
+Update the feature file to specify all six scopes, each priority, row-derived reach, seeded equal-distance ties, individual multi-target random selection, and adjacent groups. Add an action-resolution test proving activation retains the original `targetIds`, while later effects apply only to their living members and do not retarget.
 
 - [ ] **Step 2: Verify the selection tests fail**
 

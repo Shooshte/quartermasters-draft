@@ -413,7 +413,11 @@ export function processCurrentTickEffects(state: BattleState): void {
         }
       }
 
-      if (effect.timingType === "interval" && (effect.remainingTriggers ?? 0) > 0) {
+      if (
+        effect.timingType === "interval" &&
+        unit.currentHealth > 0 &&
+        (effect.remainingTriggers ?? 0) > 0
+      ) {
         remaining.push(effect);
         continue;
       }

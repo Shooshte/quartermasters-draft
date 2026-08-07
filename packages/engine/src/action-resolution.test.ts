@@ -113,7 +113,7 @@ describe("action resolution", () => {
     expect(state.scenarios[1].rows.tank[1]!.currentHealth).toBe(40);
   });
 
-  it("pays exactly once and gives every ordered item effect the same target group", () => {
+  it("pays exactly once and retains original target IDs across ordered effects", () => {
     const state = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {

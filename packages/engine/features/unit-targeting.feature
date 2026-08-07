@@ -67,8 +67,10 @@ Feature: Unit target selection
     Then the primary target and its contiguous row neighbors are selected
     And no selected target is from another row or side
 
-  Scenario: Every item effect receives the same selected target group
+  Scenario: Ordered item effects retain their original target IDs without retargeting
     Given an item has multiple ordered effects
     And its owner selects 2 targets
     When the item activates
-    Then every effect receives the identical 2 target IDs
+    Then every ordered effect shares the original 2 target IDs for targeting and activation purposes
+    And each later effect applies only to living members of that original group
+    And no effect retargets another unit

@@ -278,6 +278,36 @@ describe("effects", () => {
     expect(warrior.currentHealth).toBe(260);
   });
 
+  it("discards an interval effect when its own trigger kills the target", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.currentHealth = 40;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Lethal Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Lethal Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 50,
+            intervalTicks: 1,
+            triggerCount: 2,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(0);
+    expect(warrior.activeEffects).toHaveLength(0);
+  });
+
   it("expires interval effects cleanly if the source unit no longer exists", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

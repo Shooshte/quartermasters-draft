@@ -316,9 +316,31 @@ describe("scenariosRouter", () => {
       tx.select.mockImplementation(() => {
         selectCallCount++;
         if (selectCallCount === 1) {
-          return chainable([createdScenario]);
+          return chainable([
+            {
+              unitId: "f0000000-0000-4000-8000-000000000001",
+              unitName: "Barbarian",
+              itemId: "d0000000-0000-4000-8000-000000000001",
+              rowType: "melee",
+            },
+            {
+              unitId: "f0000000-0000-4000-8000-000000000002",
+              unitName: "Mage",
+              itemId: "d0000000-0000-4000-8000-000000000002",
+              rowType: "ranged",
+            },
+            {
+              unitId: "f0000000-0000-4000-8000-000000000003",
+              unitName: "Ranger",
+              itemId: null,
+              rowType: null,
+            },
+          ]);
         }
         if (selectCallCount === 2) {
+          return chainable([createdScenario]);
+        }
+        if (selectCallCount === 3) {
           return chainable([
             { id: "r2", rowType: "melee" },
             { id: "r3", rowType: "ranged" },
@@ -381,6 +403,101 @@ describe("scenariosRouter", () => {
       );
     });
 
+    it("allows deployment in the intersection of equipped item rows", async () => {
+      const createdScenario = {
+        id: "a2000000-0000-4000-8000-000000000101",
+        name: "Shared Range",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const unitId = "f0000000-0000-4000-8000-000000000010";
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn(),
+        update: vi.fn(),
+      };
+      tx.insert
+        .mockReturnValueOnce(chainable([createdScenario]))
+        .mockReturnValueOnce(
+          chainable([
+            { id: "r1", rowType: "tank" },
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+          ]),
+        )
+        .mockReturnValueOnce(chainable([]));
+      tx.select
+        .mockReturnValueOnce(
+          chainable([
+            { unitId, unitName: "Arcane Archer", itemId: "item-1", rowType: "ranged" },
+            { unitId, unitName: "Arcane Archer", itemId: "item-1", rowType: "support" },
+            { unitId, unitName: "Arcane Archer", itemId: "item-2", rowType: "ranged" },
+          ]),
+        )
+        .mockReturnValueOnce(chainable([createdScenario]))
+        .mockReturnValueOnce(
+          chainable([
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+            { id: "r1", rowType: "tank" },
+          ]),
+        )
+        .mockReturnValueOnce(chainable([]));
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      await expect(
+        createCaller(gmCtx).scenarios.create({
+          name: createdScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: [] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [unitId] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).resolves.toMatchObject({ name: createdScenario.name });
+    });
+
+    it("rejects deployment outside the equipped item row intersection", async () => {
+      const createdScenario = {
+        id: "a2000000-0000-4000-8000-000000000102",
+        name: "Invalid deployment",
+      };
+      const unitId = "f0000000-0000-4000-8000-000000000011";
+      const tx = { insert: vi.fn(), select: vi.fn(), delete: vi.fn(), update: vi.fn() };
+      tx.insert.mockReturnValueOnce(chainable([createdScenario])).mockReturnValueOnce(
+        chainable([
+          { id: "r1", rowType: "tank" },
+          { id: "r2", rowType: "melee" },
+          { id: "r3", rowType: "ranged" },
+          { id: "r4", rowType: "support" },
+        ]),
+      );
+      tx.select.mockReturnValueOnce(
+        chainable([{ unitId, unitName: "Ranged-only unit", itemId: "item-1", rowType: "ranged" }]),
+      );
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      await expect(
+        createCaller(gmCtx).scenarios.create({
+          name: createdScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: [unitId] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "Ranged-only unit cannot be deployed in tank.",
+      });
+      expect(tx.insert).toHaveBeenCalledTimes(2);
+    });
+
     it("throws CONFLICT for duplicate scenario names", async () => {
       const duplicateError = { code: "23505" };
       mockTransaction.mockRejectedValueOnce(duplicateError);
@@ -432,9 +549,31 @@ describe("scenariosRouter", () => {
           ]);
         }
         if (selectCallCount === 2) {
-          return chainable([updatedScenario]);
+          return chainable([
+            {
+              unitId: "f0000000-0000-4000-8000-000000000001",
+              unitName: "Barbarian",
+              itemId: null,
+              rowType: null,
+            },
+            {
+              unitId: "f0000000-0000-4000-8000-000000000002",
+              unitName: "Mage",
+              itemId: null,
+              rowType: null,
+            },
+            {
+              unitId: "f0000000-0000-4000-8000-000000000003",
+              unitName: "Ranger",
+              itemId: null,
+              rowType: null,
+            },
+          ]);
         }
         if (selectCallCount === 3) {
+          return chainable([updatedScenario]);
+        }
+        if (selectCallCount === 4) {
           return chainable([
             { id: "r2", rowType: "melee" },
             { id: "r3", rowType: "ranged" },
@@ -489,9 +628,25 @@ describe("scenariosRouter", () => {
           ]);
         }
         if (selectCallCount === 2) {
-          return chainable([updatedScenario]);
+          return chainable([
+            {
+              unitId: "f0000000-0000-4000-8000-000000000002",
+              unitName: "Samurai",
+              itemId: null,
+              rowType: null,
+            },
+            {
+              unitId: "f0000000-0000-4000-8000-000000000001",
+              unitName: "Barbarian",
+              itemId: null,
+              rowType: null,
+            },
+          ]);
         }
         if (selectCallCount === 3) {
+          return chainable([updatedScenario]);
+        }
+        if (selectCallCount === 4) {
           return chainable([
             { id: "r2", rowType: "melee" },
             { id: "r3", rowType: "ranged" },
@@ -535,6 +690,54 @@ describe("scenariosRouter", () => {
         { assignmentId: "a1", unitId: "u2", unitName: "Samurai", position: 1 },
         { assignmentId: "a2", unitId: "u1", unitName: "Barbarian", position: 2 },
       ]);
+    });
+
+    it("rejects invalid deployment before replacing assignments", async () => {
+      const updatedScenario = {
+        id: "a2000000-0000-4000-8000-000000000004",
+        name: "Invalid Update",
+      };
+      const unitId = "f0000000-0000-4000-8000-000000000012";
+      const tx = {
+        insert: vi.fn(),
+        select: vi.fn(),
+        delete: vi.fn().mockReturnValue(chainable([])),
+        update: vi.fn().mockReturnValue(chainable([updatedScenario])),
+      };
+      tx.select
+        .mockReturnValueOnce(
+          chainable([
+            { id: "r1", rowType: "tank" },
+            { id: "r2", rowType: "melee" },
+            { id: "r3", rowType: "ranged" },
+            { id: "r4", rowType: "support" },
+          ]),
+        )
+        .mockReturnValueOnce(
+          chainable([
+            { unitId, unitName: "Conflicted unit", itemId: "item-1", rowType: "ranged" },
+            { unitId, unitName: "Conflicted unit", itemId: "item-2", rowType: "tank" },
+          ]),
+        );
+      mockTransaction.mockImplementation(async (callback) => callback(tx));
+
+      await expect(
+        createCaller(gmCtx).scenarios.update({
+          id: updatedScenario.id,
+          name: updatedScenario.name,
+          rows: [
+            { rowType: "tank", unitIds: [unitId] },
+            { rowType: "melee", unitIds: [] },
+            { rowType: "ranged", unitIds: [] },
+            { rowType: "support", unitIds: [] },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "Conflicted unit cannot be deployed in tank.",
+      });
+      expect(tx.delete).not.toHaveBeenCalled();
+      expect(tx.insert).not.toHaveBeenCalled();
     });
 
     it("throws INTERNAL_SERVER_ERROR when persisted scenario rows are invalid", async () => {

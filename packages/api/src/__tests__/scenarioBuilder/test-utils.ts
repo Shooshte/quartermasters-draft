@@ -15,6 +15,7 @@ export function chainable(data: unknown) {
   chain.values = vi.fn().mockReturnValue(chain);
   chain.set = vi.fn().mockReturnValue(chain);
   chain.innerJoin = vi.fn().mockReturnValue(chain);
+  chain.leftJoin = vi.fn().mockReturnValue(chain);
   chain.returning = vi.fn().mockResolvedValue(data);
   // biome-ignore lint/suspicious/noThenProperty: Drizzle query test doubles must be thenable.
   chain.then = (resolve: (v: unknown) => void) => resolve(data);

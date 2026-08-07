@@ -82,7 +82,7 @@ describe("itemsRouter", () => {
   });
 
   describe("get", () => {
-    it("returns item with effectIds ordered by sequence", async () => {
+    it("returns item with ordered effectIds and allowed row types", async () => {
       const mockItem = {
         id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff",
@@ -101,6 +101,7 @@ describe("itemsRouter", () => {
         { effectTemplateId: EFFECT_ID_1 },
         { effectTemplateId: EFFECT_ID_2 },
       ];
+      const mockAllowedRows = [{ rowType: "support" }, { rowType: "ranged" }];
 
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -108,7 +109,10 @@ describe("itemsRouter", () => {
         if (callCount === 1) {
           return chainable([mockItem]);
         }
-        return chainable(mockEffectLinks);
+        if (callCount === 2) {
+          return chainable(mockEffectLinks);
+        }
+        return chainable(mockAllowedRows);
       });
 
       const caller = createCaller(gmCtx);
@@ -118,6 +122,7 @@ describe("itemsRouter", () => {
       expect(result).toEqual({
         ...mockItem,
         effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
+        allowedRowTypes: ["support", "ranged"],
       });
     });
 
@@ -132,7 +137,7 @@ describe("itemsRouter", () => {
   });
 
   describe("create", () => {
-    it("creates an item and preserves ordered duplicate effect ids", async () => {
+    it("creates an item and preserves ordered effects and allowed rows", async () => {
       const created = {
         id: "d-created",
         name: "Arcane Focus",
@@ -147,16 +152,20 @@ describe("itemsRouter", () => {
         activationHealthCost: 0,
       };
       const insertLinks = vi.fn().mockReturnValue(chainable([]));
+      const insertAllowedRows = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn
         .mockReturnValueOnce(chainable([created]))
-        .mockReturnValueOnce({ values: insertLinks });
-      mockSelect.mockReturnValueOnce(
-        chainable([
-          { effectTemplateId: EFFECT_ID_1 },
-          { effectTemplateId: EFFECT_ID_1 },
-          { effectTemplateId: EFFECT_ID_2 },
-        ]),
-      );
+        .mockReturnValueOnce({ values: insertLinks })
+        .mockReturnValueOnce({ values: insertAllowedRows });
+      mockSelect
+        .mockReturnValueOnce(
+          chainable([
+            { effectTemplateId: EFFECT_ID_1 },
+            { effectTemplateId: EFFECT_ID_1 },
+            { effectTemplateId: EFFECT_ID_2 },
+          ]),
+        )
+        .mockReturnValueOnce(chainable([{ rowType: "ranged" }, { rowType: "support" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.create({
@@ -171,17 +180,45 @@ describe("itemsRouter", () => {
         activationManaCost: 0,
         activationHealthCost: 0,
         effectIds: [EFFECT_ID_1, EFFECT_ID_1, EFFECT_ID_2],
+        allowedRowTypes: ["ranged", "support"],
       });
 
       expect(result).toEqual({
         ...created,
         effectIds: [EFFECT_ID_1, EFFECT_ID_1, EFFECT_ID_2],
+        allowedRowTypes: ["ranged", "support"],
       });
       expect(insertLinks).toHaveBeenCalledWith([
         { itemId: "d-created", effectTemplateId: EFFECT_ID_1, sequenceOrder: 1 },
         { itemId: "d-created", effectTemplateId: EFFECT_ID_1, sequenceOrder: 2 },
         { itemId: "d-created", effectTemplateId: EFFECT_ID_2, sequenceOrder: 3 },
       ]);
+      expect(insertAllowedRows).toHaveBeenCalledWith([
+        { itemId: "d-created", rowType: "ranged" },
+        { itemId: "d-created", rowType: "support" },
+      ]);
+    });
+
+    it("rejects duplicate allowed row types with BAD_REQUEST", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.items.create({
+          name: "Duplicate Rows",
+          meleeDmg: 0,
+          rangedDmg: 0,
+          manaRegen: 0,
+          mana: 0,
+          spellDmg: 0,
+          dodge: 0,
+          criticalChance: 0,
+          activationManaCost: 0,
+          activationHealthCost: 0,
+          effectIds: [],
+          allowedRowTypes: ["ranged", "ranged"],
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockTransaction).not.toHaveBeenCalled();
     });
 
     it("allows decimal and negative non-cost stats", async () => {
@@ -217,6 +254,7 @@ describe("itemsRouter", () => {
         activationManaCost: 0,
         activationHealthCost: 0,
         effectIds: [EFFECT_ID_1],
+        allowedRowTypes: [],
       });
 
       expect(itemValues).toHaveBeenCalledWith({
@@ -249,6 +287,7 @@ describe("itemsRouter", () => {
           activationManaCost: -1,
           activationHealthCost: 0,
           effectIds: ["00000000-0000-4000-8000-000000000001"],
+          allowedRowTypes: [],
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
@@ -272,6 +311,7 @@ describe("itemsRouter", () => {
           activationManaCost: 0,
           activationHealthCost: 0,
           effectIds: [],
+          allowedRowTypes: [],
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(mockTransaction).not.toHaveBeenCalled();
@@ -308,11 +348,13 @@ describe("itemsRouter", () => {
         activationManaCost: 0,
         activationHealthCost: 0,
         effectIds: [],
+        allowedRowTypes: [],
       });
 
       expect(result).toEqual({
         ...created,
         effectIds: [],
+        allowedRowTypes: [],
       });
       expect(mockInsertFn).toHaveBeenCalledTimes(1);
       expect(itemValues).toHaveBeenCalledWith({
@@ -331,7 +373,7 @@ describe("itemsRouter", () => {
   });
 
   describe("update", () => {
-    it("updates item fields and replaces the ordered effect sequence", async () => {
+    it("updates item fields and replaces ordered effects and allowed rows", async () => {
       const updated = {
         id: "d0000000-0000-4000-8000-000000000002",
         name: "Oak Staff Updated",
@@ -347,16 +389,21 @@ describe("itemsRouter", () => {
       };
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockDeleteFn.mockReturnValue(chainable([]));
       const insertLinks = vi.fn().mockReturnValue(chainable([]));
-      mockInsertFn.mockReturnValueOnce({ values: insertLinks });
-      mockSelect.mockReturnValueOnce(
-        chainable([
-          { effectTemplateId: EFFECT_ID_2 },
-          { effectTemplateId: EFFECT_ID_1 },
-          { effectTemplateId: EFFECT_ID_2 },
-        ]),
-      );
+      const insertAllowedRows = vi.fn().mockReturnValue(chainable([]));
+      mockInsertFn
+        .mockReturnValueOnce({ values: insertLinks })
+        .mockReturnValueOnce({ values: insertAllowedRows });
+      mockSelect
+        .mockReturnValueOnce(
+          chainable([
+            { effectTemplateId: EFFECT_ID_2 },
+            { effectTemplateId: EFFECT_ID_1 },
+            { effectTemplateId: EFFECT_ID_2 },
+          ]),
+        )
+        .mockReturnValueOnce(chainable([{ rowType: "support" }, { rowType: "melee" }]));
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.update({
@@ -372,11 +419,13 @@ describe("itemsRouter", () => {
         activationManaCost: 0,
         activationHealthCost: 0,
         effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
+        allowedRowTypes: ["support", "melee"],
       });
 
       expect(result).toEqual({
         ...updated,
         effectIds: [EFFECT_ID_2, EFFECT_ID_1, EFFECT_ID_2],
+        allowedRowTypes: ["support", "melee"],
       });
       expect(updateSet).toHaveBeenCalledWith({
         name: "Oak Staff Updated",
@@ -395,6 +444,11 @@ describe("itemsRouter", () => {
         { itemId: updated.id, effectTemplateId: EFFECT_ID_1, sequenceOrder: 2 },
         { itemId: updated.id, effectTemplateId: EFFECT_ID_2, sequenceOrder: 3 },
       ]);
+      expect(insertAllowedRows).toHaveBeenCalledWith([
+        { itemId: updated.id, rowType: "support" },
+        { itemId: updated.id, rowType: "melee" },
+      ]);
+      expect(mockDeleteFn).toHaveBeenCalledTimes(2);
     });
 
     it("returns NOT_FOUND for a missing item id", async () => {
@@ -415,6 +469,7 @@ describe("itemsRouter", () => {
           activationManaCost: 0,
           activationHealthCost: 0,
           effectIds: ["00000000-0000-4000-8000-000000000001"],
+          allowedRowTypes: [],
         }),
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
@@ -435,7 +490,7 @@ describe("itemsRouter", () => {
       };
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
-      mockDeleteFn.mockReturnValueOnce(chainable([]));
+      mockDeleteFn.mockReturnValue(chainable([]));
       mockSelect.mockReturnValueOnce(chainable([]));
 
       const caller = createCaller(gmCtx);
@@ -452,11 +507,13 @@ describe("itemsRouter", () => {
         activationManaCost: 0,
         activationHealthCost: 0,
         effectIds: [],
+        allowedRowTypes: [],
       });
 
       expect(result).toEqual({
         ...updated,
         effectIds: [],
+        allowedRowTypes: [],
       });
       expect(mockInsertFn).not.toHaveBeenCalled();
     });
@@ -483,6 +540,7 @@ describe("itemsRouter", () => {
           activationManaCost: 0,
           activationHealthCost: 0,
           effectIds: ["00000000-0000-4000-8000-000000000001"],
+          allowedRowTypes: [],
         }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
     });

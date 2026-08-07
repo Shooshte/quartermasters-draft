@@ -47,6 +47,8 @@ After the review fix, the first lint rerun identified one line-wrap-only formatt
 
 ## Assumptions and follow-ups
 
+- Reviewer follow-up: aligned the Battle Lab acceptance sentence with the deterministic slots 2–4 fixture, which resolves to `Mage`, `Samurai`, and `Ranger`.
+
 - Test-only SQL uses deterministic IDs for item-row and unit-item links and restores isolation through the existing worker database reset flow.
 - The host shell uses Node `v22.20.0`, while the repository requests Node `>=24 <26`; commands emitted the existing engine warning. The Dockerized application used Node 24.
 - Docker registry metadata requests timed out during the first image builds. Verification completed using a locally rebuilt image based on the existing Node 24 dependency layer, and the full E2E suite passed.

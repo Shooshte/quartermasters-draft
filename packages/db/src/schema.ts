@@ -16,14 +16,25 @@ import {
 export const roleEnum = pgEnum("role", ["gm", "player"]);
 export const timingTypeEnum = pgEnum("timing_type", ["instant", "interval"]);
 export const effectTypeEnum = pgEnum("effect_type", ["buff", "debuff", "healing", "damage"]);
-export const targetPolicyEnum = pgEnum("target_policy", [
+export const targetScopeEnum = pgEnum("target_scope", [
+  "self",
+  "self_allies",
+  "self_enemies",
+  "allies",
+  "enemies",
+  "both",
+]);
+export const targetPriorityEnum = pgEnum("target_priority", [
   "highest_health",
   "lowest_health",
   "highest_damage",
+  "support",
   "random",
-  "self",
 ]);
-export const targetSideEnum = pgEnum("target_side", ["allies", "enemies", "self"]);
+export const targetSelectionShapeEnum = pgEnum("target_selection_shape", [
+  "individual",
+  "adjacent",
+]);
 export const rowTypeEnum = pgEnum("row_type", ["support", "ranged", "melee", "tank"]);
 
 export const user = pgTable(
@@ -186,6 +197,21 @@ export const items = pgTable(
   ],
 );
 
+export const itemsAllowedRows = pgTable(
+  "items_allowed_rows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id, { onDelete: "cascade" }),
+    rowType: rowTypeEnum("row_type").notNull(),
+  },
+  (table) => [
+    index("items_allowed_rows_item_id_idx").on(table.itemId),
+    unique("items_allowed_rows_item_id_row_type_unique").on(table.itemId, table.rowType),
+  ],
+);
+
 export const itemsEffects = pgTable(
   "items_effects",
   {
@@ -221,11 +247,10 @@ export const units = pgTable(
     speed: real("speed").notNull().default(0),
     dodge: real("dodge").notNull().default(0),
     criticalChance: real("critical_chance").notNull().default(0),
-    targetSide: targetSideEnum("target_side").notNull().default("enemies"),
-    targetPolicy: targetPolicyEnum("target_policy").notNull().default("highest_health"),
-    targetRowCount: integer("target_row_count").notNull().default(1),
-    maxTargetsPerRow: integer("max_targets_per_row").default(1),
-    targetOnlyAdjacent: boolean("target_only_adjacent").notNull().default(false),
+    targetScope: targetScopeEnum("target_scope").notNull().default("enemies"),
+    targetPriority: targetPriorityEnum("target_priority").notNull().default("highest_health"),
+    targetCount: integer("target_count").notNull().default(1),
+    selectionShape: targetSelectionShapeEnum("selection_shape").notNull().default("individual"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
@@ -234,41 +259,7 @@ export const units = pgTable(
   },
   (table) => [
     check("units_mana_nonnegative", sql`${table.mana} >= 0`),
-    check(
-      "units_target_row_count_range",
-      sql`${table.targetRowCount} >= 1 AND ${table.targetRowCount} <= 4`,
-    ),
-    check(
-      "units_max_targets_per_row_positive",
-      sql`${table.maxTargetsPerRow} IS NULL OR ${table.maxTargetsPerRow} >= 1`,
-    ),
-    check(
-      "units_target_only_adjacent_whole_row",
-      sql`${table.maxTargetsPerRow} IS NOT NULL OR ${table.targetOnlyAdjacent} = false`,
-    ),
-    check(
-      "units_target_only_adjacent_min_targets",
-      sql`${table.targetOnlyAdjacent} = false OR ${table.maxTargetsPerRow} >= 2`,
-    ),
-    check(
-      "units_self_policy_requires_non_enemy_side",
-      sql`${table.targetSide} != 'enemies' OR ${table.targetPolicy}::text != 'self'`,
-    ),
-  ],
-);
-
-export const unitsAllowedRows = pgTable(
-  "units_allowed_rows",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    unitId: uuid("unit_id")
-      .notNull()
-      .references(() => units.id, { onDelete: "cascade" }),
-    rowType: rowTypeEnum("row_type").notNull(),
-  },
-  (table) => [
-    index("units_allowed_rows_unit_id_idx").on(table.unitId),
-    unique("units_allowed_rows_unit_id_row_type_unique").on(table.unitId, table.rowType),
+    check("units_target_count_positive", sql`${table.targetCount} >= 1`),
   ],
 );
 

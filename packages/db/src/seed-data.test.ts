@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildSeedData,
   effectSeedData,
+  itemAllowedRowSeedData,
   itemSeedData,
   itemsEffectsSeedData,
   scenarioSeedData,
@@ -236,8 +237,19 @@ describe("unitSeedData", () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it("defaults every unit to target enemies", () => {
-    expect(unitSeedData.every((unit) => unit.targetSide === "enemies")).toBe(true);
+  it("uses the new targeting fields for every unit", () => {
+    expect(unitSeedData.every((unit) => unit.targetScope === "enemies")).toBe(true);
+
+    for (const unit of unitSeedData) {
+      expect(unit.targetPriority).toBeDefined();
+      expect(unit.targetCount).toBeGreaterThan(0);
+      expect(["individual", "adjacent"]).toContain(unit.selectionShape);
+      expect(unit).not.toHaveProperty("targetSide");
+      expect(unit).not.toHaveProperty("targetPolicy");
+      expect(unit).not.toHaveProperty("targetRowCount");
+      expect(unit).not.toHaveProperty("maxTargetsPerRow");
+      expect(unit).not.toHaveProperty("targetOnlyAdjacent");
+    }
   });
 
   it("each record has a deterministic id", () => {
@@ -259,6 +271,30 @@ describe("unitSeedData", () => {
       expect(typeof unit.dodge).toBe("number");
       expect(typeof unit.criticalChance).toBe("number");
     }
+  });
+});
+
+describe("itemAllowedRowSeedData", () => {
+  it("allows every seeded item in all four rows", () => {
+    expect(itemAllowedRowSeedData).toHaveLength(itemSeedData.length * 4);
+
+    for (const item of itemSeedData) {
+      expect(
+        itemAllowedRowSeedData
+          .filter((allowedRow) => allowedRow.itemId === item.id)
+          .map((allowedRow) => allowedRow.rowType)
+          .sort(),
+      ).toEqual(["melee", "ranged", "support", "tank"]);
+    }
+  });
+
+  it("uses deterministic unique ids", () => {
+    expect(itemAllowedRowSeedData.every((allowedRow) => typeof allowedRow.id === "string")).toBe(
+      true,
+    );
+    expect(new Set(itemAllowedRowSeedData.map((allowedRow) => allowedRow.id)).size).toBe(
+      itemAllowedRowSeedData.length,
+    );
   });
 });
 

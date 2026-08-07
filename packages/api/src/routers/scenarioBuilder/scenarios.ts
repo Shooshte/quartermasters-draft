@@ -1,4 +1,12 @@
-import { db, scenarios, scenariosRows, scenariosRowsUnits, units } from "@qd/db";
+import {
+  db,
+  itemsAllowedRows,
+  scenarios,
+  scenariosRows,
+  scenariosRowsUnits,
+  units,
+  unitsItems,
+} from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { asc, count, desc, eq, exists, inArray, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
@@ -19,6 +27,7 @@ const scenarioListInput = createListInputSchema(
 );
 
 const SCENARIO_ROW_TYPES = ["ranged", "support", "melee", "tank"] as const;
+type RowType = (typeof SCENARIO_ROW_TYPES)[number];
 const scenarioRowSchema = z.object({
   rowType: z.enum(SCENARIO_ROW_TYPES),
   unitIds: z.array(idSchema),
@@ -65,6 +74,85 @@ function ensureFixedRows(
       message:
         options?.message ?? "Rows must include ranged, support, melee, and tank exactly once.",
     });
+  }
+}
+
+function allowedDeploymentRows(itemRows: RowType[][]): RowType[] {
+  const restricted = itemRows.filter((rows) => rows.length > 0);
+  return restricted.length === 0
+    ? [...SCENARIO_ROW_TYPES]
+    : restricted.reduce((shared, rows) => shared.filter((row) => rows.includes(row)));
+}
+
+async function validateScenarioPlacements(
+  executor: Pick<ScenarioTransaction, "select">,
+  rows: { rowType: RowType; unitIds: string[] }[],
+) {
+  const unitIds = [...new Set(rows.flatMap((row) => row.unitIds))];
+  if (unitIds.length === 0) {
+    return;
+  }
+
+  const placementRows = await executor
+    .select({
+      unitId: units.id,
+      unitName: units.name,
+      itemId: unitsItems.itemId,
+      rowType: itemsAllowedRows.rowType,
+    })
+    .from(units)
+    .leftJoin(unitsItems, eq(unitsItems.unitId, units.id))
+    .leftJoin(itemsAllowedRows, eq(itemsAllowedRows.itemId, unitsItems.itemId))
+    .where(inArray(units.id, unitIds));
+
+  const foundUnitIds = new Set(placementRows.map((placement) => placement.unitId));
+  const missingUnitIds = unitIds.filter((unitId) => !foundUnitIds.has(unitId));
+  if (missingUnitIds.length > 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Scenario references non-existent unit IDs: ${missingUnitIds.join(", ")}.`,
+    });
+  }
+
+  const placementByUnitId = new Map<
+    string,
+    { name: string; rowsByItemId: Map<string, RowType[]> }
+  >();
+
+  for (const placement of placementRows) {
+    let unitPlacement = placementByUnitId.get(placement.unitId);
+    if (!unitPlacement) {
+      unitPlacement = { name: placement.unitName, rowsByItemId: new Map() };
+      placementByUnitId.set(placement.unitId, unitPlacement);
+    }
+
+    if (placement.itemId) {
+      const itemRows = unitPlacement.rowsByItemId.get(placement.itemId) ?? [];
+      if (placement.rowType && !itemRows.includes(placement.rowType)) {
+        itemRows.push(placement.rowType);
+      }
+      unitPlacement.rowsByItemId.set(placement.itemId, itemRows);
+    }
+  }
+
+  for (const row of rows) {
+    for (const unitId of row.unitIds) {
+      const unitPlacement = placementByUnitId.get(unitId);
+      if (!unitPlacement) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Scenario references non-existent unit ID: ${unitId}.`,
+        });
+      }
+
+      const allowedRows = allowedDeploymentRows([...unitPlacement.rowsByItemId.values()]);
+      if (!allowedRows.includes(row.rowType)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `${unitPlacement.name} cannot be deployed in ${row.rowType}.`,
+        });
+      }
+    }
   }
 }
 
@@ -187,6 +275,8 @@ export const scenariosRouter = router({
 
     try {
       return await db.transaction(async (tx) => {
+        await validateScenarioPlacements(tx, normalized.rows);
+
         const [created] = await tx.insert(scenarios).values({ name: normalized.name }).returning();
 
         if (!created) {
@@ -240,6 +330,31 @@ export const scenariosRouter = router({
 
       try {
         return await db.transaction(async (tx) => {
+          const existingRows = await tx
+            .select({ id: scenariosRows.id, rowType: scenariosRows.rowType })
+            .from(scenariosRows)
+            .where(eq(scenariosRows.scenarioId, id));
+
+          if (existingRows.length === 0) {
+            const [existingScenario] = await tx
+              .select({ id: scenarios.id })
+              .from(scenarios)
+              .where(eq(scenarios.id, id));
+            if (!existingScenario) {
+              throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
+            }
+          }
+
+          ensureFixedRows(existingRows, {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Scenario data is in an unexpected state. Please contact support.",
+          });
+
+          const rowIdByType = new Map(existingRows.map((row) => [row.rowType, row.id]));
+          const rowIds = existingRows.map((row) => row.id);
+
+          await validateScenarioPlacements(tx, normalized.rows);
+
           const [updated] = await tx
             .update(scenarios)
             .set({ name: normalized.name })
@@ -249,19 +364,6 @@ export const scenariosRouter = router({
           if (!updated) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Scenario not found" });
           }
-
-          const existingRows = await tx
-            .select({ id: scenariosRows.id, rowType: scenariosRows.rowType })
-            .from(scenariosRows)
-            .where(eq(scenariosRows.scenarioId, id));
-
-          ensureFixedRows(existingRows, {
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Scenario data is in an unexpected state. Please contact support.",
-          });
-
-          const rowIdByType = new Map(existingRows.map((row) => [row.rowType, row.id]));
-          const rowIds = existingRows.map((row) => row.id);
 
           await tx.delete(scenariosRowsUnits).where(inArray(scenariosRowsUnits.rowId, rowIds));
 

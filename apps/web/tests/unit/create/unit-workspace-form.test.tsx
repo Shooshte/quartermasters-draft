@@ -16,12 +16,10 @@ const defaultFormValues: UnitFormValues = {
   dodge: "0",
   criticalChance: "0",
   itemIds: [],
-  targetSide: "enemies",
-  targetPolicy: "highest_health",
-  targetRowCount: 1,
-  maxTargetsPerRow: 1,
-  targetOnlyAdjacent: false,
-  allowedRowTypes: [],
+  targetScope: "enemies",
+  targetPriority: "highest_health",
+  targetCount: 1,
+  selectionShape: "individual",
 };
 
 const sampleItemOptions = [
@@ -71,8 +69,8 @@ describe("UnitWorkspaceForm", () => {
     expect(screen.getByTestId("unit-meleeDmg-input")).toBeInTheDocument();
     expect(screen.getByTestId("unit-health-input")).toBeInTheDocument();
     expect(screen.getByTestId("unit-mana-input")).toBeInTheDocument();
-    expect(screen.getByTestId("unit-target-side-select")).toHaveValue("enemies");
-    expect(screen.getByTestId("unit-target-policy-select")).toHaveValue("highest_health");
+    expect(screen.getByTestId("unit-target-scope-select")).toHaveValue("enemies");
+    expect(screen.getByTestId("unit-target-priority-select")).toHaveValue("highest_health");
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Unit");
   });
 
@@ -178,53 +176,102 @@ describe("UnitWorkspaceForm", () => {
     );
   });
 
-  it("renders an explicit-side targeting summary without effect-allegiance inference", () => {
+  it("renders individual targeting summary copy without effect-allegiance inference", () => {
     renderForm({
       formValues: {
         name: "Ally Vanguard",
-        targetSide: "allies",
-        targetPolicy: "lowest_health",
+        targetScope: "allies",
+        targetPriority: "lowest_health",
+        targetCount: 2,
+        selectionShape: "individual",
       },
     });
 
     const summary = screen.getByTestId("unit-targeting-summary");
-    expect(summary).toHaveTextContent("Target side: Allies.");
-    expect(summary).toHaveTextContent("Lowest health");
+    expect(summary).toHaveTextContent("Targets up to 2 allies individually");
+    expect(summary).toHaveTextContent("Prioritizes lowest health");
     expect(summary).not.toHaveTextContent(/first (linked )?effect/i);
     expect(summary).not.toHaveTextContent(/effect.*determine/i);
   });
 
-  it("changes target side and policy through explicit selectors", async () => {
+  it("renders adjacent targeting summary copy", () => {
+    renderForm({
+      formValues: {
+        name: "Shield Line",
+        targetScope: "both",
+        targetPriority: "support",
+        targetCount: 3,
+        selectionShape: "adjacent",
+      },
+    });
+
+    const summary = screen.getByTestId("unit-targeting-summary");
+    expect(summary).toHaveTextContent("Targets one adjacent group of up to 3 units");
+    expect(summary).toHaveTextContent("allies or enemies");
+    expect(summary).toHaveTextContent("Prioritizes support units");
+  });
+
+  it("renders self-only targeting copy for individual selection", () => {
+    renderForm({
+      formValues: {
+        name: "Self Heal",
+        targetScope: "self",
+        targetPriority: "lowest_health",
+        targetCount: 3,
+        selectionShape: "individual",
+      },
+    });
+
+    expect(screen.getByTestId("unit-targeting-summary")).toHaveTextContent("Targets the caster");
+    expect(screen.getByTestId("unit-targeting-summary")).not.toHaveTextContent("up to 3");
+  });
+
+  it("renders self-only targeting copy for adjacent selection", () => {
+    renderForm({
+      formValues: {
+        name: "Self Guard",
+        targetScope: "self",
+        targetPriority: "highest_health",
+        targetCount: 2,
+        selectionShape: "adjacent",
+      },
+    });
+
+    expect(screen.getByTestId("unit-targeting-summary")).toHaveTextContent("Targets the caster");
+    expect(screen.getByTestId("unit-targeting-summary")).not.toHaveTextContent("adjacent group");
+  });
+
+  it("changes target scope and priority through explicit selectors", async () => {
     const user = userEvent.setup();
     const onFieldChange = vi.fn();
     renderForm({ onFieldChange, formValues: { name: "Field Captain" } });
 
-    await user.selectOptions(screen.getByTestId("unit-target-side-select"), "allies");
-    await user.selectOptions(screen.getByTestId("unit-target-policy-select"), "random");
+    await user.selectOptions(screen.getByTestId("unit-target-scope-select"), "self_allies");
+    await user.selectOptions(screen.getByTestId("unit-target-priority-select"), "random");
 
-    expect(onFieldChange).toHaveBeenCalledWith("targetSide", "allies");
-    expect(onFieldChange).toHaveBeenCalledWith("targetPolicy", "random");
+    expect(onFieldChange).toHaveBeenCalledWith("targetScope", "self_allies");
+    expect(onFieldChange).toHaveBeenCalledWith("targetPriority", "random");
   });
 
-  it("renders unit targeting row controls with unit-owned test ids", () => {
-    renderForm({
-      formValues: { name: "Formation Guard", maxTargetsPerRow: 3 },
-    });
+  it("authors a positive target count and selection shape without legacy row controls", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+    renderForm({ onFieldChange, formValues: { name: "Formation Guard", targetCount: 3 } });
 
-    expect(screen.getByTestId("unit-target-row-count-toggle-1")).toBeInTheDocument();
-    expect(screen.getByTestId("unit-target-row-count-toggle-4")).toBeInTheDocument();
-    expect(screen.getByTestId("unit-target-per-row-toggle-all")).toBeInTheDocument();
-    expect(screen.getByTestId("unit-target-max-targets-per-row-input")).toBeInTheDocument();
-    expect(screen.getByTestId("unit-target-position-toggle-adjacent")).toBeEnabled();
-    expect(screen.getByTestId("unit-target-allowed-row-tank")).toBeInTheDocument();
+    expect(screen.getByTestId("unit-target-count-input")).toHaveValue(3);
+    await user.click(screen.getByTestId("unit-target-shape-toggle-adjacent"));
+    expect(onFieldChange).toHaveBeenCalledWith("selectionShape", "adjacent");
+    expect(screen.queryByTestId("unit-target-row-count-toggle-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("unit-target-per-row-toggle-all")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("unit-target-allowed-row-tank")).not.toBeInTheDocument();
   });
 
-  it("disables save for an invalid enemy self-priority combination", () => {
+  it("disables save for a non-positive target count", () => {
     renderForm({
-      formValues: { name: "Confused Duelist", targetSide: "enemies", targetPolicy: "self" },
+      formValues: { name: "Confused Duelist", targetCount: 0 },
     });
 
     expect(screen.getByTestId("entity-save-button")).toBeDisabled();
-    expect(screen.getByText("Self priority cannot be used when targeting enemies")).toBeVisible();
+    expect(screen.getByText("Target count must be at least 1")).toBeVisible();
   });
 });

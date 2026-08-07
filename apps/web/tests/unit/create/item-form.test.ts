@@ -20,6 +20,7 @@ describe("item-form", () => {
       activationManaCost: "0",
       activationHealthCost: "0",
       effectIds: [],
+      allowedRowTypes: [],
     });
   });
 
@@ -47,6 +48,7 @@ describe("item-form", () => {
         activationManaCost: "3",
         activationHealthCost: "0",
         effectIds: ["eff-2", "eff-1", "eff-2"],
+        allowedRowTypes: ["ranged", "support"],
       }),
     ).toEqual({
       name: "Arcane Focus",
@@ -60,6 +62,7 @@ describe("item-form", () => {
       activationManaCost: 3,
       activationHealthCost: 0,
       effectIds: ["eff-2", "eff-1", "eff-2"],
+      allowedRowTypes: ["ranged", "support"],
     });
   });
 
@@ -77,6 +80,7 @@ describe("item-form", () => {
         activationManaCost: "-1",
         activationHealthCost: "-2",
         effectIds: [],
+        allowedRowTypes: [],
       }),
     ).toMatchObject({
       activationManaCost: "Must be zero or greater",
@@ -98,6 +102,7 @@ describe("item-form", () => {
         activationManaCost: "0",
         activationHealthCost: "0",
         effectIds: [],
+        allowedRowTypes: [],
       }),
     ).toEqual({});
   });
@@ -117,6 +122,7 @@ describe("item-form", () => {
           activationManaCost: "0",
           activationHealthCost: "0",
           effectIds: ["eff-2", "eff-1"],
+          allowedRowTypes: ["ranged"],
         },
         {
           name: "Oak Staff",
@@ -130,6 +136,7 @@ describe("item-form", () => {
           activationManaCost: 0,
           activationHealthCost: 0,
           effectIds: ["eff-1", "eff-2"],
+          allowedRowTypes: ["ranged"],
         },
       ),
     ).toBe(true);
@@ -142,9 +149,23 @@ describe("item-form", () => {
           ...createDefaultItemFormValues(),
           name: "Bronze Buckler",
           effectIds: ["eff-1"],
+          allowedRowTypes: ["tank"],
         },
         null,
       ),
     ).toBe(true);
+  });
+
+  it("treats allowed deployment rows as an order-independent dirty field", () => {
+    expect(
+      isItemFormDirty(
+        {
+          ...createDefaultItemFormValues(),
+          name: "Versatile Spear",
+          allowedRowTypes: ["melee", "tank"],
+        },
+        { name: "Versatile Spear", allowedRowTypes: ["tank", "melee"] },
+      ),
+    ).toBe(false);
   });
 });

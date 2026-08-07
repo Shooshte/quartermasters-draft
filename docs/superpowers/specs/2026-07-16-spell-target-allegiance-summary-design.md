@@ -8,7 +8,7 @@ The battle engine derives that allegiance from the first linked effect in sequen
 
 - `buff` and `healing` select allied candidates.
 - `damage` and `debuff` select enemy candidates.
-- Every later effect is applied to the same selected targets, even when its type normally maps to the other side.
+- Every later effect retains the original selected target IDs for targeting and activation, applies only to their living members, and never retargets even when its type normally maps to the other side.
 - `targetScope: "self"` is handled before effect allegiance. The caster is the sole candidate only when the caster's current row is eligible; otherwise the spell has no target.
 
 This behavior already exists in the engine. The change will expose it in the spell workspace without changing targeting mechanics.

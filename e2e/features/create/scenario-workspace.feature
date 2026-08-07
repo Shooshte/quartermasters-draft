@@ -106,6 +106,13 @@ Feature: Scenario workspace create and edit
 
   Rule: Scenario assignment model and picker behavior
 
+    Scenario: A ranged-only item restricts its owner's scenario row
+      Given the item "Longbow" allows only the "ranged" row
+      And unit "Archer" equips "Longbow"
+      When the GM edits a scenario
+      Then "Archer" is available in the "Ranged" row picker
+      And "Archer" is absent from the "Tank" row picker
+
     Scenario: Duplicate units in the same row are allowed
       When I create a new scenario named "Mirror Line"
       And I assign unit "Barbarian" to the "melee" row at slot 1

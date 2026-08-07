@@ -62,6 +62,12 @@ Feature: Item workspace create and edit
     When I update the item spellDmg to 20
     Then reloading the item by URL should show spellDmg as 20
 
+  Scenario: Allowed deployment rows persist
+    Given I have loaded the item "Iron Sword" in the item workspace
+    When I allow deployment only in the "ranged" row
+    And I save the item
+    Then reloading the item by URL should show only the "Ranged" row pill selected
+
   Scenario: Duplicate name shows a save error
     Given I have loaded the item "Oak Staff" in the item workspace
     When I rename the item to "Iron Sword"

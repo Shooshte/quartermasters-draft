@@ -28,7 +28,12 @@ export function useDeleteItemDialog({
   const queryClient = useQueryClient();
   const dialog = useDeleteEntityDialog({
     deleteEntity: (id) => trpc.scenarioBuilder.items.delete.mutate({ id }),
-    invalidate: () => queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] }),
+    invalidate: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
+      });
+    },
     onDeleted: (id) => {
       if (entityWorkspace.entityId === id) {
         setEntityWorkspace(createIdleWorkspace());

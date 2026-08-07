@@ -1,4 +1,12 @@
-import { db, items, itemsEffects, scenariosRows, scenariosRowsUnits, unitsItems } from "@qd/db";
+import {
+  db,
+  items,
+  itemsAllowedRows,
+  itemsEffects,
+  scenariosRows,
+  scenariosRowsUnits,
+  unitsItems,
+} from "@qd/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, exists, notExists, type SQL } from "drizzle-orm";
 import { z } from "zod";
@@ -18,7 +26,10 @@ const itemListInput = createListInputSchema(
   entityListLinkageFilterSchema,
 );
 
-const itemInputBaseSchema = z.object({
+const rowTypeSchema = z.enum(["tank", "melee", "ranged", "support"]);
+const combatRowTypes = ["tank", "melee", "ranged", "support"] as const;
+
+const itemInputFields = z.object({
   name: z.string().trim().min(1),
   meleeDmg: z.number(),
   rangedDmg: z.number(),
@@ -30,7 +41,20 @@ const itemInputBaseSchema = z.object({
   activationManaCost: z.number().min(0),
   activationHealthCost: z.number().min(0),
   effectIds: z.array(idSchema),
+  allowedRowTypes: z.array(rowTypeSchema),
 });
+
+function rejectDuplicateAllowedRows(input: z.infer<typeof itemInputFields>, ctx: z.RefinementCtx) {
+  if (new Set(input.allowedRowTypes).size !== input.allowedRowTypes.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Allowed row types must not contain duplicates.",
+      path: ["allowedRowTypes"],
+    });
+  }
+}
+
+const itemInputBaseSchema = itemInputFields.superRefine(rejectDuplicateAllowedRows);
 
 type NormalizedItemInput = z.infer<typeof itemInputBaseSchema>;
 type ItemTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -40,6 +64,7 @@ function normalizeItemInput(input: z.infer<typeof itemInputBaseSchema>): Normali
     ...input,
     name: input.name.trim(),
     effectIds: [...input.effectIds],
+    allowedRowTypes: [...input.allowedRowTypes],
   };
 }
 
@@ -70,6 +95,32 @@ async function getOrderedEffectIdsForItem(
     .orderBy(asc(itemsEffects.sequenceOrder));
 
   return effectLinks.map((link) => link.effectTemplateId);
+}
+
+async function insertItemAllowedRows(
+  tx: ItemTransaction,
+  itemId: string,
+  rowTypes: NormalizedItemInput["allowedRowTypes"],
+) {
+  if (rowTypes.length === 0) {
+    return;
+  }
+
+  await tx.insert(itemsAllowedRows).values(rowTypes.map((rowType) => ({ itemId, rowType })));
+}
+
+async function getAllowedRowTypesForItem(
+  executor: Pick<ItemTransaction, "select">,
+  itemId: string,
+) {
+  const allowedRows = await executor
+    .select({ rowType: itemsAllowedRows.rowType })
+    .from(itemsAllowedRows)
+    .where(eq(itemsAllowedRows.itemId, itemId));
+
+  return allowedRows
+    .map((row) => row.rowType)
+    .sort((left, right) => combatRowTypes.indexOf(left) - combatRowTypes.indexOf(right));
 }
 
 function buildItemLinkageCondition(filter: EntityListLinkageFilter): SQL | undefined {
@@ -137,11 +188,15 @@ export const itemsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
     }
 
-    const effectIds = await getOrderedEffectIdsForItem(db, input.id);
+    const [effectIds, allowedRowTypes] = await Promise.all([
+      getOrderedEffectIdsForItem(db, input.id),
+      getAllowedRowTypesForItem(db, input.id),
+    ]);
 
     return {
       ...item,
       effectIds,
+      allowedRowTypes,
     };
   }),
 
@@ -174,10 +229,12 @@ export const itemsRouter = router({
         }
 
         await insertItemEffects(tx, created.id, normalized.effectIds);
+        await insertItemAllowedRows(tx, created.id, normalized.allowedRowTypes);
 
         return {
           ...created,
           effectIds: await getOrderedEffectIdsForItem(tx, created.id),
+          allowedRowTypes: normalized.allowedRowTypes,
         };
       });
     } catch (error) {
@@ -190,7 +247,9 @@ export const itemsRouter = router({
   }),
 
   update: gmProcedure
-    .input(z.object({ id: idSchema }).merge(itemInputBaseSchema))
+    .input(
+      z.object({ id: idSchema }).merge(itemInputFields).superRefine(rejectDuplicateAllowedRows),
+    )
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
       const normalized = normalizeItemInput(rest);
@@ -220,10 +279,13 @@ export const itemsRouter = router({
 
           await tx.delete(itemsEffects).where(eq(itemsEffects.itemId, id));
           await insertItemEffects(tx, id, normalized.effectIds);
+          await tx.delete(itemsAllowedRows).where(eq(itemsAllowedRows.itemId, id));
+          await insertItemAllowedRows(tx, id, normalized.allowedRowTypes);
 
           return {
             ...updated,
             effectIds: await getOrderedEffectIdsForItem(tx, id),
+            allowedRowTypes: normalized.allowedRowTypes,
           };
         });
       } catch (error) {

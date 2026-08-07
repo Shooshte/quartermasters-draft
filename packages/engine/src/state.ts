@@ -50,6 +50,7 @@ function normalizeItem(item: ItemInput): BattleItemState {
     criticalChance: item.criticalChance ?? 0,
     activationManaCost: item.activationManaCost ?? 0,
     activationHealthCost: item.activationHealthCost ?? 0,
+    allowedRowTypes: item.allowedRowTypes ? [...item.allowedRowTypes] : undefined,
     effects: [...(item.effects ?? [])].sort(
       (left, right) => left.sequenceOrder - right.sequenceOrder,
     ),
@@ -91,13 +92,10 @@ function createUnitState(
     mana: Math.max(0, unit.stats.mana + bonuses.mana),
     actionBar: unit.startingActionBar ?? 0,
     items,
-    targetSide: unit.targetSide ?? "enemies",
-    targetPolicy: unit.targetPolicy ?? "highest_health",
-    targetRowCount: unit.targetRowCount ?? 1,
-    maxTargetsPerRow: unit.maxTargetsPerRow ?? 1,
-    targetOnlyAdjacent: unit.targetOnlyAdjacent ?? false,
-    allowedRowTypes: [...(unit.allowedRowTypes ?? [])],
-    targetPolicyOverride: null,
+    targetScope: unit.targetScope ?? "enemies",
+    targetPriority: unit.targetPriority ?? "highest_health",
+    targetCount: unit.targetCount ?? 1,
+    selectionShape: unit.selectionShape ?? "individual",
     activeEffects: [],
     actedCount: 0,
   };
@@ -125,21 +123,6 @@ function createScenarioState(scenario: ScenarioInput): BattleScenarioState {
   };
 }
 
-function applyTargetingOverrides(
-  state: InternalBattleState,
-  overrides: BattleInput["targetingOverrides"],
-) {
-  for (const override of overrides ?? []) {
-    const scenario = state.scenarios.find((candidate) => candidate.id === override.scenarioId);
-    const unit = scenario?.rows[override.rowType].find(
-      (candidate) => candidate.slot === override.slot,
-    );
-    if (unit) {
-      unit.targetPolicyOverride = override.policy;
-    }
-  }
-}
-
 export function initializeBattleState(
   input: BattleInput,
   options: BattleOptions = {},
@@ -160,7 +143,6 @@ export function initializeBattleState(
     __scenarioOrder: input.scenarios.map((scenario) => scenario.id),
   };
 
-  applyTargetingOverrides(state, input.targetingOverrides);
   return state;
 }
 

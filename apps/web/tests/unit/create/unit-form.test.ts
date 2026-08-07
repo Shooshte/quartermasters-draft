@@ -20,12 +20,10 @@ describe("unit-form", () => {
       dodge: "0",
       criticalChance: "0",
       itemIds: [],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
   });
 
@@ -63,12 +61,10 @@ describe("unit-form", () => {
         dodge: "6.5",
         criticalChance: "7.25",
         itemIds: ["it-1", "it-1", "it-2"],
-        targetSide: "enemies",
-        targetPolicy: "highest_health",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
-        allowedRowTypes: [],
+        targetScope: "both",
+        targetPriority: "highest_health",
+        targetCount: 2,
+        selectionShape: "adjacent",
       }),
     ).toEqual({
       name: "Twinblade Adept",
@@ -82,12 +78,10 @@ describe("unit-form", () => {
       dodge: 6.5,
       criticalChance: 7.25,
       itemIds: ["it-1", "it-1", "it-2"],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "both",
+      targetPriority: "highest_health",
+      targetCount: 2,
+      selectionShape: "adjacent",
     });
   });
 
@@ -114,45 +108,34 @@ describe("unit-form", () => {
     ).toEqual({});
   });
 
-  it("requires an explicit target side", () => {
+  it("requires an explicit target scope", () => {
     expect(
       validateUnitForm({
         ...createDefaultUnitFormValues(),
         name: "Lost Archer",
-        targetSide: "",
+        targetScope: "",
       }),
-    ).toMatchObject({ targetSide: "Target side is required" });
+    ).toMatchObject({ targetScope: "Target scope is required" });
   });
 
-  it("rejects self priority when targeting enemies", () => {
+  it("requires an explicit target priority", () => {
     expect(
       validateUnitForm({
         ...createDefaultUnitFormValues(),
         name: "Confused Duelist",
-        targetSide: "enemies",
-        targetPolicy: "self",
+        targetPriority: "",
       }),
-    ).toMatchObject({ targetSide: "Self priority cannot be used when targeting enemies" });
+    ).toMatchObject({ targetPriority: "Target priority is required" });
   });
 
-  it.each([
-    {
-      maxTargetsPerRow: null,
-      message: "Adjacent targeting requires a limited number of targets per row",
-    },
-    { maxTargetsPerRow: 1, message: "Adjacent targeting requires at least 2 targets per row" },
-  ])("rejects adjacent targeting when max targets per row is $maxTargetsPerRow", ({
-    maxTargetsPerRow,
-    message,
-  }) => {
+  it.each([0, -1])("rejects a non-positive target count of %s", (targetCount) => {
     expect(
       validateUnitForm({
         ...createDefaultUnitFormValues(),
         name: "Broken Formation",
-        maxTargetsPerRow,
-        targetOnlyAdjacent: true,
+        targetCount,
       }),
-    ).toMatchObject({ targetOnlyAdjacent: message });
+    ).toMatchObject({ targetCount: "Target count must be at least 1" });
   });
 
   it("normalizes targeting fields without inferring them from linked items", () => {
@@ -160,21 +143,17 @@ describe("unit-form", () => {
       normalizeUnitFormValues({
         ...createDefaultUnitFormValues(),
         name: "  Ally Vanguard  ",
-        targetSide: "allies",
-        targetPolicy: "lowest_health",
-        targetRowCount: 2,
-        maxTargetsPerRow: 3,
-        targetOnlyAdjacent: true,
-        allowedRowTypes: ["tank", "melee"],
+        targetScope: "both",
+        targetPriority: "lowest_health",
+        targetCount: 2,
+        selectionShape: "adjacent",
       }),
     ).toMatchObject({
       name: "Ally Vanguard",
-      targetSide: "allies",
-      targetPolicy: "lowest_health",
-      targetRowCount: 2,
-      maxTargetsPerRow: 3,
-      targetOnlyAdjacent: true,
-      allowedRowTypes: ["tank", "melee"],
+      targetScope: "both",
+      targetPriority: "lowest_health",
+      targetCount: 2,
+      selectionShape: "adjacent",
     });
   });
 

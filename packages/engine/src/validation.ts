@@ -1,4 +1,12 @@
-import type { BattleInput } from "./types";
+import {
+  type BattleInput,
+  ROW_TYPES,
+  type RowType,
+  TARGET_PRIORITIES,
+  TARGET_SCOPES,
+  TARGET_SELECTION_SHAPES,
+  type UnitInput,
+} from "./types";
 
 export class InvalidBattleInputError extends Error {
   constructor(message: string) {
@@ -30,19 +38,80 @@ export function validateBattleInput(input: BattleInput): void {
     throw new InvalidBattleInputError("Battle seed must not be blank.");
   }
 
-  const units = input.scenarios.flatMap((scenario) => Object.values(scenario.rows ?? {}).flat());
-  const invalidSelfTargeter = units.find(
-    (unit) => (unit.targetSide ?? "enemies") === "enemies" && unit.targetPolicy === "self",
+  const deployedUnits = input.scenarios.flatMap((scenario) =>
+    ROW_TYPES.flatMap((rowType) =>
+      (scenario.rows?.[rowType] ?? []).map((unit) => ({ rowType, unit })),
+    ),
   );
-  if (invalidSelfTargeter) {
-    throw new InvalidBattleInputError(
-      `Self targeting policy is invalid for the enemy target side on unit ${invalidSelfTargeter.name}.`,
-    );
+  for (const { rowType, unit } of deployedUnits) {
+    validateTargetingConfiguration(unit);
+    validateTargetCount(unit);
+    validateItemRows(unit, rowType);
   }
 
-  const livingUnits = units.filter((unit) => (unit.currentHealth ?? unit.stats.health) > 0);
+  const livingUnits = deployedUnits
+    .map(({ unit }) => unit)
+    .filter((unit) => (unit.currentHealth ?? unit.stats.health) > 0);
 
   if (livingUnits.length === 0) {
     throw new InvalidBattleInputError("Battle initialization requires at least one living unit.");
+  }
+}
+
+function validateTargetingConfiguration(unit: UnitInput): void {
+  if (
+    unit.targetScope !== undefined &&
+    !TARGET_SCOPES.some((targetScope) => targetScope === unit.targetScope)
+  ) {
+    throw new InvalidBattleInputError(
+      `Invalid target scope "${String(unit.targetScope)}" for ${unit.name}.`,
+    );
+  }
+  if (
+    unit.targetPriority !== undefined &&
+    !TARGET_PRIORITIES.some((targetPriority) => targetPriority === unit.targetPriority)
+  ) {
+    throw new InvalidBattleInputError(
+      `Invalid target priority "${String(unit.targetPriority)}" for ${unit.name}.`,
+    );
+  }
+  if (
+    unit.selectionShape !== undefined &&
+    !TARGET_SELECTION_SHAPES.some((selectionShape) => selectionShape === unit.selectionShape)
+  ) {
+    throw new InvalidBattleInputError(
+      `Invalid selection shape "${String(unit.selectionShape)}" for ${unit.name}.`,
+    );
+  }
+}
+
+function validateTargetCount(unit: UnitInput): void {
+  if (
+    unit.targetCount !== undefined &&
+    (!Number.isInteger(unit.targetCount) || unit.targetCount <= 0)
+  ) {
+    throw new InvalidBattleInputError("Target count must be a positive integer");
+  }
+}
+
+function validateItemRows(unit: UnitInput, deployedRow: RowType): void {
+  let allowedRows = new Set<RowType>(ROW_TYPES);
+
+  for (const item of unit.items ?? []) {
+    const itemRows = item.allowedRowTypes ?? [];
+    if (new Set(itemRows).size !== itemRows.length) {
+      throw new InvalidBattleInputError(`${item.name} has duplicate allowed row types`);
+    }
+
+    const restriction = itemRows.length === 0 ? ROW_TYPES : itemRows;
+    allowedRows = new Set([...allowedRows].filter((rowType) => restriction.includes(rowType)));
+  }
+
+  if (allowedRows.size === 0) {
+    throw new InvalidBattleInputError(`${unit.name} has no shared allowed item rows`);
+  }
+
+  if (!allowedRows.has(deployedRow)) {
+    throw new InvalidBattleInputError(`${unit.name} cannot be deployed in ${deployedRow}`);
   }
 }

@@ -54,7 +54,7 @@ describe("loadBattleScenario", () => {
     expect(getSelectCount()).toBe(2);
   });
 
-  it("loads unit targeting and item effects in sequence order", async () => {
+  it("loads unit targeting, item placement rows, and item effects in sequence order", async () => {
     const { executor } = queuedExecutor([
       [{ id: "scenario-a", name: "Ambush at Dawn" }],
       [
@@ -73,17 +73,12 @@ describe("loadBattleScenario", () => {
             speed: 1,
             dodge: 8,
             criticalChance: 6,
-            targetSide: "allies",
-            targetPolicy: "lowest_health",
-            targetRowCount: 2,
-            maxTargetsPerRow: 3,
-            targetOnlyAdjacent: true,
+            targetScope: "self_allies",
+            targetPriority: "support",
+            targetCount: 3,
+            selectionShape: "adjacent",
           },
         },
-      ],
-      [
-        { unitId: "unit-1", rowType: "support" },
-        { unitId: "unit-1", rowType: "ranged" },
       ],
       [
         {
@@ -105,6 +100,10 @@ describe("loadBattleScenario", () => {
         },
       ],
       [
+        { itemId: "item-1", rowType: "support" },
+        { itemId: "item-1", rowType: "ranged" },
+      ],
+      [
         {
           itemId: "item-1",
           sequenceOrder: 2,
@@ -121,15 +120,15 @@ describe("loadBattleScenario", () => {
     const scenario = await loadBattleScenario(executor, "scenario-a");
 
     expect(scenario.rows?.ranged?.[0]).toMatchObject({
-      targetSide: "allies",
-      targetPolicy: "lowest_health",
-      targetRowCount: 2,
-      maxTargetsPerRow: 3,
-      targetOnlyAdjacent: true,
-      allowedRowTypes: ["ranged", "support"],
+      targetScope: "self_allies",
+      targetPriority: "support",
+      targetCount: 3,
+      selectionShape: "adjacent",
       items: [
         {
+          id: "item-1",
           name: "Oak Staff",
+          allowedRowTypes: ["ranged", "support"],
           effects: [
             { sequenceOrder: 1, effect: { name: "Scorch" } },
             { sequenceOrder: 2, effect: { name: "Burn" } },

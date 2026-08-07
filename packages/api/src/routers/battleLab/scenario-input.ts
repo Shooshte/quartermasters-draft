@@ -1,49 +1,44 @@
-import type {
-  EffectTemplateInput,
-  ItemInput,
-  RowType,
-  ScenarioInput,
-  TargetPolicy,
-  TargetSide,
-} from "@qd/engine";
+import type { items, units } from "@qd/db";
+import type { EffectTemplateInput, ItemInput, RowType, ScenarioInput } from "@qd/engine";
 
 type ScenarioRecord = {
   id: string;
   name: string;
 };
 
-type UnitRecord = {
-  id: string;
-  name: string;
-  health: number;
-  mana: number;
-  meleeDmg: number;
-  rangedDmg: number;
-  manaRegen: number;
-  spellDmg: number;
-  speed: number;
-  dodge: number;
-  criticalChance: number;
-  targetSide: TargetSide;
-  targetPolicy: TargetPolicy;
-  targetRowCount: number;
-  maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
-};
+type Stats = Pick<
+  typeof units.$inferSelect,
+  | "health"
+  | "mana"
+  | "meleeDmg"
+  | "rangedDmg"
+  | "manaRegen"
+  | "spellDmg"
+  | "speed"
+  | "dodge"
+  | "criticalChance"
+>;
 
-type ItemRecord = {
-  id: string;
-  name: string;
-  meleeDmg: number;
-  rangedDmg: number;
-  mana: number;
-  manaRegen: number;
-  spellDmg: number;
-  dodge: number;
-  criticalChance: number;
-  activationManaCost: number;
-  activationHealthCost: number;
-};
+type UnitRecord = Pick<
+  typeof units.$inferSelect,
+  "id" | "name" | "targetScope" | "targetPriority" | "targetCount" | "selectionShape"
+> &
+  Stats;
+
+type ItemRecord = Pick<
+  typeof items.$inferSelect,
+  | "id"
+  | "name"
+  | "meleeDmg"
+  | "rangedDmg"
+  | "mana"
+  | "manaRegen"
+  | "spellDmg"
+  | "dodge"
+  | "criticalChance"
+  | "activationManaCost"
+  | "activationHealthCost"
+>;
 
 type EffectRecord = {
   id: string;
@@ -80,8 +75,8 @@ export interface BattleScenarioRecords {
     priority: number;
     item: ItemRecord;
   }>;
-  unitAllowedRows: Array<{
-    unitId: string;
+  itemAllowedRows: Array<{
+    itemId: string;
     rowType: RowType;
   }>;
   itemEffects: Array<{
@@ -98,6 +93,10 @@ const ROW_ORDER: Record<RowType, number> = {
   support: 3,
 };
 
+function byCombatRowOrder(left: RowType, right: RowType): number {
+  return ROW_ORDER[left] - ROW_ORDER[right];
+}
+
 function appendToMap<Key, Value>(map: Map<Key, Value[]>, key: Key, value: Value): void {
   const values = map.get(key);
   if (values) {
@@ -113,9 +112,9 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
     appendToMap(unitItemsByUnitId, link.unitId, link);
   }
 
-  const allowedRowsByUnitId = new Map<string, RowType[]>();
-  for (const link of records.unitAllowedRows) {
-    appendToMap(allowedRowsByUnitId, link.unitId, link.rowType);
+  const allowedRowsByItemId = new Map<string, RowType[]>();
+  for (const link of records.itemAllowedRows) {
+    appendToMap(allowedRowsByItemId, link.itemId, link.rowType);
   }
 
   const effectsByItemId = new Map<string, BattleScenarioRecords["itemEffects"]>();
@@ -168,6 +167,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
         criticalChance: item.criticalChance,
         activationManaCost: item.activationManaCost,
         activationHealthCost: item.activationHealthCost,
+        allowedRowTypes: [...(allowedRowsByItemId.get(item.id) ?? [])].sort(byCombatRowOrder),
         effects: buildEffectsForItem(item.id),
       }));
   }
@@ -194,14 +194,10 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
         dodge: assignment.unit.dodge,
         criticalChance: assignment.unit.criticalChance,
       },
-      targetSide: assignment.unit.targetSide,
-      targetPolicy: assignment.unit.targetPolicy,
-      targetRowCount: assignment.unit.targetRowCount,
-      maxTargetsPerRow: assignment.unit.maxTargetsPerRow,
-      targetOnlyAdjacent: assignment.unit.targetOnlyAdjacent,
-      allowedRowTypes: [...(allowedRowsByUnitId.get(assignment.unit.id) ?? [])].sort(
-        (left, right) => ROW_ORDER[left] - ROW_ORDER[right],
-      ),
+      targetScope: assignment.unit.targetScope,
+      targetPriority: assignment.unit.targetPriority,
+      targetCount: assignment.unit.targetCount,
+      selectionShape: assignment.unit.selectionShape,
       items: buildItemsForUnit(assignment.unit.id),
     });
   }

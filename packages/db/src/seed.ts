@@ -8,13 +8,13 @@ import * as schema from "./schema";
 import {
   buildSeedData,
   effectSeedData,
+  itemAllowedRowSeedData,
   itemSeedData,
   itemsEffectsSeedData,
   scenarioSeedData,
   scenariosRowsSeedData,
   scenariosRowsUnitsSeedData,
   unitSeedData,
-  unitsAllowedRowsSeedData,
   unitsItemsSeedData,
 } from "./seed-data";
 
@@ -33,9 +33,9 @@ try {
   }
   await db.insert(schema.effects).values(effectSeedData).onConflictDoNothing();
   await db.insert(schema.items).values(itemSeedData).onConflictDoNothing();
+  await db.insert(schema.itemsAllowedRows).values(itemAllowedRowSeedData).onConflictDoNothing();
   await db.insert(schema.itemsEffects).values(itemsEffectsSeedData).onConflictDoNothing();
   await db.insert(schema.units).values(unitSeedData).onConflictDoNothing();
-  await db.insert(schema.unitsAllowedRows).values(unitsAllowedRowsSeedData).onConflictDoNothing();
   await db.insert(schema.unitsItems).values(unitsItemsSeedData).onConflictDoNothing();
   await db.insert(schema.scenarios).values(scenarioSeedData).onConflictDoNothing();
   await db.insert(schema.scenariosRows).values(scenariosRowsSeedData).onConflictDoNothing();
@@ -45,7 +45,7 @@ try {
     .onConflictDoNothing();
 
   console.log(
-    "Seeded users, accounts, effects, items, items_effects, units, units_allowed_rows, units_items, scenarios, scenarios_rows, and scenarios_rows_units",
+    "Seeded users, accounts, effects, items, items_allowed_rows, items_effects, units, units_items, scenarios, scenarios_rows, and scenarios_rows_units",
   );
   await client.end();
   process.exit(0);

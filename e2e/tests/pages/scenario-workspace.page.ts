@@ -38,6 +38,10 @@ export class ScenarioWorkspacePage {
     return this.page.getByTestId(`scenario-row-${rowType}-picker-search`);
   }
 
+  pickerOption(rowType: RowType, unitId: string) {
+    return this.page.getByTestId(`scenario-row-${rowType}-picker-option-${unitId}`);
+  }
+
   // ─── Navigation ─────────────────────────────────────────────────────────────
 
   async openNew() {
@@ -63,6 +67,11 @@ export class ScenarioWorkspacePage {
     ).toBeVisible();
     await this.page.getByTestId(`scenario-row-${rowType}-picker-option-${unitId}`).click();
     await this.page.getByTestId(`scenario-row-${rowType}-picker-add`).click();
+  }
+
+  async searchRowPicker(rowType: RowType, search: string) {
+    await this.page.getByTestId(`scenario-row-${rowType}-picker`).click();
+    await this.pickerSearch(rowType).fill(search);
   }
 
   async removeUnit(rowType: RowType, slotIndex: number) {

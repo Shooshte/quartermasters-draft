@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { initializeBattleState } from "./state";
 import {
   createBattleInput,
   createBattleInputWithSeed,
+  createItem,
   createScenario,
   createStats,
   createUnit,
@@ -105,21 +107,95 @@ describe("battle input validation", () => {
     ).not.toThrow();
   });
 
-  it("rejects self targeting policy for the enemy target side", () => {
+  it("rejects a unit with a non-positive target count", () => {
+    expect(() =>
+      initializeBattleState(
+        createBattleInput([
+          createScenario("A", { tank: [createUnit("Caster", { targetCount: 0 })] }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Target count must be a positive integer");
+  });
+
+  it("rejects a unit with a non-integer target count", () => {
+    expect(() =>
+      validateBattleInput(
+        createBattleInput([
+          createScenario("A", { tank: [createUnit("Caster", { targetCount: 1.5 })] }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Target count must be a positive integer");
+  });
+
+  it.each([
+    ["targetScope", "nearby", 'Invalid target scope "nearby" for Caster.'],
+    ["targetPriority", "weakest", 'Invalid target priority "weakest" for Caster.'],
+    ["selectionShape", "cone", 'Invalid selection shape "cone" for Caster.'],
+  ] as const)("rejects an unknown serialized %s", (field, value, message) => {
+    const caster = createUnit("Caster");
+    (caster as unknown as Record<string, unknown>)[field] = value;
+    const input = createBattleInput([
+      createScenario("A", { tank: [caster] }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => validateBattleInput(input)).toThrowError(InvalidBattleInputError);
+    expect(() => validateBattleInput(input)).toThrowError(message);
+  });
+
+  it("rejects an item that repeats an allowed row", () => {
     expect(() =>
       validateBattleInput(
         createBattleInput([
           createScenario("A", {
             tank: [
-              createUnit("Invalid Targeter", {
-                targetSide: "enemies",
-                targetPolicy: "self",
+              createUnit("Caster", {
+                items: [createItem({ name: "Bow", allowedRowTypes: ["ranged", "ranged"] })],
               }),
             ],
           }),
-          createScenario("B", { tank: [createUnit("B")] }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
         ]),
       ),
-    ).toThrow(/self targeting policy.*enemy target side/i);
+    ).toThrowError("Bow has duplicate allowed row types");
+  });
+
+  it("rejects items with no shared allowed rows", () => {
+    expect(() =>
+      validateBattleInput(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("Caster", {
+                items: [
+                  createItem({ name: "Bow", allowedRowTypes: ["ranged"] }),
+                  createItem({ name: "Shield", allowedRowTypes: ["tank"] }),
+                ],
+              }),
+            ],
+          }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Caster has no shared allowed item rows");
+  });
+
+  it("rejects a unit deployed outside an equipped item's allowed rows", () => {
+    expect(() =>
+      initializeBattleState(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("Caster", {
+                items: [createItem({ name: "Bow", allowedRowTypes: ["ranged"] })],
+              }),
+            ],
+          }),
+          createScenario("B", { tank: [createUnit("Enemy")] }),
+        ]),
+      ),
+    ).toThrowError("Caster cannot be deployed in tank");
   });
 });

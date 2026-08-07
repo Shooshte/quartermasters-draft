@@ -2,6 +2,8 @@ import { expect, type Page } from "@playwright/test";
 import { addLinkedEntity, saveEntityAndWait } from "../helpers/workspace-helpers";
 import { CreateShellPage } from "./create-shell.page";
 
+type RowType = "tank" | "melee" | "ranged" | "support";
+
 export class ItemWorkspacePage {
   readonly shell: CreateShellPage;
 
@@ -37,6 +39,10 @@ export class ItemWorkspacePage {
     return this.page.getByTestId("item-effect-picker-search");
   }
 
+  allowedRowButton(rowType: RowType) {
+    return this.page.getByTestId(`item-allowed-row-${rowType}`);
+  }
+
   async openNew() {
     await this.shell.startNewEntity("Items", "New Item");
   }
@@ -52,6 +58,17 @@ export class ItemWorkspacePage {
   async fillStats(values: Record<string, string>) {
     for (const [field, value] of Object.entries(values)) {
       await this.page.getByTestId(`item-${field}-input`).fill(value);
+    }
+  }
+
+  async setAllowedRows(rowTypes: readonly RowType[]) {
+    for (const rowType of ["tank", "melee", "ranged", "support"] as const) {
+      const shouldBeActive = rowTypes.includes(rowType);
+      const isActive =
+        (await this.allowedRowButton(rowType).getAttribute("aria-pressed")) === "true";
+      if (isActive !== shouldBeActive) {
+        await this.allowedRowButton(rowType).click();
+      }
     }
   }
 

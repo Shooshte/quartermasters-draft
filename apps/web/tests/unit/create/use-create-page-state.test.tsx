@@ -410,6 +410,42 @@ describe("useCreatePageState — lazy loading", () => {
       expect(mockUnitsList).toHaveBeenCalled();
     });
   });
+
+  it("loads linked item placement rows for scenario unit options", async () => {
+    mockUnitsList.mockResolvedValue({
+      items: [{ id: "u-ranger", name: "Ranger" }],
+      totalCount: 1,
+    });
+    mockUnitsGet.mockResolvedValue({
+      id: "u-ranger",
+      name: "Ranger",
+      itemIds: ["it-bow", "it-boots"],
+    });
+    mockItemsGet.mockImplementation(({ id }: { id: string }) =>
+      Promise.resolve({
+        id,
+        allowedRowTypes: id === "it-bow" ? ["ranged"] : ["ranged", "support"],
+      }),
+    );
+
+    const { result } = renderHook(() => useCreatePageState({ tab: "Scenarios" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.createNew("Scenarios");
+    });
+
+    await waitFor(() => {
+      expect(result.current.scenarioUnitOptions).toEqual([
+        {
+          id: "u-ranger",
+          name: "Ranger",
+          itemAllowedRowTypes: [["ranged"], ["ranged", "support"]],
+        },
+      ]);
+    });
+  });
 });
 
 describe("useCreatePageState — listFetching field", () => {
@@ -1488,6 +1524,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: ["sp-1"],
+      allowedRowTypes: [],
     });
 
     const { result, rerender } = renderHook(
@@ -1520,6 +1557,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: ["sp-1"],
+      allowedRowTypes: [],
     });
     expect(result.current.entityWorkspace.mode).toBe("edit");
     expect(result.current.entityWorkspace.entityId).toBe("i-created");
@@ -1540,6 +1578,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: ["sp-1"],
+      allowedRowTypes: [],
     });
     mockItemsUpdate.mockResolvedValueOnce({
       id: "i1",
@@ -1554,6 +1593,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: ["sp-1"],
+      allowedRowTypes: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1585,6 +1625,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: ["sp-1"],
+      allowedRowTypes: [],
     });
     expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
@@ -1603,6 +1644,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: [],
+      allowedRowTypes: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1631,6 +1673,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: [],
+      allowedRowTypes: [],
     });
     expect(mockItemsUpdate).not.toHaveBeenCalled();
   });
@@ -1663,6 +1706,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: [],
+      allowedRowTypes: [],
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Items" }, vi.fn()), {
@@ -1694,6 +1738,7 @@ describe("useCreatePageState — item save flows", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: [],
+      allowedRowTypes: [],
     });
   });
 
@@ -1853,12 +1898,10 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: ["it-1"],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
 
     const { result, rerender } = renderHook(
@@ -1890,12 +1933,10 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: ["it-1"],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
     expect(result.current.entityWorkspace.mode).toBe("edit");
     expect(result.current.entityWorkspace.entityId).toBe("u-created");
@@ -1930,12 +1971,10 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 5,
       criticalChance: 10,
       itemIds: ["it-3", "it-1"],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
@@ -1968,12 +2007,10 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 5,
       criticalChance: 10,
       itemIds: ["it-3", "it-1"],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
     expect(result.current.entityWorkspace.isDirty).toBe(false);
   });
@@ -1992,12 +2029,10 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: [],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
 
     const { result } = renderHook(() => useCreatePageState({ tab: "Units" }, vi.fn()), {
@@ -2026,12 +2061,10 @@ describe("useCreatePageState — unit save flows", () => {
       dodge: 0,
       criticalChance: 0,
       itemIds: [],
-      targetSide: "enemies",
-      targetPolicy: "highest_health",
-      targetRowCount: 1,
-      maxTargetsPerRow: 1,
-      targetOnlyAdjacent: false,
-      allowedRowTypes: [],
+      targetScope: "enemies",
+      targetPriority: "highest_health",
+      targetCount: 1,
+      selectionShape: "individual",
     });
   });
 
@@ -2459,6 +2492,7 @@ describe("useCreatePageState — scenario save flow", () => {
       activationManaCost: 0,
       activationHealthCost: 0,
       effectIds: ["sp-2"],
+      allowedRowTypes: [],
     });
   });
 
@@ -2599,6 +2633,9 @@ describe("useCreatePageState — query invalidation after save", () => {
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["scenarioBuilder", "items"],
     });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
+    });
   });
 
   it("invalidates all unit queries after creating a unit", async () => {
@@ -2686,6 +2723,9 @@ describe("useCreatePageState — query invalidation after delete", () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ["scenarioBuilder", "items"],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
     });
   });
 

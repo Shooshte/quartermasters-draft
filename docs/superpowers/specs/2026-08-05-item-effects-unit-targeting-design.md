@@ -41,8 +41,10 @@ workspace:
 
 `self` target side selects only the caster when its row is eligible. `self`
 target policy remains invalid when `targetSide` is `enemies`. Effect category
-does not determine target side: every effect from an activated item applies to
-the targets selected by the unit configuration.
+does not determine target side: activation records the target IDs selected by
+the unit configuration, every ordered effect shares those IDs for targeting and
+activation, and later effects apply only to their living members without
+retargeting.
 
 ## Persistence and Migration
 

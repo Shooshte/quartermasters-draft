@@ -1,5 +1,5 @@
 import { Pencil } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { type EntityPickerOption, EntityPickerPopover } from "./entity-picker-popover";
 import type { ScenarioRowType } from "./scenario-form";
@@ -14,9 +14,18 @@ const ROW_CONFIG: Record<ScenarioRowType, { label: string; icon: string }> = {
 interface ScenarioRowEditorProps {
   rowType: ScenarioRowType;
   unitIds: string[];
-  unitOptions: EntityPickerOption[];
+  unitOptions: ScenarioUnitOption[];
   onChange: (unitIds: string[]) => void;
   onEditUnit: (unitId: string) => void;
+}
+
+export interface ScenarioUnitOption extends EntityPickerOption {
+  itemAllowedRowTypes: ScenarioRowType[][];
+}
+
+export function canDeployInRow(unit: ScenarioUnitOption, rowType: ScenarioRowType): boolean {
+  const restricted = unit.itemAllowedRowTypes.filter((rows) => rows.length > 0);
+  return restricted.length === 0 || restricted.every((rows) => rows.includes(rowType));
 }
 
 export function ScenarioRowEditor({
@@ -29,6 +38,15 @@ export function ScenarioRowEditor({
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const { label, icon } = ROW_CONFIG[rowType];
   const unitNameById = new Map(unitOptions.map((option) => [option.id, option.name]));
+  const unitById = new Map(unitOptions.map((option) => [option.id, option]));
+  const eligibleUnitOptions = unitOptions.filter((option) => canDeployInRow(option, rowType));
+  const selectedUnitIsEligible = eligibleUnitOptions.some((option) => option.id === selectedUnitId);
+
+  useEffect(() => {
+    if (selectedUnitId && !selectedUnitIsEligible) {
+      setSelectedUnitId("");
+    }
+  }, [selectedUnitId, selectedUnitIsEligible]);
 
   const handleMove = (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -42,7 +60,7 @@ export function ScenarioRowEditor({
   };
 
   const handleAdd = () => {
-    if (!selectedUnitId) {
+    if (!selectedUnitId || !selectedUnitIsEligible) {
       return;
     }
 
@@ -67,15 +85,27 @@ export function ScenarioRowEditor({
           const slot = index + 1;
           const isFirst = index === 0;
           const isLast = index === unitIds.length - 1;
+          const unit = unitById.get(unitId);
+          const hasInvalidPlacement = unit ? !canDeployInRow(unit, rowType) : false;
 
           return (
             <div
               key={`${rowType}-${slot}-${unitId}`}
-              className="sw-slot"
+              className={`sw-slot ${hasInvalidPlacement ? "sw-slot-invalid" : ""}`}
               data-testid={`scenario-row-${rowType}-slot-${slot}`}
             >
               <span className="sw-slot-number">{slot}</span>
-              <span className="sw-slot-name">{unitNameById.get(unitId) ?? unitId}</span>
+              <span className="sw-slot-name">
+                {unitNameById.get(unitId) ?? unitId}
+                {hasInvalidPlacement ? (
+                  <span
+                    className="sw-slot-placement-error"
+                    data-testid={`scenario-row-${rowType}-slot-${slot}-placement-error`}
+                  >
+                    {`Cannot deploy in ${label} row`}
+                  </span>
+                ) : null}
+              </span>
               <div className="sw-slot-actions">
                 <button
                   type="button"
@@ -125,13 +155,13 @@ export function ScenarioRowEditor({
             searchTestId={`scenario-row-${rowType}-picker-search`}
             emptyTestId={`scenario-row-${rowType}-picker-empty`}
             optionTestIdPrefix={`scenario-row-${rowType}-picker-option`}
-            options={unitOptions}
+            options={eligibleUnitOptions}
             selectedId={selectedUnitId}
             onSelect={setSelectedUnitId}
             searchPlaceholder="Search units..."
             triggerPlaceholder="Select unit..."
             listboxLabel={`${label} row unit options`}
-            emptyMessage="No units found"
+            emptyMessage="No eligible units found"
             triggerClassName="sw-picker-trigger"
             popoverClassName="sw-picker-popover"
           />
@@ -141,7 +171,7 @@ export function ScenarioRowEditor({
             size="sm"
             data-testid={`scenario-row-${rowType}-picker-add`}
             className="sw-picker-add"
-            disabled={!selectedUnitId}
+            disabled={!selectedUnitId || !selectedUnitIsEligible}
             onClick={handleAdd}
           >
             Add

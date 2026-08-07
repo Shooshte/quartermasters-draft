@@ -7,9 +7,11 @@ import {
   BATTLE_LAB_SEED,
   CASTLE_SIEGE_ID,
   CASTLE_SIEGE_NAME,
+  IRON_SWORD_ID,
   LEATHER_SHIELD_ID,
   MAGE_ID,
   RANGER_ID,
+  SAMURAI_ID,
   TEMPLAR_ID,
   TRPC_BASE,
 } from "../helpers/seed-constants";
@@ -57,6 +59,8 @@ interface BattleReplayResponse {
       caster?: string;
       casterId?: string;
       item?: string;
+      targets?: string[];
+      targetIds?: string[];
       effects?: string[];
       source?: string;
       sourceId?: string;
@@ -168,12 +172,12 @@ async function runSavedBattle(page: Page) {
 async function configureUnitTargeting(
   parallelIndex: number,
   unitId: string,
-  side: "allies" | "enemies",
-  policy: "highest_health" | "lowest_health",
+  scope: "allies" | "enemies",
+  priority: "highest_health" | "lowest_health",
 ) {
   await runWorkerSql(
     parallelIndex,
-    `UPDATE units SET target_side = '${side}', target_policy = '${policy}' WHERE id = '${unitId}'`,
+    `UPDATE units SET target_scope = '${scope}', target_priority = '${priority}' WHERE id = '${unitId}'`,
   );
 }
 
@@ -270,6 +274,66 @@ test.describe("Battle Lab", () => {
     expect(enemyHealing).toBeDefined();
     expect(enemyHealing?.sourceId?.startsWith(`${AMBUSH_AT_DAWN_ID}:`)).toBe(true);
     expect(enemyHealing?.targetId?.startsWith(`${CASTLE_SIEGE_ID}:`)).toBe(true);
+  });
+
+  test("an adjacent multi-target activation uses its unit targeting definition", async ({
+    gmPage,
+  }, testInfo) => {
+    const ambush = await getScenario(gmPage.request, AMBUSH_AT_DAWN_ID);
+    await updateScenario(
+      gmPage.request,
+      ambush,
+      ambush.name,
+      ambush.rows.map((row) => ({
+        rowType: row.rowType,
+        unitIds: row.rowType === "ranged" ? [BARBARIAN_ID, MAGE_ID, SAMURAI_ID, RANGER_ID] : [],
+      })),
+    );
+
+    const castle = await getScenario(gmPage.request, CASTLE_SIEGE_ID);
+    await updateScenario(
+      gmPage.request,
+      castle,
+      castle.name,
+      castle.rows.map((row) => ({
+        rowType: row.rowType,
+        unitIds: row.rowType === "tank" ? [TEMPLAR_ID] : [],
+      })),
+    );
+
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET target_scope = 'enemies', target_priority = 'highest_damage', target_count = 3, selection_shape = 'adjacent', speed = 10, health = 1000 WHERE id = '${TEMPLAR_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET speed = 0, health = 1000, melee_dmg = 0, ranged_dmg = 0, spell_dmg = 0 WHERE id IN ('${BARBARIAN_ID}', '${MAGE_ID}', '${RANGER_ID}')`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `UPDATE units SET speed = 0, health = 1000, melee_dmg = 1000, ranged_dmg = 1000, spell_dmg = 1000 WHERE id = '${SAMURAI_ID}'`,
+    );
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `INSERT INTO units_items (id, unit_id, item_id, priority) VALUES ('a1000000-0000-0000-0000-000000000098', '${TEMPLAR_ID}', '${IRON_SWORD_ID}', 1)`,
+    );
+
+    const battleLab = await runSavedBattle(gmPage);
+    const replay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    const activation = replay.result.log.find(
+      (entry) =>
+        entry.type === "item-activation" &&
+        entry.caster === "Templar" &&
+        entry.item === "Iron Sword",
+    );
+
+    expect(activation).toBeDefined();
+    expect(activation?.targets).toEqual(["Mage", "Samurai", "Ranger"]);
+    expect(activation?.targetIds).toEqual([
+      `${AMBUSH_AT_DAWN_ID}:ranged:2`,
+      `${AMBUSH_AT_DAWN_ID}:ranged:3`,
+      `${AMBUSH_AT_DAWN_ID}:ranged:4`,
+    ]);
   });
 
   test("saved replay keeps its setup and result after refresh", async ({ gmPage }) => {

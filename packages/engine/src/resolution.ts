@@ -17,14 +17,12 @@ export type ActionOutcome = {
   activatedItemNames: string[];
 };
 
-function basicAttackTargeting(unit: BattleUnitState): UnitTargetingInput {
+function basicAttackTargeting(attacker: BattleUnitState): UnitTargetingInput {
   return {
-    targetSide: "enemies",
-    targetPolicy: unit.targetPolicyOverride ?? unit.targetPolicy ?? "highest_health",
-    targetRowCount: 1,
-    maxTargetsPerRow: 1,
-    targetOnlyAdjacent: false,
-    allowedRowTypes: [],
+    targetScope: "enemies",
+    targetPriority: attacker.targetPriority,
+    targetCount: 1,
+    selectionShape: "individual",
   };
 }
 

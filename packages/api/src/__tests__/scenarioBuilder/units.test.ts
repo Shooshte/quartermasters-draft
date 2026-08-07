@@ -134,18 +134,16 @@ describe("unitsRouter", () => {
       createCaller(ctx).units.get({ id: "f0000000-0000-4000-8000-000000000001" }),
     );
 
-    it("returns unit with itemIds and allowedRowTypes when found", async () => {
+    it("returns unit with ordered itemIds and only the new targeting fields", async () => {
       const mockUnit = {
         id: "f0000000-0000-4000-8000-000000000001",
         name: "Barbarian",
-        targetSide: "enemies",
-        targetPolicy: "highest_damage",
-        targetRowCount: 2,
-        maxTargetsPerRow: 3,
-        targetOnlyAdjacent: true,
+        targetScope: "both",
+        targetPriority: "highest_damage",
+        targetCount: 2,
+        selectionShape: "adjacent",
       };
-      const mockItemLinks = [{ itemId: "d0000000-0000-4000-8000-000000000001" }];
-      const mockAllowedRows = [{ rowType: "melee" }, { rowType: "tank" }];
+      const mockItemLinks = [{ itemId: ITEM_ID_2 }, { itemId: ITEM_ID_1 }];
 
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -153,10 +151,7 @@ describe("unitsRouter", () => {
         if (callCount === 1) {
           return chainable([mockUnit]);
         }
-        if (callCount === 2) {
-          return chainable(mockItemLinks);
-        }
-        return chainable(mockAllowedRows);
+        return chainable(mockItemLinks);
       });
 
       const caller = createCaller(gmCtx);
@@ -165,9 +160,14 @@ describe("unitsRouter", () => {
       });
       expect(result).toEqual({
         ...mockUnit,
-        itemIds: ["d0000000-0000-4000-8000-000000000001"],
-        allowedRowTypes: ["melee", "tank"],
+        itemIds: [ITEM_ID_2, ITEM_ID_1],
       });
+      expect(result).not.toHaveProperty("targetSide");
+      expect(result).not.toHaveProperty("targetPolicy");
+      expect(result).not.toHaveProperty("targetRowCount");
+      expect(result).not.toHaveProperty("maxTargetsPerRow");
+      expect(result).not.toHaveProperty("targetOnlyAdjacent");
+      expect(result).not.toHaveProperty("allowedRowTypes");
     });
 
     it("throws NOT_FOUND when unit is missing", async () => {
@@ -280,11 +280,10 @@ describe("unitsRouter", () => {
         speed: 0,
         dodge: 0,
         criticalChance: 0,
-        targetSide: "enemies",
-        targetPolicy: "highest_health",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
+        targetScope: "enemies",
+        targetPriority: "highest_health",
+        targetCount: 1,
+        selectionShape: "individual",
       };
       const unitValues = vi.fn().mockReturnValue(chainable([created]));
       mockInsertFn.mockReturnValueOnce({ values: unitValues });
@@ -308,7 +307,6 @@ describe("unitsRouter", () => {
       expect(result).toEqual({
         ...created,
         itemIds: [],
-        allowedRowTypes: [],
       });
       expect(mockInsertFn).toHaveBeenCalledTimes(1);
       expect(unitValues).toHaveBeenCalledWith({
@@ -322,11 +320,10 @@ describe("unitsRouter", () => {
         speed: 0,
         dodge: 0,
         criticalChance: 0,
-        targetSide: "enemies",
-        targetPolicy: "highest_health",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
+        targetScope: "enemies",
+        targetPriority: "highest_health",
+        targetCount: 1,
+        selectionShape: "individual",
       });
     });
 
@@ -343,19 +340,16 @@ describe("unitsRouter", () => {
         speed: 1.35,
         dodge: 6.5,
         criticalChance: 7.25,
-        targetSide: "allies",
-        targetPolicy: "lowest_health",
-        targetRowCount: 2,
-        maxTargetsPerRow: 3,
-        targetOnlyAdjacent: true,
+        targetScope: "self_allies",
+        targetPriority: "lowest_health",
+        targetCount: 3,
+        selectionShape: "adjacent",
       };
       const unitValues = vi.fn().mockReturnValue(chainable([created]));
       const insertLinks = vi.fn().mockReturnValue(chainable([]));
-      const insertAllowedRows = vi.fn().mockReturnValue(chainable([]));
       mockInsertFn
         .mockReturnValueOnce({ values: unitValues })
-        .mockReturnValueOnce({ values: insertLinks })
-        .mockReturnValueOnce({ values: insertAllowedRows });
+        .mockReturnValueOnce({ values: insertLinks });
       mockSelect.mockReturnValueOnce(
         chainable([{ itemId: ITEM_ID_1 }, { itemId: ITEM_ID_1 }, { itemId: ITEM_ID_2 }]),
       );
@@ -373,18 +367,15 @@ describe("unitsRouter", () => {
         dodge: 6.5,
         criticalChance: 7.25,
         itemIds: [ITEM_ID_1, ITEM_ID_1, ITEM_ID_2],
-        targetSide: "allies",
-        targetPolicy: "lowest_health",
-        targetRowCount: 2,
-        maxTargetsPerRow: 3,
-        targetOnlyAdjacent: true,
-        allowedRowTypes: ["melee", "tank"],
+        targetScope: "self_allies",
+        targetPriority: "lowest_health",
+        targetCount: 3,
+        selectionShape: "adjacent",
       });
 
       expect(result).toEqual({
         ...created,
         itemIds: [ITEM_ID_1, ITEM_ID_1, ITEM_ID_2],
-        allowedRowTypes: ["melee", "tank"],
       });
       expect(unitValues).toHaveBeenCalledWith({
         name: "Twinblade Adept",
@@ -397,78 +388,24 @@ describe("unitsRouter", () => {
         speed: 1.35,
         dodge: 6.5,
         criticalChance: 7.25,
-        targetSide: "allies",
-        targetPolicy: "lowest_health",
-        targetRowCount: 2,
-        maxTargetsPerRow: 3,
-        targetOnlyAdjacent: true,
+        targetScope: "self_allies",
+        targetPriority: "lowest_health",
+        targetCount: 3,
+        selectionShape: "adjacent",
       });
       expect(insertLinks).toHaveBeenCalledWith([
         { unitId: "u-dual", itemId: ITEM_ID_1, priority: 1 },
         { unitId: "u-dual", itemId: ITEM_ID_1, priority: 2 },
         { unitId: "u-dual", itemId: ITEM_ID_2, priority: 3 },
       ]);
-      expect(insertAllowedRows).toHaveBeenCalledWith([
-        { unitId: "u-dual", rowType: "melee" },
-        { unitId: "u-dual", rowType: "tank" },
-      ]);
     });
 
-    it("normalizes duplicate allowed row types before insertion", async () => {
-      const created = {
-        id: "u-targeting",
-        name: "Targeting Adept",
-        meleeDmg: 0,
-        health: 100,
-        mana: 100,
-        rangedDmg: 0,
-        manaRegen: 0,
-        spellDmg: 0,
-        speed: 1,
-        dodge: 0,
-        criticalChance: 0,
-        targetSide: "enemies",
-        targetPolicy: "highest_health",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
-      };
-      const unitValues = vi.fn().mockReturnValue(chainable([created]));
-      const insertAllowedRows = vi.fn().mockReturnValue(chainable([]));
-      mockInsertFn
-        .mockReturnValueOnce({ values: unitValues })
-        .mockReturnValueOnce({ values: insertAllowedRows });
-      mockSelect.mockReturnValueOnce(chainable([]));
-
-      const caller = createCaller(gmCtx);
-      const result = await caller.units.create({
-        name: "Targeting Adept",
-        meleeDmg: 0,
-        health: 100,
-        mana: 100,
-        rangedDmg: 0,
-        manaRegen: 0,
-        spellDmg: 0,
-        speed: 1,
-        dodge: 0,
-        criticalChance: 0,
-        itemIds: [],
-        allowedRowTypes: ["melee", "melee", "tank"],
-      });
-
-      expect(insertAllowedRows).toHaveBeenCalledWith([
-        { unitId: "u-targeting", rowType: "melee" },
-        { unitId: "u-targeting", rowType: "tank" },
-      ]);
-      expect(result.allowedRowTypes).toEqual(["melee", "tank"]);
-    });
-
-    it("rejects invalid targeting with duplicate allowed row types before a transaction", async () => {
+    it("rejects non-positive target counts before a transaction", async () => {
       const caller = createCaller(gmCtx);
 
       await expect(
         caller.units.create({
-          name: "Invalid Duplicate Targeting Unit",
+          name: "Invalid Target Count Unit",
           meleeDmg: 0,
           health: 100,
           mana: 100,
@@ -479,58 +416,7 @@ describe("unitsRouter", () => {
           dodge: 0,
           criticalChance: 0,
           itemIds: [],
-          maxTargetsPerRow: null,
-          targetOnlyAdjacent: true,
-          allowedRowTypes: ["melee", "melee"],
-        }),
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      expect(mockTransaction).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      { maxTargetsPerRow: null, label: "whole-row targeting" },
-      { maxTargetsPerRow: 1, label: "a single target per row" },
-    ])("rejects adjacent targeting with $label", async ({ maxTargetsPerRow }) => {
-      const caller = createCaller(gmCtx);
-
-      await expect(
-        caller.units.create({
-          name: "Invalid Adjacent Unit",
-          meleeDmg: 0,
-          health: 100,
-          mana: 100,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          speed: 1,
-          dodge: 0,
-          criticalChance: 0,
-          itemIds: [],
-          maxTargetsPerRow,
-          targetOnlyAdjacent: true,
-        }),
-      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-      expect(mockTransaction).not.toHaveBeenCalled();
-    });
-
-    it("rejects self target policy when targeting enemies", async () => {
-      const caller = createCaller(gmCtx);
-
-      await expect(
-        caller.units.create({
-          name: "Invalid Self Unit",
-          meleeDmg: 0,
-          health: 100,
-          mana: 100,
-          rangedDmg: 0,
-          manaRegen: 0,
-          spellDmg: 0,
-          speed: 1,
-          dodge: 0,
-          criticalChance: 0,
-          itemIds: [],
-          targetSide: "enemies",
-          targetPolicy: "self",
+          targetCount: 0,
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(mockTransaction).not.toHaveBeenCalled();
@@ -568,20 +454,16 @@ describe("unitsRouter", () => {
         speed: 1,
         dodge: 5,
         criticalChance: 10,
-        targetSide: "self",
-        targetPolicy: "self",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
+        targetScope: "self",
+        targetPriority: "support",
+        targetCount: 1,
+        selectionShape: "individual",
       };
       const updateSet = vi.fn().mockReturnValue(chainable([updated]));
       mockUpdateFn.mockReturnValueOnce({ set: updateSet });
       mockDeleteFn.mockReturnValue(chainable([]));
       const insertLinks = vi.fn().mockReturnValue(chainable([]));
-      const insertAllowedRows = vi.fn().mockReturnValue(chainable([]));
-      mockInsertFn
-        .mockReturnValueOnce({ values: insertLinks })
-        .mockReturnValueOnce({ values: insertAllowedRows });
+      mockInsertFn.mockReturnValueOnce({ values: insertLinks });
       mockSelect.mockReturnValueOnce(chainable([{ itemId: ITEM_ID_2 }, { itemId: ITEM_ID_1 }]));
 
       const caller = createCaller(gmCtx);
@@ -598,18 +480,15 @@ describe("unitsRouter", () => {
         dodge: 5,
         criticalChance: 10,
         itemIds: [ITEM_ID_2, ITEM_ID_1],
-        targetSide: "self",
-        targetPolicy: "self",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
-        allowedRowTypes: ["melee"],
+        targetScope: "self",
+        targetPriority: "support",
+        targetCount: 1,
+        selectionShape: "individual",
       });
 
       expect(result).toEqual({
         ...updated,
         itemIds: [ITEM_ID_2, ITEM_ID_1],
-        allowedRowTypes: ["melee"],
       });
       expect(updateSet).toHaveBeenCalledWith({
         name: "Barbarian Updated",
@@ -622,18 +501,16 @@ describe("unitsRouter", () => {
         speed: 1,
         dodge: 5,
         criticalChance: 10,
-        targetSide: "self",
-        targetPolicy: "self",
-        targetRowCount: 1,
-        maxTargetsPerRow: 1,
-        targetOnlyAdjacent: false,
+        targetScope: "self",
+        targetPriority: "support",
+        targetCount: 1,
+        selectionShape: "individual",
       });
       expect(insertLinks).toHaveBeenCalledWith([
         { unitId: updated.id, itemId: ITEM_ID_2, priority: 1 },
         { unitId: updated.id, itemId: ITEM_ID_1, priority: 2 },
       ]);
-      expect(insertAllowedRows).toHaveBeenCalledWith([{ unitId: updated.id, rowType: "melee" }]);
-      expect(mockDeleteFn).toHaveBeenCalledTimes(2);
+      expect(mockDeleteFn).toHaveBeenCalledTimes(1);
     });
 
     it("throws NOT_FOUND when the unit does not exist", async () => {

@@ -14,8 +14,8 @@ Feature: Unit workspace create and edit
     When I create a new unit named "Bronze Sentinel"
     Then the unit workspace should save the unit in edit mode
     And the URL should contain the created "unit_id"
-    And reloading the unit by URL should show target side "enemies" and target policy "highest_health"
-    And reloading the unit by URL should show one target row, one target per row, non-adjacent targeting, and all rows eligible
+    And reloading the unit by URL should show target scope "enemies" and target priority "highest_health"
+    And reloading the unit by URL should show target count 1 and "individual" selection
 
   Scenario: Name is required
     When I start creating a new unit without filling in a name
@@ -55,25 +55,29 @@ Feature: Unit workspace create and edit
     When I update the unit health to 120
     Then reloading the unit by URL should show health as 120
 
-  Scenario: Each target side is explicit and persists
-    When I create a new unit named "Ally Vanguard" targeting "allies" using "lowest_health"
-    Then reloading the unit by URL should show target side "allies"
+  Scenario: Each target scope is explicit and persists
+    When I create a new unit named "Ally Vanguard" targeting "self_allies" using "lowest_health"
+    Then reloading the unit by URL should show target scope "self_allies"
     When I create a new unit named "Enemy Hunter" targeting "enemies" using "highest_damage"
-    Then reloading the unit by URL should show target side "enemies"
-    When I create a new unit named "Self Warder" targeting "self" using "self"
-    Then reloading the unit by URL should show target side "self"
+    Then reloading the unit by URL should show target scope "enemies"
+    When I create a new unit named "Battle Oracle" targeting "both" using "support"
+    Then reloading the unit by URL should show target scope "both"
 
-  Scenario: Target policy offers all five options
+  Scenario: Target scope offers all six options
     When I start creating a new unit
-    Then the target policy dropdown should offer "highest_health", "lowest_health", "highest_damage", "random", and "self"
+    Then the target scope dropdown should offer "self", "self_allies", "self_enemies", "allies", "enemies", and "both"
 
-  Scenario: Self policy is invalid for enemies
-    When I create a new unit targeting "enemies" using "self"
+  Scenario: Target priority offers all five options
+    When I start creating a new unit
+    Then the target priority dropdown should offer "highest_health", "lowest_health", "highest_damage", "support", and "random"
+
+  Scenario: Target count must be positive
+    When I create a new unit with target count 0
     Then saving should remain blocked
 
   Scenario: Targeting summary comes only from the unit configuration
     Given I have loaded the unit "Barbarian" in the unit workspace
-    When I choose target side "allies" and target policy "lowest_health"
+    When I choose target scope "allies" and target priority "lowest_health"
     Then the targeting summary should identify allies and "lowest_health"
     And the targeting summary should not infer a side from any item effects
 
@@ -89,33 +93,12 @@ Feature: Unit workspace create and edit
     When "Ranger" activates item "Leather Shield"
     Then "Mend" should apply to an enemy
 
-  Scenario: Target row count supports one through four rows
-    When I start creating a new unit
-    Then the target row count control should offer 1, 2, 3, and 4
-
-  Scenario: Whole-row and limited per-row controls persist
-    When I create a new unit targeting "enemies" using "random"
-    And I choose 2 target rows
-    And I click the "All" per-row toggle segment
-    Then reloading the unit by URL should show target row count as 2 and max targets per row as "whole row"
-
-  Scenario: Adjacent targeting requires a limited count of at least two
-    When I start creating a new unit
-    And I set max targets per row to 1
-    Then the "Adjacent" position rule should be disabled
-    When I set max targets per row to 3
-    Then the "Adjacent" position rule should be enabled
-    When I click the "All" per-row toggle segment
-    Then the "Adjacent" position rule should be disabled
-
-  Scenario: Allowed row controls default to all and persist restrictions
-    When I start creating a new unit
-    Then all row type controls should show as eligible
-    And the targeting summary should explain that all rows are eligible
-    When I create a new unit named "Tank Buster" targeting "enemies" using "highest_health"
-    And I make only the "melee" and "tank" rows eligible
-    Then reloading the unit by URL should show row restrictions "melee" and "tank"
-    And the targeting summary should explain that only Tank and Melee are eligible
+  Scenario: Target count and adjacent selection persist
+    When I create a new unit named "Chain Lightning Adept" targeting "enemies" using "highest_damage"
+    And I set target count to 3
+    And I choose "adjacent" selection
+    Then reloading the unit by URL should show target count 3 and "adjacent" selection
+    And the targeting summary should explain that one adjacent group of up to 3 enemies is selected
 
   Scenario: Open an item linked to a unit
     Given I have loaded the unit "Barbarian" in the unit workspace

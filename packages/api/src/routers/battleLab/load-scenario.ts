@@ -2,12 +2,12 @@ import {
   type db,
   effects,
   items,
+  itemsAllowedRows,
   itemsEffects,
   scenarios,
   scenariosRows,
   scenariosRowsUnits,
   units,
-  unitsAllowedRows,
   unitsItems,
 } from "@qd/db";
 import type { ScenarioInput } from "@qd/engine";
@@ -47,11 +47,10 @@ export async function loadBattleScenario(
         speed: units.speed,
         dodge: units.dodge,
         criticalChance: units.criticalChance,
-        targetSide: units.targetSide,
-        targetPolicy: units.targetPolicy,
-        targetRowCount: units.targetRowCount,
-        maxTargetsPerRow: units.maxTargetsPerRow,
-        targetOnlyAdjacent: units.targetOnlyAdjacent,
+        targetScope: units.targetScope,
+        targetPriority: units.targetPriority,
+        targetCount: units.targetCount,
+        selectionShape: units.selectionShape,
       },
     })
     .from(scenariosRows)
@@ -61,14 +60,6 @@ export async function loadBattleScenario(
     .orderBy(asc(scenariosRowsUnits.slot));
 
   const unitIds = [...new Set(assignments.map((assignment) => assignment.unit.id))];
-  const unitAllowedRows =
-    unitIds.length === 0
-      ? []
-      : await executor
-          .select({ unitId: unitsAllowedRows.unitId, rowType: unitsAllowedRows.rowType })
-          .from(unitsAllowedRows)
-          .where(inArray(unitsAllowedRows.unitId, unitIds));
-
   const unitItems =
     unitIds.length === 0
       ? []
@@ -96,6 +87,14 @@ export async function loadBattleScenario(
           .orderBy(asc(unitsItems.priority));
 
   const itemIds = [...new Set(unitItems.map((link) => link.item.id))];
+  const itemAllowedRows =
+    itemIds.length === 0
+      ? []
+      : await executor
+          .select({ itemId: itemsAllowedRows.itemId, rowType: itemsAllowedRows.rowType })
+          .from(itemsAllowedRows)
+          .where(inArray(itemsAllowedRows.itemId, itemIds));
+
   const itemEffects =
     itemIds.length === 0
       ? []
@@ -134,8 +133,8 @@ export async function loadBattleScenario(
   return toScenarioInput({
     scenario,
     assignments,
-    unitAllowedRows,
     unitItems,
+    itemAllowedRows,
     itemEffects,
   });
 }

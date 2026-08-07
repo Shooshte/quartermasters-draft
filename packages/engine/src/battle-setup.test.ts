@@ -38,6 +38,28 @@ describe("battle setup", () => {
     expect(getUnitByName(engine, "A", "Mage").mana).toBe(225);
   });
 
+  it("defaults and preserves the targeting and item placement contracts", () => {
+    const engine = new BattleEngine(
+      createBattleInput([
+        createScenario("A", {
+          support: [
+            createUnit("Mage", {
+              items: [createItem({ name: "Focus", allowedRowTypes: ["support"] })],
+            }),
+          ],
+        }),
+        createScenario("B", { tank: [createUnit("Dummy")] }),
+      ]),
+    );
+
+    const mage = getUnitByName(engine, "A", "Mage");
+    expect(mage.targetScope).toBe("enemies");
+    expect(mage.targetPriority).toBe("highest_health");
+    expect(mage.targetCount).toBe(1);
+    expect(mage.selectionShape).toBe("individual");
+    expect(mage.items[0]?.allowedRowTypes).toEqual(["support"]);
+  });
+
   it("initializes battle state with fixed row order, zero action bar, full mana, and base health", () => {
     const alpha = createScenario("Alpha", {
       tank: [
@@ -140,28 +162,6 @@ describe("battle setup", () => {
     });
     expect(mageA.itemBonusStats).toMatchObject({ spellDmg: 12, manaRegen: 3, criticalChance: 2 });
     expect(mageB.itemBonusStats).toMatchObject({ spellDmg: 12, manaRegen: 3, criticalChance: 2 });
-  });
-
-  it("stores targeting overrides by scenario row and slot", () => {
-    const input = createBattleInput(
-      [
-        createScenario("Alpha", { ranged: [createUnit("Archer"), createUnit("Archer Two")] }),
-        createScenario("Bravo", { melee: [createUnit("Barbarian")] }),
-      ],
-      33,
-      [
-        { scenarioId: "Alpha", rowType: "ranged", slot: 1, policy: "highest_health" },
-        { scenarioId: "Alpha", rowType: "ranged", slot: 2, policy: "highest_damage" },
-        { scenarioId: "Bravo", rowType: "melee", slot: 1, policy: "random" },
-      ],
-    );
-
-    const engine = new BattleEngine(input);
-    expect(getUnitByName(engine, "Alpha", "Archer").targetPolicyOverride).toBe("highest_health");
-    expect(getUnitByName(engine, "Alpha", "Archer Two").targetPolicyOverride).toBe(
-      "highest_damage",
-    );
-    expect(getUnitByName(engine, "Bravo", "Barbarian").targetPolicyOverride).toBe("random");
   });
 
   it("rejects non-finite seeds and battles where both scenarios are empty", () => {

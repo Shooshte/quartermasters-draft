@@ -28,3 +28,8 @@ Feature: Game master Battle Lab
       When one selected scenario is renamed through the scenario builder API
       And the game master reopens the same replay URL
       Then the replay should show the new scenario name
+
+    Scenario: An adjacent multi-target spell uses its unit targeting definition
+      Given "Templar" targets enemies by highest damage with 3 adjacent targets
+      When the battle resolves Templar's item activation
+      Then the activation log lists "Mage", "Samurai", and "Ranger" as 3 contiguous targets

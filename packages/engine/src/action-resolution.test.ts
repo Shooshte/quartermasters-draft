@@ -92,14 +92,36 @@ describe("action resolution", () => {
     expect(resolveUnitAction(state, state.scenarios[0].rows.tank[0]!).totalDamage).toBe(24);
   });
 
-  it("pays exactly once and selects one target set for multiple ordered item effects", () => {
+  it("uses the attacker's target priority for a basic attack", () => {
     const state = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
-          melee: [
+          tank: [createUnit("Attacker", { targetPriority: "lowest_health" })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Healthy", { stats: createStats({ health: 200 }) }),
+            createUnit("Wounded", { stats: createStats({ health: 50 }) }),
+          ],
+        }),
+      ]),
+    );
+
+    resolveUnitAction(state, state.scenarios[0].rows.tank[0]!);
+
+    expect(state.scenarios[1].rows.tank[0]!.currentHealth).toBe(200);
+    expect(state.scenarios[1].rows.tank[1]!.currentHealth).toBe(40);
+  });
+
+  it("pays exactly once and retains original target IDs across ordered effects", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
             createUnit("Warrior", {
               stats: createStats({ health: 100, mana: 50 }),
-              targetPolicy: "random",
+              targetPriority: "random",
+              targetCount: 2,
               items: [
                 createItem({
                   name: "Runed Blade",
@@ -114,10 +136,11 @@ describe("action resolution", () => {
         createScenario("Bravo", {
           tank: [createUnit("Dummy A", { stats: createStats({ health: 200 }) })],
           melee: [createUnit("Dummy B", { stats: createStats({ health: 200 }) })],
+          ranged: [createUnit("Dummy C", { stats: createStats({ health: 200 }) })],
         }),
       ]),
     );
-    const warrior = state.scenarios[0].rows.melee[0]!;
+    const warrior = state.scenarios[0].rows.ranged[0]!;
 
     const outcome = resolveUnitAction(state, warrior);
     const damageEntries = state.log.filter(
@@ -126,17 +149,25 @@ describe("action resolution", () => {
 
     expect(outcome).toMatchObject({
       usedBasicAttack: false,
-      totalDamage: 20,
+      totalDamage: 40,
       activatedItemNames: ["Runed Blade"],
     });
     expect(warrior.mana).toBe(40);
     expect(warrior.currentHealth).toBe(85);
-    expect(damageEntries.map((entry) => entry.origin?.effect?.name)).toEqual(["Burn", "Weaken"]);
-    expect(
-      new Set(
-        damageEntries.map((entry) => (entry.type === "damage" ? entry.targetId : "unexpected")),
-      ).size,
-    ).toBe(1);
+    expect(damageEntries.map((entry) => entry.origin?.effect?.name)).toEqual([
+      "Burn",
+      "Burn",
+      "Weaken",
+      "Weaken",
+    ]);
+    const burnTargetIds = damageEntries
+      .filter((entry) => entry.origin?.effect?.name === "Burn")
+      .map((entry) => (entry.type === "damage" ? entry.targetId : "unexpected"));
+    const weakenTargetIds = damageEntries
+      .filter((entry) => entry.origin?.effect?.name === "Weaken")
+      .map((entry) => (entry.type === "damage" ? entry.targetId : "unexpected"));
+    expect(burnTargetIds).toHaveLength(2);
+    expect(weakenTargetIds).toEqual(burnTargetIds);
     expect(state.log.filter((entry) => entry.type === "item-activation")).toHaveLength(1);
   });
 
@@ -174,7 +205,7 @@ describe("action resolution", () => {
           effects: effectSequence(damageEffect("Aimed Shot")),
         }),
       ],
-      { allowedRowTypes: ["ranged"] },
+      { targetScope: "allies" },
     );
     const warrior = state.scenarios[0].rows.melee[0]!;
     warrior.mana = 50;
@@ -189,26 +220,54 @@ describe("action resolution", () => {
     expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("stops an ordered effect sequence after its final selected target dies", () => {
-    const state = makeStateWithWarrior("melee", [
-      createItem({
-        name: "Finisher",
-        activationManaCost: 10,
-        effects: effectSequence(damageEffect("Alpha Blast", 200), damageEffect("Beta Follow-up")),
-      }),
-    ]);
-    const warrior = state.scenarios[0].rows.melee[0]!;
-    warrior.mana = 50;
+  it("gives later effects only the surviving members of the original target group", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
+            createUnit("Warrior", {
+              targetPriority: "lowest_health",
+              targetCount: 2,
+              items: [
+                createItem({
+                  name: "Finisher",
+                  effects: effectSequence(
+                    damageEffect("Alpha Blast", 200),
+                    damageEffect("Beta Follow-up"),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Dummy A", { stats: createStats({ health: 100 }) }),
+            createUnit("Dummy B", { stats: createStats({ health: 250 }) }),
+            createUnit("Unselected Dummy", { stats: createStats({ health: 300 }) }),
+          ],
+        }),
+      ]),
+    );
+    const warrior = state.scenarios[0].rows.ranged[0]!;
 
     const outcome = resolveUnitAction(state, warrior);
-    const effectNames = state.log
-      .filter((entry) => entry.type === "damage" && entry.origin?.kind === "item-effect")
-      .map((entry) => entry.origin?.effect?.name);
+    const damageEntries = state.log.filter(
+      (entry) => entry.type === "damage" && entry.origin?.kind === "item-effect",
+    );
+    const targetIdsFor = (effectName: string) =>
+      damageEntries
+        .filter((entry) => entry.origin?.effect?.name === effectName)
+        .map((entry) => (entry.type === "damage" ? entry.targetId : "unexpected"));
+    const alphaTargetIds = targetIdsFor("Alpha Blast");
+    const betaTargetIds = targetIdsFor("Beta Follow-up");
 
     expect(outcome.activatedItemNames).toEqual(["Finisher"]);
-    expect(outcome.totalDamage).toBe(200);
-    expect(warrior.mana).toBe(40);
-    expect(effectNames).toEqual(["Alpha Blast"]);
+    expect(outcome.totalDamage).toBe(310);
+    expect(alphaTargetIds).toHaveLength(2);
+    expect(betaTargetIds).toEqual([state.scenarios[1].rows.tank[1]!.instanceId]);
+    expect(alphaTargetIds).toContain(betaTargetIds[0]);
+    expect(state.scenarios[1].rows.tank[2]!.currentHealth).toBe(300);
   });
 
   it("reports only damage dealt during the current action", () => {

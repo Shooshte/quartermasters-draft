@@ -2,19 +2,30 @@ export const ROW_TYPES = ["tank", "melee", "ranged", "support"] as const;
 
 export type RowType = (typeof ROW_TYPES)[number];
 
-export const TARGET_POLICIES = [
+export const TARGET_SCOPES = [
+  "self",
+  "self_allies",
+  "self_enemies",
+  "allies",
+  "enemies",
+  "both",
+] as const;
+
+export type TargetScope = (typeof TARGET_SCOPES)[number];
+
+export const TARGET_PRIORITIES = [
   "highest_health",
   "lowest_health",
   "highest_damage",
+  "support",
   "random",
-  "self",
 ] as const;
 
-export type TargetPolicy = (typeof TARGET_POLICIES)[number];
+export type TargetPriority = (typeof TARGET_PRIORITIES)[number];
 
-export const TARGET_SIDES = ["allies", "enemies", "self"] as const;
+export const TARGET_SELECTION_SHAPES = ["individual", "adjacent"] as const;
 
-export type TargetSide = (typeof TARGET_SIDES)[number];
+export type TargetSelectionShape = (typeof TARGET_SELECTION_SHAPES)[number];
 
 export const STAT_KEYS = [
   "health",
@@ -75,6 +86,7 @@ export interface ItemInput {
   criticalChance?: number;
   activationManaCost?: number;
   activationHealthCost?: number;
+  allowedRowTypes?: RowType[];
   effects?: ItemEffectInput[];
 }
 
@@ -83,12 +95,10 @@ export interface UnitInput {
   name: string;
   stats: UnitStats;
   items?: ItemInput[];
-  targetSide?: TargetSide;
-  targetPolicy?: TargetPolicy;
-  targetRowCount?: number;
-  maxTargetsPerRow?: number | null;
-  targetOnlyAdjacent?: boolean;
-  allowedRowTypes?: RowType[];
+  targetScope?: TargetScope;
+  targetPriority?: TargetPriority;
+  targetCount?: number;
+  selectionShape?: TargetSelectionShape;
   currentHealth?: number;
   startingActionBar?: number;
 }
@@ -99,19 +109,11 @@ export interface ScenarioInput {
   rows?: Partial<Record<RowType, UnitInput[]>>;
 }
 
-export interface TargetingOverrideInput {
-  scenarioId: string;
-  rowType: RowType;
-  slot: number;
-  policy: TargetPolicy;
-}
-
 export type BattleSeed = number | string;
 
 export interface BattleInput {
   scenarios: [ScenarioInput, ScenarioInput];
   seed: BattleSeed;
-  targetingOverrides?: TargetingOverrideInput[];
 }
 
 export interface BattleOptions {
@@ -132,6 +134,7 @@ export interface BattleItemState {
   criticalChance: number;
   activationManaCost: number;
   activationHealthCost: number;
+  allowedRowTypes?: RowType[];
   effects: ItemEffectInput[];
 }
 
@@ -165,13 +168,10 @@ export interface BattleUnitState {
   mana: number;
   actionBar: number;
   items: BattleItemState[];
-  targetSide: TargetSide;
-  targetPolicy: TargetPolicy;
-  targetRowCount: number;
-  maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
-  allowedRowTypes: RowType[];
-  targetPolicyOverride: TargetPolicy | null;
+  targetScope: TargetScope;
+  targetPriority: TargetPriority;
+  targetCount: number;
+  selectionShape: TargetSelectionShape;
   activeEffects: ActiveEffectState[];
   actedCount: number;
 }

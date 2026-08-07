@@ -196,6 +196,7 @@ describe("EntityWorkspace", () => {
             activationManaCost: "0",
             activationHealthCost: "0",
             effectIds: [],
+            allowedRowTypes: [],
           },
         })}
         effectOptions={[{ id: "eff-1", name: "Burn", effectType: "damage" }]}
@@ -226,12 +227,10 @@ describe("EntityWorkspace", () => {
             dodge: "0",
             criticalChance: "0",
             itemIds: [],
-            targetSide: "enemies",
-            targetPolicy: "highest_health",
-            targetRowCount: 1,
-            maxTargetsPerRow: 1,
-            targetOnlyAdjacent: false,
-            allowedRowTypes: [],
+            targetScope: "enemies",
+            targetPriority: "highest_health",
+            targetCount: 1,
+            selectionShape: "individual",
           },
         })}
         itemOptions={[{ id: "it-1", name: "Iron Sword" }]}
@@ -266,6 +265,7 @@ describe("EntityWorkspace", () => {
             activationManaCost: "0",
             activationHealthCost: "0",
             effectIds: ["eff-1"],
+            allowedRowTypes: [],
           },
         })}
         effectOptions={[{ id: "eff-1", name: "Burn", effectType: "damage" }]}
@@ -295,12 +295,10 @@ describe("EntityWorkspace", () => {
             dodge: "0",
             criticalChance: "0",
             itemIds: ["it-1"],
-            targetSide: "enemies",
-            targetPolicy: "highest_health",
-            targetRowCount: 1,
-            maxTargetsPerRow: 1,
-            targetOnlyAdjacent: false,
-            allowedRowTypes: [],
+            targetScope: "enemies",
+            targetPriority: "highest_health",
+            targetCount: 1,
+            selectionShape: "individual",
           },
         })}
         itemOptions={[{ id: "it-1", name: "Staff" }]}

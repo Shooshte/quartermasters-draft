@@ -1,4 +1,5 @@
 import type { EffectType } from "./effect-form";
+import type { ScenarioRowType } from "./scenario-form";
 
 export interface EffectOption {
   id: string;
@@ -36,6 +37,7 @@ export interface ItemFormValues {
   activationManaCost: string;
   activationHealthCost: string;
   effectIds: string[];
+  allowedRowTypes: ScenarioRowType[];
 }
 
 type ItemRecord = {
@@ -50,6 +52,7 @@ type ItemRecord = {
   activationManaCost?: number | null;
   activationHealthCost?: number | null;
   effectIds?: string[] | null;
+  allowedRowTypes?: ScenarioRowType[] | null;
 };
 
 export type ItemFieldErrors = Partial<Record<keyof ItemFormValues, string>>;
@@ -66,6 +69,7 @@ export interface NormalizedItemInput {
   activationManaCost: number;
   activationHealthCost: number;
   effectIds: string[];
+  allowedRowTypes: ScenarioRowType[];
 }
 
 const ITEM_LABELS: Record<(typeof ITEM_NUMERIC_FIELDS)[number], string> = {
@@ -97,6 +101,7 @@ export function createDefaultItemFormValues(): ItemFormValues {
     activationManaCost: "0",
     activationHealthCost: "0",
     effectIds: [],
+    allowedRowTypes: [],
   };
 }
 
@@ -121,6 +126,7 @@ export function itemRecordToFormValues(record: Partial<ItemRecord>): ItemFormVal
     activationManaCost: numberToFormValue(record.activationManaCost),
     activationHealthCost: numberToFormValue(record.activationHealthCost),
     effectIds: record.effectIds ? [...record.effectIds] : [],
+    allowedRowTypes: record.allowedRowTypes ? [...new Set(record.allowedRowTypes)] : [],
   };
 }
 
@@ -145,6 +151,7 @@ export function normalizeItemFormValues(values: ItemFormValues): NormalizedItemI
     activationManaCost: parseNumericField(values.activationManaCost),
     activationHealthCost: parseNumericField(values.activationHealthCost),
     effectIds: [...values.effectIds],
+    allowedRowTypes: [...new Set(values.allowedRowTypes)],
   };
 }
 
@@ -160,6 +167,10 @@ export function validateItemForm(values: ItemFormValues): ItemFieldErrors {
     if (!Number.isFinite(normalized[field])) {
       errors[field] = "Must be a valid number";
     }
+  }
+
+  if (new Set(values.allowedRowTypes).size !== values.allowedRowTypes.length) {
+    errors.allowedRowTypes = "Allowed deployment rows must not contain duplicates";
   }
 
   if (!Number.isNaN(normalized.activationManaCost) && normalized.activationManaCost < 0) {
@@ -194,6 +205,15 @@ export function isItemFormDirty(
     if (current[field] !== original[field]) {
       return true;
     }
+  }
+
+  const currentAllowedRows = [...current.allowedRowTypes].sort();
+  const originalAllowedRows = [...original.allowedRowTypes].sort();
+  if (
+    currentAllowedRows.length !== originalAllowedRows.length ||
+    currentAllowedRows.some((rowType, index) => rowType !== originalAllowedRows[index])
+  ) {
+    return true;
   }
 
   return (

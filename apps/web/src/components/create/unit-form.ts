@@ -3,23 +3,31 @@ export interface ItemOption {
   name: string;
 }
 
-export type TargetSide = "allies" | "enemies" | "self";
-export type TargetPolicy =
+export type TargetScope = "self" | "self_allies" | "self_enemies" | "allies" | "enemies" | "both";
+export type TargetPriority =
   | "highest_health"
   | "lowest_health"
   | "highest_damage"
-  | "random"
-  | "self";
-export type RowType = "support" | "ranged" | "melee" | "tank";
+  | "support"
+  | "random";
+export type TargetSelectionShape = "individual" | "adjacent";
 
-const VALID_TARGET_SIDES: readonly string[] = ["allies", "enemies", "self"];
-const VALID_TARGET_POLICIES: readonly string[] = [
+const VALID_TARGET_SCOPES: readonly string[] = [
+  "self",
+  "self_allies",
+  "self_enemies",
+  "allies",
+  "enemies",
+  "both",
+];
+const VALID_TARGET_PRIORITIES: readonly string[] = [
   "highest_health",
   "lowest_health",
   "highest_damage",
+  "support",
   "random",
-  "self",
 ];
+const VALID_TARGET_SELECTION_SHAPES: readonly string[] = ["individual", "adjacent"];
 
 export const UNIT_NUMERIC_FIELDS = [
   "meleeDmg",
@@ -50,12 +58,10 @@ export interface UnitFormValues {
   dodge: string;
   criticalChance: string;
   itemIds: string[];
-  targetSide: TargetSide | "";
-  targetPolicy: TargetPolicy | "";
-  targetRowCount: number;
-  maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
-  allowedRowTypes: RowType[];
+  targetScope: TargetScope | "";
+  targetPriority: TargetPriority | "";
+  targetCount: number;
+  selectionShape: TargetSelectionShape;
 }
 
 type UnitRecord = {
@@ -70,12 +76,10 @@ type UnitRecord = {
   dodge?: number | null;
   criticalChance?: number | null;
   itemIds?: string[] | null;
-  targetSide?: string | null;
-  targetPolicy?: string | null;
-  targetRowCount?: number | null;
-  maxTargetsPerRow?: number | null;
-  targetOnlyAdjacent?: boolean | null;
-  allowedRowTypes?: RowType[] | null;
+  targetScope?: string | null;
+  targetPriority?: string | null;
+  targetCount?: number | null;
+  selectionShape?: string | null;
 };
 
 export type UnitFieldErrors = Partial<Record<keyof UnitFormValues, string>>;
@@ -92,12 +96,10 @@ export interface NormalizedUnitInput {
   dodge: number;
   criticalChance: number;
   itemIds: string[];
-  targetSide: TargetSide;
-  targetPolicy: TargetPolicy;
-  targetRowCount: number;
-  maxTargetsPerRow: number | null;
-  targetOnlyAdjacent: boolean;
-  allowedRowTypes: RowType[];
+  targetScope: TargetScope;
+  targetPriority: TargetPriority;
+  targetCount: number;
+  selectionShape: TargetSelectionShape;
 }
 
 const UNIT_LABELS: Record<(typeof UNIT_NUMERIC_FIELDS)[number], string> = {
@@ -129,12 +131,10 @@ export function createDefaultUnitFormValues(): UnitFormValues {
     dodge: "0",
     criticalChance: "0",
     itemIds: [],
-    targetSide: "enemies",
-    targetPolicy: "highest_health",
-    targetRowCount: 1,
-    maxTargetsPerRow: 1,
-    targetOnlyAdjacent: false,
-    allowedRowTypes: [],
+    targetScope: "enemies",
+    targetPriority: "highest_health",
+    targetCount: 1,
+    selectionShape: "individual",
   };
 }
 
@@ -159,12 +159,10 @@ export function unitRecordToFormValues(record: Partial<UnitRecord>): UnitFormVal
     dodge: numberToFormValue(record.dodge),
     criticalChance: numberToFormValue(record.criticalChance),
     itemIds: record.itemIds ? [...record.itemIds] : [],
-    targetSide: (record.targetSide as TargetSide | "") ?? "enemies",
-    targetPolicy: (record.targetPolicy as TargetPolicy | "") ?? "highest_health",
-    targetRowCount: record.targetRowCount ?? 1,
-    maxTargetsPerRow: record.maxTargetsPerRow === undefined ? 1 : record.maxTargetsPerRow,
-    targetOnlyAdjacent: record.targetOnlyAdjacent ?? false,
-    allowedRowTypes: record.allowedRowTypes ? [...record.allowedRowTypes] : [],
+    targetScope: (record.targetScope as TargetScope | "") ?? "enemies",
+    targetPriority: (record.targetPriority as TargetPriority | "") ?? "highest_health",
+    targetCount: record.targetCount ?? 1,
+    selectionShape: (record.selectionShape as TargetSelectionShape) ?? "individual",
   };
 }
 
@@ -189,12 +187,10 @@ export function normalizeUnitFormValues(values: UnitFormValues): NormalizedUnitI
     dodge: parseNumericField(values.dodge),
     criticalChance: parseNumericField(values.criticalChance),
     itemIds: [...values.itemIds],
-    targetSide: values.targetSide as TargetSide,
-    targetPolicy: values.targetPolicy as TargetPolicy,
-    targetRowCount: values.targetRowCount,
-    maxTargetsPerRow: values.maxTargetsPerRow,
-    targetOnlyAdjacent: values.targetOnlyAdjacent,
-    allowedRowTypes: [...values.allowedRowTypes],
+    targetScope: values.targetScope as TargetScope,
+    targetPriority: values.targetPriority as TargetPriority,
+    targetCount: values.targetCount,
+    selectionShape: values.selectionShape,
   };
 }
 
@@ -216,41 +212,20 @@ export function validateUnitForm(values: UnitFormValues): UnitFieldErrors {
     errors.mana = "Must be zero or greater";
   }
 
-  if (!VALID_TARGET_SIDES.includes(values.targetSide)) {
-    errors.targetSide = "Target side is required";
+  if (!VALID_TARGET_SCOPES.includes(values.targetScope)) {
+    errors.targetScope = "Target scope is required";
   }
 
-  if (!VALID_TARGET_POLICIES.includes(values.targetPolicy)) {
-    errors.targetPolicy = "Target policy is required";
+  if (!VALID_TARGET_PRIORITIES.includes(values.targetPriority)) {
+    errors.targetPriority = "Target priority is required";
   }
 
-  if (values.targetPolicy === "self" && values.targetSide === "enemies") {
-    errors.targetSide = "Self priority cannot be used when targeting enemies";
+  if (!Number.isInteger(values.targetCount) || values.targetCount < 1) {
+    errors.targetCount = "Target count must be at least 1";
   }
 
-  if (
-    !Number.isInteger(values.targetRowCount) ||
-    values.targetRowCount < 1 ||
-    values.targetRowCount > 4
-  ) {
-    errors.targetRowCount = "Target row count must be between 1 and 4";
-  }
-
-  if (
-    values.maxTargetsPerRow !== null &&
-    (!Number.isInteger(values.maxTargetsPerRow) || values.maxTargetsPerRow < 1)
-  ) {
-    errors.maxTargetsPerRow = "Max targets per row must be at least 1";
-  }
-
-  if (values.targetOnlyAdjacent && values.maxTargetsPerRow === null) {
-    errors.targetOnlyAdjacent = "Adjacent targeting requires a limited number of targets per row";
-  } else if (
-    values.targetOnlyAdjacent &&
-    values.maxTargetsPerRow !== null &&
-    values.maxTargetsPerRow < 2
-  ) {
-    errors.targetOnlyAdjacent = "Adjacent targeting requires at least 2 targets per row";
+  if (!VALID_TARGET_SELECTION_SHAPES.includes(values.selectionShape)) {
+    errors.selectionShape = "Selection shape is required";
   }
 
   return errors;
@@ -280,20 +255,10 @@ export function isUnitFormDirty(
   }
 
   if (
-    current.targetSide !== original.targetSide ||
-    current.targetPolicy !== original.targetPolicy ||
-    current.targetRowCount !== original.targetRowCount ||
-    current.maxTargetsPerRow !== original.maxTargetsPerRow ||
-    current.targetOnlyAdjacent !== original.targetOnlyAdjacent
-  ) {
-    return true;
-  }
-
-  const currentAllowedRows = [...current.allowedRowTypes].sort();
-  const originalAllowedRows = [...original.allowedRowTypes].sort();
-  if (
-    currentAllowedRows.length !== originalAllowedRows.length ||
-    currentAllowedRows.some((rowType, index) => rowType !== originalAllowedRows[index])
+    current.targetScope !== original.targetScope ||
+    current.targetPriority !== original.targetPriority ||
+    current.targetCount !== original.targetCount ||
+    current.selectionShape !== original.selectionShape
   ) {
     return true;
   }

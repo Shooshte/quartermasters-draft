@@ -16,6 +16,7 @@ const defaultFormValues: ItemFormValues = {
   activationManaCost: "0",
   activationHealthCost: "0",
   effectIds: [],
+  allowedRowTypes: [],
 };
 
 const sampleEffectOptions = [
@@ -61,10 +62,32 @@ describe("ItemWorkspaceForm", () => {
     expect(screen.getByText("Combat Stats")).toBeInTheDocument();
     expect(screen.getByText("Utility Stats")).toBeInTheDocument();
     expect(screen.getByText("Activation Costs")).toBeInTheDocument();
+    expect(screen.getByText("Allowed deployment rows")).toBeInTheDocument();
     expect(screen.getByTestId("item-effect-picker")).toBeInTheDocument();
     expect(screen.getByTestId("item-meleeDmg-input")).toBeInTheDocument();
     expect(screen.getByTestId("item-mana-input")).toBeInTheDocument();
     expect(screen.getByTestId("item-activationManaCost-input")).toBeInTheDocument();
+  });
+
+  it("toggles allowed deployment rows without producing duplicates", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+    const view = renderForm({ onFieldChange });
+
+    await user.click(screen.getByTestId("item-allowed-row-ranged"));
+    expect(onFieldChange).toHaveBeenCalledWith("allowedRowTypes", ["ranged"]);
+
+    view.rerender(
+      <ItemWorkspaceForm
+        {...view.props}
+        formValues={{
+          ...view.props.formValues,
+          allowedRowTypes: ["ranged", "ranged"],
+        }}
+      />,
+    );
+    await user.click(screen.getByTestId("item-allowed-row-melee"));
+    expect(onFieldChange).toHaveBeenLastCalledWith("allowedRowTypes", ["melee", "ranged"]);
   });
 
   it("disables save when required fields are missing", () => {

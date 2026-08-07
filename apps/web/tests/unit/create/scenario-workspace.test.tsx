@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { ScenarioUnitOption } from "~/components/create/scenario-row-editor";
 import { ScenarioWorkspace } from "~/components/create/scenario-workspace";
 import type { WorkspaceState } from "~/components/create/types";
 
@@ -17,13 +18,13 @@ function makeWorkspace(overrides: Partial<WorkspaceState> = {}): WorkspaceState 
 }
 
 describe("ScenarioWorkspace", () => {
-  const unitOptions = [
-    { id: "u-1", name: "Barbarian" },
-    { id: "u-2", name: "Mage" },
-    { id: "u-3", name: "Ranger" },
-    { id: "u-4", name: "Samurai" },
-    { id: "u-5", name: "Templar" },
-    { id: "u-6", name: "Undead Knight" },
+  const unitOptions: ScenarioUnitOption[] = [
+    { id: "u-1", name: "Barbarian", itemAllowedRowTypes: [[]] },
+    { id: "u-2", name: "Mage", itemAllowedRowTypes: [["ranged", "support"]] },
+    { id: "u-3", name: "Ranger", itemAllowedRowTypes: [["ranged"]] },
+    { id: "u-4", name: "Samurai", itemAllowedRowTypes: [["melee"]] },
+    { id: "u-5", name: "Templar", itemAllowedRowTypes: [["tank", "melee"], []] },
+    { id: "u-6", name: "Undead Knight", itemAllowedRowTypes: [] },
   ];
 
   it("shows idle placeholder", () => {
@@ -286,6 +287,89 @@ describe("ScenarioWorkspace", () => {
       { rowType: "melee", unitIds: ["u-1"] },
       { rowType: "tank", unitIds: [] },
     ]);
+  });
+
+  it("only offers units whose equipped items allow the row", async () => {
+    const user = userEvent.setup();
+    render(
+      <ScenarioWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "scenario",
+          formValues: { name: "Deployment", rows: [] },
+        })}
+        onFieldChange={vi.fn()}
+        onSave={vi.fn()}
+        isSaving={false}
+        saveError={null}
+        unitOptions={unitOptions}
+      />,
+    );
+
+    await user.click(screen.getByTestId("scenario-row-tank-picker"));
+
+    expect(screen.getByTestId("scenario-row-tank-picker-option-u-1")).toBeInTheDocument();
+    expect(screen.getByTestId("scenario-row-tank-picker-option-u-5")).toBeInTheDocument();
+    expect(screen.queryByTestId("scenario-row-tank-picker-option-u-3")).not.toBeInTheDocument();
+  });
+
+  it("offers no row when equipped item restrictions have an empty intersection", async () => {
+    const user = userEvent.setup();
+    render(
+      <ScenarioWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "scenario",
+          formValues: { name: "Impossible Deployment", rows: [] },
+        })}
+        onFieldChange={vi.fn()}
+        onSave={vi.fn()}
+        isSaving={false}
+        saveError={null}
+        unitOptions={[
+          {
+            id: "ranged-only-unit",
+            name: "Conflicted Scout",
+            itemAllowedRowTypes: [["ranged"], ["melee"]],
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByTestId("scenario-row-tank-picker"));
+    expect(
+      screen.queryByTestId("scenario-row-tank-picker-option-ranged-only-unit"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("scenario-row-tank-picker-empty")).toHaveTextContent(
+      "No eligible units found",
+    );
+  });
+
+  it("retains an assigned unit that is invalid for its row and marks the placement", () => {
+    render(
+      <ScenarioWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "scenario",
+          entityId: "123",
+          data: { name: "Legacy Deployment", rows: [] },
+          formValues: {
+            name: "Legacy Deployment",
+            rows: [{ rowType: "tank", unitIds: ["u-3"] }],
+          },
+        })}
+        onFieldChange={vi.fn()}
+        onSave={vi.fn()}
+        isSaving={false}
+        saveError={null}
+        unitOptions={unitOptions}
+      />,
+    );
+
+    expect(screen.getByTestId("scenario-row-tank-slot-1")).toHaveTextContent("Ranger");
+    expect(screen.getByTestId("scenario-row-tank-slot-1-placement-error")).toHaveTextContent(
+      "Cannot deploy in Tank row",
+    );
   });
 
   it("edits a scenario unit through its one-based edit button", async () => {

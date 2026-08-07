@@ -702,6 +702,20 @@
   white-space: nowrap;
 }
 
+.sw-slot-invalid {
+  border-color: oklch(0.55 0.22 25 / 55%);
+  background: oklch(0.55 0.22 25 / 8%);
+}
+
+.sw-slot-placement-error {
+  display: block;
+  margin-top: 1px;
+  color: oklch(0.68 0.18 25);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
 .sw-slot-actions {
   display: flex;
   gap: 2px;

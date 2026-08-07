@@ -28,9 +28,11 @@ import {
   isScenarioFormDirty,
   normalizeScenarioFormValues,
   type ScenarioFormValues,
+  type ScenarioRowType,
   scenarioRecordToFormValues,
   validateScenarioForm,
 } from "./scenario-form";
+import type { ScenarioUnitOption } from "./scenario-row-editor";
 import {
   type CreatePageNavigate,
   type CreatePageSearch,
@@ -151,7 +153,7 @@ export interface CreatePageState {
   saveScenario: () => Promise<void>;
   isScenarioSaving: boolean;
   scenarioSaveError: string | null;
-  scenarioUnitOptions: { id: string; name: string }[];
+  scenarioUnitOptions: ScenarioUnitOption[];
   saveEntity: () => Promise<void>;
   isEntitySaving: boolean;
   entitySaveError: string | null;
@@ -328,7 +330,29 @@ export function useCreatePageState(
 
   const scenarioUnitOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
-    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.units.list.query(input)),
+    queryFn: async () => {
+      const units = await loadAllWorkspaceOptions((input) =>
+        trpc.scenarioBuilder.units.list.query(input),
+      );
+      const unitRecords = await Promise.all(
+        units.map((unit: { id: string; name: string }) =>
+          trpc.scenarioBuilder.units.get.query({ id: unit.id }),
+        ),
+      );
+      const itemIds = [...new Set(unitRecords.flatMap((unit) => unit.itemIds))];
+      const itemRecords = await Promise.all(
+        itemIds.map((id) => trpc.scenarioBuilder.items.get.query({ id })),
+      );
+      const allowedRowsByItemId = new Map(
+        itemRecords.map((item) => [item.id, item.allowedRowTypes as ScenarioRowType[]]),
+      );
+
+      return unitRecords.map((unit) => ({
+        id: unit.id,
+        name: unit.name,
+        itemAllowedRowTypes: unit.itemIds.map((itemId) => allowedRowsByItemId.get(itemId) ?? []),
+      }));
+    },
     enabled:
       scenarioWorkspace.entityType === "scenario" &&
       (scenarioWorkspace.mode === "create" ||
@@ -656,6 +680,9 @@ export function useCreatePageState(
         }
 
         await queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "items"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
+        });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to save item. Please try again.";
@@ -762,12 +789,7 @@ export function useCreatePageState(
     saveScenario,
     isScenarioSaving,
     scenarioSaveError,
-    scenarioUnitOptions: (scenarioUnitOptionsQuery.data ?? []).map(
-      (unit: { id: string; name: string }) => ({
-        id: unit.id,
-        name: unit.name,
-      }),
-    ),
+    scenarioUnitOptions: scenarioUnitOptionsQuery.data ?? [],
     saveEntity,
     isEntitySaving,
     entitySaveError,

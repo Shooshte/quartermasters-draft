@@ -5,6 +5,7 @@ import {
   type ScenarioFormValues,
   type ScenarioRowType,
 } from "./scenario-form";
+import type { ScenarioUnitOption } from "./scenario-row-editor";
 import { ScenarioRowEditor } from "./scenario-row-editor";
 import type { WorkspaceState } from "./types";
 
@@ -14,7 +15,7 @@ interface ScenarioWorkspaceProps {
   onSave: () => void;
   isSaving: boolean;
   saveError: string | null;
-  unitOptions: { id: string; name: string }[];
+  unitOptions: ScenarioUnitOption[];
   onEditUnit?: (unitId: string) => void;
 }
 

@@ -1,10 +1,5 @@
-import type { RowType, UnitFieldErrors, UnitFormValues } from "./unit-form";
-import {
-  getEffectiveAllowedRows,
-  TARGET_ROW_TYPES_IN_COMBAT_ORDER,
-  UnitTargetingSummary,
-} from "./unit-targeting-summary";
-import { WorkspaceRowTypePill } from "./workspace-row-type-pill";
+import type { UnitFieldErrors, UnitFormValues } from "./unit-form";
+import { UnitTargetingSummary } from "./unit-targeting-summary";
 import { WorkspaceSegmentToggle } from "./workspace-segment-toggle";
 import { WorkspaceSelectChip } from "./workspace-select-chip";
 
@@ -15,199 +10,114 @@ interface UnitTargetingCardProps {
 }
 
 export function UnitTargetingCard({ formValues, errors, onFieldChange }: UnitTargetingCardProps) {
-  const perRowMode = formValues.maxTargetsPerRow === null ? "all" : "limit";
-  const adjacentDisabled = formValues.maxTargetsPerRow === null || formValues.maxTargetsPerRow < 2;
-  const effectiveAllowedRows = getEffectiveAllowedRows(formValues.allowedRowTypes);
-  const adjacentDisabledReason =
-    formValues.maxTargetsPerRow === null
-      ? "Adjacent placement does not apply when all units are targeted."
-      : formValues.maxTargetsPerRow < 2
-        ? "Choose at least 2 targets in each row to use adjacent placement."
-        : null;
-
-  const toggleAllowedRow = (rowType: RowType) => {
-    if (effectiveAllowedRows.includes(rowType)) {
-      if (effectiveAllowedRows.length === 1) return;
-      onFieldChange(
-        "allowedRowTypes",
-        effectiveAllowedRows.filter((candidate) => candidate !== rowType),
-      );
-      return;
-    }
-
-    const nextRows = TARGET_ROW_TYPES_IN_COMBAT_ORDER.filter(
-      (candidate) => effectiveAllowedRows.includes(candidate) || candidate === rowType,
-    );
-    onFieldChange(
-      "allowedRowTypes",
-      nextRows.length === TARGET_ROW_TYPES_IN_COMBAT_ORDER.length ? [] : nextRows,
-    );
-  };
-
   return (
     <div data-testid="unit-targeting-card">
       <div className="ws-section-header">Targeting</div>
       <div className="targeting-card">
         <div className="targeting-card-policy-row">
-          <span className="targeting-card-policy-label">Side</span>
+          <span className="targeting-card-policy-label">Scope</span>
           <WorkspaceSelectChip
-            chipTestId="unit-target-side-chip"
-            selectTestId="unit-target-side-select"
+            chipTestId="unit-target-scope-chip"
+            selectTestId="unit-target-scope-select"
             className="ws-chip"
-            value={formValues.targetSide}
+            value={formValues.targetScope}
             includeEmptyOption
-            options={[{ value: "allies" }, { value: "enemies" }, { value: "self" }]}
-            onChange={(value) => onFieldChange("targetSide", value)}
+            options={[
+              { value: "self", label: "Self" },
+              { value: "self_allies", label: "Self + allies" },
+              { value: "self_enemies", label: "Self + enemies" },
+              { value: "allies", label: "Allies" },
+              { value: "enemies", label: "Enemies" },
+              { value: "both", label: "Allies + enemies" },
+            ]}
+            onChange={(value) => onFieldChange("targetScope", value)}
           />
         </div>
-        {errors.targetSide ? (
+        {errors.targetScope ? (
           <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
-            {errors.targetSide}
+            {errors.targetScope}
           </p>
         ) : null}
 
         <div className="targeting-card-policy-row">
           <span className="targeting-card-policy-label">Priority</span>
           <WorkspaceSelectChip
-            chipTestId="unit-target-policy-chip"
-            selectTestId="unit-target-policy-select"
+            chipTestId="unit-target-priority-chip"
+            selectTestId="unit-target-priority-select"
             className="ws-chip"
             style={{
               background: "oklch(0.78 0.15 75 / 12%)",
               color: "oklch(0.78 0.15 75)",
               border: "1px solid oklch(0.78 0.15 75 / 18%)",
             }}
-            value={formValues.targetPolicy}
+            value={formValues.targetPriority}
             includeEmptyOption
             options={[
-              { value: "highest_health" },
-              { value: "lowest_health" },
-              { value: "highest_damage" },
-              { value: "random" },
-              { value: "self" },
+              { value: "highest_health", label: "Highest health" },
+              { value: "lowest_health", label: "Lowest health" },
+              { value: "highest_damage", label: "Highest damage" },
+              { value: "support", label: "Support" },
+              { value: "random", label: "Random" },
             ]}
-            onChange={(value) => onFieldChange("targetPolicy", value)}
+            onChange={(value) => onFieldChange("targetPriority", value)}
           />
         </div>
-        {errors.targetPolicy ? (
+        {errors.targetPriority ? (
           <p className="text-sm text-destructive" style={{ padding: "4px 12px" }}>
-            {errors.targetPolicy}
+            {errors.targetPriority}
           </p>
         ) : null}
 
         <UnitTargetingSummary
-          targetSide={formValues.targetSide}
-          targetPolicy={formValues.targetPolicy}
-          targetRowCount={formValues.targetRowCount}
-          maxTargetsPerRow={formValues.maxTargetsPerRow}
-          targetOnlyAdjacent={formValues.targetOnlyAdjacent}
-          allowedRowTypes={formValues.allowedRowTypes}
+          targetScope={formValues.targetScope}
+          targetPriority={formValues.targetPriority}
+          targetCount={formValues.targetCount}
+          selectionShape={formValues.selectionShape}
         />
 
         <div className="targeting-card-body">
           <div className="targeting-controls">
             <div className="targeting-ctrl-block">
-              <span className="targeting-ctrl-section-label">Rows hit per activation</span>
-              <WorkspaceSegmentToggle
-                options={[1, 2, 3, 4].map((count) => ({
-                  value: String(count),
-                  label: String(count),
-                }))}
-                value={String(formValues.targetRowCount)}
-                onChange={(value) => onFieldChange("targetRowCount", Number(value))}
-                testId="unit-target-row-count-toggle"
-                ariaLabel="Rows hit per activation"
+              <label className="targeting-ctrl-section-label" htmlFor="unit-target-count">
+                Targets per activation
+              </label>
+              <input
+                id="unit-target-count"
+                aria-label="Targets per activation"
+                data-testid="unit-target-count-input"
+                type="number"
+                min={1}
+                step={1}
+                className="targeting-ctrl-input"
+                value={formValues.targetCount}
+                onChange={(event) => {
+                  const value = Number.parseInt(event.target.value, 10);
+                  if (!Number.isNaN(value)) {
+                    onFieldChange("targetCount", value);
+                  }
+                }}
               />
-              {errors.targetRowCount ? (
-                <p className="text-sm text-destructive">{errors.targetRowCount}</p>
+              {errors.targetCount ? (
+                <p className="text-sm text-destructive">{errors.targetCount}</p>
               ) : null}
             </div>
 
             <div className="targeting-ctrl-block">
-              <span className="targeting-ctrl-section-label">Targets in each row</span>
-              <div className="targeting-ctrl-row">
-                <WorkspaceSegmentToggle
-                  options={[
-                    { value: "all", label: "All" },
-                    { value: "limit", label: "Limit" },
-                  ]}
-                  value={perRowMode}
-                  onChange={(mode) => {
-                    if (mode === "all") {
-                      if (formValues.targetOnlyAdjacent) {
-                        onFieldChange("targetOnlyAdjacent", false);
-                      }
-                      onFieldChange("maxTargetsPerRow", null);
-                    } else {
-                      onFieldChange("maxTargetsPerRow", 1);
-                    }
-                  }}
-                  testId="unit-target-per-row-toggle"
-                  ariaLabel="Targets in each row"
-                />
-                {perRowMode === "limit" ? (
-                  <input
-                    aria-label="Maximum targets in each row"
-                    data-testid="unit-target-max-targets-per-row-input"
-                    type="number"
-                    min={1}
-                    className="targeting-ctrl-input"
-                    value={formValues.maxTargetsPerRow ?? 1}
-                    onChange={(event) => {
-                      const value = Number.parseInt(event.target.value, 10);
-                      if (Number.isNaN(value)) return;
-                      if (value < 2 && formValues.targetOnlyAdjacent) {
-                        onFieldChange("targetOnlyAdjacent", false);
-                      }
-                      onFieldChange("maxTargetsPerRow", value);
-                    }}
-                  />
-                ) : null}
-              </div>
-              {errors.maxTargetsPerRow ? (
-                <p className="text-sm text-destructive">{errors.maxTargetsPerRow}</p>
-              ) : null}
-            </div>
-
-            <div className="targeting-ctrl-block">
-              <span className="targeting-ctrl-section-label">Position rule</span>
+              <span className="targeting-ctrl-section-label">Selection shape</span>
               <WorkspaceSegmentToggle
                 options={[
-                  { value: "any", label: "Any" },
-                  { value: "adjacent", label: "Adjacent", disabled: adjacentDisabled },
+                  { value: "individual", label: "Individual" },
+                  { value: "adjacent", label: "Adjacent" },
                 ]}
-                value={formValues.targetOnlyAdjacent ? "adjacent" : "any"}
-                onChange={(value) => onFieldChange("targetOnlyAdjacent", value === "adjacent")}
-                testId="unit-target-position-toggle"
-                ariaLabel="Position rule"
+                value={formValues.selectionShape}
+                onChange={(value) => onFieldChange("selectionShape", value)}
+                testId="unit-target-shape-toggle"
+                ariaLabel="Selection shape"
               />
-              {adjacentDisabledReason ? (
-                <p className="targeting-ctrl-help">{adjacentDisabledReason}</p>
-              ) : null}
-              {errors.targetOnlyAdjacent ? (
-                <p className="text-sm text-destructive">{errors.targetOnlyAdjacent}</p>
+              {errors.selectionShape ? (
+                <p className="text-sm text-destructive">{errors.selectionShape}</p>
               ) : null}
             </div>
-
-            <fieldset className="targeting-ctrl-block targeting-ctrl-block-wide">
-              <legend className="targeting-ctrl-section-label">Eligible rows</legend>
-              <div className="targeting-row-options">
-                {TARGET_ROW_TYPES_IN_COMBAT_ORDER.map((rowType) => {
-                  const active = effectiveAllowedRows.includes(rowType);
-                  return (
-                    <WorkspaceRowTypePill
-                      key={rowType}
-                      rowType={rowType}
-                      active={active}
-                      disabled={active && effectiveAllowedRows.length === 1}
-                      testId={`unit-target-allowed-row-${rowType}`}
-                      onClick={() => toggleAllowedRow(rowType)}
-                    />
-                  );
-                })}
-              </div>
-              <p className="targeting-ctrl-help">At least one row must remain eligible.</p>
-            </fieldset>
           </div>
         </div>
       </div>

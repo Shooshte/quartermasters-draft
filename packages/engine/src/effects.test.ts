@@ -288,6 +288,75 @@ describe("effects", () => {
     expect(mage.activeEffects).toHaveLength(0);
   });
 
+  it("resolves each direct interval damage source as a separate hit in field order", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Triad",
+        effects: effectSequence(
+          createEffect({
+            name: "Triad",
+            effectType: "damage",
+            timingType: "interval",
+            directMeleeDmg: 10,
+            directRangedDmg: 20,
+            directSpellDmg: 30,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(240);
+    const damages = state.log
+      .filter((entry) => entry.type === "damage" && entry.origin?.effect?.name === "Triad")
+      .map((entry) => entry.damage);
+    expect(damages).toEqual([10, 20, 30]);
+  });
+
+  it("queues melee-only interval damage without requiring a spell value", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Melee Pulse",
+        effects: effectSequence(
+          createEffect({
+            name: "Melee Pulse",
+            effectType: "damage",
+            timingType: "interval",
+            directMeleeDmg: 10,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(290);
+    expect(
+      state.log
+        .filter(
+          (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Melee Pulse",
+        )
+        .map((entry) => entry.damage),
+    ).toEqual([10]);
+  });
+
   it("waits intervalTicks before the first trigger and between subsequent triggers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

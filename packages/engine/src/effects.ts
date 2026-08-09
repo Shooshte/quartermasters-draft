@@ -194,7 +194,7 @@ function queueIntervalEffect(
 ): ActiveEffectState[] {
   const activeEffects: ActiveEffectState[] = [];
 
-  if (typeof effect.directSpellDmg === "number" || typeof effect.directHealing === "number") {
+  if (typeof effect.directHealing === "number") {
     activeEffects.push({
       id: nextEffectId(state),
       name: effect.name ?? "Effect",
@@ -203,12 +203,34 @@ function queueIntervalEffect(
       targetUnitId: target.instanceId,
       effectType: effect.effectType,
       timingType: effect.timingType,
-      value: effect.directHealing ?? effect.directSpellDmg ?? 0,
+      value: effect.directHealing,
       remainingTriggers: effect.triggerCount ?? 0,
       nextTriggerTick: tick + (effect.intervalTicks ?? 0),
       intervalTicks: effect.intervalTicks ?? 0,
       origin,
     });
+  } else {
+    const directDamageValues = [
+      effect.directMeleeDmg,
+      effect.directRangedDmg,
+      effect.directSpellDmg,
+    ].filter((value): value is number => typeof value === "number");
+    for (const value of directDamageValues) {
+      activeEffects.push({
+        id: nextEffectId(state),
+        name: effect.name ?? "Effect",
+        sourceUnitId: caster.instanceId,
+        sourceScenarioId: caster.scenarioId,
+        targetUnitId: target.instanceId,
+        effectType: effect.effectType,
+        timingType: effect.timingType,
+        value,
+        remainingTriggers: effect.triggerCount ?? 0,
+        nextTriggerTick: tick + (effect.intervalTicks ?? 0),
+        intervalTicks: effect.intervalTicks ?? 0,
+        origin,
+      });
+    }
   }
 
   return activeEffects;

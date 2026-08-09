@@ -342,6 +342,151 @@ describe("unit targeting", () => {
     ).toEqual(["Baseline"]);
   });
 
+  it("excludes direct damage on healing intervals from highest-damage priority", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [createUnit("Caster", { targetPriority: "highest_damage" })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Damage Over Time", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0 }),
+              items: [
+                createItem({
+                  name: "Damage Item",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "interval",
+                      intervalTicks: 10,
+                      directSpellDmg: 50,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+            createUnit("Healing Over Time", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0 }),
+              items: [
+                createItem({
+                  name: "Healing Item",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "healing",
+                      timingType: "interval",
+                      intervalTicks: 1,
+                      directSpellDmg: 100,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Damage Over Time"]);
+  });
+
+  it("does not speed-scale interval damage for highest-damage priority", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [createUnit("Caster", { targetPriority: "highest_damage" })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Steady Interval", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Steady Item",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "interval",
+                      intervalTicks: 1,
+                      directSpellDmg: 5,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+            createUnit("Hasted Interval", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Hasted Item",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "interval",
+                      intervalTicks: 2,
+                      directSpellDmg: 8,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+    const hastedInterval = state.scenarios[1].rows.tank[1]!;
+    hastedInterval.activeEffects.push({
+      id: "haste",
+      name: "Haste",
+      sourceUnitId: hastedInterval.instanceId,
+      sourceScenarioId: hastedInterval.scenarioId,
+      targetUnitId: hastedInterval.instanceId,
+      effectType: "buff",
+      timingType: "instant",
+      statKey: "speed",
+      value: 100,
+    });
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Steady Interval"]);
+  });
+
+  it("uses the deterministic fallback order for equal projected output", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [createUnit("Caster", { targetPriority: "highest_damage", targetCount: 2 })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("First", {
+              stats: createStats({ meleeDmg: 10, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+            }),
+            createUnit("Second", {
+              stats: createStats({ meleeDmg: 10, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+            }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["First", "Second"]);
+  });
+
   it("selects multiple seeded-random candidates without duplicates", () => {
     const select = () => {
       const state = setupBattle("random-three");

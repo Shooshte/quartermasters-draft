@@ -132,6 +132,7 @@ function canTargetEnemies(scope: TargetScope): boolean {
 }
 
 function directDamage(effect: EffectTemplateInput): number {
+  if (effect.effectType === "healing") return 0;
   return (
     (effect.directMeleeDmg ?? 0) +
     (effect.directRangedDmg ?? 0) +

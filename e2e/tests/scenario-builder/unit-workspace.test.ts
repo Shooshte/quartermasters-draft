@@ -281,6 +281,24 @@ test.describe("Unit Workspace", () => {
     await expect(unit.itemRows).toHaveCount(0);
   });
 
+  test("previews final stats from equipped items before saving", async ({ gmPage }) => {
+    const unit = new UnitWorkspacePage(gmPage);
+    await unit.openNew();
+    await unit.fillStats({ meleeDmg: "10", criticalChance: "2" });
+
+    await expect(unit.finalStat("meleeDmg")).toHaveText("Final 10");
+
+    await unit.linkItem("Iron Sword");
+    await expect(unit.finalStat("meleeDmg")).toHaveText("Final 25 (+15 items)");
+    await expect(unit.finalStat("criticalChance")).toHaveText("Final 7 (+5 items)");
+
+    await unit.linkItem("Iron Sword");
+    await expect(unit.finalStat("meleeDmg")).toHaveText("Final 40 (+30 items)");
+
+    await unit.removeItem(0);
+    await expect(unit.finalStat("meleeDmg")).toHaveText("Final 25 (+15 items)");
+  });
+
   test("add an item to a unit", async ({ gmPage }) => {
     const unit = new UnitWorkspacePage(gmPage);
     await unit.openNew();

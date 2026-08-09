@@ -61,6 +61,10 @@ export class UnitWorkspacePage {
     return this.page.getByTestId(`unit-target-shape-toggle-${shape}`);
   }
 
+  finalStat(field: string) {
+    return this.page.getByTestId(`unit-${field}-final`);
+  }
+
   async openNew() {
     await this.shell.startNewEntity("Units", "New Unit");
   }

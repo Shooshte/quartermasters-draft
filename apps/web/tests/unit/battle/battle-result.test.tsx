@@ -180,6 +180,47 @@ describe("BattleResultView", () => {
     ]);
   });
 
+  it("renders normal and effective final stats in the unit ledger", () => {
+    const finalStateUnit = unit({
+      itemBonusStats: { ...zeroStats, mana: 20, meleeDmg: 4, dodge: 2 },
+      activeEffects: [
+        { statKey: "health", value: 20 },
+        { statKey: "mana", value: 10 },
+        { statKey: "meleeDmg", value: 6 },
+        { statKey: "speed", value: -4 },
+      ] as BattleUnit["activeEffects"],
+    });
+    const result = {
+      ...fixture.result,
+      finalState: {
+        ...fixture.result.finalState,
+        scenarios: [
+          {
+            ...fixture.result.finalState.scenarios[0],
+            rows: {
+              ...fixture.result.finalState.scenarios[0].rows,
+              tank: [finalStateUnit],
+            },
+          },
+          fixture.result.finalState.scenarios[1],
+        ],
+      },
+    };
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    const ledger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
+    expect(within(ledger).getByRole("cell", { name: "82 / 140" })).toBeVisible();
+    expect(within(ledger).getByRole("cell", { name: "34 / 130" })).toBeVisible();
+    expect(within(ledger).getByText("Melee damage 32 → 38")).toBeVisible();
+    expect(within(ledger).getByText("Speed 14 → 10")).toBeVisible();
+    expect(within(ledger).getByText("Ranged damage 0")).toBeVisible();
+    expect(within(ledger).getByText("Mana regeneration 2")).toBeVisible();
+    expect(within(ledger).getByText("Spell damage 0")).toBeVisible();
+    expect(within(ledger).getByText("Dodge 2")).toBeVisible();
+    expect(within(ledger).getByText("Critical chance 0")).toBeVisible();
+  });
+
   it("renders a draw when neither scenario wins", () => {
     render(
       <BattleResultView

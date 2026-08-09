@@ -194,7 +194,7 @@ function queueIntervalEffect(
 ): ActiveEffectState[] {
   const activeEffects: ActiveEffectState[] = [];
 
-  if (typeof effect.directHealing === "number") {
+  if (effect.effectType === "healing") {
     activeEffects.push({
       id: nextEffectId(state),
       name: effect.name ?? "Effect",
@@ -203,7 +203,7 @@ function queueIntervalEffect(
       targetUnitId: target.instanceId,
       effectType: effect.effectType,
       timingType: effect.timingType,
-      value: effect.directHealing,
+      value: effect.directHealing ?? effect.directSpellDmg ?? 0,
       remainingTriggers: effect.triggerCount ?? 0,
       nextTriggerTick: tick + (effect.intervalTicks ?? 0),
       intervalTicks: effect.intervalTicks ?? 0,

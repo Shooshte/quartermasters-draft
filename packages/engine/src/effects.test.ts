@@ -357,6 +357,80 @@ describe("effects", () => {
     ).toEqual([10]);
   });
 
+  it("queues ranged-only interval damage without requiring other direct damage values", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Ranged Pulse",
+        effects: effectSequence(
+          createEffect({
+            name: "Ranged Pulse",
+            effectType: "damage",
+            timingType: "interval",
+            directRangedDmg: 15,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(285);
+    expect(
+      state.log
+        .filter(
+          (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Ranged Pulse",
+        )
+        .map((entry) => entry.damage),
+    ).toEqual([15]);
+  });
+
+  it("queues a healing interval as one healing entry even with direct damage fields", () => {
+    const state = createEffectState();
+    const cleric = state.scenarios[0].rows.support[0]!;
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    mage.currentHealth = 100;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Restorative Triad",
+        effects: effectSequence(
+          createEffect({
+            name: "Restorative Triad",
+            effectType: "healing",
+            timingType: "interval",
+            directMeleeDmg: 10,
+            directRangedDmg: 20,
+            directSpellDmg: 30,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    expect(mage.activeEffects).toHaveLength(1);
+    processOngoingEffects(state, 1);
+
+    expect(mage.currentHealth).toBe(130);
+    expect(
+      state.log
+        .filter(
+          (entry) => entry.type === "heal" && entry.origin?.effect?.name === "Restorative Triad",
+        )
+        .map((entry) => entry.amount),
+    ).toEqual([30]);
+  });
+
   it("waits intervalTicks before the first trigger and between subsequent triggers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

@@ -190,7 +190,7 @@ describe("BattleResultView", () => {
         { statKey: "speed", value: -4 },
       ] as BattleUnit["activeEffects"],
     });
-    const result = {
+    const result: typeof fixture.result = {
       ...fixture.result,
       finalState: {
         ...fixture.result.finalState,

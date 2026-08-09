@@ -188,6 +188,8 @@ describe("BattleResultView", () => {
         { statKey: "mana", value: 10 },
         { statKey: "meleeDmg", value: 6 },
         { statKey: "speed", value: -4 },
+        { statKey: "dodge", value: -50 },
+        { value: 100 },
       ] as BattleUnit["activeEffects"],
     });
     const result: typeof fixture.result = {
@@ -210,15 +212,17 @@ describe("BattleResultView", () => {
     render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
 
     const ledger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
-    expect(within(ledger).getByRole("cell", { name: "82 / 140" })).toBeVisible();
-    expect(within(ledger).getByRole("cell", { name: "34 / 130" })).toBeVisible();
-    expect(within(ledger).getByText("Melee damage 32 → 38")).toBeVisible();
-    expect(within(ledger).getByText("Speed 14 → 10")).toBeVisible();
-    expect(within(ledger).getByText("Ranged damage 0")).toBeVisible();
-    expect(within(ledger).getByText("Mana regeneration 2")).toBeVisible();
-    expect(within(ledger).getByText("Spell damage 0")).toBeVisible();
-    expect(within(ledger).getByText("Dodge 2")).toBeVisible();
-    expect(within(ledger).getByText("Critical chance 0")).toBeVisible();
+    const dawnWardenRow = within(ledger).getAllByRole("row")[1];
+
+    expect(within(dawnWardenRow).getByRole("cell", { name: "82 / 140" })).toBeVisible();
+    expect(within(dawnWardenRow).getByRole("cell", { name: "34 / 130" })).toBeVisible();
+    expect(dawnWardenRow).toHaveTextContent(/Melee damage\s*32 →\s*38/);
+    expect(dawnWardenRow).toHaveTextContent(/Speed\s*14 →\s*10/);
+    expect(dawnWardenRow).toHaveTextContent(/Ranged damage\s*0/);
+    expect(dawnWardenRow).toHaveTextContent(/Mana regeneration\s*2/);
+    expect(dawnWardenRow).toHaveTextContent(/Spell damage\s*0/);
+    expect(dawnWardenRow).toHaveTextContent(/Dodge\s*2 →\s*0/);
+    expect(dawnWardenRow).toHaveTextContent(/Critical chance\s*0/);
   });
 
   it("renders a draw when neither scenario wins", () => {

@@ -323,7 +323,7 @@ test.describe("Battle Lab", () => {
     );
     await runWorkerSql(
       testInfo.parallelIndex,
-      `UPDATE units SET speed = 0, health = 1000, melee_dmg = 1000, ranged_dmg = 1000, spell_dmg = 1000 WHERE id = '${SAMURAI_ID}'`,
+      `UPDATE units SET speed = 1, health = 1000, melee_dmg = 1000, ranged_dmg = 1000, spell_dmg = 1000 WHERE id = '${SAMURAI_ID}'`,
     );
     await runWorkerSql(
       testInfo.parallelIndex,

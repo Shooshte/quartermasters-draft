@@ -288,6 +288,180 @@ describe("effects", () => {
     expect(mage.activeEffects).toHaveLength(0);
   });
 
+  it("resolves each direct interval damage source as a separate hit in field order", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Triad",
+        effects: effectSequence(
+          createEffect({
+            name: "Triad",
+            effectType: "damage",
+            timingType: "interval",
+            directMeleeDmg: 10,
+            directRangedDmg: 20,
+            directSpellDmg: 30,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(240);
+    const damages = state.log
+      .filter((entry) => entry.type === "damage" && entry.origin?.effect?.name === "Triad")
+      .map((entry) => entry.damage);
+    expect(damages).toEqual([10, 20, 30]);
+  });
+
+  it("queues melee-only interval damage without requiring a spell value", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Melee Pulse",
+        effects: effectSequence(
+          createEffect({
+            name: "Melee Pulse",
+            effectType: "damage",
+            timingType: "interval",
+            directMeleeDmg: 10,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(290);
+    expect(
+      state.log
+        .filter(
+          (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Melee Pulse",
+        )
+        .map((entry) => entry.damage),
+    ).toEqual([10]);
+  });
+
+  it("queues ranged-only interval damage without requiring other direct damage values", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Ranged Pulse",
+        effects: effectSequence(
+          createEffect({
+            name: "Ranged Pulse",
+            effectType: "damage",
+            timingType: "interval",
+            directRangedDmg: 15,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(warrior.currentHealth).toBe(285);
+    expect(
+      state.log
+        .filter(
+          (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Ranged Pulse",
+        )
+        .map((entry) => entry.damage),
+    ).toEqual([15]);
+  });
+
+  it("queues a healing interval as one healing entry even with direct damage fields", () => {
+    const state = createEffectState();
+    const cleric = state.scenarios[0].rows.support[0]!;
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    mage.currentHealth = 100;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Restorative Triad",
+        effects: effectSequence(
+          createEffect({
+            name: "Restorative Triad",
+            effectType: "healing",
+            timingType: "interval",
+            directMeleeDmg: 10,
+            directRangedDmg: 20,
+            directSpellDmg: 30,
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    expect(mage.activeEffects).toHaveLength(1);
+    processOngoingEffects(state, 1);
+
+    expect(mage.currentHealth).toBe(130);
+    expect(
+      state.log
+        .filter(
+          (entry) => entry.type === "heal" && entry.origin?.effect?.name === "Restorative Triad",
+        )
+        .map((entry) => entry.amount),
+    ).toEqual([30]);
+  });
+
+  it("does not queue a healing interval when it has no healing value", () => {
+    const state = createEffectState();
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Empty Restoration",
+        effects: effectSequence(
+          createEffect({
+            name: "Empty Restoration",
+            effectType: "healing",
+            timingType: "interval",
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(
+      state.scenarios
+        .flatMap((scenario) => Object.values(scenario.rows).flat())
+        .flatMap((unit) => unit.activeEffects),
+    ).toHaveLength(0);
+    expect(state.log.filter((entry) => entry.type === "heal")).toHaveLength(0);
+  });
+
   it("waits intervalTicks before the first trigger and between subsequent triggers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

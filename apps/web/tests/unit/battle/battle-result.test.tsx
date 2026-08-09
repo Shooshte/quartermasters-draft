@@ -301,7 +301,7 @@ describe("BattleResultView", () => {
       actionId,
       sourceUnitId: attackLog.attackerId,
       item: { id: "hood", name: "Acolyte Hood", position: 1 },
-      effect: { id: "all-stats", name: "+10 all stats", position: 1 },
+      effect: { id: "all-stats", name: "+10 all stats, 2 ticks", position: 1 },
     };
     const result = {
       ...fixture.result,
@@ -314,7 +314,7 @@ describe("BattleResultView", () => {
           item: "Acolyte Hood",
           targets: [attackLog.target],
           targetIds: [attackLog.targetId],
-          effects: ["+10 all stats"],
+          effects: ["+10 all stats, 2 ticks"],
           actionId,
           origin: effectOrigin,
           message: "Tick 11: Dawn Warden activates Acolyte Hood",
@@ -322,7 +322,7 @@ describe("BattleResultView", () => {
         {
           tick: 11,
           type: "effect-apply",
-          effect: "+10 all stats",
+          effect: "+10 all stats, 2 ticks",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "health",
@@ -335,7 +335,7 @@ describe("BattleResultView", () => {
         {
           tick: 11,
           type: "effect-apply",
-          effect: "+10 all stats",
+          effect: "+10 all stats, 2 ticks",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "speed",
@@ -348,7 +348,7 @@ describe("BattleResultView", () => {
         {
           tick: 13,
           type: "effect-expire",
-          effect: "+10 all stats",
+          effect: "+10 all stats, 2 ticks",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "health",
@@ -360,7 +360,7 @@ describe("BattleResultView", () => {
         {
           tick: 13,
           type: "effect-expire",
-          effect: "+10 all stats",
+          effect: "+10 all stats, 2 ticks",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "speed",

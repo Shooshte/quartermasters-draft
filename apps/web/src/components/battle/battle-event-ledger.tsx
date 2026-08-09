@@ -87,16 +87,6 @@ function displaySignedValue(value: number) {
   return value > 0 ? `+${value}` : String(value);
 }
 
-function effectDuration(entry: DetailedModifierEntry) {
-  if (entry.expiresAtTick == null) return null;
-
-  const actionId = entry.actionId ?? entry.origin?.actionId;
-  const actionTick = actionId ? Number(actionId.split(":", 1)[0]) : Number.NaN;
-  const duration = entry.expiresAtTick - actionTick;
-
-  return Number.isFinite(duration) && duration > 0 ? duration : null;
-}
-
 function EventDescription({
   entry,
   unitIds,
@@ -189,13 +179,11 @@ function EffectDescription({
 }) {
   const firstEntry = group.entries[0];
   const target = unitLabel(unitIds, firstEntry.targetId, firstEntry.target ?? "Unknown target");
-  const duration = effectDuration(firstEntry);
-  const effect = duration != null ? `${group.effect}, ${duration} ticks` : group.effect;
 
   if (group.eventType === "effect-expire") {
     return (
       <>
-        <p className="font-medium text-foreground">{effect} expired on {target}.</p>
+        <p className="font-medium text-foreground">{group.effect} expired on {target}.</p>
         <div className="mt-1 space-y-1 border-l border-primary/30 pl-3">
           {group.entries.map((entry) => (
             <p key={entryKey(entry)}>
@@ -210,7 +198,7 @@ function EffectDescription({
 
   return (
     <>
-      <p className="font-medium text-foreground">{effect}</p>
+      <p className="font-medium text-foreground">{group.effect}</p>
       <div className="mt-1 space-y-1 border-l border-primary/30 pl-3">
         {group.entries.map((entry) => (
           <p key={entryKey(entry)}>

@@ -68,6 +68,49 @@ function createEffectState() {
 }
 
 describe("effects", () => {
+  it("records each normalized stat consequence when a modifier applies and expires", () => {
+    const state = createEffectState();
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Withering Bell",
+        effects: effectSequence(
+          createEffect({
+            name: "Withering",
+            effectType: "debuff",
+            timingType: "instant",
+            meleeDmg: 10,
+            speed: -3,
+            durationTicks: 2,
+          }),
+        ),
+      }),
+    );
+
+    expect(
+      state.log
+        .filter((entry) => entry.type === "effect-apply")
+        .map(({ stat, value, expiresAtTick }) => ({ stat, value, expiresAtTick })),
+    ).toEqual([
+      { stat: "meleeDmg", value: -10, expiresAtTick: 2 },
+      { stat: "speed", value: -3, expiresAtTick: 2 },
+    ]);
+
+    processOngoingEffects(state, 2);
+
+    expect(
+      state.log
+        .filter((entry) => entry.type === "effect-expire")
+        .map(({ stat, value, expiresAtTick }) => ({ stat, value, expiresAtTick })),
+    ).toEqual([
+      { stat: "meleeDmg", value: -10, expiresAtTick: 2 },
+      { stat: "speed", value: -3, expiresAtTick: 2 },
+    ]);
+  });
+
   it("preserves mana deficit when a capacity buff applies and expires", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

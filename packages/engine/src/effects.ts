@@ -167,7 +167,11 @@ function applyInstantEffect(
         tick,
         target,
         effect.name ?? "Effect",
-        modifier.statKey,
+        {
+          stat: activeEffect.statKey!,
+          value: activeEffect.value,
+          expiresAtTick: activeEffect.expiresAtTick!,
+        },
         origin.actionId,
         origin,
       );
@@ -367,7 +371,7 @@ export function processCurrentTickEffects(state: BattleState): void {
         if (effect.nextTriggerTick <= currentTick && unit.currentHealth > 0) {
           const source = findUnitById(state, effect.sourceUnitId);
           if (!source) {
-            logEffectExpired(state, currentTick, unit, effect.name, effect.origin);
+            logEffectExpired(state, currentTick, unit, effect.name, undefined, effect.origin);
             continue;
           }
           const sourceStats = getUnitEffectiveStats(source);
@@ -436,7 +440,20 @@ export function processCurrentTickEffects(state: BattleState): void {
         effect.expiresAtTick != null &&
         effect.expiresAtTick <= currentTick
       ) {
-        logEffectExpired(state, currentTick, unit, effect.name, effect.origin);
+        logEffectExpired(
+          state,
+          currentTick,
+          unit,
+          effect.name,
+          effect.statKey && effect.expiresAtTick != null
+            ? {
+                stat: effect.statKey,
+                value: effect.value,
+                expiresAtTick: effect.expiresAtTick,
+              }
+            : undefined,
+          effect.origin,
+        );
         clampHealth(unit, getUnitEffectiveStats(unit).health);
       }
     }

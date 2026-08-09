@@ -5,6 +5,7 @@ import type {
   BattleScenarioState,
   BattleState,
   BattleUnitState,
+  EffectTemplateInput,
   TargetPriority,
   TargetScope,
 } from "./types";
@@ -126,14 +127,46 @@ function compareTargetFallback(
   );
 }
 
-function priorityValue(unit: BattleUnitState, priority: TargetPriority): number {
+function canTargetEnemies(scope: TargetScope): boolean {
+  return scope === "enemies" || scope === "self_enemies" || scope === "both";
+}
+
+function directDamage(effect: EffectTemplateInput): number {
+  return (
+    (effect.directMeleeDmg ?? 0) +
+    (effect.directRangedDmg ?? 0) +
+    (effect.directSpellDmg ?? 0)
+  );
+}
+
+function projectedDamagePerTick(unit: BattleUnitState): number {
   const stats = getUnitEffectiveStats(unit);
+  const statDamage = stats.meleeDmg + stats.rangedDmg + stats.spellDmg;
+  if (!canTargetEnemies(unit.targetScope)) return (statDamage * stats.speed) / 100;
+
+  let instantDamage = 0;
+  let intervalDamage = 0;
+  for (const item of unit.items) {
+    for (const { effect } of item.effects) {
+      const damage = directDamage(effect);
+      const intervalTicks = effect.intervalTicks ?? 0;
+      if (damage <= 0) continue;
+      if (effect.timingType === "instant") instantDamage += damage;
+      if (effect.timingType === "interval" && intervalTicks > 0) {
+        intervalDamage += damage / intervalTicks;
+      }
+    }
+  }
+  return ((statDamage + instantDamage) * stats.speed) / 100 + intervalDamage;
+}
+
+function priorityValue(unit: BattleUnitState, priority: TargetPriority): number {
   switch (priority) {
     case "highest_health":
     case "lowest_health":
       return unit.currentHealth;
     case "highest_damage":
-      return stats.meleeDmg + stats.rangedDmg + stats.spellDmg;
+      return projectedDamagePerTick(unit);
     case "support":
       return Number(unit.rowType !== "support");
     case "random":

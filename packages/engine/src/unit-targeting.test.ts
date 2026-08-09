@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { asInternalState, initializeBattleState } from "./state";
 import { selectTargets } from "./targeting";
-import { createBattleInput, createScenario, createStats, createUnit } from "./test-helpers";
+import {
+  createBattleInput,
+  createEffect,
+  createItem,
+  createScenario,
+  createStats,
+  createUnit,
+  effectSequence,
+} from "./test-helpers";
 import type { BattleUnitState } from "./types";
 import type { InvalidBattleStateError } from "./validation";
 
@@ -207,6 +215,131 @@ describe("unit targeting", () => {
         (unit) => unit.name,
       ),
     ).toEqual([expected]);
+  });
+
+  it("projects instant and interval damage using effective speed for highest-damage priority", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [createUnit("Caster", { targetPriority: "highest_damage" })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Slow Burst", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Burst",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "instant",
+                      directSpellDmg: 45,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+            createUnit("Fast Dot", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 50 }),
+              items: [
+                createItem({
+                  name: "Dot",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "instant",
+                      directSpellDmg: 10,
+                    }),
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "interval",
+                      intervalTicks: 2,
+                      directSpellDmg: 80,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+    const fastDot = state.scenarios[1].rows.tank[1]!;
+    fastDot.activeEffects.push({
+      id: "haste",
+      name: "Haste",
+      sourceUnitId: fastDot.instanceId,
+      sourceScenarioId: fastDot.scenarioId,
+      targetUnitId: fastDot.instanceId,
+      effectType: "buff",
+      timingType: "instant",
+      statKey: "speed",
+      value: 50,
+    });
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Fast Dot"]);
+  });
+
+  it("excludes direct damage from ally-only and zero-interval effects for highest-damage priority", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [createUnit("Caster", { targetPriority: "highest_damage" })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Baseline", {
+              stats: createStats({ meleeDmg: 10, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+            }),
+            createUnit("Ally Burst", {
+              targetScope: "allies",
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Ally Burst Item",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "instant",
+                      directSpellDmg: 100,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+            createUnit("Zero Interval", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Zero Interval Item",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "interval",
+                      intervalTicks: 0,
+                      directSpellDmg: 100,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Baseline"]);
   });
 
   it("selects multiple seeded-random candidates without duplicates", () => {

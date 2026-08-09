@@ -56,7 +56,7 @@ interface BattleReplayResponse {
               name: string;
               remainingTriggers?: number;
               expiresAtTick?: number;
-              statKey?: string;
+              statKey?: keyof BattleStats;
               value: number;
             }[];
           }[]

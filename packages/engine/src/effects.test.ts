@@ -317,7 +317,8 @@ describe("effects", () => {
 
     expect(warrior.currentHealth).toBe(240);
     const damages = state.log
-      .filter((entry) => entry.type === "damage" && entry.origin?.effect?.name === "Triad")
+      .filter((entry) => entry.type === "damage")
+      .filter((entry) => entry.origin?.effect?.name === "Triad")
       .map((entry) => entry.damage);
     expect(damages).toEqual([10, 20, 30]);
   });
@@ -350,9 +351,8 @@ describe("effects", () => {
     expect(warrior.currentHealth).toBe(290);
     expect(
       state.log
-        .filter(
-          (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Melee Pulse",
-        )
+        .filter((entry) => entry.type === "damage")
+        .filter((entry) => entry.origin?.effect?.name === "Melee Pulse")
         .map((entry) => entry.damage),
     ).toEqual([10]);
   });
@@ -385,9 +385,8 @@ describe("effects", () => {
     expect(warrior.currentHealth).toBe(285);
     expect(
       state.log
-        .filter(
-          (entry) => entry.type === "damage" && entry.origin?.effect?.name === "Ranged Pulse",
-        )
+        .filter((entry) => entry.type === "damage")
+        .filter((entry) => entry.origin?.effect?.name === "Ranged Pulse")
         .map((entry) => entry.damage),
     ).toEqual([15]);
   });
@@ -424,9 +423,8 @@ describe("effects", () => {
     expect(mage.currentHealth).toBe(130);
     expect(
       state.log
-        .filter(
-          (entry) => entry.type === "heal" && entry.origin?.effect?.name === "Restorative Triad",
-        )
+        .filter((entry) => entry.type === "heal")
+        .filter((entry) => entry.origin?.effect?.name === "Restorative Triad")
         .map((entry) => entry.amount),
     ).toEqual([30]);
   });

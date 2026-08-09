@@ -286,6 +286,56 @@ describe("unit targeting", () => {
     ).toEqual(["Fast Dot"]);
   });
 
+  it("projects only the direct damage source an instant effect resolves", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", { ranged: [createUnit("Caster")] }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Multi-source Instant", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Misleading Strike",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "instant",
+                      directMeleeDmg: 40,
+                      directSpellDmg: 100,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+            createUnit("Single-source Instant", {
+              stats: createStats({ meleeDmg: 0, rangedDmg: 0, spellDmg: 0, speed: 100 }),
+              items: [
+                createItem({
+                  name: "Reliable Strike",
+                  effects: effectSequence(
+                    createEffect({
+                      effectType: "damage",
+                      timingType: "instant",
+                      directSpellDmg: 80,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Single-source Instant"]);
+  });
+
   it("excludes direct damage from ally-only and zero-interval effects for highest-damage priority", () => {
     const state = initializeBattleState(
       createBattleInput([

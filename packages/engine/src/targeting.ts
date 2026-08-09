@@ -131,13 +131,18 @@ function canTargetEnemies(scope: TargetScope): boolean {
   return scope === "enemies" || scope === "self_enemies" || scope === "both";
 }
 
-function directDamage(effect: EffectTemplateInput): number {
+function intervalDirectDamage(effect: EffectTemplateInput): number {
   if (effect.effectType === "healing") return 0;
   return (
     (effect.directMeleeDmg ?? 0) +
     (effect.directRangedDmg ?? 0) +
     (effect.directSpellDmg ?? 0)
   );
+}
+
+function instantDirectDamage(effect: EffectTemplateInput): number {
+  if (effect.effectType === "healing") return 0;
+  return effect.directMeleeDmg ?? effect.directRangedDmg ?? effect.directSpellDmg ?? 0;
 }
 
 function projectedDamagePerTick(unit: BattleUnitState): number {
@@ -149,12 +154,12 @@ function projectedDamagePerTick(unit: BattleUnitState): number {
   let intervalDamage = 0;
   for (const item of unit.items) {
     for (const { effect } of item.effects) {
-      const damage = directDamage(effect);
       const intervalTicks = effect.intervalTicks ?? 0;
-      if (damage <= 0) continue;
-      if (effect.timingType === "instant") instantDamage += damage;
+      if (effect.timingType === "instant") {
+        instantDamage += instantDirectDamage(effect);
+      }
       if (effect.timingType === "interval" && intervalTicks > 0) {
-        intervalDamage += damage / intervalTicks;
+        intervalDamage += intervalDirectDamage(effect) / intervalTicks;
       }
     }
   }

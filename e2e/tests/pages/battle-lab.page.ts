@@ -11,15 +11,29 @@ interface ExpectedBattleUnit {
   rowType: ScenarioRowType;
   slot: number;
   currentHealth: number;
-  baseStats: { health: number };
-  itemBonusStats: { health: number };
+  baseStats: ExpectedBattleStats;
+  itemBonusStats: ExpectedBattleStats;
   mana: number;
   actedCount: number;
   activeEffects: {
     name: string;
     remainingTriggers?: number;
     expiresAtTick?: number;
+    statKey?: keyof ExpectedBattleStats;
+    value: number;
   }[];
+}
+
+interface ExpectedBattleStats {
+  health: number;
+  mana: number;
+  meleeDmg: number;
+  rangedDmg: number;
+  manaRegen: number;
+  spellDmg: number;
+  speed: number;
+  dodge: number;
+  criticalChance: number;
 }
 
 interface ExpectedBattleReplay {
@@ -52,6 +66,59 @@ interface ExpectedBattleReplay {
 interface ExpectedSelection {
   id: string;
   name: string;
+}
+
+const displayedStatKeys = [
+  ["meleeDmg", "Melee damage"],
+  ["rangedDmg", "Ranged damage"],
+  ["manaRegen", "Mana regeneration"],
+  ["spellDmg", "Spell damage"],
+  ["speed", "Speed"],
+  ["dodge", "Dodge"],
+  ["criticalChance", "Critical chance"],
+] as const satisfies ReadonlyArray<readonly [keyof ExpectedBattleStats, string]>;
+
+function normalStats(unit: ExpectedBattleUnit): ExpectedBattleStats {
+  const stats = { ...unit.baseStats };
+
+  for (const statKey of Object.keys(stats) as Array<keyof ExpectedBattleStats>) {
+    stats[statKey] += unit.itemBonusStats[statKey];
+  }
+
+  return stats;
+}
+
+function effectiveStats(unit: ExpectedBattleUnit): ExpectedBattleStats {
+  const stats = normalStats(unit);
+
+  for (const effect of unit.activeEffects) {
+    if (effect.statKey) stats[effect.statKey] += effect.value;
+  }
+
+  for (const statKey of Object.keys(stats) as Array<keyof ExpectedBattleStats>) {
+    stats[statKey] = Math.max(0, stats[statKey]);
+  }
+
+  return stats;
+}
+
+function displayStatValue(value: number) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function displayStats(unit: ExpectedBattleUnit) {
+  const normal = normalStats(unit);
+  const effective = effectiveStats(unit);
+
+  return new RegExp(
+    displayedStatKeys
+      .map(([statKey, label]) =>
+        normal[statKey] === effective[statKey]
+          ? `${label}\\s*${displayStatValue(normal[statKey])}`
+          : `${label}\\s*${displayStatValue(normal[statKey])}\\s*→\\s*${displayStatValue(effective[statKey])}`,
+      )
+      .join("\\s*"),
+  );
 }
 
 function displayRow(row: ScenarioRowType) {
@@ -164,13 +231,15 @@ export class BattleLabPage {
 
       for (const [index, unit] of units.entries()) {
         const row = table.getByRole("row").nth(index + 1);
+        const effective = effectiveStats(unit);
         await expect(row.getByRole("cell")).toHaveText([
           unit.name,
           displayRow(unit.rowType),
           String(unit.slot),
-          `${unit.currentHealth} / ${unit.baseStats.health + unit.itemBonusStats.health}`,
+          `${unit.currentHealth} / ${effective.health}`,
           unit.currentHealth > 0 ? "Alive" : "Dead",
-          String(unit.mana),
+          `${unit.mana} / ${effective.mana}`,
+          displayStats(unit),
           String(unit.actedCount),
           displayEffects(unit),
         ]);

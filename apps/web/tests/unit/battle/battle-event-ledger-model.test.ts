@@ -91,6 +91,32 @@ describe("buildBattleEventGroups", () => {
     expect(groups).toHaveLength(2);
     expect(groups[1]).toMatchObject({ kind: "event", entry: delayedDamage });
   });
+
+  it("groups consecutive detailed expirations without a current action", () => {
+    const healthExpiration = {
+      ...healthApplication,
+      tick: 13,
+      type: "effect-expire" as const,
+      actionId: undefined,
+      expiresAtTick: 13,
+      message: "health expired",
+    };
+    const speedExpiration = {
+      ...healthExpiration,
+      stat: "speed",
+      message: "speed expired",
+    };
+
+    expect(buildBattleEventGroups([healthExpiration, speedExpiration])).toEqual([
+      {
+        kind: "effect",
+        key: "effect-expire:13:12:alpha:support:1:1:alpha:support:1:hood:all-stats:alpha:ranged:1",
+        eventType: "effect-expire",
+        effect: "+10 all stats",
+        entries: [healthExpiration, speedExpiration],
+      },
+    ]);
+  });
 });
 
 describe("buildBattleLedgerItems", () => {

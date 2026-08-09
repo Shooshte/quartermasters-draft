@@ -47,6 +47,13 @@ export type BattleEventGroup<T extends LedgerLogEntry = LedgerLogEntry> =
       kind: "event";
       key: string;
       entry: T;
+    }
+  | {
+      kind: "effect";
+      key: string;
+      eventType: "effect-apply" | "effect-expire";
+      effect: string;
+      entries: T[];
     };
 
 function isDetailedModifierEntry(
@@ -157,6 +164,22 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
         actorId: entryActorId,
         entries: [entry],
       });
+      continue;
+    }
+
+    if (isDetailedModifierEntry(entry)) {
+      const key = modifierGroupKey(entry);
+      if (lastGroup?.kind === "effect" && lastGroup.key === key) {
+        lastGroup.entries.push(entry);
+      } else {
+        groups.push({
+          kind: "effect",
+          key,
+          eventType: entry.type,
+          effect: entry.origin.effect.name,
+          entries: [entry],
+        });
+      }
       continue;
     }
 

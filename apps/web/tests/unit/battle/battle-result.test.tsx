@@ -293,4 +293,132 @@ describe("BattleResultView", () => {
       within(events).getByText("From Dawn Warden · Ambush at Dawn / Tank 1 · Oak Staff"),
     ).toBeVisible();
   });
+
+  it("nests detailed modifier applications and expirations beneath their effect headings", () => {
+    const actionId = "11:scenario-a:tank:1:8";
+    const effectOrigin = {
+      kind: "item-effect",
+      actionId,
+      sourceUnitId: attackLog.attackerId,
+      item: { id: "hood", name: "Acolyte Hood", position: 1 },
+      effect: { id: "all-stats", name: "+10 all stats", position: 1 },
+    };
+    const result = {
+      ...fixture.result,
+      log: [
+        {
+          tick: 11,
+          type: "item-activation",
+          caster: attackLog.attacker,
+          casterId: attackLog.attackerId,
+          item: "Acolyte Hood",
+          targets: [attackLog.target],
+          targetIds: [attackLog.targetId],
+          effects: ["+10 all stats"],
+          actionId,
+          origin: effectOrigin,
+          message: "Tick 11: Dawn Warden activates Acolyte Hood",
+        },
+        {
+          tick: 11,
+          type: "effect-apply",
+          effect: "+10 all stats",
+          target: "Iron Guard",
+          targetId: "scenario-b:melee:1",
+          stat: "health",
+          value: 10,
+          expiresAtTick: 13,
+          actionId,
+          origin: effectOrigin,
+          message: "Health modified",
+        },
+        {
+          tick: 11,
+          type: "effect-apply",
+          effect: "+10 all stats",
+          target: "Iron Guard",
+          targetId: "scenario-b:melee:1",
+          stat: "speed",
+          value: 10,
+          expiresAtTick: 13,
+          actionId,
+          origin: effectOrigin,
+          message: "Speed modified",
+        },
+        {
+          tick: 13,
+          type: "effect-expire",
+          effect: "+10 all stats",
+          target: "Iron Guard",
+          targetId: "scenario-b:melee:1",
+          stat: "health",
+          value: 10,
+          expiresAtTick: 13,
+          origin: effectOrigin,
+          message: "Health expired",
+        },
+        {
+          tick: 13,
+          type: "effect-expire",
+          effect: "+10 all stats",
+          target: "Iron Guard",
+          targetId: "scenario-b:melee:1",
+          stat: "speed",
+          value: 10,
+          expiresAtTick: 13,
+          origin: effectOrigin,
+          message: "Speed expired",
+        },
+      ],
+    } as unknown as ReplayOutput["result"];
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    const events = screen.getByRole("list", { name: "Battle events" });
+    const effectHeading = within(events).getByText("+10 all stats, 2 ticks", { exact: true });
+    expect(effectHeading).toBeVisible();
+    expect(
+      within(events).getByText(
+        "Health: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+      ),
+    ).toBeVisible();
+    expect(
+      within(events).getByText(
+        "Speed: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+      ),
+    ).toBeVisible();
+    expect(
+      within(events).getByText("+10 all stats, 2 ticks expired on Iron Guard · The Iron Line / Melee 1."),
+    ).toBeVisible();
+    expect(within(events).getByText("Health: +10 expired.")).toBeVisible();
+    expect(within(events).getByText("Speed: +10 expired.")).toBeVisible();
+
+    const effectBlock = effectHeading.parentElement?.parentElement;
+    expect(effectBlock).toContainElement(
+      within(events).getByText("Health: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13)."),
+    );
+    expect(effectBlock).toContainElement(
+      within(events).getByText("Speed: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13)."),
+    );
+  });
+
+  it("keeps legacy effect application sentences when modifier values are absent", () => {
+    const result = {
+      ...fixture.result,
+      log: [
+        {
+          tick: 11,
+          type: "effect-apply",
+          effect: "Ward",
+          target: "Iron Guard",
+          targetId: "scenario-b:melee:1",
+          message: "Ward applied",
+        },
+      ],
+    } as unknown as ReplayOutput["result"];
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    expect(screen.getByText("Ward applied to Iron Guard · The Iron Line / Melee 1.")).toBeVisible();
+  });
 });

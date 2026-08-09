@@ -1,11 +1,23 @@
 import type { AppRouter } from "@qd/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { Card, CardContent, CardDescription, CardHeader } from "~/components/ui/card";
-import { buildBattleEventGroups, type LedgerLogEntry } from "./battle-event-ledger-model";
+import {
+  buildBattleEventGroups,
+  buildBattleLedgerItems,
+  type BattleLedgerItem,
+  type LedgerLogEntry,
+} from "./battle-event-ledger-model";
 
 type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
 type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["rows"]["tank"][number];
 type BattleLogEntry = ReplayOutput["result"]["log"][number];
+type DetailedModifierEntry = Extract<
+  BattleLogEntry,
+  { type: "effect-apply" | "effect-expire" }
+> & { stat: string; value: number; target: string; targetId: string; expiresAtTick: number };
+type EffectLedgerItem = Omit<Extract<BattleLedgerItem<BattleLogEntry>, { kind: "effect" }>, "entries"> & {
+  entries: DetailedModifierEntry[];
+};
 
 interface BattleEventLedgerProps {
   scenarios: ReplayOutput["scenarios"];
@@ -53,6 +65,36 @@ function entryKey(entry: BattleLogEntry) {
     "amount" in entry ? entry.amount : "",
     entry.origin?.effect?.position ?? "",
   ].join(":");
+}
+
+const statLabels: Record<string, string> = {
+  health: "Health",
+  mana: "Mana",
+  meleeDmg: "Melee damage",
+  rangedDmg: "Ranged damage",
+  manaRegen: "Mana regeneration",
+  spellDmg: "Spell damage",
+  speed: "Speed",
+  dodge: "Dodge",
+  criticalChance: "Critical chance",
+};
+
+function displayStat(stat: string) {
+  return statLabels[stat] ?? stat;
+}
+
+function displaySignedValue(value: number) {
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function effectDuration(entry: DetailedModifierEntry) {
+  if (entry.expiresAtTick == null) return null;
+
+  const actionId = entry.actionId ?? entry.origin?.actionId;
+  const actionTick = actionId ? Number(actionId.split(":", 1)[0]) : Number.NaN;
+  const duration = entry.expiresAtTick - actionTick;
+
+  return Number.isFinite(duration) && duration > 0 ? duration : null;
 }
 
 function EventDescription({
@@ -138,6 +180,50 @@ function SourceCaption({
   );
 }
 
+function EffectDescription({
+  group,
+  unitIds,
+}: {
+  group: EffectLedgerItem;
+  unitIds: Map<string, string>;
+}) {
+  const firstEntry = group.entries[0];
+  const target = unitLabel(unitIds, firstEntry.targetId, firstEntry.target ?? "Unknown target");
+  const duration = effectDuration(firstEntry);
+  const effect = duration != null ? `${group.effect}, ${duration} ticks` : group.effect;
+
+  if (group.eventType === "effect-expire") {
+    return (
+      <>
+        <p className="font-medium text-foreground">{effect} expired on {target}.</p>
+        <div className="mt-1 space-y-1 border-l border-primary/30 pl-3">
+          {group.entries.map((entry) => (
+            <p key={entryKey(entry)}>
+              {displayStat(entry.stat!)}: {displaySignedValue(entry.value!)} expired.
+            </p>
+          ))}
+        </div>
+        <SourceCaption entry={firstEntry} unitIds={unitIds} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <p className="font-medium text-foreground">{effect}</p>
+      <div className="mt-1 space-y-1 border-l border-primary/30 pl-3">
+        {group.entries.map((entry) => (
+          <p key={entryKey(entry)}>
+            {displayStat(entry.stat!)}: {displaySignedValue(entry.value!)} on{" "}
+            {unitLabel(unitIds, entry.targetId, entry.target ?? "Unknown target")}
+            {entry.expiresAtTick != null ? ` (until tick ${entry.expiresAtTick})` : ""}.
+          </p>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function BattleEventLedger({ scenarios, result }: BattleEventLedgerProps) {
   const unitIds = createUnitDirectory(scenarios, result);
   const groups = buildBattleEventGroups(result.log as BattleLogEntry[] as LedgerLogEntry[]);
@@ -166,17 +252,40 @@ export function BattleEventLedger({ scenarios, result }: BattleEventLedgerProps)
               );
             }
 
+            if (group.kind === "effect") {
+              return (
+                <li
+                  key={group.key}
+                  className="px-4 py-3 text-sm leading-5 text-foreground/90 sm:px-5"
+                >
+                  <EffectDescription
+                    group={group as EffectLedgerItem}
+                    unitIds={unitIds}
+                  />
+                </li>
+              );
+            }
+
             return (
               <li key={group.key} className="px-4 py-4 sm:px-5">
                 <p className="text-sm font-semibold text-foreground">
                   {unitLabel(unitIds, group.actorId, "Unknown unit")}
                 </p>
                 <div className="mt-2 space-y-2 border-l border-primary/30 pl-3 text-sm leading-5 text-foreground/90">
-                  {group.entries.map((entry) => (
-                    <div key={entryKey(entry as BattleLogEntry)}>
-                      <EventDescription entry={entry as BattleLogEntry} unitIds={unitIds} />
-                    </div>
-                  ))}
+                  {buildBattleLedgerItems(group.entries).map((item) =>
+                    item.kind === "effect" ? (
+                      <div key={item.key}>
+                        <EffectDescription
+                          group={item as EffectLedgerItem}
+                          unitIds={unitIds}
+                        />
+                      </div>
+                    ) : (
+                      <div key={item.key}>
+                        <EventDescription entry={item.entry as BattleLogEntry} unitIds={unitIds} />
+                      </div>
+                    ),
+                  )}
                 </div>
               </li>
             );

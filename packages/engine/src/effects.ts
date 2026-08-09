@@ -195,20 +195,23 @@ function queueIntervalEffect(
   const activeEffects: ActiveEffectState[] = [];
 
   if (effect.effectType === "healing") {
-    activeEffects.push({
-      id: nextEffectId(state),
-      name: effect.name ?? "Effect",
-      sourceUnitId: caster.instanceId,
-      sourceScenarioId: caster.scenarioId,
-      targetUnitId: target.instanceId,
-      effectType: effect.effectType,
-      timingType: effect.timingType,
-      value: effect.directHealing ?? effect.directSpellDmg ?? 0,
-      remainingTriggers: effect.triggerCount ?? 0,
-      nextTriggerTick: tick + (effect.intervalTicks ?? 0),
-      intervalTicks: effect.intervalTicks ?? 0,
-      origin,
-    });
+    const healing = effect.directHealing ?? effect.directSpellDmg;
+    if (typeof healing === "number") {
+      activeEffects.push({
+        id: nextEffectId(state),
+        name: effect.name ?? "Effect",
+        sourceUnitId: caster.instanceId,
+        sourceScenarioId: caster.scenarioId,
+        targetUnitId: target.instanceId,
+        effectType: effect.effectType,
+        timingType: effect.timingType,
+        value: healing,
+        remainingTriggers: effect.triggerCount ?? 0,
+        nextTriggerTick: tick + (effect.intervalTicks ?? 0),
+        intervalTicks: effect.intervalTicks ?? 0,
+        origin,
+      });
+    }
   } else {
     const directDamageValues = [
       effect.directMeleeDmg,

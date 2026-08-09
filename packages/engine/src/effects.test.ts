@@ -431,6 +431,37 @@ describe("effects", () => {
     ).toEqual([30]);
   });
 
+  it("does not queue a healing interval when it has no healing value", () => {
+    const state = createEffectState();
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Empty Restoration",
+        effects: effectSequence(
+          createEffect({
+            name: "Empty Restoration",
+            effectType: "healing",
+            timingType: "interval",
+            intervalTicks: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+
+    processOngoingEffects(state, 1);
+
+    expect(
+      state.scenarios
+        .flatMap((scenario) => Object.values(scenario.rows).flat())
+        .flatMap((unit) => unit.activeEffects),
+    ).toHaveLength(0);
+    expect(state.log.filter((entry) => entry.type === "heal")).toHaveLength(0);
+  });
+
   it("waits intervalTicks before the first trigger and between subsequent triggers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

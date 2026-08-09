@@ -21,6 +21,18 @@ import { BattleLabPage } from "../pages/battle-lab.page";
 
 type ScenarioRowType = "ranged" | "support" | "melee" | "tank";
 
+interface BattleStats {
+  health: number;
+  mana: number;
+  meleeDmg: number;
+  rangedDmg: number;
+  manaRegen: number;
+  spellDmg: number;
+  speed: number;
+  dodge: number;
+  criticalChance: number;
+}
+
 interface BattleReplayResponse {
   scenarios: { id: string; name: string }[];
   result: {
@@ -36,15 +48,15 @@ interface BattleReplayResponse {
             rowType: ScenarioRowType;
             slot: number;
             currentHealth: number;
-            baseStats: { health: number; mana: number };
-            itemBonusStats: { health: number; mana: number };
+            baseStats: BattleStats;
+            itemBonusStats: BattleStats;
             mana: number;
             actedCount: number;
             activeEffects: {
               name: string;
               remainingTriggers?: number;
               expiresAtTick?: number;
-              statKey?: string;
+              statKey?: keyof BattleStats;
               value: number;
             }[];
           }[]

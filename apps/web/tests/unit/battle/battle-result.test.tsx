@@ -180,6 +180,51 @@ describe("BattleResultView", () => {
     ]);
   });
 
+  it("renders normal and effective final stats in the unit ledger", () => {
+    const finalStateUnit = unit({
+      itemBonusStats: { ...zeroStats, mana: 20, meleeDmg: 4, dodge: 2 },
+      activeEffects: [
+        { statKey: "health", value: 20 },
+        { statKey: "mana", value: 10 },
+        { statKey: "meleeDmg", value: 6 },
+        { statKey: "speed", value: -4 },
+        { statKey: "dodge", value: -50 },
+        { value: 100 },
+      ] as BattleUnit["activeEffects"],
+    });
+    const result: typeof fixture.result = {
+      ...fixture.result,
+      finalState: {
+        ...fixture.result.finalState,
+        scenarios: [
+          {
+            ...fixture.result.finalState.scenarios[0],
+            rows: {
+              ...fixture.result.finalState.scenarios[0].rows,
+              tank: [finalStateUnit],
+            },
+          },
+          fixture.result.finalState.scenarios[1],
+        ],
+      },
+    };
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    const ledger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
+    const dawnWardenRow = within(ledger).getAllByRole("row")[1];
+
+    expect(within(dawnWardenRow).getByRole("cell", { name: "82 / 140" })).toBeVisible();
+    expect(within(dawnWardenRow).getByRole("cell", { name: "34 / 130" })).toBeVisible();
+    expect(dawnWardenRow).toHaveTextContent(/Melee damage\s*32 →\s*38/);
+    expect(dawnWardenRow).toHaveTextContent(/Speed\s*14 →\s*10/);
+    expect(dawnWardenRow).toHaveTextContent(/Ranged damage\s*0/);
+    expect(dawnWardenRow).toHaveTextContent(/Mana regeneration\s*2/);
+    expect(dawnWardenRow).toHaveTextContent(/Spell damage\s*0/);
+    expect(dawnWardenRow).toHaveTextContent(/Dodge\s*2 →\s*0/);
+    expect(dawnWardenRow).toHaveTextContent(/Critical chance\s*0/);
+  });
+
   it("renders a draw when neither scenario wins", () => {
     render(
       <BattleResultView

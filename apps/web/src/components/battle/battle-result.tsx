@@ -21,6 +21,40 @@ interface BattleResultViewProps {
 
 const rowOrder = ["tank", "melee", "ranged", "support"] as const;
 
+const displayedStatKeys = [
+  ["meleeDmg", "Melee damage"],
+  ["rangedDmg", "Ranged damage"],
+  ["manaRegen", "Mana regeneration"],
+  ["spellDmg", "Spell damage"],
+  ["speed", "Speed"],
+  ["dodge", "Dodge"],
+  ["criticalChance", "Critical chance"],
+] as const;
+
+function normalStats(unit: BattleUnit) {
+  const stats = { ...unit.baseStats };
+
+  for (const statKey of Object.keys(stats) as Array<keyof typeof stats>) {
+    stats[statKey] += unit.itemBonusStats[statKey];
+  }
+
+  return stats;
+}
+
+function effectiveStats(unit: BattleUnit) {
+  const stats = normalStats(unit);
+
+  for (const effect of unit.activeEffects) {
+    if (effect.statKey) stats[effect.statKey] += effect.value;
+  }
+
+  for (const statKey of Object.keys(stats) as Array<keyof typeof stats>) {
+    stats[statKey] = Math.max(0, stats[statKey]);
+  }
+
+  return stats;
+}
+
 function displayRow(row: BattleUnit["rowType"]) {
   return `${row.charAt(0).toUpperCase()}${row.slice(1)}`;
 }
@@ -73,6 +107,7 @@ function FinalStateLedger({
               <TableHead>Health</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Mana</TableHead>
+              <TableHead>Stats</TableHead>
               <TableHead>Actions</TableHead>
               <TableHead className="pr-4">Active effects</TableHead>
             </TableRow>
@@ -80,35 +115,69 @@ function FinalStateLedger({
           <TableBody>
             {units.length === 0 ? (
               <TableRow disableHover>
-                <TableCell colSpan={8} className="px-4 py-5 text-muted-foreground italic">
+                <TableCell colSpan={9} className="px-4 py-5 text-muted-foreground italic">
                   No units in this scenario.
                 </TableCell>
               </TableRow>
             ) : (
-              units.map((unit) => (
-                <TableRow key={unit.instanceId}>
-                  <TableCell className="pl-4 font-medium text-foreground">{unit.name}</TableCell>
-                  <TableCell>{displayRow(unit.rowType)}</TableCell>
-                  <TableCell className="tabular-nums">{unit.slot}</TableCell>
-                  <TableCell className="tabular-nums">
-                    {unit.currentHealth} / {unit.baseStats.health + unit.itemBonusStats.health}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={
-                        unit.currentHealth > 0 ? "text-emerald-300/90" : "text-muted-foreground"
-                      }
-                    >
-                      {unit.currentHealth > 0 ? "Alive" : "Dead"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="tabular-nums">{unit.mana}</TableCell>
-                  <TableCell className="tabular-nums">{unit.actedCount}</TableCell>
-                  <TableCell className="max-w-64 whitespace-normal text-muted-foreground">
-                    {displayEffects(unit)}
-                  </TableCell>
-                </TableRow>
-              ))
+              units.map((unit) => {
+                const normal = normalStats(unit);
+                const effective = effectiveStats(unit);
+
+                return (
+                  <TableRow key={unit.instanceId}>
+                    <TableCell className="pl-4 font-medium text-foreground">{unit.name}</TableCell>
+                    <TableCell>{displayRow(unit.rowType)}</TableCell>
+                    <TableCell className="tabular-nums">{unit.slot}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {unit.currentHealth} / {effective.health}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={
+                          unit.currentHealth > 0 ? "text-emerald-300/90" : "text-muted-foreground"
+                        }
+                      >
+                        {unit.currentHealth > 0 ? "Alive" : "Dead"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {unit.mana} / {effective.mana}
+                    </TableCell>
+                    <TableCell>
+                      <dl className="space-y-1 text-xs">
+                        {displayedStatKeys.map(([statKey, label]) => {
+                          const changed = normal[statKey] !== effective[statKey];
+                          const effectiveClassName =
+                            effective[statKey] > normal[statKey]
+                              ? "text-emerald-300/90"
+                              : "text-rose-300/90";
+
+                          return (
+                            <div key={statKey} className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">{label}</dt>
+                              <dd className="tabular-nums">
+                                {changed ? (
+                                  <>
+                                    {normal[statKey]} →{" "}
+                                    <span className={effectiveClassName}>{effective[statKey]}</span>
+                                  </>
+                                ) : (
+                                  normal[statKey]
+                                )}
+                              </dd>
+                            </div>
+                          );
+                        })}
+                      </dl>
+                    </TableCell>
+                    <TableCell className="tabular-nums">{unit.actedCount}</TableCell>
+                    <TableCell className="max-w-64 whitespace-normal text-muted-foreground">
+                      {displayEffects(unit)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

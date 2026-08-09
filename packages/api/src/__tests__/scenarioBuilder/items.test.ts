@@ -41,8 +41,30 @@ describe("itemsRouter", () => {
 
     it("returns items with totalCount and default limit=20", async () => {
       const mockItems = [
-        { id: "1", name: "Alpha", updatedAt: new Date() },
-        { id: "2", name: "Beta", updatedAt: new Date() },
+        {
+          id: "1",
+          name: "Alpha",
+          updatedAt: new Date(),
+          meleeDmg: 8,
+          rangedDmg: 1,
+          mana: 2,
+          manaRegen: 3,
+          spellDmg: 4,
+          dodge: 5,
+          criticalChance: 6,
+        },
+        {
+          id: "2",
+          name: "Beta",
+          updatedAt: new Date(),
+          meleeDmg: 18,
+          rangedDmg: 11,
+          mana: 12,
+          manaRegen: 13,
+          spellDmg: 14,
+          dodge: 15,
+          criticalChance: 16,
+        },
       ];
       let callCount = 0;
       mockSelect.mockImplementation(() => {
@@ -53,6 +75,18 @@ describe("itemsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.items.list();
+      expect(Object.keys(mockSelect.mock.calls[0]?.[0] ?? {})).toEqual([
+        "id",
+        "name",
+        "updatedAt",
+        "meleeDmg",
+        "rangedDmg",
+        "mana",
+        "manaRegen",
+        "spellDmg",
+        "dodge",
+        "criticalChance",
+      ]);
       expect(result.items).toEqual(mockItems);
       expect(result.page).toBe(1);
       expect(result.limit).toBe(20);

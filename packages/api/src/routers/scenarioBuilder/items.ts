@@ -166,6 +166,13 @@ export const itemsRouter = router({
         id: items.id,
         name: items.name,
         updatedAt: items.updatedAt,
+        meleeDmg: items.meleeDmg,
+        rangedDmg: items.rangedDmg,
+        mana: items.mana,
+        manaRegen: items.manaRegen,
+        spellDmg: items.spellDmg,
+        dodge: items.dodge,
+        criticalChance: items.criticalChance,
       })
       .from(items);
     const countQuery = db.select({ count: count() }).from(items);

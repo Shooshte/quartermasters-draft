@@ -1,7 +1,7 @@
 import type { AppRouter } from "@qd/api";
 import { render, screen, within } from "@testing-library/react";
 import type { inferRouterOutputs } from "@trpc/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { BattleResultView } from "~/components/battle/battle-result";
 
 type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
@@ -426,5 +426,43 @@ describe("BattleResultView", () => {
     render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
 
     expect(screen.getByText("Ward applied to Iron Guard · The Iron Line / Melee 1.")).toBeVisible();
+  });
+
+  it("renders seven multi-stat expiration rows without duplicate React keys", () => {
+    const effectOrigin = {
+      kind: "item-effect",
+      sourceUnitId: attackLog.attackerId,
+      item: { id: "hood", name: "Acolyte Hood", position: 1 },
+      effect: { id: "all-stats", name: "+10 all stats, 2 ticks", position: 1 },
+    };
+    const result = {
+      ...fixture.result,
+      log: ["health", "mana", "meleeDmg", "rangedDmg", "manaRegen", "spellDmg", "speed"].map(
+        (stat) => ({
+          tick: 13,
+          type: "effect-expire",
+          effect: "+10 all stats, 2 ticks",
+          target: "Iron Guard",
+          targetId: "scenario-b:melee:1",
+          stat,
+          value: 10,
+          expiresAtTick: 13,
+          origin: effectOrigin,
+          message: "Tick 13: +10 all stats, 2 ticks expires on Iron Guard",
+        }),
+      ),
+    } as unknown as ReplayOutput["result"];
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    try {
+      render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+      expect(screen.getAllByText(/: \+10 expired\./)).toHaveLength(7);
+      expect(consoleError.mock.calls.flat().join(" ")).not.toContain(
+        "Encountered two children with the same key",
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });

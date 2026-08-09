@@ -67,6 +67,8 @@ function entryKey(entry: BattleLogEntry) {
     entry.type,
     entry.message,
     "targetId" in entry ? entry.targetId : "",
+    "stat" in entry ? entry.stat : "",
+    "value" in entry ? entry.value : "",
     "damage" in entry ? entry.damage : "",
     "amount" in entry ? entry.amount : "",
     entry.origin?.effect?.position ?? "",

@@ -801,6 +801,13 @@ export function useCreatePageState(
     itemOptions: (itemOptionsQuery.data ?? []).map((item: ItemOption) => ({
       id: item.id,
       name: item.name,
+      meleeDmg: item.meleeDmg,
+      rangedDmg: item.rangedDmg,
+      mana: item.mana,
+      manaRegen: item.manaRegen,
+      spellDmg: item.spellDmg,
+      dodge: item.dodge,
+      criticalChance: item.criticalChance,
     })),
     listLoading: allLoading,
     listFetching: allFetching,

@@ -8,7 +8,14 @@ import type {
   EffectExpireLogEntry,
   FatigueLogEntry,
   HealLogEntry,
+  StatKey,
 } from "./types";
+
+type EffectLogModifier = {
+  stat: StatKey;
+  value: number;
+  expiresAtTick: number;
+};
 
 export function pushLog(state: BattleState, entry: BattleLogEntry): void {
   state.log.push(entry);
@@ -19,7 +26,7 @@ export function logEffectApplied(
   tick: number,
   target: BattleUnitState,
   effect: string,
-  stat?: string,
+  modifier: EffectLogModifier,
   actionId?: string,
   origin?: BattleLogOrigin,
 ): void {
@@ -29,12 +36,12 @@ export function logEffectApplied(
     target: target.name,
     targetId: target.instanceId,
     effect,
-    stat,
+    stat: modifier.stat,
+    value: modifier.value,
+    expiresAtTick: modifier.expiresAtTick,
     actionId,
     origin,
-    message: stat
-      ? `Tick ${tick}: ${target.name} gains ${effect} (${stat} modified)`
-      : `Tick ${tick}: ${target.name} gains ${effect}`,
+    message: `Tick ${tick}: ${target.name} gains ${effect} (${modifier.stat} modified)`,
   };
   pushLog(state, entry);
 }
@@ -44,6 +51,7 @@ export function logEffectExpired(
   tick: number,
   target: BattleUnitState,
   effect: string,
+  modifier: EffectLogModifier | undefined,
   origin?: BattleLogOrigin,
 ): void {
   const entry: EffectExpireLogEntry = {
@@ -52,6 +60,13 @@ export function logEffectExpired(
     target: target.name,
     targetId: target.instanceId,
     effect,
+    ...(modifier
+      ? {
+          stat: modifier.stat,
+          value: modifier.value,
+          expiresAtTick: modifier.expiresAtTick,
+        }
+      : {}),
     origin,
     message: `Tick ${tick}: ${effect} expires on ${target.name}`,
   };

@@ -262,7 +262,9 @@ export interface EffectApplyLogEntry extends BaseLogEntry {
   target: string;
   targetId: string;
   effect: string;
-  stat?: string;
+  stat: StatKey;
+  value: number;
+  expiresAtTick: number;
 }
 
 export interface EffectExpireLogEntry extends BaseLogEntry {
@@ -270,6 +272,9 @@ export interface EffectExpireLogEntry extends BaseLogEntry {
   target: string;
   targetId: string;
   effect: string;
+  stat?: StatKey;
+  value?: number;
+  expiresAtTick?: number;
 }
 
 export interface DamageLogEntry extends BaseLogEntry {

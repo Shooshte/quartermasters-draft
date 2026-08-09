@@ -111,13 +111,13 @@ function displayStats(unit: ExpectedBattleUnit) {
   const effective = effectiveStats(unit);
 
   return new RegExp(
-    displayedStatKeys
+    `^${displayedStatKeys
       .map(([statKey, label]) =>
         normal[statKey] === effective[statKey]
           ? `${label}\\s*${displayStatValue(normal[statKey])}`
           : `${label}\\s*${displayStatValue(normal[statKey])}\\s*→\\s*${displayStatValue(effective[statKey])}`,
       )
-      .join("\\s*"),
+      .join("\\s*")}$`,
   );
 }
 

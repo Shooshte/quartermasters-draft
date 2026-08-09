@@ -168,9 +168,9 @@ function applyInstantEffect(
         target,
         effect.name ?? "Effect",
         {
-          stat: activeEffect.statKey!,
+          stat: modifier.statKey,
           value: activeEffect.value,
-          expiresAtTick: activeEffect.expiresAtTick!,
+          expiresAtTick: tick + (effect.durationTicks ?? 0),
         },
         origin.actionId,
         origin,

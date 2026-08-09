@@ -56,9 +56,7 @@ export type BattleEventGroup<T extends LedgerLogEntry = LedgerLogEntry> =
       entries: T[];
     };
 
-function isDetailedModifierEntry(
-  entry: LedgerLogEntry,
-): entry is LedgerLogEntry & {
+function isDetailedModifierEntry(entry: LedgerLogEntry): entry is LedgerLogEntry & {
   type: "effect-apply" | "effect-expire";
   origin: NonNullable<LedgerLogEntry["origin"]> & {
     effect: NonNullable<NonNullable<LedgerLogEntry["origin"]>["effect"]>;

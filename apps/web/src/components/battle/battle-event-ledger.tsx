@@ -2,20 +2,26 @@ import type { AppRouter } from "@qd/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { Card, CardContent, CardDescription, CardHeader } from "~/components/ui/card";
 import {
+  type BattleLedgerItem,
   buildBattleEventGroups,
   buildBattleLedgerItems,
-  type BattleLedgerItem,
   type LedgerLogEntry,
 } from "./battle-event-ledger-model";
 
 type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
 type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["rows"]["tank"][number];
 type BattleLogEntry = ReplayOutput["result"]["log"][number];
-type DetailedModifierEntry = Extract<
-  BattleLogEntry,
-  { type: "effect-apply" | "effect-expire" }
-> & { stat: string; value: number; target: string; targetId: string; expiresAtTick: number };
-type EffectLedgerItem = Omit<Extract<BattleLedgerItem<BattleLogEntry>, { kind: "effect" }>, "entries"> & {
+type DetailedModifierEntry = Extract<BattleLogEntry, { type: "effect-apply" | "effect-expire" }> & {
+  stat: string;
+  value: number;
+  target: string;
+  targetId: string;
+  expiresAtTick: number;
+};
+type EffectLedgerItem = Omit<
+  Extract<BattleLedgerItem<BattleLogEntry>, { kind: "effect" }>,
+  "entries"
+> & {
   entries: DetailedModifierEntry[];
 };
 
@@ -183,11 +189,13 @@ function EffectDescription({
   if (group.eventType === "effect-expire") {
     return (
       <>
-        <p className="font-medium text-foreground">{group.effect} expired on {target}.</p>
+        <p className="font-medium text-foreground">
+          {group.effect} expired on {target}.
+        </p>
         <div className="mt-1 space-y-1 border-l border-primary/30 pl-3">
           {group.entries.map((entry) => (
             <p key={entryKey(entry)}>
-              {displayStat(entry.stat!)}: {displaySignedValue(entry.value!)} expired.
+              {displayStat(entry.stat)}: {displaySignedValue(entry.value)} expired.
             </p>
           ))}
         </div>
@@ -202,7 +210,7 @@ function EffectDescription({
       <div className="mt-1 space-y-1 border-l border-primary/30 pl-3">
         {group.entries.map((entry) => (
           <p key={entryKey(entry)}>
-            {displayStat(entry.stat!)}: {displaySignedValue(entry.value!)} on{" "}
+            {displayStat(entry.stat)}: {displaySignedValue(entry.value)} on{" "}
             {unitLabel(unitIds, entry.targetId, entry.target ?? "Unknown target")}
             {entry.expiresAtTick != null ? ` (until tick ${entry.expiresAtTick})` : ""}.
           </p>
@@ -246,10 +254,7 @@ export function BattleEventLedger({ scenarios, result }: BattleEventLedgerProps)
                   key={group.key}
                   className="px-4 py-3 text-sm leading-5 text-foreground/90 sm:px-5"
                 >
-                  <EffectDescription
-                    group={group as EffectLedgerItem}
-                    unitIds={unitIds}
-                  />
+                  <EffectDescription group={group as EffectLedgerItem} unitIds={unitIds} />
                 </li>
               );
             }
@@ -263,10 +268,7 @@ export function BattleEventLedger({ scenarios, result }: BattleEventLedgerProps)
                   {buildBattleLedgerItems(group.entries).map((item) =>
                     item.kind === "effect" ? (
                       <div key={item.key}>
-                        <EffectDescription
-                          group={item as EffectLedgerItem}
-                          unitIds={unitIds}
-                        />
+                        <EffectDescription group={item as EffectLedgerItem} unitIds={unitIds} />
                       </div>
                     ) : (
                       <div key={item.key}>

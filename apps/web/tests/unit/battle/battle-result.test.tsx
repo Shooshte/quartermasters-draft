@@ -388,17 +388,23 @@ describe("BattleResultView", () => {
       ),
     ).toBeVisible();
     expect(
-      within(events).getByText("+10 all stats, 2 ticks expired on Iron Guard · The Iron Line / Melee 1."),
+      within(events).getByText(
+        "+10 all stats, 2 ticks expired on Iron Guard · The Iron Line / Melee 1.",
+      ),
     ).toBeVisible();
     expect(within(events).getByText("Health: +10 expired.")).toBeVisible();
     expect(within(events).getByText("Speed: +10 expired.")).toBeVisible();
 
     const effectBlock = effectHeading.parentElement?.parentElement;
     expect(effectBlock).toContainElement(
-      within(events).getByText("Health: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13)."),
+      within(events).getByText(
+        "Health: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+      ),
     );
     expect(effectBlock).toContainElement(
-      within(events).getByText("Speed: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13)."),
+      within(events).getByText(
+        "Speed: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+      ),
     );
   });
 

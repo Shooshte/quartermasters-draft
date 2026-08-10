@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 interface WorkspaceNumericFieldProps {
   id: string;
   testId: string;
@@ -8,6 +10,7 @@ interface WorkspaceNumericFieldProps {
   step?: number | "any";
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   cellClassName?: string;
+  supportingContent?: ReactNode;
   onChange: (value: string) => void;
 }
 
@@ -21,6 +24,7 @@ export function WorkspaceNumericField({
   step = "any",
   inputMode = "decimal",
   cellClassName = "ws-cell-neutral",
+  supportingContent,
   onChange,
 }: WorkspaceNumericFieldProps) {
   const stringValue = value ?? "";
@@ -46,6 +50,7 @@ export function WorkspaceNumericField({
         aria-invalid={error ? true : undefined}
         onChange={(event) => onChange(event.target.value)}
       />
+      {supportingContent}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );

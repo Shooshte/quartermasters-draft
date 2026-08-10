@@ -139,3 +139,14 @@ Feature: Unit workspace create and edit
     And I remove the item at position 3
     And I save the unit
     Then reloading the unit by URL should show "Iron Sword" at both positions
+
+  Scenario: Preview final stats from equipped items before saving
+    When I start creating a new unit with melee damage 10 and critical chance 2
+    Then final melee damage should be 10 with no item contribution
+    When I link item "Iron Sword" to the unit
+    Then final melee damage should be 25 with a 15 item contribution
+    And final critical chance should be 7 with a 5 item contribution
+    When I link item "Iron Sword" to the unit again
+    Then final melee damage should be 40 with a 30 item contribution
+    When I remove one linked "Iron Sword"
+    Then final melee damage should be 25 with a 15 item contribution

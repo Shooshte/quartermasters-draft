@@ -1,12 +1,14 @@
 import type { LinkedEntityOption } from "./linked-entity-picker";
 import { LinkedEntitySection } from "./linked-entity-section";
 import {
+  computeUnitStatPreviews,
   getUnitFieldLabel,
   hasUnitFormErrors,
   type ItemOption,
   UNIT_COMBAT_FIELDS,
   UNIT_VITAL_FIELDS,
   type UnitFormValues,
+  type UnitNumericField,
   validateUnitForm,
 } from "./unit-form";
 import { UnitTargetingCard } from "./unit-targeting-card";
@@ -38,10 +40,24 @@ export function UnitWorkspaceForm({
 }: UnitWorkspaceFormProps) {
   const errors = validateUnitForm(formValues);
   const saveLabel = mode === "create" ? "Create Unit" : "Save Changes";
+  const statPreviews = computeUnitStatPreviews(formValues, itemOptions);
   const linkedItemOptions: LinkedEntityOption[] = itemOptions.map((item) => ({
     id: item.id,
     name: item.name,
   }));
+  const renderStatPreview = (field: UnitNumericField) => {
+    const preview = statPreviews[field];
+    const bonusPrefix = preview.itemBonus > 0 ? "+" : "";
+
+    return (
+      <p className="mt-1 min-h-4 text-xs text-muted-foreground" data-testid={`unit-${field}-final`}>
+        <span className="font-medium text-foreground">
+          Final {preview.finalValue === null ? "—" : preview.finalValue}
+        </span>
+        {preview.itemBonus !== 0 ? ` (${bonusPrefix}${preview.itemBonus} items)` : null}
+      </p>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4" data-testid="unit-form-fields">
@@ -89,6 +105,7 @@ export function UnitWorkspaceForm({
               label={getUnitFieldLabel(field)}
               value={formValues[field]}
               error={errors[field]}
+              supportingContent={renderStatPreview(field)}
               onChange={(value) => onFieldChange(field, value)}
             />
           ))}
@@ -105,6 +122,7 @@ export function UnitWorkspaceForm({
               label={getUnitFieldLabel(field)}
               value={formValues[field]}
               error={errors[field]}
+              supportingContent={renderStatPreview(field)}
               onChange={(value) => onFieldChange(field, value)}
             />
           ))}

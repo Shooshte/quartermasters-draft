@@ -1,8 +1,3 @@
-export interface ItemOption {
-  id: string;
-  name: string;
-}
-
 export type TargetScope = "self" | "self_allies" | "self_enemies" | "allies" | "enemies" | "both";
 export type TargetPriority =
   | "highest_health"
@@ -40,6 +35,44 @@ export const UNIT_NUMERIC_FIELDS = [
   "dodge",
   "criticalChance",
 ] as const;
+
+export type UnitNumericField = (typeof UNIT_NUMERIC_FIELDS)[number];
+
+type ItemStatField =
+  | "meleeDmg"
+  | "rangedDmg"
+  | "mana"
+  | "manaRegen"
+  | "spellDmg"
+  | "dodge"
+  | "criticalChance";
+
+export interface ItemOption {
+  id: string;
+  name: string;
+  meleeDmg?: number;
+  rangedDmg?: number;
+  mana?: number;
+  manaRegen?: number;
+  spellDmg?: number;
+  dodge?: number;
+  criticalChance?: number;
+}
+
+export interface UnitStatPreview {
+  finalValue: number | null;
+  itemBonus: number;
+}
+
+const ITEM_STAT_FIELDS: readonly ItemStatField[] = [
+  "meleeDmg",
+  "rangedDmg",
+  "mana",
+  "manaRegen",
+  "spellDmg",
+  "dodge",
+  "criticalChance",
+];
 
 export const UNIT_COMBAT_FIELDS = ["meleeDmg", "rangedDmg", "spellDmg", "criticalChance"] as const;
 
@@ -136,6 +169,39 @@ export function createDefaultUnitFormValues(): UnitFormValues {
     targetCount: 1,
     selectionShape: "individual",
   };
+}
+
+export function computeUnitStatPreviews(
+  values: UnitFormValues,
+  itemOptions: ItemOption[],
+): Record<UnitNumericField, UnitStatPreview> {
+  const optionsById = new Map(itemOptions.map((item) => [item.id, item]));
+  const itemBonuses = Object.fromEntries(UNIT_NUMERIC_FIELDS.map((field) => [field, 0])) as Record<
+    UnitNumericField,
+    number
+  >;
+
+  for (const itemId of values.itemIds) {
+    const item = optionsById.get(itemId);
+    if (!item) continue;
+
+    for (const field of ITEM_STAT_FIELDS) {
+      const modifier = item[field];
+      if (typeof modifier === "number" && Number.isFinite(modifier)) {
+        itemBonuses[field] += modifier;
+      }
+    }
+  }
+
+  return Object.fromEntries(
+    UNIT_NUMERIC_FIELDS.map((field) => {
+      const baseValue = values[field].trim() === "" ? 0 : Number(values[field]);
+      const finalValue = Number.isFinite(baseValue)
+        ? Math.max(0, baseValue + itemBonuses[field])
+        : null;
+      return [field, { finalValue, itemBonus: itemBonuses[field] }];
+    }),
+  ) as Record<UnitNumericField, UnitStatPreview>;
 }
 
 function numberToFormValue(value: number | null | undefined): string {

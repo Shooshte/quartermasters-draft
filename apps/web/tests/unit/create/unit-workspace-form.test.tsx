@@ -1,7 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { UnitFormValues } from "~/components/create/unit-form";
+import {
+  type ItemOption,
+  UNIT_NUMERIC_FIELDS,
+  type UnitFormValues,
+} from "~/components/create/unit-form";
 import { UnitWorkspaceForm } from "~/components/create/unit-workspace-form";
 
 const defaultFormValues: UnitFormValues = {
@@ -34,7 +38,7 @@ const sampleItemOptions = [
 function renderForm(
   overrides: {
     formValues?: Partial<UnitFormValues>;
-    itemOptions?: typeof sampleItemOptions;
+    itemOptions?: ItemOption[];
     onFieldChange?: (field: string, value: unknown) => void;
     onSave?: () => void;
     onEditItem?: (itemId: string) => void;
@@ -72,6 +76,46 @@ describe("UnitWorkspaceForm", () => {
     expect(screen.getByTestId("unit-target-scope-select")).toHaveValue("enemies");
     expect(screen.getByTestId("unit-target-priority-select")).toHaveValue("highest_health");
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Unit");
+  });
+
+  it("shows persistent final stats and aggregate item contributions inline", () => {
+    renderForm({
+      formValues: {
+        name: "Twinblade Adept",
+        meleeDmg: "10",
+        health: "95",
+        criticalChance: "2",
+        itemIds: ["it-1", "it-1"],
+      },
+      itemOptions: [{ id: "it-1", name: "Iron Sword", meleeDmg: 8, criticalChance: 3 }],
+    });
+
+    expect(screen.getByTestId("unit-meleeDmg-final")).toHaveTextContent("Final 26 (+16 items)");
+    expect(screen.getByTestId("unit-criticalChance-final")).toHaveTextContent("Final 8 (+6 items)");
+    expect(screen.getByTestId("unit-health-final")).toHaveTextContent("Final 95");
+    expect(screen.getByTestId("unit-health-final")).not.toHaveTextContent("items");
+    expect(screen.getByTestId("unit-speed-final")).toHaveTextContent("Final 0");
+    for (const field of UNIT_NUMERIC_FIELDS) {
+      expect(screen.getByTestId(`unit-${field}-final`)).toBeVisible();
+    }
+  });
+
+  it("shows a negative item contribution beside the zero-clamped final value", () => {
+    renderForm({
+      formValues: { name: "Cursed Scout", dodge: "2", itemIds: ["curse"] },
+      itemOptions: [{ id: "curse", name: "Cursed Boots", dodge: -5 }],
+    });
+
+    expect(screen.getByTestId("unit-dodge-final")).toHaveTextContent("Final 0 (-5 items)");
+  });
+
+  it("shows an unavailable final value for invalid base input", () => {
+    renderForm({
+      formValues: { name: "Broken Mage", spellDmg: "Infinity", itemIds: ["it-2"] },
+      itemOptions: [{ id: "it-2", name: "Oak Staff", spellDmg: 12 }],
+    });
+
+    expect(screen.getByTestId("unit-spellDmg-final")).toHaveTextContent("Final — (+12 items)");
   });
 
   it("disables save when the name is missing", () => {

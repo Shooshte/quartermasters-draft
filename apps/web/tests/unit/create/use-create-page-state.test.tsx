@@ -2100,6 +2100,18 @@ describe("useCreatePageState — unit save flows", () => {
   });
 
   it("loads item options across multiple list pages for the unit workspace", async () => {
+    const finalItem = {
+      id: "it-101",
+      name: "Item 101",
+      meleeDmg: 8,
+      rangedDmg: 1,
+      mana: 2,
+      manaRegen: 3,
+      spellDmg: 4,
+      dodge: 5,
+      criticalChance: 6,
+    };
+
     mockItemsList.mockImplementation(({ page, limit }: { page: number; limit: number }) => {
       if (page === 1) {
         return Promise.resolve({
@@ -2112,7 +2124,7 @@ describe("useCreatePageState — unit save flows", () => {
       }
 
       return Promise.resolve({
-        items: [{ id: "it-101", name: "Item 101" }],
+        items: [finalItem],
         totalCount: limit + 1,
       });
     });
@@ -2128,6 +2140,8 @@ describe("useCreatePageState — unit save flows", () => {
     await waitFor(() => {
       expect(result.current.itemOptions).toHaveLength(101);
     });
+
+    expect(result.current.itemOptions.at(-1)).toEqual(finalItem);
 
     expect(mockItemsList).toHaveBeenNthCalledWith(1, {
       limit: 100,

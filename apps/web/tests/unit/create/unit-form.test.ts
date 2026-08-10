@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeUnitStatPreviews,
   createDefaultUnitFormValues,
   isUnitFormDirty,
   normalizeUnitFormValues,
@@ -25,6 +26,58 @@ describe("unit-form", () => {
       targetCount: 1,
       selectionShape: "individual",
     });
+  });
+
+  it("adds linked item stats once per occurrence and ignores unavailable item options", () => {
+    const previews = computeUnitStatPreviews(
+      {
+        ...createDefaultUnitFormValues(),
+        meleeDmg: "10",
+        health: "95",
+        speed: "1.25",
+        criticalChance: "2",
+        itemIds: ["sword", "missing", "sword"],
+      },
+      [
+        {
+          id: "sword",
+          name: "Iron Sword",
+          meleeDmg: 8,
+          criticalChance: 3,
+        },
+      ],
+    );
+
+    expect(previews.meleeDmg).toEqual({ finalValue: 26, itemBonus: 16 });
+    expect(previews.criticalChance).toEqual({ finalValue: 8, itemBonus: 6 });
+    expect(previews.health).toEqual({ finalValue: 95, itemBonus: 0 });
+    expect(previews.speed).toEqual({ finalValue: 1.25, itemBonus: 0 });
+  });
+
+  it("clamps final stats at zero while preserving the raw item contribution", () => {
+    const previews = computeUnitStatPreviews(
+      {
+        ...createDefaultUnitFormValues(),
+        dodge: "2",
+        itemIds: ["curse"],
+      },
+      [{ id: "curse", name: "Cursed Boots", dodge: -5 }],
+    );
+
+    expect(previews.dodge).toEqual({ finalValue: 0, itemBonus: -5 });
+  });
+
+  it("returns no final value for a non-finite unit base stat", () => {
+    const previews = computeUnitStatPreviews(
+      {
+        ...createDefaultUnitFormValues(),
+        spellDmg: "Infinity",
+        itemIds: ["staff"],
+      },
+      [{ id: "staff", name: "Oak Staff", spellDmg: 12 }],
+    );
+
+    expect(previews.spellDmg).toEqual({ finalValue: null, itemBonus: 12 });
   });
 
   it("rejects negative mana capacity", () => {

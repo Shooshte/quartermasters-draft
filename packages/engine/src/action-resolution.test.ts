@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveUnitAction } from "./resolution";
+import { commitPlannedActions } from "./action-operations";
+import { planUnitAction, resolveUnitAction } from "./resolution";
 import { initializeBattleState } from "./state";
 import {
   createBattleInput,
@@ -55,6 +56,133 @@ function makeStateWithWarrior(
 }
 
 describe("action resolution", () => {
+  it("plans same-batch targeting from one common snapshot", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
+            createUnit("Archer One", { stats: createStats({ rangedDmg: 20 }) }),
+            createUnit("Archer Two", { stats: createStats({ rangedDmg: 20 }) }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Healthy", { stats: createStats({ health: 200 }) }),
+            createUnit("Wounded", { stats: createStats({ health: 150 }) }),
+          ],
+        }),
+      ]),
+    );
+    const [first, second] = state.scenarios[0].rows.ranged;
+    let effectId = 0;
+    const allocateEffectId = () => `planned-effect-${++effectId}`;
+
+    const plans = [first!, second!].map((actor) =>
+      planUnitAction(state, actor.instanceId, 3, () => 0.5, allocateEffectId),
+    );
+
+    expect(
+      plans.map((plan) => plan.operations.find((operation) => operation.kind === "damage")),
+    ).toEqual([
+      { kind: "damage", targetId: "Bravo:tank:1", amount: 10 },
+      { kind: "damage", targetId: "Bravo:tank:1", amount: 10 },
+    ]);
+    expect(plans.map((plan) => plan.actionId)).toEqual([
+      "3:Alpha:ranged:1:1",
+      "3:Alpha:ranged:2:1",
+    ]);
+    expect(state.scenarios[1].rows.tank.map((unit) => unit.currentHealth)).toEqual([200, 150]);
+
+    commitPlannedActions(state, plans, 3);
+    expect(state.scenarios[1].rows.tank.map((unit) => unit.currentHealth)).toEqual([180, 150]);
+  });
+
+  it("consumes one shared random stream across isolated plans", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
+            createUnit("Archer One", { targetPriority: "random" }),
+            createUnit("Archer Two", { targetPriority: "random" }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Target One"), createUnit("Target Two")],
+        }),
+      ]),
+    );
+    const draws = [0.9, 0.1, 0.1, 0.9];
+    const random = () => {
+      const draw = draws.shift();
+      if (draw === undefined) throw new Error("Planning consumed too many RNG draws.");
+      return draw;
+    };
+
+    const plans = state.scenarios[0].rows.ranged.map((actor) =>
+      planUnitAction(state, actor.instanceId, 3, random, () => "unused-effect-id"),
+    );
+
+    expect(
+      plans.map(
+        (plan) => plan.operations.find((operation) => operation.kind === "damage")?.targetId,
+      ),
+    ).toEqual(["Bravo:tank:2", "Bravo:tank:1"]);
+    expect(draws).toEqual([]);
+  });
+
+  it("plans attacks against pre-batch stats when another action adds a modifier", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          tank: [createUnit("Guard", { stats: createStats({ health: 200, dodge: 0 }) })],
+          support: [
+            createUnit("Protector", {
+              targetScope: "allies",
+              items: [
+                createItem({
+                  name: "Ward",
+                  effects: effectSequence(
+                    createEffect({
+                      name: "Defended",
+                      effectType: "buff",
+                      timingType: "instant",
+                      dodge: 50,
+                      lastsForActions: 2,
+                    }),
+                  ),
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Attacker", { stats: createStats({ meleeDmg: 20 }) })],
+        }),
+      ]),
+    );
+    const protector = state.scenarios[0].rows.support[0]!;
+    const attacker = state.scenarios[1].rows.tank[0]!;
+    let effectId = 0;
+    const allocateEffectId = () => `planned-effect-${++effectId}`;
+
+    const plans = [protector, attacker].map((actor) =>
+      planUnitAction(state, actor.instanceId, 4, () => 0.5, allocateEffectId),
+    );
+    const attackDamage = plans[1]?.operations.find((operation) => operation.kind === "damage");
+    const addedEffect = plans[0]?.operations.find((operation) => operation.kind === "add-effect");
+
+    expect(attackDamage).toEqual({ kind: "damage", targetId: "Alpha:tank:1", amount: 20 });
+    expect(addedEffect).toMatchObject({
+      kind: "add-effect",
+      effect: { id: "planned-effect-1", name: "Defended" },
+    });
+    commitPlannedActions(state, plans, 4);
+    expect(state.scenarios[0].rows.tank[0]).toMatchObject({
+      currentHealth: 180,
+      activeEffects: [{ name: "Defended", statKey: "dodge", value: 50 }],
+    });
+  });
+
   it("falls back to a basic attack when no effect-bearing items are available", () => {
     const state = makeStateWithWarrior("tank", [createItem({ name: "Steel Gauntlet" })]);
     const warrior = state.scenarios[0].rows.tank[0]!;

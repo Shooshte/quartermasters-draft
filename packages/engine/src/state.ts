@@ -19,6 +19,7 @@ import { validateBattleInput } from "./validation";
 type InternalBattleState = BattleState & {
   __rng: () => number;
   __effectCounter: number;
+  __allocateEffectId?: () => string;
   __resolveActionsOnTick: boolean;
   __scenarioOrder: string[];
 };
@@ -160,6 +161,9 @@ export function nextRandom(state: BattleState): number {
 
 export function nextEffectId(state: BattleState): string {
   const internal = asInternalState(state);
+  if (internal.__allocateEffectId) {
+    return internal.__allocateEffectId();
+  }
   internal.__effectCounter += 1;
   return `active-effect-${internal.__effectCounter}`;
 }

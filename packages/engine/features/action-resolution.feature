@@ -2,6 +2,26 @@ Feature: Item activation action resolution
   Units try effect-bearing items by priority and fall back to a basic attack only
   if no item activation succeeds.
 
+  Rule: Units ready at the same moment resolve from one snapshot
+
+    Scenario: Simultaneous lethal attacks produce a draw
+      Given two units reach action bar 100 together
+      And each can kill the other
+      When their action batch resolves
+      Then both actions are logged
+      And both units die
+      And the battle is a draw
+
+    Scenario: Same-batch targeting does not observe another action
+      Given two ready attackers prioritize highest health
+      When both calculate actions from the same snapshot
+      Then both may select the same initially-highest-health target
+
+    Scenario: A new modifier does not change another action in its application batch
+      Given one ready unit applies a defense buff to an ally
+      And an enemy attacks that ally in the same batch
+      Then the attack uses the ally's pre-batch defense
+
   Scenario: An affordable item pays once for its entire ordered effect sequence
     Given "Warrior" has an item "Fire Sword" costing 10 mana and 15 health with effects "Flame Strike" then "Burn"
     And "Warrior" targets enemies using "highest_health"

@@ -1,3 +1,4 @@
+import { recordActionOperation } from "./action-operations";
 import { logEffectApplied, logEffectExpired, logHeal, pushLog } from "./logging";
 import { computeSpellDamageWithModifiers, getUnitEffectiveStats } from "./math";
 import { clampHealth, findUnitById, nextEffectId, reconcileManaForCapacityChange } from "./state";
@@ -126,6 +127,7 @@ function applyInstantEffect(
 
   if (typeof effect.directHealing === "number") {
     const amount = effect.directHealing;
+    recordActionOperation(state, { kind: "healing", targetId: target.instanceId, amount });
     target.currentHealth = Math.min(maxHealth, target.currentHealth + amount);
     logHeal(state, batchNumber, caster, target, amount, origin, origin.actionId);
   }
@@ -134,14 +136,21 @@ function applyInstantEffect(
     effect.directMeleeDmg ?? effect.directRangedDmg ?? effect.directSpellDmg ?? null;
   if (typeof directDamage === "number") {
     const modifiedDamage = computeSpellDamageWithModifiers(directDamage, casterStats, targetStats);
+    recordActionOperation(state, {
+      kind: "damage",
+      targetId: target.instanceId,
+      amount: modifiedDamage,
+    });
     target.currentHealth = Math.max(0, target.currentHealth - modifiedDamage);
     logDamage(state, batchNumber, caster, target, modifiedDamage, origin, origin.actionId);
-    if (target.currentHealth === 0) {
-      logDeath(state, batchNumber, target, origin, origin.actionId);
-    }
   }
 
   if (effect.effectType === "healing" && typeof effect.health === "number") {
+    recordActionOperation(state, {
+      kind: "healing",
+      targetId: target.instanceId,
+      amount: effect.health,
+    });
     target.currentHealth = Math.min(maxHealth, target.currentHealth + effect.health);
     logHeal(state, batchNumber, caster, target, effect.health, origin, origin.actionId);
   }
@@ -163,6 +172,11 @@ function applyInstantEffect(
         actionsRemaining: effect.lastsForActions ?? 0,
         origin,
       };
+      recordActionOperation(state, {
+        kind: "add-effect",
+        targetId: target.instanceId,
+        effect: activeEffect,
+      });
       target.activeEffects.push(activeEffect);
       appliedModifiers.push(activeEffect);
       logEffectApplied(
@@ -251,15 +265,21 @@ function applyEffectTemplate(
   effectPosition: number,
 ): string[] {
   if (effect.timingType === "interval") {
-    target.activeEffects.push(
-      ...queueIntervalEffect(
-        state,
-        caster,
-        target,
-        effect,
-        effectOrigin(origin, effect, effectPosition),
-      ),
+    const activeEffects = queueIntervalEffect(
+      state,
+      caster,
+      target,
+      effect,
+      effectOrigin(origin, effect, effectPosition),
     );
+    for (const activeEffect of activeEffects) {
+      recordActionOperation(state, {
+        kind: "add-effect",
+        targetId: target.instanceId,
+        effect: activeEffect,
+      });
+      target.activeEffects.push(activeEffect);
+    }
     return [effect.name ?? "Effect"];
   }
 
@@ -494,7 +514,9 @@ export function processPreActionEffects(
     }
   }
 
-  return new Set(readyUnits.filter((unit) => unit.currentHealth > 0).map((unit) => unit.instanceId));
+  return new Set(
+    readyUnits.filter((unit) => unit.currentHealth > 0).map((unit) => unit.instanceId),
+  );
 }
 
 /** Decrements only modifiers that existed before the resolved action batch. */

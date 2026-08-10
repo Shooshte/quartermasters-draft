@@ -1,14 +1,14 @@
 import type { LinkedEntityOption } from "./linked-entity-picker";
 import { LinkedEntitySection } from "./linked-entity-section";
 import {
+  computeUnitStatPreviews,
   getUnitFieldLabel,
   hasUnitFormErrors,
-  computeUnitStatPreviews,
   type ItemOption,
   UNIT_COMBAT_FIELDS,
   UNIT_VITAL_FIELDS,
-  type UnitNumericField,
   type UnitFormValues,
+  type UnitNumericField,
   validateUnitForm,
 } from "./unit-form";
 import { UnitTargetingCard } from "./unit-targeting-card";
@@ -50,10 +50,7 @@ export function UnitWorkspaceForm({
     const bonusPrefix = preview.itemBonus > 0 ? "+" : "";
 
     return (
-      <p
-        className="mt-1 min-h-4 text-xs text-muted-foreground"
-        data-testid={`unit-${field}-final`}
-      >
+      <p className="mt-1 min-h-4 text-xs text-muted-foreground" data-testid={`unit-${field}-final`}>
         <span className="font-medium text-foreground">
           Final {preview.finalValue === null ? "—" : preview.finalValue}
         </span>

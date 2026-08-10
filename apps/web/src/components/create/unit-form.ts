@@ -176,9 +176,10 @@ export function computeUnitStatPreviews(
   itemOptions: ItemOption[],
 ): Record<UnitNumericField, UnitStatPreview> {
   const optionsById = new Map(itemOptions.map((item) => [item.id, item]));
-  const itemBonuses = Object.fromEntries(
-    UNIT_NUMERIC_FIELDS.map((field) => [field, 0]),
-  ) as Record<UnitNumericField, number>;
+  const itemBonuses = Object.fromEntries(UNIT_NUMERIC_FIELDS.map((field) => [field, 0])) as Record<
+    UnitNumericField,
+    number
+  >;
 
   for (const itemId of values.itemIds) {
     const item = optionsById.get(itemId);

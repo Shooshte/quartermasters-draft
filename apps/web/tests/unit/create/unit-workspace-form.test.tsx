@@ -87,15 +87,11 @@ describe("UnitWorkspaceForm", () => {
         criticalChance: "2",
         itemIds: ["it-1", "it-1"],
       },
-      itemOptions: [
-        { id: "it-1", name: "Iron Sword", meleeDmg: 8, criticalChance: 3 },
-      ],
+      itemOptions: [{ id: "it-1", name: "Iron Sword", meleeDmg: 8, criticalChance: 3 }],
     });
 
     expect(screen.getByTestId("unit-meleeDmg-final")).toHaveTextContent("Final 26 (+16 items)");
-    expect(screen.getByTestId("unit-criticalChance-final")).toHaveTextContent(
-      "Final 8 (+6 items)",
-    );
+    expect(screen.getByTestId("unit-criticalChance-final")).toHaveTextContent("Final 8 (+6 items)");
     expect(screen.getByTestId("unit-health-final")).toHaveTextContent("Final 95");
     expect(screen.getByTestId("unit-health-final")).not.toHaveTextContent("items");
     expect(screen.getByTestId("unit-speed-final")).toHaveTextContent("Final 0");

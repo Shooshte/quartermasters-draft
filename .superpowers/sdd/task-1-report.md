@@ -70,3 +70,15 @@ Result: exited `0` (`tsc --noEmit`).
 
 - Every pnpm invocation prints an existing configuration warning: `package.json`'s `pnpm.onlyBuiltDependencies` and `pnpm.overrides` are no longer read by this pnpm version. It did not affect command exit status and is outside this task's scope.
 - Scheduler integration into `BattleEngine`, action resolution, timing reconfiguration, and end-to-end coverage are intentionally deferred to later tasks.
+
+## Review Correction Evidence
+
+Updated `packages/engine/features/action-bar.feature` to explicitly retain deterministic speed/scenario/row/slot ordering for seeded RNG consumption and battle logs.
+
+Focused check:
+
+```sh
+git diff --check -- packages/engine/features/action-bar.feature .superpowers/sdd/task-1-report.md
+```
+
+Result: exited `0` (no whitespace errors).

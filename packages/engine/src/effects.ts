@@ -406,8 +406,13 @@ export function processPreActionEffects(
       continue;
     }
 
+    if ((effect.remainingTriggers ?? 0) <= 0) {
+      expiredEffectIds.add(effect.id);
+      continue;
+    }
+
     effect.actionsUntilTrigger = (effect.actionsUntilTrigger ?? 0) - 1;
-    if (effect.actionsUntilTrigger > 0 || (effect.remainingTriggers ?? 0) <= 0) {
+    if (effect.actionsUntilTrigger > 0) {
       continue;
     }
 

@@ -120,6 +120,37 @@ describe("effects", () => {
     expect(warrior.currentHealth).toBe(280);
   });
 
+  it("expires an interval effect with the default non-positive trigger count before the affected unit acts", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Empty Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Empty Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            triggerEveryActions: 2,
+          }),
+        ),
+      }),
+    );
+
+    expect(warrior.activeEffects).toHaveLength(1);
+    expect(warrior.activeEffects[0]?.remainingTriggers).toBe(0);
+
+    processPreActionEffects(state, [warrior.instanceId], 1);
+
+    expect(warrior.activeEffects).toHaveLength(0);
+    expect(warrior.currentHealth).toBe(300);
+  });
+
   it("expires a modifier after its final covered action", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

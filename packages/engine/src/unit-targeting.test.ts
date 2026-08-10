@@ -254,7 +254,7 @@ describe("unit targeting", () => {
                     createEffect({
                       effectType: "damage",
                       timingType: "interval",
-                      intervalTicks: 2,
+                      triggerEveryActions: 2,
                       directSpellDmg: 80,
                     }),
                   ),
@@ -336,7 +336,7 @@ describe("unit targeting", () => {
     ).toEqual(["Single-source Instant"]);
   });
 
-  it("excludes direct damage from ally-only and zero-interval effects for highest-damage priority", () => {
+  it("ranks zero-action interval effects by their immediate action rate", () => {
     const state = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
@@ -372,7 +372,7 @@ describe("unit targeting", () => {
                     createEffect({
                       effectType: "damage",
                       timingType: "interval",
-                      intervalTicks: 0,
+                      triggerEveryActions: 0,
                       directSpellDmg: 100,
                     }),
                   ),
@@ -389,7 +389,7 @@ describe("unit targeting", () => {
       selectTargets(state, caster, configure(caster, { targetPriority: "highest_damage" })).map(
         (unit) => unit.name,
       ),
-    ).toEqual(["Baseline"]);
+    ).toEqual(["Zero Interval"]);
   });
 
   it("excludes direct damage on healing intervals from highest-damage priority", () => {
@@ -409,7 +409,7 @@ describe("unit targeting", () => {
                     createEffect({
                       effectType: "damage",
                       timingType: "interval",
-                      intervalTicks: 10,
+                      triggerEveryActions: 10,
                       directSpellDmg: 50,
                     }),
                   ),
@@ -425,7 +425,7 @@ describe("unit targeting", () => {
                     createEffect({
                       effectType: "healing",
                       timingType: "interval",
-                      intervalTicks: 1,
+                      triggerEveryActions: 1,
                       directSpellDmg: 100,
                     }),
                   ),
@@ -462,7 +462,7 @@ describe("unit targeting", () => {
                     createEffect({
                       effectType: "damage",
                       timingType: "interval",
-                      intervalTicks: 1,
+                      triggerEveryActions: 1,
                       directSpellDmg: 5,
                     }),
                   ),
@@ -478,7 +478,7 @@ describe("unit targeting", () => {
                     createEffect({
                       effectType: "damage",
                       timingType: "interval",
-                      intervalTicks: 2,
+                      triggerEveryActions: 2,
                       directSpellDmg: 8,
                     }),
                   ),

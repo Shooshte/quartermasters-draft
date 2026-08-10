@@ -145,7 +145,7 @@ function instantDirectDamage(effect: EffectTemplateInput): number {
   return effect.directMeleeDmg ?? effect.directRangedDmg ?? effect.directSpellDmg ?? 0;
 }
 
-function projectedDamagePerTick(unit: BattleUnitState): number {
+function projectedDamageRate(unit: BattleUnitState): number {
   const stats = getUnitEffectiveStats(unit);
   const statDamage = stats.meleeDmg + stats.rangedDmg + stats.spellDmg;
   if (!canTargetEnemies(unit.targetScope)) return (statDamage * stats.speed) / 100;
@@ -154,12 +154,11 @@ function projectedDamagePerTick(unit: BattleUnitState): number {
   let intervalDamage = 0;
   for (const item of unit.items) {
     for (const { effect } of item.effects) {
-      const intervalTicks = effect.intervalTicks ?? 0;
       if (effect.timingType === "instant") {
         instantDamage += instantDirectDamage(effect);
       }
-      if (effect.timingType === "interval" && intervalTicks > 0) {
-        intervalDamage += intervalDirectDamage(effect) / intervalTicks;
+      if (effect.timingType === "interval") {
+        intervalDamage += intervalDirectDamage(effect) / (effect.triggerEveryActions ?? 1);
       }
     }
   }
@@ -172,7 +171,7 @@ function priorityValue(unit: BattleUnitState, priority: TargetPriority): number 
     case "lowest_health":
       return unit.currentHealth;
     case "highest_damage":
-      return projectedDamagePerTick(unit);
+      return projectedDamageRate(unit);
     case "support":
       return Number(unit.rowType !== "support");
     case "random":

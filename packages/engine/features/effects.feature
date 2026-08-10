@@ -32,7 +32,16 @@ Feature: Item effect resolution
     When "Warrior" acts
     Then "Restoration" applies to an enemy
 
-  Scenario: An interval effect retains its item and effect attribution
-    Given "Warrior" activates item "Venom Blade" with interval effect "Poison"
-    When "Poison" triggers later
-    Then the outcome identifies item "Venom Blade" and effect "Poison"
+  Scenario: An interval effect follows the affected unit's actions
+    Given Poison triggers every 2 affected-unit actions for 3 triggers
+    When the affected unit reaches its 2nd, 4th, and 6th action opportunities
+    Then Poison triggers before each corresponding normal action
+
+  Scenario: A modifier covers the target's next actions
+    Given Haste lasts for 3 affected-unit actions
+    Then Haste modifies scheduling and outcomes for those 3 actions
+    And Haste expires after the 3rd resolved action
+
+  Scenario: Application does not consume an action
+    Given Haste is applied while its target is in the same action batch
+    Then Haste begins counting from the target's next action opportunity

@@ -24,7 +24,7 @@ function createLoggedBattle() {
         name: "Burning",
         effectType: "damage",
         timingType: "interval",
-        intervalTicks: 3,
+        triggerEveryActions: 3,
         triggerCount: 1,
         directSpellDmg: 10,
       }),
@@ -116,8 +116,8 @@ describe("battle log", () => {
     expect(result.log.some((entry) => entry.type === "death")).toBe(true);
     expect(result.log.at(-1)?.type).toBe("battle-end");
 
-    const ticks = result.log.map((entry) => entry.tick);
-    expect(ticks).toEqual([...ticks].sort((left, right) => left - right));
+    const batchNumbers = result.log.map((entry) => entry.batchNumber);
+    expect(batchNumbers).toEqual([...batchNumbers].sort((left, right) => left - right));
   });
 
   it("is deterministic for identical inputs and seed", () => {

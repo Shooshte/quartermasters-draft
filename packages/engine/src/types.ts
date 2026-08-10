@@ -51,9 +51,9 @@ export interface EffectTemplateInput {
   name?: string;
   timingType: EffectTimingType;
   effectType: EffectCategory;
-  intervalTicks?: number | null;
+  triggerEveryActions?: number | null;
   triggerCount?: number | null;
-  durationTicks?: number | null;
+  lastsForActions?: number | null;
   meleeDmg?: number | null;
   health?: number | null;
   mana?: number | null;
@@ -149,9 +149,9 @@ export interface ActiveEffectState {
   statKey?: StatKey;
   value: number;
   remainingTriggers?: number;
-  nextTriggerTick?: number;
-  intervalTicks?: number;
-  expiresAtTick?: number;
+  actionsUntilTrigger?: number;
+  triggerEveryActions?: number;
+  actionsRemaining?: number;
   origin?: BattleLogOrigin;
 }
 
@@ -217,7 +217,7 @@ export type BattleLogEntry =
   | BattleEndLogEntry;
 
 export interface BaseLogEntry {
-  tick: number;
+  batchNumber: number;
   type: string;
   message: string;
   actionId?: string;
@@ -264,7 +264,7 @@ export interface EffectApplyLogEntry extends BaseLogEntry {
   effect: string;
   stat: StatKey;
   value: number;
-  expiresAtTick: number;
+  actionsRemaining: number;
 }
 
 export interface EffectExpireLogEntry extends BaseLogEntry {
@@ -274,7 +274,7 @@ export interface EffectExpireLogEntry extends BaseLogEntry {
   effect: string;
   stat?: StatKey;
   value?: number;
-  expiresAtTick?: number;
+  actionsRemaining?: number;
 }
 
 export interface DamageLogEntry extends BaseLogEntry {

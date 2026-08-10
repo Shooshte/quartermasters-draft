@@ -14,7 +14,7 @@ import type {
 type EffectLogModifier = {
   stat: StatKey;
   value: number;
-  expiresAtTick: number;
+  actionsRemaining: number;
 };
 
 export function pushLog(state: BattleState, entry: BattleLogEntry): void {
@@ -23,7 +23,7 @@ export function pushLog(state: BattleState, entry: BattleLogEntry): void {
 
 export function logEffectApplied(
   state: BattleState,
-  tick: number,
+  batchNumber: number,
   target: BattleUnitState,
   effect: string,
   modifier: EffectLogModifier,
@@ -31,31 +31,31 @@ export function logEffectApplied(
   origin?: BattleLogOrigin,
 ): void {
   const entry: EffectApplyLogEntry = {
-    tick,
+    batchNumber,
     type: "effect-apply",
     target: target.name,
     targetId: target.instanceId,
     effect,
     stat: modifier.stat,
     value: modifier.value,
-    expiresAtTick: modifier.expiresAtTick,
+    actionsRemaining: modifier.actionsRemaining,
     actionId,
     origin,
-    message: `Tick ${tick}: ${target.name} gains ${effect} (${modifier.stat} modified)`,
+    message: `${target.name} gains ${effect} (${modifier.stat} modified)`,
   };
   pushLog(state, entry);
 }
 
 export function logEffectExpired(
   state: BattleState,
-  tick: number,
+  batchNumber: number,
   target: BattleUnitState,
   effect: string,
   modifier: EffectLogModifier | undefined,
   origin?: BattleLogOrigin,
 ): void {
   const entry: EffectExpireLogEntry = {
-    tick,
+    batchNumber,
     type: "effect-expire",
     target: target.name,
     targetId: target.instanceId,
@@ -64,18 +64,18 @@ export function logEffectExpired(
       ? {
           stat: modifier.stat,
           value: modifier.value,
-          expiresAtTick: modifier.expiresAtTick,
+          actionsRemaining: modifier.actionsRemaining,
         }
       : {}),
     origin,
-    message: `Tick ${tick}: ${effect} expires on ${target.name}`,
+    message: `${effect} expires on ${target.name}`,
   };
   pushLog(state, entry);
 }
 
 export function logHeal(
   state: BattleState,
-  tick: number,
+  batchNumber: number,
   source: BattleUnitState,
   target: BattleUnitState,
   amount: number,
@@ -83,7 +83,7 @@ export function logHeal(
   actionId?: string,
 ): void {
   const entry: HealLogEntry = {
-    tick,
+    batchNumber,
     type: "heal",
     source: source.name,
     sourceId: source.instanceId,
@@ -92,33 +92,33 @@ export function logHeal(
     amount,
     actionId,
     origin,
-    message: `Tick ${tick}: ${source.name} heals ${target.name} for ${amount}`,
+    message: `${source.name} heals ${target.name} for ${amount}`,
   };
   pushLog(state, entry);
 }
 
 export function logFatigue(
   state: BattleState,
-  tick: number,
+  batchNumber: number,
   target: BattleUnitState,
   damage: number,
 ): void {
   const entry: FatigueLogEntry = {
-    tick,
+    batchNumber,
     type: "fatigue",
     target: target.name,
     targetId: target.instanceId,
     damage,
     origin: { kind: "fatigue" },
-    message: `Tick ${tick}: fatigue hits ${target.name} for ${damage} damage`,
+    message: `Fatigue hits ${target.name} for ${damage} damage`,
   };
   pushLog(state, entry);
 }
 
-export function logBattleEnd(state: BattleState, tick: number, winnerId: string | null): void {
+export function logBattleEnd(state: BattleState, batchNumber: number, winnerId: string | null): void {
   const outcome = winnerId === null ? "draw" : winnerId;
   const entry: BattleEndLogEntry = {
-    tick,
+    batchNumber,
     type: "battle-end",
     outcome,
     winnerId,

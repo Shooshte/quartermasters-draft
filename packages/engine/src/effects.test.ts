@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { applyItemEffects, processOngoingEffects } from "./effects";
+import {
+  applyItemEffects,
+  completeResolvedActionEffects,
+  processPreActionEffects,
+} from "./effects";
 import { getUnitEffectiveStats } from "./math";
 import { initializeBattleState } from "./state";
 import {
@@ -67,7 +71,107 @@ function createEffectState() {
   );
 }
 
+function processActionOpportunities(state: ReturnType<typeof createEffectState>, count: number) {
+  for (let batchNumber = 1; batchNumber <= count; batchNumber += 1) {
+    const units = state.scenarios.flatMap((scenario) => Object.values(scenario.rows).flat());
+    const actorIds = units
+      .filter((unit) => unit.activeEffects.length > 0)
+      .map((unit) => unit.instanceId);
+    const eligibleEffectIds = new Set(
+      units.flatMap((unit) =>
+        unit.activeEffects
+          .filter((effect) => effect.actionsRemaining !== undefined)
+          .map((effect) => effect.id),
+      ),
+    );
+    processPreActionEffects(state, actorIds, batchNumber);
+    completeResolvedActionEffects(state, actorIds, eligibleEffectIds, batchNumber);
+  }
+}
+
 describe("effects", () => {
+  it("triggers on the affected unit's second opportunity", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Burning",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            triggerEveryActions: 2,
+            triggerCount: 2,
+          }),
+        ),
+      }),
+      1,
+    );
+
+    processPreActionEffects(state, [warrior.instanceId], 2);
+    expect(warrior.currentHealth).toBe(300);
+    processPreActionEffects(state, [warrior.instanceId], 3);
+    expect(warrior.currentHealth).toBe(280);
+  });
+
+  it("expires a modifier after its final covered action", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    mage.activeEffects.push({
+      id: "haste",
+      name: "Haste",
+      sourceUnitId: "source",
+      sourceScenarioId: "alpha",
+      targetUnitId: mage.instanceId,
+      effectType: "buff",
+      timingType: "instant",
+      statKey: "speed",
+      value: 3,
+      actionsRemaining: 2,
+    });
+
+    completeResolvedActionEffects(state, [mage.instanceId], new Set(["haste"]), 2);
+    expect(getUnitEffectiveStats(mage).speed).toBe(8);
+    completeResolvedActionEffects(state, [mage.instanceId], new Set(["haste"]), 3);
+    expect(getUnitEffectiveStats(mage).speed).toBe(5);
+  });
+
+  it("does not consume an action when an effect is applied in the current batch", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Haste Staff",
+        effects: effectSequence(
+          createEffect({
+            name: "Haste",
+            effectType: "buff",
+            timingType: "instant",
+            speed: 3,
+            lastsForActions: 2,
+          }),
+        ),
+      }),
+      4,
+    );
+
+    const haste = mage.activeEffects.find((effect) => effect.name === "Haste")!;
+    completeResolvedActionEffects(state, [mage.instanceId], new Set(), 4);
+    expect(haste.actionsRemaining).toBe(2);
+    completeResolvedActionEffects(state, [mage.instanceId], new Set([haste.id]), 5);
+    expect(haste.actionsRemaining).toBe(1);
+  });
+
   it("records each normalized stat consequence when a modifier applies and expires", () => {
     const state = createEffectState();
     const cleric = state.scenarios[0].rows.support[0]!;
@@ -84,7 +188,7 @@ describe("effects", () => {
             timingType: "instant",
             meleeDmg: 10,
             speed: -3,
-            durationTicks: 2,
+            lastsForActions: 2,
           }),
         ),
       }),
@@ -93,21 +197,21 @@ describe("effects", () => {
     expect(
       state.log
         .filter((entry) => entry.type === "effect-apply")
-        .map(({ stat, value, expiresAtTick }) => ({ stat, value, expiresAtTick })),
+        .map(({ stat, value, actionsRemaining }) => ({ stat, value, actionsRemaining })),
     ).toEqual([
-      { stat: "meleeDmg", value: -10, expiresAtTick: 2 },
-      { stat: "speed", value: -3, expiresAtTick: 2 },
+      { stat: "meleeDmg", value: -10, actionsRemaining: 2 },
+      { stat: "speed", value: -3, actionsRemaining: 2 },
     ]);
 
-    processOngoingEffects(state, 2);
+    processActionOpportunities(state, 2);
 
     expect(
       state.log
         .filter((entry) => entry.type === "effect-expire")
-        .map(({ stat, value, expiresAtTick }) => ({ stat, value, expiresAtTick })),
+        .map(({ stat, value, actionsRemaining }) => ({ stat, value, actionsRemaining })),
     ).toEqual([
-      { stat: "meleeDmg", value: -10, expiresAtTick: 2 },
-      { stat: "speed", value: -3, expiresAtTick: 2 },
+      { stat: "meleeDmg", value: -10, actionsRemaining: 0 },
+      { stat: "speed", value: -3, actionsRemaining: 0 },
     ]);
   });
 
@@ -128,14 +232,14 @@ describe("effects", () => {
             effectType: "buff",
             timingType: "instant",
             mana: 50,
-            durationTicks: 2,
+            lastsForActions: 2,
           }),
         ),
       }),
     );
 
     expect(mage.mana).toBe(120);
-    processOngoingEffects(state, 2);
+    processActionOpportunities(state, 2);
     expect(mage.mana).toBe(70);
   });
 
@@ -156,7 +260,7 @@ describe("effects", () => {
             effectType: "buff",
             timingType: "instant",
             mana: -50,
-            durationTicks: 2,
+            lastsForActions: 2,
           }),
         ),
       }),
@@ -164,7 +268,7 @@ describe("effects", () => {
 
     expect(getUnitEffectiveStats(mage).mana).toBe(50);
     expect(mage.mana).toBe(20);
-    processOngoingEffects(state, 2);
+    processActionOpportunities(state, 2);
     expect(getUnitEffectiveStats(mage).mana).toBe(100);
     expect(mage.mana).toBe(70);
   });
@@ -186,14 +290,14 @@ describe("effects", () => {
             effectType: "buff",
             timingType: "instant",
             mana: 50,
-            durationTicks: 2,
+            lastsForActions: 2,
           }),
           createEffect({
             name: "Mana Collapse",
             effectType: "buff",
             timingType: "instant",
             mana: -120,
-            durationTicks: 2,
+            lastsForActions: 2,
           }),
         ),
       }),
@@ -201,7 +305,7 @@ describe("effects", () => {
 
     expect(getUnitEffectiveStats(mage).mana).toBe(30);
     expect(mage.mana).toBe(0);
-    processOngoingEffects(state, 2);
+    processActionOpportunities(state, 2);
     expect(getUnitEffectiveStats(mage).mana).toBe(100);
     expect(mage.mana).toBe(70);
   });
@@ -265,13 +369,13 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalTicks: 1000,
+            triggerEveryActions: 1000,
             triggerCount: 3,
           }),
         ),
       }),
     );
-    processOngoingEffects(state, 3000);
+    processActionOpportunities(state, 3000);
     // interval 20 dmg * 3 triggers, crit=5%, dodge=5% => round(20 * 1.05 * 0.95) = 20 per trigger, so 300 - 60 = 240.
     expect(warrior.currentHealth).toBe(240);
 
@@ -284,7 +388,7 @@ describe("effects", () => {
       }),
     );
     expect(mage.activeEffects).toHaveLength(1);
-    processOngoingEffects(state, 2000);
+    processActionOpportunities(state, 2000);
     expect(mage.activeEffects).toHaveLength(0);
   });
 
@@ -306,14 +410,14 @@ describe("effects", () => {
             directMeleeDmg: 10,
             directRangedDmg: 20,
             directSpellDmg: 30,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 1,
           }),
         ),
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(warrior.currentHealth).toBe(240);
     const damages = state.log
@@ -339,14 +443,14 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directMeleeDmg: 10,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 1,
           }),
         ),
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(warrior.currentHealth).toBe(290);
     expect(
@@ -373,14 +477,14 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directRangedDmg: 15,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 1,
           }),
         ),
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(warrior.currentHealth).toBe(285);
     expect(
@@ -410,7 +514,7 @@ describe("effects", () => {
             directMeleeDmg: 10,
             directRangedDmg: 20,
             directSpellDmg: 30,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 1,
           }),
         ),
@@ -418,7 +522,7 @@ describe("effects", () => {
     );
 
     expect(mage.activeEffects).toHaveLength(1);
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(mage.currentHealth).toBe(130);
     expect(
@@ -443,14 +547,14 @@ describe("effects", () => {
             name: "Empty Restoration",
             effectType: "healing",
             timingType: "interval",
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 1,
           }),
         ),
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(
       state.scenarios
@@ -460,7 +564,7 @@ describe("effects", () => {
     expect(state.log.filter((entry) => entry.type === "heal")).toHaveLength(0);
   });
 
-  it("waits intervalTicks before the first trigger and between subsequent triggers", () => {
+  it("waits affected-unit actions before the first trigger and between subsequent triggers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;
     const warrior = state.scenarios[1].rows.tank[0]!;
@@ -476,20 +580,20 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalTicks: 2,
+            triggerEveryActions: 2,
             triggerCount: 2,
           }),
         ),
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
     expect(warrior.currentHealth).toBe(300);
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
     expect(warrior.currentHealth).toBe(280);
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
     expect(warrior.currentHealth).toBe(280);
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
     expect(warrior.currentHealth).toBe(260);
   });
 
@@ -510,14 +614,14 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 50,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 2,
           }),
         ),
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(warrior.currentHealth).toBe(0);
     expect(warrior.activeEffects).toHaveLength(0);
@@ -539,7 +643,7 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 2,
           }),
         ),
@@ -547,7 +651,7 @@ describe("effects", () => {
     );
 
     state.scenarios[0].rows.ranged = [];
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(warrior.activeEffects).toHaveLength(0);
     expect(
@@ -581,7 +685,7 @@ describe("effects", () => {
           effectType: "damage",
           timingType: "interval",
           directSpellDmg: 20,
-          intervalTicks: 1,
+          triggerEveryActions: 1,
           triggerCount: 1,
         }),
       ),
@@ -614,7 +718,7 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 1,
           }),
           createEffect({
@@ -627,7 +731,7 @@ describe("effects", () => {
       }),
     );
 
-    processOngoingEffects(state, 1);
+    processActionOpportunities(state, 1);
 
     expect(warrior.currentHealth).toBe(0);
     expect(warrior.activeEffects).toHaveLength(0);
@@ -689,13 +793,13 @@ describe("effects", () => {
             effectType: "damage",
             timingType: "interval",
             directSpellDmg: 20,
-            intervalTicks: 1,
+            triggerEveryActions: 1,
             triggerCount: 2,
           }),
         ),
       }),
     );
-    processOngoingEffects(state, 2);
+    processActionOpportunities(state, 2);
     // interval 20 dmg * 2 triggers with same modifiers => 24 * 2 = 48, then 252 - 48 = 204.
     expect(warrior.currentHealth).toBe(204);
   });

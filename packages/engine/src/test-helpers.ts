@@ -31,9 +31,9 @@ export function createEffect(
   return {
     id: effect.id ?? effect.name?.toLowerCase().replace(/\s+/g, "-") ?? `effect-${Math.random()}`,
     name: effect.name ?? "Effect",
-    intervalTicks: null,
+    triggerEveryActions: null,
     triggerCount: null,
-    durationTicks: null,
+    lastsForActions: null,
     meleeDmg: null,
     health: null,
     mana: null,
@@ -127,14 +127,14 @@ export function effectSequence(
 export function statBuff(
   statKey: StatKey,
   value: number,
-  durationTicks: number,
+  lastsForActions: number,
   effectType: "buff" | "debuff" = "buff",
 ): EffectTemplateInput {
   return createEffect({
     name: `${effectType}-${statKey}`,
     effectType,
     timingType: "instant",
-    durationTicks,
+    lastsForActions,
     [statKey]: value,
   });
 }

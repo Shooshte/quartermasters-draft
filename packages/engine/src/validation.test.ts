@@ -249,6 +249,30 @@ describe("battle input validation", () => {
     );
   });
 
+  it("accepts persistent instant taunts with stat modifiers during initialization", () => {
+    const effect = createEffect({
+      name: "Persistent Provoke",
+      effectType: "buff",
+      timingType: "instant",
+      isTaunt: true,
+      speed: 5,
+      dodge: 3,
+      lastsForActions: null,
+    });
+    const input = createBattleInput([
+      createScenario("A", {
+        support: [
+          createUnit("Caster", {
+            items: [createItem({ name: "Item", effects: effectSequence(effect) })],
+          }),
+        ],
+      }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => initializeBattleState(input)).not.toThrow();
+  });
+
   it("rejects interval taunts", () => {
     const effect = createEffect({
       name: "Interval Provoke",

@@ -83,6 +83,7 @@ function validateEffectTiming(unit: UnitInput): void {
       (effect.triggerEveryActions == null || effect.triggerCount == null);
     const hasStatModifier = STAT_KEYS.some((statKey) => effect[statKey] != null);
     const actionDurationMissing =
+      !effect.isTaunt &&
       effect.timingType === "instant" &&
       (effect.effectType === "buff" || effect.effectType === "debuff") &&
       hasStatModifier &&

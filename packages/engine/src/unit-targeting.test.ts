@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { completeResolvedActionEffects } from "./effects";
 import { asInternalState, initializeBattleState } from "./state";
 import { selectTargets } from "./targeting";
 import {
@@ -85,6 +86,26 @@ function configure(
 ) {
   Object.assign(caster, targeting);
   return caster;
+}
+
+function applyTaunt(
+  target: BattleUnitState,
+  source: BattleUnitState,
+  id: string,
+  actionsRemaining?: number,
+): void {
+  target.activeEffects.push({
+    id,
+    name: "Taunt",
+    sourceUnitId: source.instanceId,
+    sourceScenarioId: source.scenarioId,
+    targetUnitId: target.instanceId,
+    effectType: "debuff",
+    timingType: "instant",
+    value: 0,
+    isTaunt: true,
+    ...(actionsRemaining === undefined ? {} : { actionsRemaining }),
+  });
 }
 
 describe("unit targeting", () => {
@@ -215,6 +236,82 @@ describe("unit targeting", () => {
         (unit) => unit.name,
       ),
     ).toEqual([expected]);
+  });
+
+  it("prioritizes a persistent taunt source over lowest-health priority", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.ranged[0]!;
+    const taunter = state.scenarios[1].rows.tank[0]!;
+    applyTaunt(caster, taunter, "taunt-persistent");
+
+    expect(
+      selectTargets(state, caster, configure(caster, { targetPriority: "lowest_health" })).map(
+        (unit) => unit.name,
+      ),
+    ).toEqual(["Warrior"]);
+  });
+
+  it("prioritizes the newest active taunt source", () => {
+    const state = setupBattle();
+    const caster = state.scenarios[0].rows.ranged[0]!;
+    const firstTaunter = state.scenarios[1].rows.tank[0]!;
+    const newestTaunter = state.scenarios[1].rows.ranged[0]!;
+    applyTaunt(caster, firstTaunter, "taunt-first");
+    applyTaunt(caster, newestTaunter, "taunt-newest");
+
+    expect(selectTargets(state, caster, caster).map((unit) => unit.name)).toEqual(["Ranger"]);
+  });
+
+  it.each([
+    [
+      "dead",
+      (state: ReturnType<typeof setupBattle>, _caster: BattleUnitState) => {
+        state.scenarios[1].rows.tank[0]!.currentHealth = 0;
+        return state.scenarios[1].rows.tank[0]!;
+      },
+    ],
+    [
+      "outside the target scope",
+      (state: ReturnType<typeof setupBattle>) => state.scenarios[0].rows.tank[0]!,
+    ],
+  ] as const)("falls back to normal priority when the newest taunter is %s", (_reason, selectTaunter) => {
+    const state = setupBattle();
+    const caster = configure(state.scenarios[0].rows.ranged[0]!, {
+      targetPriority: "lowest_health",
+    });
+    applyTaunt(caster, selectTaunter(state, caster), "taunt-newest");
+
+    expect(selectTargets(state, caster, caster).map((unit) => unit.name)).toEqual(["Sorcerer"]);
+  });
+
+  it("falls back to normal priority after a timed taunt expires", () => {
+    const state = setupBattle();
+    const caster = configure(state.scenarios[0].rows.ranged[0]!, {
+      targetPriority: "lowest_health",
+    });
+    const taunter = state.scenarios[1].rows.tank[0]!;
+    applyTaunt(caster, taunter, "taunt-timed", 1);
+
+    completeResolvedActionEffects(state, [caster.instanceId], new Set(["taunt-timed"]), 1);
+
+    expect(selectTargets(state, caster, caster).map((unit) => unit.name)).toEqual(["Sorcerer"]);
+  });
+
+  it("does not let a melee caster target a taunter behind a nearer occupied row", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", { melee: [createUnit("Caster")] }),
+        createScenario("Bravo", {
+          tank: [createUnit("Front Guard", { stats: createStats({ health: 20 }) })],
+          ranged: [createUnit("Rear Taunter", { stats: createStats({ health: 200 }) })],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.melee[0]!;
+    const taunter = state.scenarios[1].rows.ranged[0]!;
+    applyTaunt(caster, taunter, "taunt-rear");
+
+    expect(selectTargets(state, caster, caster).map((unit) => unit.name)).toEqual(["Front Guard"]);
   });
 
   it("projects instant and interval damage using effective speed for highest-damage priority", () => {
@@ -601,6 +698,33 @@ describe("unit targeting", () => {
       "Guard",
       "Tank",
       "Brute",
+    ]);
+  });
+
+  it("centers adjacent selection on a legal taunt source", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [createUnit("Caster", { selectionShape: "adjacent", targetCount: 3 })],
+        }),
+        createScenario("Bravo", {
+          tank: [
+            createUnit("Left", { stats: createStats({ health: 20 }) }),
+            createUnit("Taunter", { stats: createStats({ health: 80 }) }),
+            createUnit("Right", { stats: createStats({ health: 30 }) }),
+            createUnit("Outside", { stats: createStats({ health: 200 }) }),
+          ],
+        }),
+      ]),
+    );
+    const caster = state.scenarios[0].rows.ranged[0]!;
+    const taunter = state.scenarios[1].rows.tank[1]!;
+    applyTaunt(caster, taunter, "taunt-adjacent");
+
+    expect(selectTargets(state, caster, caster).map((unit) => unit.name)).toEqual([
+      "Left",
+      "Taunter",
+      "Right",
     ]);
   });
 

@@ -130,6 +130,24 @@ test.describe("Effect Workspace CRUD", () => {
     await expect(effect.lastsForActionsInput).toHaveValue("3");
   });
 
+  test("creates and reloads shield and bypass configuration", async ({ gmPage }) => {
+    const effect = new EffectWorkspacePage(gmPage);
+    await effect.openNew();
+
+    await effect.fillName("Shielded Ward");
+    await gmPage.getByTestId("effect-shield-input").fill("25");
+    await gmPage.getByTestId("effect-bypassesShield-input").check();
+    await effect.lastsForActionsInput.fill("3");
+    await expect(gmPage.getByTestId("effect-shield-input")).toHaveValue("25");
+    await expect(gmPage.getByTestId("effect-bypassesShield-input")).toBeChecked();
+    await effect.saveCreate();
+
+    await gmPage.reload();
+
+    await expect(gmPage.getByTestId("effect-shield-input")).toHaveValue("25");
+    await expect(gmPage.getByTestId("effect-bypassesShield-input")).toBeChecked();
+  });
+
   test("edit an existing effect and persist changes", async ({ gmPage }) => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openById(BARBARIAN_ROAR_ID);

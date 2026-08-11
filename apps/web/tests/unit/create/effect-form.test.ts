@@ -1,8 +1,7 @@
-import { createElement } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { EffectWorkspaceForm } from "~/components/create/effect-workspace-form";
 import {
   createDefaultEffectFormValues,
   effectRecordToFormValues,
@@ -10,6 +9,7 @@ import {
   normalizeEffectFormValues,
   validateEffectForm,
 } from "~/components/create/effect-form";
+import { EffectWorkspaceForm } from "~/components/create/effect-workspace-form";
 
 describe("effect-form", () => {
   it("provides action timing defaults for a new effect", () => {

@@ -539,7 +539,9 @@ export function processPreActionEffects(
   }
   const affectedTargets = new Map<string, BattleUnitState>();
   for (const targetEvents of eventsByTarget.values()) {
-    const target = targetEvents[0]!.target;
+    const firstEvent = targetEvents[0];
+    if (!firstEvent) continue;
+    const target = firstEvent.target;
     affectedTargets.set(target.instanceId, target);
     if (target.shieldLayers.length > 0) {
       for (const event of targetEvents) {

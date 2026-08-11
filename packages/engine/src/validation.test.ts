@@ -298,9 +298,13 @@ describe("battle input validation", () => {
     );
   });
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 1.5])(
-    "rejects an invalid timed taunt duration of %s",
-    (lastsForActions) => {
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    1.5,
+  ])("rejects an invalid timed taunt duration of %s", (lastsForActions) => {
     const effect = createEffect({
       name: "Invalid Timed Provoke",
       effectType: "buff",
@@ -319,9 +323,8 @@ describe("battle input validation", () => {
       createScenario("B", { tank: [createUnit("Enemy")] }),
     ]);
 
-      expect(() => validateBattleInput(input)).toThrowError(
-        'Taunt effect "Invalid Timed Provoke" must have a positive duration.',
-      );
-    },
-  );
+    expect(() => validateBattleInput(input)).toThrowError(
+      'Taunt effect "Invalid Timed Provoke" must have a positive duration.',
+    );
+  });
 });

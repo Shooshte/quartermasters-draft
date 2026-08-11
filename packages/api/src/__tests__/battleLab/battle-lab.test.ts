@@ -261,6 +261,7 @@ describe("battleLabRouter", () => {
                 name: "Incomplete Burn",
                 timingType: "interval",
                 effectType: "damage",
+                isTaunt: false,
                 triggerEveryActions: null,
                 triggerCount: 3,
               },

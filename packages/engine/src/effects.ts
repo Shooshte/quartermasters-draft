@@ -166,9 +166,7 @@ function applyInstantEffect(
       timingType: effect.timingType,
       value: 0,
       isTaunt: true,
-      ...(effect.lastsForActions == null
-        ? {}
-        : { actionsRemaining: effect.lastsForActions }),
+      ...(effect.lastsForActions == null ? {} : { actionsRemaining: effect.lastsForActions }),
       origin,
     };
     recordActionOperation(state, {

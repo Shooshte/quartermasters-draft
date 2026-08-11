@@ -68,6 +68,105 @@ describe("BattleEngine", () => {
       expect(fatigueDamage(next.log)).toBe(3);
     });
 
+    it("uses shields for fatigue damage", () => {
+      const ward = createItem({
+        name: "Ward",
+        effects: effectSequence(
+          createEffect({
+            name: "Ward",
+            effectType: "buff",
+            timingType: "instant",
+            shield: 5,
+          }),
+        ),
+      });
+      const engine = new BattleEngine(
+        createBattleInput([
+          createScenario("A", {
+            tank: [
+              createUnit("A", {
+                items: [ward],
+                targetScope: "self",
+                stats: createStats({ health: 100, meleeDmg: 0, speed: 100 }),
+              }),
+            ],
+          }),
+          createScenario("B", {
+            tank: [
+              createUnit("B", {
+                items: [ward],
+                targetScope: "self",
+                stats: createStats({ health: 100, meleeDmg: 0, speed: 100 }),
+              }),
+            ],
+          }),
+        ]),
+        { fatigueActionThreshold: 0, fatigueDamageStart: 1 },
+      );
+      const next = engine.resolveNextBatch();
+
+      expect(allUnits(next).map((unit) => unit.currentHealth)).toEqual([100, 100]);
+      expect(allUnits(next).map((unit) => unit.shieldLayers)).toEqual([
+        [expect.objectContaining({ remaining: 2 })],
+        [expect.objectContaining({ remaining: 2 })],
+      ]);
+    });
+
+    it("logs a shielded unit dead and prevents its action when bypass damage is lethal", () => {
+      const engine = new BattleEngine(
+        createBattleInput([
+          createScenario("A", {
+            support: [
+              createUnit("Caster", {
+                stats: createStats({ spellDmg: 0, speed: 100 }),
+                items: [
+                  createItem({
+                    name: "Piercing Ward",
+                    effects: effectSequence(
+                      createEffect({
+                        name: "Ward",
+                        effectType: "buff",
+                        timingType: "instant",
+                        shield: 25,
+                        lastsForActions: 3,
+                      }),
+                      createEffect({
+                        name: "Piercing Burn",
+                        effectType: "damage",
+                        timingType: "interval",
+                        directSpellDmg: 100,
+                        bypassesShield: true,
+                        triggerEveryActions: 1,
+                        triggerCount: 1,
+                      }),
+                    ),
+                  }),
+                ],
+              }),
+            ],
+          }),
+          createScenario("B", {
+            support: [
+              createUnit("Victim", {
+                stats: createStats({ health: 100, rangedDmg: 50, speed: 50 }),
+              }),
+            ],
+          }),
+        ]),
+      );
+
+      engine.resolveNextBatch();
+      const state = engine.resolveNextBatch();
+      const victim = allUnits(state).find((unit) => unit.name === "Victim")!;
+
+      expect(victim.currentHealth).toBe(0);
+      expect(victim.shieldLayers).toEqual([expect.objectContaining({ remaining: 25 })]);
+      expect(victim.actedCount).toBe(0);
+      expect(
+        state.log.some((entry) => entry.type === "death" && entry.unitId === victim.instanceId),
+      ).toBe(true);
+    });
+
     it("uses 500 resolved actions as the default fatigue threshold", () => {
       const engine = new BattleEngine(pairedInput(10_000, 0));
       for (let batch = 0; batch < 250; batch += 1) engine.resolveNextBatch();

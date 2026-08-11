@@ -57,6 +57,8 @@ export function createEffect(
     speed: null,
     dodge: null,
     criticalChance: null,
+    shield: null,
+    bypassesShield: false,
     directHealing: null,
     directMeleeDmg: null,
     directRangedDmg: null,

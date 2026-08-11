@@ -514,6 +514,115 @@ describe("effects", () => {
     expect(mage.currentHealth).toBe(200);
   });
 
+  it("does not replenish shield when healing restores health", () => {
+    const state = createEffectState();
+    const cleric = state.scenarios[0].rows.support[0]!;
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    mage.currentHealth = 50;
+    mage.shieldLayers = [{ id: "ward", remaining: 12 }];
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Mend",
+        effects: effectSequence(
+          createEffect({
+            name: "Mend",
+            effectType: "healing",
+            timingType: "instant",
+            directHealing: 20,
+          }),
+        ),
+      }),
+    );
+
+    expect(mage.currentHealth).toBe(70);
+    expect(mage.shieldLayers).toEqual([{ id: "ward", remaining: 12 }]);
+  });
+
+  it("uses shields for unflagged direct damage", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.shieldLayers = [{ id: "ward", remaining: 25 }];
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Blast",
+        effects: effectSequence(
+          createEffect({
+            name: "Arcane Damage",
+            effectType: "damage",
+            timingType: "instant",
+            directSpellDmg: 20,
+          }),
+        ),
+      }),
+    );
+
+    expect(warrior.currentHealth).toBe(300);
+    expect(warrior.shieldLayers).toEqual([{ id: "ward", remaining: 5 }]);
+  });
+
+  it("lets flagged direct damage bypass shields", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.shieldLayers = [{ id: "ward", remaining: 25 }];
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Piercing Blast",
+        effects: effectSequence(
+          createEffect({
+            name: "Piercing Blast",
+            effectType: "damage",
+            timingType: "instant",
+            directSpellDmg: 20,
+            bypassesShield: true,
+          }),
+        ),
+      }),
+    );
+
+    expect(warrior.currentHealth).toBe(280);
+    expect(warrior.shieldLayers).toEqual([{ id: "ward", remaining: 25 }]);
+  });
+
+  it("removes a timed shield when its effect expires", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Timed Ward",
+        effects: effectSequence(
+          createEffect({
+            name: "Ward",
+            effectType: "buff",
+            timingType: "instant",
+            shield: 12,
+            lastsForActions: 1,
+          }),
+        ),
+      }),
+    );
+
+    expect(warrior.shieldLayers).toHaveLength(1);
+    expect(warrior.shieldLayers[0]?.activeEffectId).toBe(warrior.activeEffects[0]?.id);
+    processActionOpportunities(state, 1);
+
+    expect(warrior.shieldLayers).toEqual([]);
+  });
+
   it("processes interval damage triggers and expires buff or debuff modifiers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;
@@ -587,6 +696,67 @@ describe("effects", () => {
       .filter((entry) => entry.origin?.effect?.name === "Triad")
       .map((entry) => entry.damage);
     expect(damages).toEqual([10, 20, 30]);
+  });
+
+  it("lets flagged interval damage bypass shields", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.currentHealth = 100;
+    warrior.shieldLayers = [{ id: "ward", remaining: 25 }];
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Piercing Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Piercing Burn",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            bypassesShield: true,
+            triggerEveryActions: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+    processActionOpportunities(state, 1);
+
+    expect(warrior.currentHealth).toBe(80);
+    expect(warrior.shieldLayers[0]?.remaining).toBe(25);
+  });
+
+  it("uses shields for unflagged interval damage", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.currentHealth = 100;
+    warrior.shieldLayers = [{ id: "ward", remaining: 25 }];
+
+    applyItemEffects(
+      state,
+      mage,
+      createItem({
+        name: "Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Burn",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            triggerEveryActions: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+    );
+    processActionOpportunities(state, 1);
+
+    expect(warrior.currentHealth).toBe(100);
+    expect(warrior.shieldLayers[0]?.remaining).toBe(5);
   });
 
   it("queues melee-only interval damage without requiring a spell value", () => {

@@ -56,22 +56,22 @@ function unit(overrides: Partial<BattleUnit>): BattleUnit {
 }
 
 const attackLog = {
-  tick: 11,
+  batchNumber: 1,
   type: "attack" as const,
   attacker: "Dawn Warden",
   attackerId: "scenario-a:tank:1",
   target: "Iron Guard",
   targetId: "scenario-b:melee:1",
   damage: 28,
-  message: "Tick 11: Dawn Warden attacks Iron Guard for 28 damage",
+  message: "Dawn Warden attacks Iron Guard for 28 damage",
 };
 
 const battleEndLog = {
-  tick: 184,
+  batchNumber: 93,
   type: "battle-end" as const,
   outcome: "Ambush at Dawn",
   winnerId: "scenario-a",
-  message: "Tick 184: Battle ends: Ambush at Dawn wins",
+  message: "Battle ends: Ambush at Dawn wins",
 };
 
 const fixture: Pick<ReplayOutput, "scenarios" | "result"> = {
@@ -81,12 +81,13 @@ const fixture: Pick<ReplayOutput, "scenarios" | "result"> = {
   ],
   result: {
     winnerId: "scenario-a",
-    ticksElapsed: 184,
+    actionsResolved: 184,
     finalState: {
-      tick: 184,
+      actionCount: 184,
+      batchCount: 93,
       status: "finished",
       winnerId: "scenario-a",
-      fatigueTickThreshold: 100,
+      fatigueActionThreshold: 500,
       fatigueDamageStart: 1,
       scenarios: [
         {
@@ -97,17 +98,16 @@ const fixture: Pick<ReplayOutput, "scenarios" | "result"> = {
               unit({
                 activeEffects: [
                   {
-                    id: "burning-1",
-                    name: "Burning",
+                    id: "focused-1",
+                    name: "Focused",
                     sourceUnitId: "scenario-b:ranged:1",
                     sourceScenarioId: "scenario-b",
                     targetUnitId: "scenario-a:tank:1",
-                    effectType: "damage",
-                    timingType: "interval",
+                    effectType: "buff",
+                    timingType: "instant",
+                    statKey: "speed",
                     value: 4,
-                    remainingTriggers: 2,
-                    nextTriggerTick: 190,
-                    intervalTicks: 10,
+                    actionsRemaining: 2,
                   },
                 ],
               }),
@@ -155,12 +155,18 @@ describe("BattleResultView", () => {
     render(<BattleResultView scenarios={fixture.scenarios} result={fixture.result} />);
 
     expect(screen.getByRole("heading", { name: "Ambush at Dawn wins" })).toBeVisible();
-    expect(screen.getByText("184 ticks")).toBeVisible();
+    expect(screen.getByText("184 actions resolved")).toBeVisible();
     expect(screen.getByRole("cell", { name: "82 / 120" })).toBeVisible();
     expect(screen.getByRole("cell", { name: "Alive" })).toBeVisible();
     expect(screen.getAllByRole("cell", { name: "Dead" })).toHaveLength(2);
-    expect(screen.getByText("Burning (2 triggers remaining)")).toBeVisible();
+    expect(screen.getByText("Focused (2 actions remaining)")).toBeVisible();
     expect(screen.getByText("Battle ended: Ambush at Dawn.")).toBeVisible();
+    expect(screen.queryByText(/tick/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Grouped by simultaneous action batch. Display order does not determine outcomes.",
+      ),
+    ).toBeVisible();
 
     const firstLedger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
     const unitNames = within(firstLedger)
@@ -226,23 +232,34 @@ describe("BattleResultView", () => {
   });
 
   it("renders a draw when neither scenario wins", () => {
-    render(
-      <BattleResultView
-        scenarios={fixture.scenarios}
-        result={{ ...fixture.result, winnerId: null }}
-      />,
-    );
+    const actionLimitResult = {
+      ...fixture.result,
+      winnerId: null,
+      log: [
+        {
+          ...battleEndLog,
+          outcome: "draw",
+          winnerId: null,
+          message: "Battle ends at the action limit: draw",
+        },
+      ],
+    };
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={actionLimitResult} />);
 
     expect(screen.getByRole("heading", { name: "Draw" })).toBeVisible();
+    expect(screen.getByText("Battle ended at the action limit: draw.")).toBeVisible();
   });
 
-  it("renders attributed turn blocks without per-event tick labels", () => {
-    const actionId = "11:scenario-a:tank:1:8";
+  it("renders simultaneous actions as peer turns in one labeled batch", () => {
+    const actionId = "action-dawn-warden-8";
+    const simultaneousActionId = "action-iron-guard-8";
     const result = {
       ...fixture.result,
       log: [
         {
           ...attackLog,
+          batchNumber: 4,
           actionId,
           origin: {
             kind: "basic-attack",
@@ -251,7 +268,7 @@ describe("BattleResultView", () => {
           },
         },
         {
-          tick: 11,
+          batchNumber: 4,
           type: "damage",
           source: attackLog.attacker,
           sourceId: attackLog.attackerId,
@@ -264,7 +281,23 @@ describe("BattleResultView", () => {
             actionId,
             sourceUnitId: attackLog.attackerId,
           },
-          message: "Tick 11: Dawn Warden hits Iron Guard for 28 damage",
+          message: "Dawn Warden hits Iron Guard for 28 damage",
+        },
+        {
+          batchNumber: 4,
+          type: "attack",
+          attacker: attackLog.target,
+          attackerId: attackLog.targetId,
+          target: attackLog.attacker,
+          targetId: attackLog.attackerId,
+          damage: 21,
+          actionId: simultaneousActionId,
+          origin: {
+            kind: "basic-attack",
+            actionId: simultaneousActionId,
+            sourceUnitId: attackLog.targetId,
+          },
+          message: "Iron Guard attacks Dawn Warden for 21 damage",
         },
       ],
     } as unknown as ReplayOutput["result"];
@@ -272,14 +305,19 @@ describe("BattleResultView", () => {
     render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
 
     const events = screen.getByRole("list", { name: "Battle events" });
+    const simultaneousActions = within(events).getByRole("list", {
+      name: "Simultaneous actions in batch 4",
+    });
+    expect(within(events).getByText("Simultaneous actions · Batch 4")).toBeVisible();
+    expect(within(simultaneousActions).getAllByRole("listitem")).toHaveLength(2);
     expect(within(events).getByText("Dawn Warden · Ambush at Dawn / Tank 1")).toBeVisible();
-    expect(within(events).getByText(/Iron Guard · The Iron Line \/ Melee 1/)).toBeVisible();
-    expect(within(events).getByText("Basic attack")).toBeVisible();
-    expect(within(events).queryByText("Tick 11", { exact: false })).not.toBeInTheDocument();
+    expect(within(events).getByText("Iron Guard · The Iron Line / Melee 1")).toBeVisible();
+    expect(within(events).getAllByText("Basic attack")).toHaveLength(2);
+    expect(within(events).queryByText(/tick/i)).not.toBeInTheDocument();
   });
 
   it("shows item-effect attribution on immediate and delayed outcomes", () => {
-    const actionId = "11:scenario-a:tank:1:8";
+    const actionId = "action-dawn-warden-8";
     const itemOrigin = {
       kind: "item-effect",
       actionId,
@@ -290,7 +328,7 @@ describe("BattleResultView", () => {
       ...fixture.result,
       log: [
         {
-          tick: 11,
+          batchNumber: 4,
           type: "item-activation",
           caster: attackLog.attacker,
           casterId: attackLog.attackerId,
@@ -300,10 +338,10 @@ describe("BattleResultView", () => {
           effects: ["Impact", "Burning"],
           actionId,
           origin: itemOrigin,
-          message: "Tick 11: Dawn Warden activates Oak Staff on Iron Guard",
+          message: "Dawn Warden activates Oak Staff on Iron Guard",
         },
         {
-          tick: 11,
+          batchNumber: 4,
           type: "damage",
           source: attackLog.attacker,
           sourceId: attackLog.attackerId,
@@ -312,10 +350,10 @@ describe("BattleResultView", () => {
           damage: 20,
           actionId,
           origin: { ...itemOrigin, effect: { name: "Impact", position: 1 } },
-          message: "Tick 11: Dawn Warden hits Iron Guard for 20 damage",
+          message: "Dawn Warden hits Iron Guard for 20 damage",
         },
         {
-          tick: 19,
+          batchNumber: 9,
           type: "damage",
           source: attackLog.attacker,
           sourceId: attackLog.attackerId,
@@ -323,7 +361,7 @@ describe("BattleResultView", () => {
           targetId: attackLog.targetId,
           damage: 8,
           origin: { ...itemOrigin, effect: { name: "Burning", position: 2 } },
-          message: "Tick 19: Dawn Warden hits Iron Guard for 8 damage",
+          message: "Dawn Warden hits Iron Guard for 8 damage",
         },
       ],
     } as unknown as ReplayOutput["result"];
@@ -340,77 +378,77 @@ describe("BattleResultView", () => {
   });
 
   it("nests detailed modifier applications and expirations beneath their effect headings", () => {
-    const actionId = "11:scenario-a:tank:1:8";
+    const actionId = "action-dawn-warden-8";
     const effectOrigin = {
       kind: "item-effect",
       actionId,
       sourceUnitId: attackLog.attackerId,
       item: { id: "hood", name: "Acolyte Hood", position: 1 },
-      effect: { id: "all-stats", name: "+10 all stats, 2 ticks", position: 1 },
+      effect: { id: "all-stats", name: "+10 all stats, 2 actions", position: 1 },
     };
     const result = {
       ...fixture.result,
       log: [
         {
-          tick: 11,
+          batchNumber: 4,
           type: "item-activation",
           caster: attackLog.attacker,
           casterId: attackLog.attackerId,
           item: "Acolyte Hood",
           targets: [attackLog.target],
           targetIds: [attackLog.targetId],
-          effects: ["+10 all stats, 2 ticks"],
+          effects: ["+10 all stats, 2 actions"],
           actionId,
           origin: effectOrigin,
-          message: "Tick 11: Dawn Warden activates Acolyte Hood",
+          message: "Dawn Warden activates Acolyte Hood",
         },
         {
-          tick: 11,
+          batchNumber: 4,
           type: "effect-apply",
-          effect: "+10 all stats, 2 ticks",
+          effect: "+10 all stats, 2 actions",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "health",
           value: 10,
-          expiresAtTick: 13,
+          actionsRemaining: 2,
           actionId,
           origin: effectOrigin,
           message: "Health modified",
         },
         {
-          tick: 11,
+          batchNumber: 4,
           type: "effect-apply",
-          effect: "+10 all stats, 2 ticks",
+          effect: "+10 all stats, 2 actions",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "speed",
           value: 10,
-          expiresAtTick: 13,
+          actionsRemaining: 2,
           actionId,
           origin: effectOrigin,
           message: "Speed modified",
         },
         {
-          tick: 13,
+          batchNumber: 7,
           type: "effect-expire",
-          effect: "+10 all stats, 2 ticks",
+          effect: "+10 all stats, 2 actions",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "health",
           value: 10,
-          expiresAtTick: 13,
+          actionsRemaining: 0,
           origin: effectOrigin,
           message: "Health expired",
         },
         {
-          tick: 13,
+          batchNumber: 7,
           type: "effect-expire",
-          effect: "+10 all stats, 2 ticks",
+          effect: "+10 all stats, 2 actions",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat: "speed",
           value: 10,
-          expiresAtTick: 13,
+          actionsRemaining: 0,
           origin: effectOrigin,
           message: "Speed expired",
         },
@@ -420,21 +458,21 @@ describe("BattleResultView", () => {
     render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
 
     const events = screen.getByRole("list", { name: "Battle events" });
-    const effectHeading = within(events).getByText("+10 all stats, 2 ticks", { exact: true });
+    const effectHeading = within(events).getByText("+10 all stats, 2 actions", { exact: true });
     expect(effectHeading).toBeVisible();
     expect(
       within(events).getByText(
-        "Health: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+        "Health: +10 on Iron Guard · The Iron Line / Melee 1 (2 actions remaining).",
       ),
     ).toBeVisible();
     expect(
       within(events).getByText(
-        "Speed: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+        "Speed: +10 on Iron Guard · The Iron Line / Melee 1 (2 actions remaining).",
       ),
     ).toBeVisible();
     expect(
       within(events).getByText(
-        "+10 all stats, 2 ticks expired on Iron Guard · The Iron Line / Melee 1.",
+        "+10 all stats, 2 actions expired on Iron Guard · The Iron Line / Melee 1.",
       ),
     ).toBeVisible();
     expect(within(events).getByText("Health: +10 expired.")).toBeVisible();
@@ -443,12 +481,12 @@ describe("BattleResultView", () => {
     const effectBlock = effectHeading.parentElement?.parentElement;
     expect(effectBlock).toContainElement(
       within(events).getByText(
-        "Health: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+        "Health: +10 on Iron Guard · The Iron Line / Melee 1 (2 actions remaining).",
       ),
     );
     expect(effectBlock).toContainElement(
       within(events).getByText(
-        "Speed: +10 on Iron Guard · The Iron Line / Melee 1 (until tick 13).",
+        "Speed: +10 on Iron Guard · The Iron Line / Melee 1 (2 actions remaining).",
       ),
     );
   });
@@ -458,7 +496,7 @@ describe("BattleResultView", () => {
       ...fixture.result,
       log: [
         {
-          tick: 11,
+          batchNumber: 4,
           type: "effect-apply",
           effect: "Ward",
           target: "Iron Guard",
@@ -478,22 +516,22 @@ describe("BattleResultView", () => {
       kind: "item-effect",
       sourceUnitId: attackLog.attackerId,
       item: { id: "hood", name: "Acolyte Hood", position: 1 },
-      effect: { id: "all-stats", name: "+10 all stats, 2 ticks", position: 1 },
+      effect: { id: "all-stats", name: "+10 all stats, 2 actions", position: 1 },
     };
     const result = {
       ...fixture.result,
       log: ["health", "mana", "meleeDmg", "rangedDmg", "manaRegen", "spellDmg", "speed"].map(
         (stat) => ({
-          tick: 13,
+          batchNumber: 7,
           type: "effect-expire",
-          effect: "+10 all stats, 2 ticks",
+          effect: "+10 all stats, 2 actions",
           target: "Iron Guard",
           targetId: "scenario-b:melee:1",
           stat,
           value: 10,
-          expiresAtTick: 13,
+          actionsRemaining: 0,
           origin: effectOrigin,
-          message: "Tick 13: +10 all stats, 2 ticks expires on Iron Guard",
+          message: "+10 all stats, 2 actions expires on Iron Guard",
         }),
       ),
     } as unknown as ReplayOutput["result"];

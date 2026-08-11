@@ -341,7 +341,7 @@ describe("useCreatePageState — isDirty (full form surface)", () => {
       name: "Rage",
       timingType: "interval",
       effectType: "buff",
-      intervalTicks: 1000,
+      triggerEveryActions: 2,
       triggerCount: 2,
     });
 
@@ -541,7 +541,7 @@ describe("useCreatePageState — race condition protection", () => {
       name: "Barbarian Roar",
       timingType: "instant",
       effectType: "buff",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
     mockItemsGet.mockImplementationOnce(
@@ -571,7 +571,7 @@ describe("useCreatePageState — race condition protection", () => {
       name: "Barbarian Roar",
       timingType: "instant",
       effectType: "buff",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
     expect(result.current.entityWorkspace.formValues).toMatchObject({
@@ -1350,7 +1350,7 @@ describe("useCreatePageState — effect save flows", () => {
       name: "",
       timingType: "instant",
       effectType: "buff",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
   });
@@ -1361,7 +1361,7 @@ describe("useCreatePageState — effect save flows", () => {
       name: "Rage",
       timingType: "interval",
       effectType: "buff",
-      intervalTicks: 1000,
+      triggerEveryActions: 2,
       triggerCount: 2,
       meleeDmg: 1.5,
     });
@@ -1378,7 +1378,7 @@ describe("useCreatePageState — effect save flows", () => {
       name: "Rage",
       timingType: "interval",
       effectType: "buff",
-      intervalTicks: 1000,
+      triggerEveryActions: 2,
       triggerCount: 2,
       meleeDmg: 1.5,
     });
@@ -1399,7 +1399,7 @@ describe("useCreatePageState — effect save flows", () => {
       name: "Arc Spark",
       timingType: "instant",
       effectType: "damage",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
 
@@ -1426,13 +1426,53 @@ describe("useCreatePageState — effect save flows", () => {
     expect(currentSearch.effect_id).toBe("e-created");
   });
 
+  it("saves interval timing with the action-based API fields", async () => {
+    mockEffectsCreate.mockResolvedValueOnce({
+      id: "e-created",
+      name: "Battle Rhythm",
+      timingType: "interval",
+      effectType: "buff",
+      triggerEveryActions: 2,
+      triggerCount: 3,
+      lastsForActions: null,
+    });
+
+    const { result } = renderHook(() => useCreatePageState({ tab: "Effects" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.createNew("Effects");
+      result.current.updateEntityField("name", "Battle Rhythm");
+      result.current.updateEntityField("timingType", "interval");
+      result.current.updateEntityField("triggerEveryActions", 2);
+      result.current.updateEntityField("triggerCount", 3);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockEffectsCreate).toHaveBeenCalledOnce();
+    const payload = mockEffectsCreate.mock.calls[0]?.[0];
+    expect(payload).toMatchObject({
+      name: "Battle Rhythm",
+      timingType: "interval",
+      triggerEveryActions: 2,
+      triggerCount: 3,
+      lastsForActions: null,
+    });
+    expect(payload).not.toHaveProperty("intervalTicks");
+    expect(payload).not.toHaveProperty("durationTicks");
+  });
+
   it("successful update clears dirty state", async () => {
     mockEffectsGet.mockResolvedValueOnce({
       id: "e1",
       name: "Rage",
       timingType: "instant",
       effectType: "buff",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
     mockEffectsUpdate.mockResolvedValueOnce({
@@ -1440,7 +1480,7 @@ describe("useCreatePageState — effect save flows", () => {
       name: "Rage Updated",
       timingType: "instant",
       effectType: "buff",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
 
@@ -1470,7 +1510,7 @@ describe("useCreatePageState — effect save flows", () => {
       name: "Rage",
       timingType: "instant",
       effectType: "buff",
-      intervalTicks: null,
+      triggerEveryActions: null,
       triggerCount: null,
     });
     mockEffectsUpdate.mockRejectedValueOnce(new Error("An effect with this name already exists."));

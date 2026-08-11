@@ -49,7 +49,13 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof LibraryPanel
     onScenarioSortChange: vi.fn(),
     onDeleteScenario: vi.fn(),
     effectListItems: [
-      { id: "ef-1", name: "Arcane Damage", timingType: "instant", effectType: "damage" },
+      {
+        id: "ef-1",
+        name: "Arcane Damage",
+        timingType: "instant",
+        effectType: "damage",
+        needsTimingConfiguration: false,
+      },
     ],
     effectPage: 1,
     effectTotalPages: 1,
@@ -134,5 +140,22 @@ describe("LibraryPanel", () => {
     renderPanel({ activeTab: "Scenarios" });
 
     expect(screen.queryByLabelText("Filter by scenario")).not.toBeInTheDocument();
+  });
+
+  it("marks effects whose migrated timing needs repair", () => {
+    renderPanel({
+      activeTab: "Effects",
+      effectListItems: [
+        {
+          id: "legacy-effect",
+          name: "Legacy Poison",
+          timingType: "interval",
+          effectType: "damage",
+          needsTimingConfiguration: true,
+        },
+      ],
+    });
+
+    expect(screen.getByText("Timing needs configuration")).toBeInTheDocument();
   });
 });

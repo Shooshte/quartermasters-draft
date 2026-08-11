@@ -52,7 +52,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
           },
         })}
@@ -112,7 +112,7 @@ describe("EntityWorkspace", () => {
               name: "Barbarian Roar",
               timingType: "instant",
               effectType: "buff",
-              intervalTicks: null,
+              triggerEveryActions: null,
               triggerCount: null,
             },
           })}
@@ -138,7 +138,7 @@ describe("EntityWorkspace", () => {
             name: "Test",
             timingType: "instant",
             effectType: "buff",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
           },
         })}
@@ -154,7 +154,7 @@ describe("EntityWorkspace", () => {
     expect(onFieldChange).toHaveBeenCalledWith("name", "TestX");
   });
 
-  it("renders effect editor with dropdowns and disabled interval fields for instant timing", () => {
+  it("renders action timing fields with guidance and disables interval fields for instant timing", () => {
     render(
       <EntityWorkspace
         workspace={makeWorkspace({
@@ -164,7 +164,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
           },
         })}
@@ -174,8 +174,13 @@ describe("EntityWorkspace", () => {
 
     expect(screen.getByTestId("effect-timing-type-select")).toBeInTheDocument();
     expect(screen.getByTestId("effect-effect-type-select")).toBeInTheDocument();
-    expect(screen.getByTestId("effect-intervalTicks-input")).toBeDisabled();
+    expect(screen.getByTestId("effect-triggerEveryActions-input")).toBeDisabled();
     expect(screen.getByTestId("effect-triggerCount-input")).toBeDisabled();
+    expect(screen.getByTestId("effect-lastsForActions-input")).toBeEnabled();
+    expect(
+      screen.getByText("Timing advances only when the affected unit gets an action opportunity."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/ticks?/i)).not.toBeInTheDocument();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
   });
 
@@ -325,7 +330,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
           },
         })}
@@ -359,7 +364,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "buff",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
           },
         })}
@@ -390,7 +395,7 @@ describe("EntityWorkspace", () => {
             name: "",
             timingType: "instant",
             effectType: "damage",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
           },
         })}
@@ -413,7 +418,7 @@ describe("EntityWorkspace", () => {
             name: "Rage",
             timingType: "interval",
             effectType: "buff",
-            intervalTicks: 1000,
+            triggerEveryActions: 2,
             triggerCount: 3,
           },
         })}
@@ -421,7 +426,7 @@ describe("EntityWorkspace", () => {
       />,
     );
 
-    expect(screen.getByTestId("effect-intervalTicks-input")).toBeEnabled();
+    expect(screen.getByTestId("effect-triggerEveryActions-input")).toBeEnabled();
     expect(screen.getByTestId("effect-triggerCount-input")).toBeEnabled();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Save Changes");
   });
@@ -438,7 +443,7 @@ describe("EntityWorkspace", () => {
             name: "Rage",
             timingType: "interval",
             effectType: "buff",
-            intervalTicks: 1000,
+            triggerEveryActions: 2,
             triggerCount: 3,
           },
         })}
@@ -450,5 +455,55 @@ describe("EntityWorkspace", () => {
     );
 
     expect(screen.getByTestId("entity-save-error")).toHaveTextContent("already exists");
+  });
+
+  it("shows a prominent repair warning and blocks saving incomplete legacy timing", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "effect",
+          entityId: "legacy-effect",
+          data: { name: "Legacy Poison", needsTimingConfiguration: true },
+          formValues: {
+            name: "Legacy Poison",
+            timingType: "interval",
+            effectType: "damage",
+            triggerEveryActions: null,
+            triggerCount: null,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Timing needs configuration");
+    expect(screen.getByTestId("entity-save-button")).toBeDisabled();
+  });
+
+  it("does not require a duration for an interval stat buff", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "edit",
+          entityType: "effect",
+          entityId: "battle-rhythm",
+          data: { name: "Battle Rhythm" },
+          formValues: {
+            name: "Battle Rhythm",
+            timingType: "interval",
+            effectType: "buff",
+            speed: 2,
+            triggerEveryActions: 2,
+            triggerCount: 3,
+            lastsForActions: null,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.queryByText("Timing needs configuration")).not.toBeInTheDocument();
+    expect(screen.getByTestId("entity-save-button")).toBeEnabled();
   });
 });

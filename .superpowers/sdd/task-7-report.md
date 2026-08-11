@@ -1,54 +1,80 @@
-# Task 7 report: E2E targeting and item placement acceptance
+# Task 7 Report: Web Effect Authoring and Legacy Repair UX
 
 ## Status
 
-Task 7 is implemented. The requested browser acceptance coverage now proves ranged-only item placement and an adjacent three-target highest-damage activation. Existing E2E coverage and page objects were migrated to the current targeting and item-row contracts; product behavior was not refactored.
+Implemented action-based effect authoring and legacy timing repair UX. Effect forms now use `triggerEveryActions`, `triggerCount`, and `lastsForActions`; validation and repair status match the API rules; library rows and workspaces show **Timing needs configuration**; strict mutation payloads exclude API metadata; and the direct Playwright coverage exercises repair of a persisted incomplete effect.
 
-## Implementation
+## Files Changed
 
-- Migrated unit-workspace feature coverage and page-object selectors from the retired target-side/row model to `targetScope`, `targetPriority`, `targetCount`, and `selectionShape`.
-- Added item-workspace acceptance coverage for allowed deployment rows persisting after save and reload.
-- Added deterministic scenario setup for an Archer equipped with a ranged-only Longbow, then asserted that the unit is available in the Ranged picker and absent from the Tank picker.
-- Added deterministic battle setup for a Templar configured for highest-damage targeting with `targetCount: 3` and `selectionShape: adjacent`, then asserted the activation records exactly the three contiguous ranged targets in order. Four equal-health candidates make the high-damage primary select a different adjacent window from the default high-health priority.
-- Migrated shared E2E database setup and read assertions from the removed unit-row seed model to item allowed rows and the current targeting fields.
-- Used existing stable test IDs and web-first Playwright assertions throughout; no sleeps were added.
+- `apps/web/src/components/create/effect-form.ts`
+- `apps/web/src/components/create/effect-colors.ts`
+- `apps/web/src/components/create/effect-workspace-form.tsx`
+- `apps/web/src/components/create/effect-library-list.tsx`
+- `apps/web/src/components/create/library-panel.tsx`
+- `apps/web/src/components/create/use-create-page-state.ts`
+- `apps/web/tests/unit/create/effect-form.test.ts`
+- `apps/web/tests/unit/create/entity-library-list.test.tsx`
+- `apps/web/tests/unit/create/entity-workspace.test.tsx`
+- `apps/web/tests/unit/create/library-panel.test.tsx`
+- `apps/web/tests/unit/create/use-create-page-state.test.tsx`
+- `e2e/features/create/effect-workspace.feature`
+- `e2e/tests/scenario-builder/effect-workspace.test.ts`
+- `.superpowers/sdd/task-7-report.md`
 
-## TDD evidence
+The additional typed library fixtures and direct Playwright spec were necessary contract/acceptance fallout from the requested list status and Gherkin changes.
 
-The first two focused attempts could not reach Playwright because Docker timed out fetching registry metadata for `node:24-alpine` with `DeadlineExceeded`. The application image was then rebuilt locally from the already-present Node 24 dependency layer; the temporary Dockerfile was removed after use.
+## TDD Evidence
 
-Focused command:
+### RED 1: action timing and repair behavior
 
-```text
-pnpm --filter @qd/e2e test:e2e -- scenario-builder/unit-workspace.test.ts scenario-builder/library-items-tab.test.ts scenario-builder/scenario-workspace.test.ts battle/battle-lab.test.ts
+Command:
+
+```bash
+pnpm --filter @qd/api build
+pnpm --filter @qd/web test -- tests/unit/create/effect-form.test.ts tests/unit/create/entity-workspace.test.tsx tests/unit/create/use-create-page-state.test.tsx tests/unit/create/library-panel.test.tsx
 ```
 
-- RED: 75 passed, 1 failed. The failure was an extra empty-state-copy assertion beyond the required picker restriction; the required assertion that Archer was absent from Tank had already passed.
-- GREEN: 76 passed in 41.6s after removing that copy-level overconstraint. The exact required availability/absence assertion remained.
+Result: API build passed; web tests failed with 13 expected failures and 370 passes. Failures were the old tick-shaped defaults/validation/payload, missing action field IDs and helper text, missing workspace warning, missing list warning, and interval modifier save behavior.
+
+### RED 2: strict API mutation payload safety
+
+Command:
+
+```bash
+pnpm --filter @qd/web test -- tests/unit/create/effect-form.test.ts
+```
+
+Result: one expected failure because `effectRecordToFormValues` copied API-only `id`, `needsTimingConfiguration`, and `updatedAt` fields into form values.
+
+### GREEN
+
+Command:
+
+```bash
+pnpm --filter @qd/web test -- tests/unit/create/effect-form.test.ts tests/unit/create/entity-workspace.test.tsx tests/unit/create/use-create-page-state.test.tsx tests/unit/create/library-panel.test.tsx tests/unit/create/entity-library-list.test.tsx
+```
+
+Result: 46 test files passed, 384 tests passed.
 
 ## Verification
 
-- Focused E2E command above: PASS, 76/76 in 40.2s on the final reviewed fixture.
-- `pnpm run test`: PASS, 10/10 Turbo tasks; web 46 files / 362 tests, API 146 tests, DB 69 tests, engine 121 tests, E2E unit 4 tests.
-- `pnpm run test:e2e`: PASS, 290/290 in 1.7m.
-- `pnpm run lint`: PASS; Biome checked 283 files and all 9 typecheck tasks succeeded.
-- `pnpm run typecheck`: PASS, 9/9 Turbo tasks.
-- `git diff --check`: PASS.
+- `pnpm --filter @qd/api build` — passed.
+- Focused web test command above — passed, 46 files / 384 tests.
+- `pnpm --filter @qd/e2e test:e2e -- tests/scenario-builder/effect-workspace.test.ts` — passed, 9 tests.
+- `pnpm --filter @qd/web build` — passed.
+- Scoped `pnpm exec biome check ...` — passed with no fixes.
+- `git diff --check` — passed.
+- `pnpm --filter @qd/web typecheck` — blocked by pre-existing/in-progress Task 8 battle ledger/result migration errors only. Errors are confined to `battle-event-ledger.tsx`, `battle-result.tsx`, and `battle-result.test.tsx` references to removed tick contracts; Task 7 contributes no type errors.
 
-A read-only completion review found that the initial three-candidate battle fixture proved count and contiguity but could not distinguish `highest_damage` from the default priority. The final four-candidate fixture gives Samurai uniquely highest damage while all candidates have equal health, and expects slots 2–4; a default high-health regression would instead choose the slots 1–3 window. The review also aligned the placement test with the feature wording by opening an existing scenario rather than a new form.
+## Self-Review
 
-The initial full lint run identified formatting-only violations left in four files changed by earlier tasks: `unit-targeting-summary.tsx`, `scenario-input.ts`, `0016_snapshot.json`, and `_journal.json`. Applying Biome's mechanical formatting to those files made the required full lint command pass; no behavior changed.
+- Confirmed no tick-facing fields or copy remain in effect authoring, its Gherkin, or its direct Playwright spec; old names remain only in negative payload assertions.
+- Confirmed instant timing clears cadence/count but retains duration.
+- Confirmed instant stat buffs/debuffs require duration, while interval stat modifiers require cadence/count without duration.
+- Confirmed warning copy is exact in workspaces and list rows; workspace warning uses `role="alert"`, labels remain associated with inputs, and save stays disabled while invalid.
+- Confirmed action values persist through the real API and incomplete migrated timing can be repaired end to end.
+- Independent code review found no remaining Critical, Important, or Minor issues after adding persisted legacy-repair Playwright coverage.
 
-After the review fix, the first lint rerun identified one line-wrap-only formatter violation in `battle-lab.test.ts`; applying Biome's exact output made the final lint command pass.
+## Concerns / Follow-Up
 
-## Commit
-
-- `test(e2e): cover targeting and item row restrictions`
-
-## Assumptions and follow-ups
-
-- Reviewer follow-up: aligned the Battle Lab acceptance sentence with the deterministic slots 2–4 fixture, which resolves to `Mage`, `Samurai`, and `Ranger`.
-
-- Test-only SQL uses deterministic IDs for item-row and unit-item links and restores isolation through the existing worker database reset flow.
-- The host shell uses Node `v22.20.0`, while the repository requests Node `>=24 <26`; commands emitted the existing engine warning. The Dockerized application used Node 24.
-- Docker registry metadata requests timed out during the first image builds. Verification completed using a locally rebuilt image based on the existing Node 24 dependency layer, and the full E2E suite passed.
+- Global web typecheck cannot turn green until Task 8 updates the battle ledger/result presentation to the new engine contracts. Those files were explicitly excluded from Task 7 and were not edited.

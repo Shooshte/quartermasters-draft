@@ -3,23 +3,32 @@
 // e2e/tests/scenario-builder/library-effects-tab.test.ts.
 import { expect, test } from "../db-reset.fixture";
 import { BARBARIAN_ROAR_ID } from "../helpers/seed-constants";
+import { runWorkerSql } from "../helpers/worker-db";
 import { EffectWorkspacePage } from "../pages/effect-workspace.page";
+
+const LEGACY_TIMING_EFFECT_ID = "a0000000-0000-0000-0000-000000000099";
 
 test.beforeEach(async ({ resetDb }) => {
   await resetDb();
 });
 
 test.describe("Effect Workspace CRUD", () => {
-  test("interval fields are visible but disabled for instant timing", async ({ gmPage }) => {
+  test("interval action fields are visible but disabled for instant timing", async ({ gmPage }) => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openNew();
 
-    await expect(gmPage.getByTestId("effect-intervalTicks-input")).toBeVisible();
+    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toBeVisible();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeVisible();
-    await expect(gmPage.getByTestId("effect-intervalTicks-input")).toBeDisabled();
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeVisible();
+    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toBeDisabled();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeDisabled();
-    await expect(gmPage.getByText("Interval (ticks)", { exact: true })).toBeVisible();
-    await expect(gmPage.getByText("Duration (ticks)", { exact: true })).toBeVisible();
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeEnabled();
+    await expect(
+      gmPage.getByText("Trigger every (affected-unit actions)", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      gmPage.getByText("Lasts for (affected-unit actions)", { exact: true }),
+    ).toBeVisible();
   });
 
   test("validation blocks save when interval fields are missing", async ({ gmPage }) => {
@@ -29,6 +38,31 @@ test.describe("Effect Workspace CRUD", () => {
     await effect.setTimingType("interval");
 
     await expect(effect.saveButton).toBeDisabled();
+  });
+
+  test("repairs incomplete migrated timing before saving", async ({ gmPage }, testInfo) => {
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      `INSERT INTO effects (id, name, timing_type, effect_type, direct_spell_dmg)
+       VALUES ('${LEGACY_TIMING_EFFECT_ID}', 'Legacy Poison', 'interval', 'damage', 2)`,
+    );
+    const effect = new EffectWorkspacePage(gmPage);
+
+    await effect.openById(LEGACY_TIMING_EFFECT_ID);
+
+    await expect(gmPage.getByRole("alert")).toHaveText("Timing needs configuration");
+    await expect(effect.saveButton).toBeDisabled();
+
+    await gmPage.getByTestId("effect-triggerEveryActions-input").fill("2");
+    await gmPage.getByTestId("effect-triggerCount-input").fill("3");
+
+    await expect(gmPage.getByRole("alert")).not.toBeVisible();
+    await expect(effect.saveButton).toBeEnabled();
+    await effect.saveUpdate();
+
+    await gmPage.reload();
+    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toHaveValue("2");
+    await expect(gmPage.getByTestId("effect-triggerCount-input")).toHaveValue("3");
   });
 
   test("timing chip background click forwards focus to the native select", async ({ gmPage }) => {
@@ -62,14 +96,12 @@ test.describe("Effect Workspace CRUD", () => {
 
     await effect.fillName("Battle Rhythm");
     await effect.setTimingType("interval");
-    await gmPage.getByTestId("effect-intervalTicks-input").fill("1000");
-    await gmPage.getByTestId("effect-durationTicks-input").fill("2500");
+    await gmPage.getByTestId("effect-triggerEveryActions-input").fill("2");
     await gmPage.getByTestId("effect-triggerCount-input").fill("3");
     await effect.saveCreate();
 
     await expect(effect.timingTypeSelect).toHaveValue("interval");
-    await expect(gmPage.getByTestId("effect-intervalTicks-input")).toHaveValue("1000");
-    await expect(gmPage.getByTestId("effect-durationTicks-input")).toHaveValue("2500");
+    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toHaveValue("2");
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toHaveValue("3");
   });
 
@@ -79,6 +111,7 @@ test.describe("Effect Workspace CRUD", () => {
 
     await effect.fillName("Mana Drain");
     await gmPage.getByTestId("effect-mana-input").fill("-40");
+    await gmPage.getByTestId("effect-lastsForActions-input").fill("3");
     await effect.saveCreate();
     await gmPage.reload();
 

@@ -134,7 +134,15 @@ describe("Library list wrappers", () => {
   it("keeps effect, item, and unit labels intact", () => {
     const { rerender } = render(
       <EffectLibraryList
-        items={[{ id: "e1", name: "Arcane Damage", timingType: "instant", effectType: "damage" }]}
+        items={[
+          {
+            id: "e1",
+            name: "Arcane Damage",
+            timingType: "instant",
+            effectType: "damage",
+            needsTimingConfiguration: false,
+          },
+        ]}
         isLoading={false}
         isFetching={false}
         selectedId={null}

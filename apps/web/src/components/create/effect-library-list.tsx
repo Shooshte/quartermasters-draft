@@ -2,7 +2,13 @@ import { EntityLibraryList } from "./entity-library-list";
 import type { EffectSortBy, EffectSortDir } from "./types";
 
 interface EffectLibraryListProps {
-  items: { id: string; name: string; timingType: string; effectType: string }[];
+  items: {
+    id: string;
+    name: string;
+    timingType: string;
+    effectType: string;
+    needsTimingConfiguration: boolean;
+  }[];
   isLoading: boolean;
   isFetching: boolean;
   selectedId: string | null;
@@ -26,7 +32,14 @@ export function EffectLibraryList(props: EffectLibraryListProps) {
         {
           key: "name",
           label: "Name",
-          renderCell: (item) => item.name,
+          renderCell: (item) => (
+            <span className="flex flex-col gap-0.5">
+              <span>{item.name}</span>
+              {item.needsTimingConfiguration ? (
+                <span className="text-amber-300">Timing needs configuration</span>
+              ) : null}
+            </span>
+          ),
         },
         {
           key: "timingType",

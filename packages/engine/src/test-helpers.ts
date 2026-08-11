@@ -31,6 +31,7 @@ export function createEffect(
   return {
     id: effect.id ?? effect.name?.toLowerCase().replace(/\s+/g, "-") ?? `effect-${Math.random()}`,
     name: effect.name ?? "Effect",
+    isTaunt: false,
     triggerEveryActions: null,
     triggerCount: null,
     lastsForActions: null,

@@ -51,7 +51,7 @@ export interface EffectTemplateInput {
   name?: string;
   timingType: EffectTimingType;
   effectType: EffectCategory;
-  isTaunt?: boolean;
+  isTaunt: boolean;
   triggerEveryActions?: number | null;
   triggerCount?: number | null;
   lastsForActions?: number | null;

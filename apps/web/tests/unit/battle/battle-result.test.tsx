@@ -50,6 +50,7 @@ function unit(overrides: Partial<BattleUnit>): BattleUnit {
     targetCount: 1,
     selectionShape: "individual",
     activeEffects: [],
+    shieldLayers: [],
     actedCount: 7,
     ...overrides,
   };

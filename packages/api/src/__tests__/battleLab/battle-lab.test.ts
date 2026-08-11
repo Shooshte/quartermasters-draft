@@ -234,9 +234,55 @@ describe("battleLabRouter", () => {
         { id: SCENARIO_B_ID, name: "Bravo" },
       ]);
       expect(result.result).toMatchObject({
-        winnerId: SCENARIO_A_ID,
-        ticksElapsed: 1,
+        winnerId: null,
+        actionsResolved: 2,
+        finalState: {
+          actionCount: 2,
+          batchCount: 1,
+        },
       });
+      expect(result.result.log[0]).toMatchObject({ batchNumber: 1 });
+    });
+
+    it("rejects linked effects with incomplete action timing before replay insertion", async () => {
+      const scenarioWithIncompleteEffect = livingScenario(SCENARIO_A_ID, "Incomplete Alpha");
+      const incompleteUnit = scenarioWithIncompleteEffect.rows?.tank?.[0];
+      if (!incompleteUnit) {
+        throw new Error("Expected the test scenario to include a tank unit.");
+      }
+      incompleteUnit.items = [
+        {
+          id: "item-incomplete",
+          name: "Incomplete Item",
+          effects: [
+            {
+              sequenceOrder: 1,
+              effect: {
+                name: "Incomplete Burn",
+                timingType: "interval",
+                effectType: "damage",
+                triggerEveryActions: null,
+                triggerCount: 3,
+              },
+            },
+          ],
+        },
+      ];
+      mockLoadBattleScenario
+        .mockResolvedValueOnce(scenarioWithIncompleteEffect)
+        .mockResolvedValueOnce(scenarioB);
+
+      await expect(
+        createCaller(gmCtx).battleLab.create({
+          scenarioAId: SCENARIO_A_ID,
+          scenarioBId: SCENARIO_B_ID,
+          seed: "incomplete-effect",
+        }),
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: 'Effect "Incomplete Burn" timing needs configuration.',
+      });
+      expect(mockInsert).not.toHaveBeenCalled();
     });
 
     it("does not insert when battle resolution fails validation", async () => {

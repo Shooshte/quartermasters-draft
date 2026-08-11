@@ -22,6 +22,18 @@ const { effectsRouter } = await import("../../routers/scenarioBuilder/effects");
 
 const createCaller = createCallerFactory(router({ effects: effectsRouter }));
 
+const emptyEffectStats = {
+  meleeDmg: null,
+  health: null,
+  mana: null,
+  rangedDmg: null,
+  manaRegen: null,
+  spellDmg: null,
+  speed: null,
+  dodge: null,
+  criticalChance: null,
+};
+
 describe("effectsRouter", () => {
   beforeEach(() => {
     mockSelect.mockReset();
@@ -40,6 +52,10 @@ describe("effectsRouter", () => {
           name: "Alpha",
           timingType: "instant",
           effectType: "buff",
+          triggerEveryActions: null,
+          triggerCount: null,
+          lastsForActions: null,
+          ...emptyEffectStats,
           updatedAt: new Date(),
         },
         {
@@ -47,6 +63,10 @@ describe("effectsRouter", () => {
           name: "Beta",
           timingType: "interval",
           effectType: "damage",
+          triggerEveryActions: 2,
+          triggerCount: 3,
+          lastsForActions: null,
+          ...emptyEffectStats,
           updatedAt: new Date(),
         },
       ];
@@ -59,7 +79,10 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.list();
-      expect(result.items).toEqual(mockEffects);
+      expect(result.items).toEqual([
+        { ...mockEffects[0], needsTimingConfiguration: false },
+        { ...mockEffects[1], needsTimingConfiguration: false },
+      ]);
       expect(result.page).toBe(1);
       expect(result.limit).toBe(20);
       expect(result.totalCount).toBe(5);
@@ -97,7 +120,7 @@ describe("effectsRouter", () => {
 
       const caller = createCaller(gmCtx);
       const result = await caller.effects.list({ page: 2, limit: 10 });
-      expect(result.items).toEqual(mockEffects);
+      expect(result.items).toEqual([{ ...mockEffects[0], needsTimingConfiguration: false }]);
       expect(result.page).toBe(2);
       expect(result.limit).toBe(10);
       expect(result.totalCount).toBe(15);
@@ -147,6 +170,30 @@ describe("effectsRouter", () => {
 
       await expect(list({ linkageFilter: { mode: "scenario" } })).rejects.toThrow();
     });
+
+    it("marks legacy interval timing for configuration", async () => {
+      const effectRow = {
+        id: "1",
+        name: "Legacy Burn",
+        timingType: "interval" as const,
+        effectType: "damage" as const,
+        triggerEveryActions: null,
+        triggerCount: null,
+        lastsForActions: null,
+        ...emptyEffectStats,
+        updatedAt: new Date(),
+      };
+      let callCount = 0;
+      mockSelect.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return chainable([effectRow]);
+        return chainable([{ count: 1 }]);
+      });
+
+      const result = await createCaller(gmCtx).effects.list();
+
+      expect(result.items[0]?.needsTimingConfiguration).toBe(true);
+    });
   });
 
   describe("get", () => {
@@ -160,6 +207,10 @@ describe("effectsRouter", () => {
         name: "Barbarian Roar",
         effectType: "buff",
         timingType: "instant",
+        triggerEveryActions: null,
+        triggerCount: null,
+        lastsForActions: null,
+        ...emptyEffectStats,
       };
       mockSelect.mockReturnValue(chainable([mockEffect]));
 
@@ -167,7 +218,7 @@ describe("effectsRouter", () => {
       const result = await caller.effects.get({
         id: "a0000000-0000-4000-8000-000000000001",
       });
-      expect(result).toEqual(mockEffect);
+      expect(result).toEqual({ ...mockEffect, needsTimingConfiguration: false });
     });
 
     it("throws NOT_FOUND when effect is missing", async () => {
@@ -237,8 +288,9 @@ describe("effectsRouter", () => {
             name: "New Effect",
             timingType: "instant",
             effectType: "buff",
-            intervalTicks: null,
+            triggerEveryActions: null,
             triggerCount: null,
+            lastsForActions: null,
           },
         ]),
       );
@@ -261,8 +313,9 @@ describe("effectsRouter", () => {
             name: "Rage",
             timingType: "interval",
             effectType: "buff",
-            intervalTicks: 1000,
+            triggerEveryActions: 2,
             triggerCount: 3,
+            lastsForActions: null,
           },
         ]),
       );
@@ -272,14 +325,14 @@ describe("effectsRouter", () => {
         name: "Rage",
         timingType: "interval",
         effectType: "buff",
-        intervalTicks: 1000,
+        triggerEveryActions: 2,
         triggerCount: 3,
       });
 
       expect(result).toMatchObject({
         id: "e2",
         timingType: "interval",
-        intervalTicks: 1000,
+        triggerEveryActions: 2,
         triggerCount: 3,
       });
     });
@@ -289,6 +342,39 @@ describe("effectsRouter", () => {
       await expect(
         caller.effects.create({ name: "Rage", timingType: "interval", effectType: "buff" }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("rejects legacy tick aliases", async () => {
+      const caller = createCaller(gmCtx);
+      const create = caller.effects.create as (input: unknown) => Promise<unknown>;
+
+      await expect(
+        create({
+          name: "Legacy Rage",
+          timingType: "interval",
+          effectType: "damage",
+          triggerEveryActions: 2,
+          triggerCount: 3,
+          intervalTicks: 1_000,
+          durationTicks: 3_000,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it("requires lastsForActions for a stat-bearing modifier", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Fleeting Strength",
+          timingType: "instant",
+          effectType: "buff",
+          meleeDmg: 5,
+          lastsForActions: null,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
     });
 
     it.each([

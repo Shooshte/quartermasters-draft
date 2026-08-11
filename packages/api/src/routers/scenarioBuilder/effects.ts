@@ -24,10 +24,10 @@ const nullablePositiveInteger = z.number().int().positive().nullable().default(n
 const effectInputShape = {
   name: z.string().trim().min(1),
   timingType: z.enum(["instant", "interval"]),
-  intervalTicks: nullablePositiveInteger,
+  triggerEveryActions: nullablePositiveInteger,
   triggerCount: nullablePositiveInteger,
   effectType: z.enum(["buff", "debuff", "healing", "damage"]),
-  durationTicks: nullablePositiveInteger,
+  lastsForActions: nullablePositiveInteger,
   meleeDmg: nullableNumber,
   health: nullableNumber,
   mana: z.number().finite().nullable().default(null),
@@ -43,15 +43,56 @@ const effectInputShape = {
   directSpellDmg: nullableNumber,
 } satisfies z.ZodRawShape;
 
-const effectInputBaseSchema = z.object(effectInputShape);
+const effectInputBaseSchema = z.object(effectInputShape).strict();
 
-function validateTimingFields(input: z.infer<typeof effectInputBaseSchema>, ctx: z.RefinementCtx) {
+const EFFECT_STAT_FIELDS = [
+  "health",
+  "mana",
+  "meleeDmg",
+  "rangedDmg",
+  "manaRegen",
+  "spellDmg",
+  "speed",
+  "dodge",
+  "criticalChance",
+] as const;
+
+type EffectTimingInput = z.infer<typeof effectInputBaseSchema>;
+type EffectTimingStatusInput = Pick<
+  EffectTimingInput,
+  | "timingType"
+  | "triggerEveryActions"
+  | "triggerCount"
+  | "lastsForActions"
+  | "effectType"
+  | (typeof EFFECT_STAT_FIELDS)[number]
+>;
+
+function needsTimingConfiguration(input: EffectTimingStatusInput): boolean {
   if (input.timingType === "interval") {
-    if (input.intervalTicks === null) {
+    return input.triggerEveryActions === null || input.triggerCount === null;
+  }
+
+  const hasModifier =
+    (input.effectType === "buff" || input.effectType === "debuff") &&
+    EFFECT_STAT_FIELDS.some((field) => input[field] !== null);
+  return hasModifier && input.lastsForActions === null;
+}
+
+function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect: T) {
+  return {
+    ...effect,
+    needsTimingConfiguration: needsTimingConfiguration(effect),
+  };
+}
+
+function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
+  if (input.timingType === "interval") {
+    if (input.triggerEveryActions === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["intervalTicks"],
-        message: "Tick interval is required for interval timing.",
+        path: ["triggerEveryActions"],
+        message: "Trigger every actions is required for interval timing.",
       });
     }
     if (input.triggerCount === null) {
@@ -63,14 +104,14 @@ function validateTimingFields(input: z.infer<typeof effectInputBaseSchema>, ctx:
     }
   }
 
-  if (
-    input.timingType === "instant" &&
-    (input.intervalTicks !== null || input.triggerCount !== null)
-  ) {
+  const hasModifier =
+    (input.effectType === "buff" || input.effectType === "debuff") &&
+    EFFECT_STAT_FIELDS.some((field) => input[field] !== null);
+  if (hasModifier && input.lastsForActions === null) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ["timingType"],
-      message: "Instant timing cannot include interval fields.",
+      path: ["lastsForActions"],
+      message: "Lasts for actions is required for stat buffs and debuffs.",
     });
   }
 }
@@ -81,7 +122,7 @@ function normalizeEffectInput<T extends z.infer<typeof effectInputSchema>>(input
   return {
     ...input,
     name: input.name.trim(),
-    intervalTicks: input.timingType === "instant" ? null : input.intervalTicks,
+    triggerEveryActions: input.timingType === "instant" ? null : input.triggerEveryActions,
     triggerCount: input.timingType === "instant" ? null : input.triggerCount,
   };
 }
@@ -134,7 +175,19 @@ export const effectsRouter = router({
         id: effects.id,
         name: effects.name,
         timingType: effects.timingType,
+        triggerEveryActions: effects.triggerEveryActions,
+        triggerCount: effects.triggerCount,
         effectType: effects.effectType,
+        lastsForActions: effects.lastsForActions,
+        meleeDmg: effects.meleeDmg,
+        health: effects.health,
+        mana: effects.mana,
+        rangedDmg: effects.rangedDmg,
+        manaRegen: effects.manaRegen,
+        spellDmg: effects.spellDmg,
+        speed: effects.speed,
+        dodge: effects.dodge,
+        criticalChance: effects.criticalChance,
         updatedAt: effects.updatedAt,
       })
       .from(effects);
@@ -148,7 +201,12 @@ export const effectsRouter = router({
       linkageCondition ? countQuery.where(linkageCondition) : countQuery,
     ]);
 
-    return toPaginatedResult(items, countResult, input.page, input.limit);
+    return toPaginatedResult(
+      items.map(withTimingConfigurationStatus),
+      countResult,
+      input.page,
+      input.limit,
+    );
   }),
 
   get: gmProcedure.input(z.object({ id: idSchema })).query(async ({ input }) => {
@@ -158,7 +216,7 @@ export const effectsRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
     }
 
-    return effect;
+    return withTimingConfigurationStatus(effect);
   }),
 
   create: gmProcedure.input(effectInputSchema).mutation(async ({ input }) => {
@@ -167,7 +225,7 @@ export const effectsRouter = router({
       if (!created) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Effect was not created." });
       }
-      return created;
+      return withTimingConfigurationStatus(created);
     } catch (error) {
       if (error instanceof TRPCError) {
         throw error;
@@ -178,7 +236,11 @@ export const effectsRouter = router({
 
   update: gmProcedure
     .input(
-      z.object({ id: idSchema }).merge(effectInputBaseSchema).superRefine(validateTimingFields),
+      z
+        .object({ id: idSchema })
+        .merge(effectInputBaseSchema)
+        .strict()
+        .superRefine(validateTimingFields),
     )
     .mutation(async ({ input }) => {
       const { id, ...rest } = input;
@@ -193,7 +255,7 @@ export const effectsRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Effect not found" });
         }
 
-        return updated;
+        return withTimingConfigurationStatus(updated);
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;

@@ -65,3 +65,30 @@ The delegated review found no critical issues. Its stale-eligibility finding was
 - Self-target summaries now always read `Targets the caster.` and intentionally ignore target count and selection shape.
 - TDD RED: `pnpm --filter @qd/web test -- apps/web/tests/unit/create/scenario-workspace.test.tsx apps/web/tests/unit/create/unit-workspace-form.test.tsx` failed with the stale Add button enabled and the old self individual/adjacent copy.
 - GREEN: the same focused command passed with 46 files / 362 tests. It emitted the existing Node v22 versus required Node >=24 engine warning.
+
+## API validation and mapping addendum
+
+### Files changed
+
+- `packages/api/src/routers/scenarioBuilder/effects.ts`
+- `packages/api/src/routers/battleLab/load-scenario.ts`
+- `packages/api/src/routers/battleLab/scenario-input.ts`
+- `packages/api/src/__tests__/scenarioBuilder/effects.test.ts`
+- `packages/api/src/__tests__/battleLab/load-scenario.test.ts`
+- `packages/api/src/__tests__/battleLab/scenario-input.test.ts`
+- `packages/api/src/__tests__/battleLab/battle-lab.test.ts`
+
+### TDD RED/GREEN
+
+After replacing API fixtures with action timing fields and adding status, validation, mapping, alias-rejection, and battle-result coverage, focused API tests failed with seven intended assertions. They identified legacy tick fields, missing `needsTimingConfiguration`, unmapped scenario timing, and an obsolete result assertion. The green implementation accepts only `triggerEveryActions`, `triggerCount`, and `lastsForActions`; derives repair status on list/get/create/update output; maps action timing into the engine; and lets engine validation return `BAD_REQUEST` before replay insertion.
+
+### Verification and review
+
+- `pnpm --filter @qd/engine build` — passed
+- `pnpm --filter @qd/db build` — passed
+- Focused API tests and `pnpm --filter @qd/api test` — 152 passed
+- `pnpm --filter @qd/api typecheck` and `pnpm --filter @qd/api build` — passed
+- `pnpm run test` — 10 Turbo tasks passed
+- `pnpm run test:e2e` — passed
+- Scoped Biome check and `git diff --check` — passed
+- No API production code retains tick timing fields; legacy aliases are strictly rejected. No concerns identified.

@@ -45,9 +45,9 @@ type EffectRecord = {
   name: string;
   timingType: EffectTemplateInput["timingType"];
   effectType: EffectTemplateInput["effectType"];
-  intervalTicks: number | null;
+  triggerEveryActions: number | null;
   triggerCount: number | null;
-  durationTicks: number | null;
+  lastsForActions: number | null;
   meleeDmg: number | null;
   health: number | null;
   mana: number | null;
@@ -132,9 +132,9 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
           name: effect.name,
           timingType: effect.timingType,
           effectType: effect.effectType,
-          intervalTicks: effect.intervalTicks,
+          triggerEveryActions: effect.triggerEveryActions,
           triggerCount: effect.triggerCount,
-          durationTicks: effect.durationTicks,
+          lastsForActions: effect.lastsForActions,
           meleeDmg: effect.meleeDmg,
           health: effect.health,
           mana: effect.mana,

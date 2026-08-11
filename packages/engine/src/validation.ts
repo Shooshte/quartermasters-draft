@@ -62,6 +62,22 @@ export function validateBattleInput(input: BattleInput): void {
 
 function validateEffectTiming(unit: UnitInput): void {
   for (const { effect } of (unit.items ?? []).flatMap((item) => item.effects ?? [])) {
+    if (effect.isTaunt && effect.timingType === "interval") {
+      throw new InvalidBattleInputError(
+        `Taunt effect "${effect.name ?? "Effect"}" must use instant timing.`,
+      );
+    }
+    if (
+      effect.isTaunt &&
+      effect.timingType === "instant" &&
+      effect.lastsForActions != null &&
+      (!Number.isInteger(effect.lastsForActions) || effect.lastsForActions <= 0)
+    ) {
+      throw new InvalidBattleInputError(
+        `Taunt effect "${effect.name ?? "Effect"}" must have a positive duration.`,
+      );
+    }
+
     const intervalTimingMissing =
       effect.timingType === "interval" &&
       (effect.triggerEveryActions == null || effect.triggerCount == null);

@@ -152,6 +152,7 @@ export interface ActiveEffectState {
   actionsUntilTrigger?: number;
   triggerEveryActions?: number;
   actionsRemaining?: number;
+  isTaunt?: boolean;
   origin?: BattleLogOrigin;
 }
 

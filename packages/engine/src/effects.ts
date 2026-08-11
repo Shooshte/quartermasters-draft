@@ -155,6 +155,30 @@ function applyInstantEffect(
     logHeal(state, batchNumber, caster, target, effect.health, origin, origin.actionId);
   }
 
+  if (effect.isTaunt) {
+    const taunt: ActiveEffectState = {
+      id: nextEffectId(state),
+      name: effect.name ?? "Effect",
+      sourceUnitId: caster.instanceId,
+      sourceScenarioId: caster.scenarioId,
+      targetUnitId: target.instanceId,
+      effectType: effect.effectType,
+      timingType: effect.timingType,
+      value: 0,
+      isTaunt: true,
+      ...(effect.lastsForActions == null
+        ? {}
+        : { actionsRemaining: effect.lastsForActions }),
+      origin,
+    };
+    recordActionOperation(state, {
+      kind: "add-effect",
+      targetId: target.instanceId,
+      effect: taunt,
+    });
+    target.activeEffects.push(taunt);
+  }
+
   if (effect.effectType === "buff" || effect.effectType === "debuff") {
     const oldMaximumMana = getUnitEffectiveStats(target).mana;
     for (const modifier of effectStatEntries(effect)) {

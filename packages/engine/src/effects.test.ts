@@ -90,6 +90,96 @@ function processActionOpportunities(state: ReturnType<typeof createEffectState>,
 }
 
 describe("effects", () => {
+  it("creates one persistent taunt status even when the effect has multiple stat modifiers", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Provoking Staff",
+        effects: effectSequence(
+          createEffect({
+            name: "Provoke",
+            effectType: "buff",
+            timingType: "instant",
+            isTaunt: true,
+            speed: 3,
+            dodge: 5,
+          }),
+        ),
+      }),
+    );
+
+    expect(mage.activeEffects.filter((effect) => effect.isTaunt)).toEqual([
+      expect.objectContaining({
+        name: "Provoke",
+        sourceUnitId: cleric.instanceId,
+        sourceScenarioId: cleric.scenarioId,
+        targetUnitId: mage.instanceId,
+        isTaunt: true,
+      }),
+    ]);
+    expect(mage.activeEffects.find((effect) => effect.isTaunt)?.actionsRemaining).toBeUndefined();
+  });
+
+  it("sets the configured duration on an instant timed taunt", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Timed Provoking Staff",
+        effects: effectSequence(
+          createEffect({
+            name: "Timed Provoke",
+            effectType: "buff",
+            timingType: "instant",
+            isTaunt: true,
+            lastsForActions: 2,
+          }),
+        ),
+      }),
+    );
+
+    expect(mage.activeEffects.filter((effect) => effect.isTaunt)).toEqual([
+      expect.objectContaining({ name: "Timed Provoke", actionsRemaining: 2 }),
+    ]);
+  });
+
+  it("expires a timed taunt after its affected unit's configured action opportunities", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Timed Provoking Staff",
+        effects: effectSequence(
+          createEffect({
+            name: "Timed Provoke",
+            effectType: "buff",
+            timingType: "instant",
+            isTaunt: true,
+            lastsForActions: 2,
+          }),
+        ),
+      }),
+    );
+
+    processActionOpportunities(state, 1);
+    expect(mage.activeEffects.filter((effect) => effect.isTaunt)).toHaveLength(1);
+    processActionOpportunities(state, 1);
+    expect(mage.activeEffects.filter((effect) => effect.isTaunt)).toHaveLength(0);
+  });
+
   it("triggers on the affected unit's second opportunity", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

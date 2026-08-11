@@ -80,6 +80,14 @@ const POSITIVE_INTEGER_FIELDS = [
   "lastsForActions",
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
+const NON_NEGATIVE_AMOUNT_FIELDS = [
+  "shield",
+  "directHealing",
+  "directMeleeDmg",
+  "directRangedDmg",
+  "directSpellDmg",
+] as const satisfies readonly (keyof EffectFormValues)[];
+
 export function createDefaultEffectFormValues(): EffectFormValues {
   return {
     name: "",
@@ -148,6 +156,13 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
     if (value === null) continue;
     if (!Number.isInteger(value) || value <= 0) {
       errors[field] = "Must be a positive integer.";
+    }
+  }
+
+  for (const field of NON_NEGATIVE_AMOUNT_FIELDS) {
+    const value = normalized[field];
+    if (value !== null && (!Number.isFinite(value) || value < 0)) {
+      errors[field] = "Must be zero or greater.";
     }
   }
 

@@ -82,11 +82,12 @@ function validateEffectTiming(unit: UnitInput): void {
       effect.timingType === "interval" &&
       (effect.triggerEveryActions == null || effect.triggerCount == null);
     const hasStatModifier = STAT_KEYS.some((statKey) => effect[statKey] != null);
+    const hasShield = typeof effect.shield === "number" && effect.shield > 0;
     const actionDurationMissing =
       !effect.isTaunt &&
       effect.timingType === "instant" &&
       (effect.effectType === "buff" || effect.effectType === "debuff") &&
-      hasStatModifier &&
+      (hasStatModifier || hasShield) &&
       effect.lastsForActions == null;
 
     if (intervalTimingMissing || actionDurationMissing) {

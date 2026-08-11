@@ -212,6 +212,38 @@ describe("effect-form", () => {
     ).toMatchObject({ lastsForActions: expect.stringContaining("required") });
   });
 
+  it.each([
+    "shield",
+    "directHealing",
+    "directMeleeDmg",
+    "directRangedDmg",
+    "directSpellDmg",
+  ] as const)("rejects a negative %s amount", (field) => {
+    const errors = validateEffectForm({
+      ...createDefaultEffectFormValues(),
+      name: "Invalid signed effect",
+      effectType: "damage",
+      [field]: -1,
+    });
+
+    expect(errors[field]).toContain("zero or greater");
+  });
+
+  it("accepts zero shield, damage, and healing amounts", () => {
+    expect(
+      validateEffectForm({
+        ...createDefaultEffectFormValues(),
+        name: "Zero effect",
+        effectType: "damage",
+        shield: 0,
+        directHealing: 0,
+        directMeleeDmg: 0,
+        directRangedDmg: 0,
+        directSpellDmg: 0,
+      }),
+    ).toEqual({});
+  });
+
   it("does not require duration for an interval stat buff", () => {
     const errors = validateEffectForm({
       ...createDefaultEffectFormValues(),

@@ -620,6 +620,63 @@ describe("effectsRouter", () => {
     });
 
     it.each([
+      "shield",
+      "directHealing",
+      "directMeleeDmg",
+      "directRangedDmg",
+      "directSpellDmg",
+    ] as const)("rejects a negative %s amount", async (field) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Invalid signed effect",
+          timingType: "instant",
+          effectType: "damage",
+          [field]: -1,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it("accepts zero shield, damage, and healing amounts", async () => {
+      mockInsertFn.mockReturnValue(
+        chainable([
+          {
+            id: "e-zero",
+            name: "Zero effect",
+            timingType: "instant",
+            effectType: "damage",
+            shield: 0,
+            directHealing: 0,
+            directMeleeDmg: 0,
+            directRangedDmg: 0,
+            directSpellDmg: 0,
+          },
+        ]),
+      );
+
+      const result = await createCaller(gmCtx).effects.create({
+        name: "Zero effect",
+        timingType: "instant",
+        effectType: "damage",
+        shield: 0,
+        directHealing: 0,
+        directMeleeDmg: 0,
+        directRangedDmg: 0,
+        directSpellDmg: 0,
+      });
+
+      expect(result).toMatchObject({
+        shield: 0,
+        directHealing: 0,
+        directMeleeDmg: 0,
+        directRangedDmg: 0,
+        directSpellDmg: 0,
+      });
+    });
+
+    it.each([
       Number.POSITIVE_INFINITY,
       Number.NEGATIVE_INFINITY,
     ])("rejects non-finite mana modifier %s", async (mana) => {

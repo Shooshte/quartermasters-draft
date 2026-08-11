@@ -68,6 +68,39 @@ describe("simultaneous action operations", () => {
     expect(unit.shieldLayers).toEqual([{ id: "ward", remaining: 20 }]);
   });
 
+  it.each([
+    false,
+    true,
+  ])("ignores negative damage without increasing health or shields when bypass=%s", (bypassesShield) => {
+    const state = operationState(100, 100);
+    const unit = state.scenarios[0].rows.tank[0]!;
+    unit.currentHealth = 90;
+    unit.shieldLayers = [{ id: "ward", remaining: 20 }];
+
+    expect(applyDamage(unit, -30, bypassesShield)).toBe(0);
+    expect(unit.currentHealth).toBe(90);
+    expect(unit.shieldLayers).toEqual([{ id: "ward", remaining: 20 }]);
+  });
+
+  it("ignores a negative recorded shield grant", () => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+
+    commitPlannedActions(
+      state,
+      [
+        planned("caster", {
+          kind: "grant-shield",
+          targetId: target.instanceId,
+          layer: createShieldLayer("invalid-shield", -5),
+        }),
+      ],
+      1,
+    );
+
+    expect(target.shieldLayers).toEqual([]);
+  });
+
   it("replays shield grants and damage in recorded order", () => {
     const state = operationState(100, 100);
     const target = state.scenarios[1].rows.tank[0]!;
@@ -107,6 +140,34 @@ describe("simultaneous action operations", () => {
     );
 
     expect(target.currentHealth).toBe(60);
+  });
+
+  it.each([
+    ["healing before damage", ["healing", "damage"]],
+    ["damage before healing", ["damage", "healing"]],
+  ] as const)("aggregates %s when existing shields are untouched by bypassing damage", (_label, operationOrder) => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+    target.currentHealth = 90;
+    target.shieldLayers = [{ id: "ward", remaining: 25 }];
+    const operations: Record<(typeof operationOrder)[number], ActionOperation> = {
+      healing: { kind: "healing", targetId: target.instanceId, amount: 20 },
+      damage: {
+        kind: "damage",
+        targetId: target.instanceId,
+        amount: 30,
+        bypassesShield: true,
+      },
+    };
+
+    commitPlannedActions(
+      state,
+      operationOrder.map((kind) => planned(kind, operations[kind])),
+      1,
+    );
+
+    expect(target.currentHealth).toBe(80);
+    expect(target.shieldLayers).toEqual([{ id: "ward", remaining: 25 }]);
   });
 
   it("commits both lethal same-batch actions", () => {

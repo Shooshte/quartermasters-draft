@@ -19,6 +19,7 @@ const effectListInput = createListInputSchema(
 );
 
 const nullableNumber = z.number().nullable().default(null);
+const nullableNonNegativeNumber = z.number().finite().nonnegative().nullable().default(null);
 const nullablePositiveInteger = z.number().int().positive().nullable().default(null);
 
 const effectInputShape = {
@@ -38,12 +39,12 @@ const effectInputShape = {
   speed: nullableNumber,
   dodge: nullableNumber,
   criticalChance: nullableNumber,
-  shield: nullableNumber,
+  shield: nullableNonNegativeNumber,
   bypassesShield: z.boolean().default(false),
-  directHealing: nullableNumber,
-  directMeleeDmg: nullableNumber,
-  directRangedDmg: nullableNumber,
-  directSpellDmg: nullableNumber,
+  directHealing: nullableNonNegativeNumber,
+  directMeleeDmg: nullableNonNegativeNumber,
+  directRangedDmg: nullableNonNegativeNumber,
+  directSpellDmg: nullableNonNegativeNumber,
 } satisfies z.ZodRawShape;
 
 const effectInputBaseSchema = z.object(effectInputShape).strict();

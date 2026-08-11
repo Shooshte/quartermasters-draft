@@ -64,12 +64,17 @@ function zeroTotals(): OperationTotals {
   return { damage: 0, healing: 0, healthCost: 0, manaCost: 0 };
 }
 
+export function nonNegativeHealthAmount(amount: number): number {
+  return Number.isFinite(amount) ? Math.max(0, amount) : 0;
+}
+
 export function applyDamage(unit: BattleUnitState, amount: number, bypassesShield = false): number {
-  let remainingDamage = amount;
+  let remainingDamage = nonNegativeHealthAmount(amount);
   if (!bypassesShield) {
     for (const layer of unit.shieldLayers) {
-      const absorbed = Math.min(layer.remaining, remainingDamage);
-      layer.remaining -= absorbed;
+      const availableShield = nonNegativeHealthAmount(layer.remaining);
+      const absorbed = Math.min(availableShield, remainingDamage);
+      layer.remaining = availableShield - absorbed;
       remainingDamage -= absorbed;
       if (remainingDamage === 0) break;
     }
@@ -80,13 +85,30 @@ export function applyDamage(unit: BattleUnitState, amount: number, bypassesShiel
   return healthDamage;
 }
 
+export function applyHealing(unit: BattleUnitState, amount: number, maximumHealth: number): void {
+  unit.currentHealth = Math.max(
+    0,
+    Math.min(maximumHealth, unit.currentHealth + nonNegativeHealthAmount(amount)),
+  );
+}
+
 function hasShieldResolution(
   target: BattleUnitState,
   operations: readonly ActionOperation[],
 ): boolean {
   return (
-    target.shieldLayers.length > 0 ||
-    operations.some((operation) => operation.kind === "grant-shield")
+    operations.some(
+      (operation) =>
+        operation.kind === "grant-shield" && nonNegativeHealthAmount(operation.layer.remaining) > 0,
+    ) ||
+    (target.shieldLayers.length > 0 &&
+      operations.some(
+        (operation) =>
+          (operation.kind === "damage" &&
+            operation.bypassesShield !== true &&
+            nonNegativeHealthAmount(operation.amount) > 0) ||
+          (operation.kind === "health-cost" && nonNegativeHealthAmount(operation.amount) > 0),
+      ))
   );
 }
 
@@ -101,13 +123,15 @@ function applyShieldAwareOperations(
         applyDamage(target, operation.amount, operation.bypassesShield === true);
         break;
       case "healing":
-        target.currentHealth = Math.min(maximumHealth, target.currentHealth + operation.amount);
+        applyHealing(target, operation.amount, maximumHealth);
         break;
       case "health-cost":
         applyDamage(target, operation.amount);
         break;
       case "grant-shield":
-        target.shieldLayers.push(structuredClone(operation.layer));
+        if (nonNegativeHealthAmount(operation.layer.remaining) > 0) {
+          target.shieldLayers.push(structuredClone(operation.layer));
+        }
         break;
       case "add-effect":
       case "mana-cost":
@@ -163,13 +187,13 @@ export function commitPlannedActions(
       const targetTotals = totals.get(operation.targetId) ?? zeroTotals();
       switch (operation.kind) {
         case "damage":
-          targetTotals.damage += operation.amount;
+          targetTotals.damage += nonNegativeHealthAmount(operation.amount);
           break;
         case "healing":
-          targetTotals.healing += operation.amount;
+          targetTotals.healing += nonNegativeHealthAmount(operation.amount);
           break;
         case "health-cost":
-          targetTotals.healthCost += operation.amount;
+          targetTotals.healthCost += nonNegativeHealthAmount(operation.amount);
           break;
         case "mana-cost":
           targetTotals.manaCost += operation.amount;

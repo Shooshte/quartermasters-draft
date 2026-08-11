@@ -77,6 +77,7 @@ describe("BattleEngine", () => {
             effectType: "buff",
             timingType: "instant",
             shield: 5,
+            lastsForActions: 3,
           }),
         ),
       });

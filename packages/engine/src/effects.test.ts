@@ -515,6 +515,47 @@ describe("effects", () => {
     expect(mage.currentHealth).toBe(200);
   });
 
+  it("ignores negative instant damage, healing, and shield amounts from effect inputs", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.currentHealth = 50;
+    warrior.shieldLayers = [{ id: "ward", remaining: 10 }];
+
+    applyItemEffectsToTargets(
+      state,
+      mage,
+      createItem({
+        name: "Invalid Signed Effects",
+        effects: effectSequence(
+          createEffect({
+            name: "Inverse Damage",
+            effectType: "damage",
+            timingType: "instant",
+            directSpellDmg: -20,
+          }),
+          createEffect({
+            name: "Inverse Healing",
+            effectType: "healing",
+            timingType: "instant",
+            directHealing: -20,
+          }),
+          createEffect({
+            name: "Inverse Shield",
+            effectType: "buff",
+            timingType: "instant",
+            shield: -20,
+            lastsForActions: 1,
+          }),
+        ),
+      }),
+      [warrior],
+    );
+
+    expect(warrior.currentHealth).toBe(50);
+    expect(warrior.shieldLayers).toEqual([{ id: "ward", remaining: 10 }]);
+  });
+
   it("does not replenish shield when healing restores health", () => {
     const state = createEffectState();
     const cleric = state.scenarios[0].rows.support[0]!;
@@ -747,6 +788,98 @@ describe("effects", () => {
     processPreActionEffects(state, [warrior.instanceId], 1);
 
     expect(warrior.currentHealth).toBe(100);
+  });
+
+  it.each([
+    ["healing before damage", ["healing", "damage"]],
+    ["damage before healing", ["damage", "healing"]],
+  ] as const)("aggregates shield-preserving interval %s before clamping", (_label, eventOrder) => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.baseStats.health = 100;
+    warrior.currentHealth = 90;
+    warrior.shieldLayers = [{ id: "ward", remaining: 25 }];
+
+    for (const kind of eventOrder) {
+      const isHealing = kind === "healing";
+      applyItemEffectsToTargets(
+        state,
+        isHealing ? cleric : mage,
+        createItem({
+          name: isHealing ? "Restoration" : "Piercing Burn",
+          effects: effectSequence(
+            createEffect({
+              name: isHealing ? "Restoration" : "Piercing Burn",
+              effectType: isHealing ? "healing" : "damage",
+              timingType: "interval",
+              ...(isHealing ? { directHealing: 20 } : { directSpellDmg: 30 }),
+              bypassesShield: !isHealing,
+              triggerEveryActions: 1,
+              triggerCount: 1,
+            }),
+          ),
+        }),
+        [warrior],
+      );
+    }
+
+    processPreActionEffects(state, [warrior.instanceId], 1);
+
+    expect(warrior.currentHealth).toBe(80);
+    expect(warrior.shieldLayers).toEqual([{ id: "ward", remaining: 25 }]);
+  });
+
+  it("ignores negative interval damage and healing amounts from effect inputs", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.currentHealth = 50;
+    warrior.shieldLayers = [{ id: "ward", remaining: 10 }];
+
+    applyItemEffectsToTargets(
+      state,
+      mage,
+      createItem({
+        name: "Inverse Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Inverse Burn",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: -20,
+            triggerEveryActions: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+      [warrior],
+    );
+    applyItemEffectsToTargets(
+      state,
+      cleric,
+      createItem({
+        name: "Inverse Restoration",
+        effects: effectSequence(
+          createEffect({
+            name: "Inverse Restoration",
+            effectType: "healing",
+            timingType: "interval",
+            directHealing: -20,
+            triggerEveryActions: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+      [warrior],
+    );
+
+    processPreActionEffects(state, [warrior.instanceId], 1);
+
+    expect(warrior.currentHealth).toBe(50);
+    expect(warrior.shieldLayers).toEqual([{ id: "ward", remaining: 10 }]);
   });
 
   it("lets flagged interval damage bypass shields", () => {

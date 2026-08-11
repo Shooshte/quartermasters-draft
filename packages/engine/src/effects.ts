@@ -1,4 +1,9 @@
-import { applyDamage, recordActionOperation } from "./action-operations";
+import {
+  applyDamage,
+  applyHealing,
+  nonNegativeHealthAmount,
+  recordActionOperation,
+} from "./action-operations";
 import { logEffectApplied, logEffectExpired, logHeal, pushLog } from "./logging";
 import { computeSpellDamageWithModifiers, getUnitEffectiveStats } from "./math";
 import { clampHealth, findUnitById, nextEffectId, reconcileManaForCapacityChange } from "./state";
@@ -124,7 +129,8 @@ function applyInstantEffect(
   const casterStats = getUnitEffectiveStats(caster);
   const targetStats = getUnitEffectiveStats(target);
   const maxHealth = getUnitEffectiveStats(target).health;
-  const shieldAmount = typeof effect.shield === "number" && effect.shield > 0 ? effect.shield : 0;
+  const shieldAmount =
+    typeof effect.shield === "number" ? nonNegativeHealthAmount(effect.shield) : 0;
   let timedShieldEffect: ActiveEffectState | undefined;
 
   if (
@@ -164,16 +170,22 @@ function applyInstantEffect(
   }
 
   if (typeof effect.directHealing === "number") {
-    const amount = effect.directHealing;
+    const amount = nonNegativeHealthAmount(effect.directHealing);
     recordActionOperation(state, { kind: "healing", targetId: target.instanceId, amount });
-    target.currentHealth = Math.min(maxHealth, target.currentHealth + amount);
+    applyHealing(target, amount, maxHealth);
     logHeal(state, batchNumber, caster, target, amount, origin, origin.actionId);
   }
 
   const directDamage =
     effect.directMeleeDmg ?? effect.directRangedDmg ?? effect.directSpellDmg ?? null;
   if (typeof directDamage === "number") {
-    const modifiedDamage = computeSpellDamageWithModifiers(directDamage, casterStats, targetStats);
+    const modifiedDamage = nonNegativeHealthAmount(
+      computeSpellDamageWithModifiers(
+        nonNegativeHealthAmount(directDamage),
+        casterStats,
+        targetStats,
+      ),
+    );
     recordActionOperation(state, {
       kind: "damage",
       targetId: target.instanceId,
@@ -185,13 +197,14 @@ function applyInstantEffect(
   }
 
   if (effect.effectType === "healing" && typeof effect.health === "number") {
+    const amount = nonNegativeHealthAmount(effect.health);
     recordActionOperation(state, {
       kind: "healing",
       targetId: target.instanceId,
-      amount: effect.health,
+      amount,
     });
-    target.currentHealth = Math.min(maxHealth, target.currentHealth + effect.health);
-    logHeal(state, batchNumber, caster, target, effect.health, origin, origin.actionId);
+    applyHealing(target, amount, maxHealth);
+    logHeal(state, batchNumber, caster, target, amount, origin, origin.actionId);
   }
 
   if (effect.isTaunt) {
@@ -284,7 +297,7 @@ function queueIntervalEffect(
         targetUnitId: target.instanceId,
         effectType: effect.effectType,
         timingType: effect.timingType,
-        value: healing,
+        value: nonNegativeHealthAmount(healing),
         remainingTriggers: effect.triggerCount ?? 0,
         actionsUntilTrigger: effect.triggerEveryActions ?? 0,
         triggerEveryActions: effect.triggerEveryActions ?? 0,
@@ -307,7 +320,7 @@ function queueIntervalEffect(
         targetUnitId: target.instanceId,
         effectType: effect.effectType,
         timingType: effect.timingType,
-        value,
+        value: nonNegativeHealthAmount(value),
         remainingTriggers: effect.triggerCount ?? 0,
         actionsUntilTrigger: effect.triggerEveryActions ?? 0,
         triggerEveryActions: effect.triggerEveryActions ?? 0,
@@ -507,14 +520,15 @@ export function processPreActionEffects(
       continue;
     }
 
-    const amount =
+    const amount = nonNegativeHealthAmount(
       effect.effectType === "healing"
         ? effect.value
         : computeSpellDamageWithModifiers(
-            effect.value,
+            nonNegativeHealthAmount(effect.value),
             getUnitEffectiveStats(source),
             getUnitEffectiveStats(target),
-          );
+          ),
+    );
     events.push({
       effect,
       source,
@@ -543,13 +557,14 @@ export function processPreActionEffects(
     if (!firstEvent) continue;
     const target = firstEvent.target;
     affectedTargets.set(target.instanceId, target);
-    if (target.shieldLayers.length > 0) {
+    const hasShieldableDamage = targetEvents.some(
+      (event) =>
+        event.kind === "damage" && event.effect.bypassesShield !== true && event.amount > 0,
+    );
+    if (target.shieldLayers.length > 0 && hasShieldableDamage) {
       for (const event of targetEvents) {
         if (event.kind === "healing") {
-          target.currentHealth = Math.min(
-            getUnitEffectiveStats(target).health,
-            target.currentHealth + event.amount,
-          );
+          applyHealing(target, event.amount, getUnitEffectiveStats(target).health);
         } else {
           applyDamage(target, event.amount, event.effect.bypassesShield === true);
         }

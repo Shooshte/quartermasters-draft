@@ -232,6 +232,13 @@ describe("battle input validation", () => {
       dodge: -5,
       lastsForActions: null,
     }),
+    createEffect({
+      name: "Incomplete shield",
+      effectType: "buff",
+      timingType: "instant",
+      shield: 5,
+      lastsForActions: null,
+    }),
   ])("rejects action-timed effect configurations with missing durations", (effect) => {
     const input = createBattleInput([
       createScenario("A", {

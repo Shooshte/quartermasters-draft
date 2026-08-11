@@ -141,6 +141,7 @@ export const effects = pgTable(
     dodge: real("dodge"),
     criticalChance: real("critical_chance"),
     effectType: effectTypeEnum("effect_type").notNull().default("buff"),
+    isTaunt: boolean("is_taunt").notNull().default(false),
     lastsForActions: integer("lasts_for_actions"),
     directHealing: real("direct_healing"),
     directMeleeDmg: real("direct_melee_dmg"),

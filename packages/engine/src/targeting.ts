@@ -113,6 +113,17 @@ function reachableCandidates(state: BattleState, caster: BattleUnitState): Battl
   return selectNearestRow(state, candidates);
 }
 
+function newestReachableTauntSource(
+  caster: BattleUnitState,
+  candidates: BattleUnitState[],
+): BattleUnitState | undefined {
+  for (const effect of [...caster.activeEffects].reverse()) {
+    if (!effect.isTaunt) continue;
+    const source = candidates.find((candidate) => candidate.instanceId === effect.sourceUnitId);
+    if (source) return source;
+  }
+}
+
 function compareTargetFallback(
   state: BattleState,
   left: BattleUnitState,
@@ -226,11 +237,12 @@ export function selectTargets(
   targeting: UnitTargetingInput,
 ): BattleUnitState[] {
   const targetingCaster = { ...caster, ...targeting };
-  const ranked = rankCandidates(
-    state,
-    reachableCandidates(state, targetingCaster),
-    targeting.targetPriority,
-  );
+  const candidates = reachableCandidates(state, targetingCaster);
+  const tauntSource = newestReachableTauntSource(targetingCaster, candidates);
+  const rankedCandidates = rankCandidates(state, candidates, targeting.targetPriority);
+  const ranked = tauntSource
+    ? [tauntSource, ...rankedCandidates.filter((candidate) => candidate !== tauntSource)]
+    : rankedCandidates;
   if (ranked.length === 0 || targeting.selectionShape === "individual") {
     return ranked.slice(0, targeting.targetCount);
   }

@@ -51,6 +51,7 @@ export interface EffectTemplateInput {
   name?: string;
   timingType: EffectTimingType;
   effectType: EffectCategory;
+  isTaunt: boolean;
   triggerEveryActions?: number | null;
   triggerCount?: number | null;
   lastsForActions?: number | null;
@@ -151,6 +152,7 @@ export interface ActiveEffectState {
   actionsUntilTrigger?: number;
   triggerEveryActions?: number;
   actionsRemaining?: number;
+  isTaunt?: boolean;
   origin?: BattleLogOrigin;
 }
 
@@ -264,7 +266,7 @@ export interface EffectApplyLogEntry extends BaseLogEntry {
   effect: string;
   stat: StatKey;
   value: number;
-  actionsRemaining: number;
+  actionsRemaining?: number;
 }
 
 export interface EffectExpireLogEntry extends BaseLogEntry {

@@ -67,6 +67,33 @@ Feature: Unit target selection
     Then the primary target and its contiguous row neighbors are selected
     And no selected target is from another row or side
 
+  Scenario: A legal active taunt source becomes the primary target
+    Given a ranged "Knight" has a persistent taunt from a living enemy
+    And another reachable enemy would win "lowest_health" priority
+    When "Knight" selects targets
+    Then the taunt source is selected as the primary target
+
+  Scenario: Newer legal taunts take precedence
+    Given a unit has two active taunts from reachable living enemies
+    When the unit selects targets
+    Then the source of the newest taunt is the primary target
+
+  Scenario: An illegal taunt source does not override normal target priority
+    Given a unit has an active taunt whose source is dead, outside scope, or behind a nearer occupied row
+    When the unit selects targets
+    Then the unit uses its configured target priority
+
+  Scenario: A timed taunt stops affecting targets after expiry
+    Given a unit has a timed taunt from a reachable enemy
+    And the taunt expires after the unit acts
+    When the unit next selects targets
+    Then the unit uses its configured target priority
+
+  Scenario: Adjacent selection stays centered on a legal taunt source
+    Given a ranged unit selects 3 adjacent enemies while taunted by a reachable middle-row enemy
+    When the unit selects targets
+    Then the taunt source and its contiguous row neighbors are selected
+
   Scenario: Ordered item effects retain their original target IDs without retargeting
     Given an item has multiple ordered effects
     And its owner selects 2 targets

@@ -107,6 +107,7 @@ export async function loadBattleScenario(
               name: effects.name,
               timingType: effects.timingType,
               effectType: effects.effectType,
+              isTaunt: effects.isTaunt,
               triggerEveryActions: effects.triggerEveryActions,
               triggerCount: effects.triggerCount,
               lastsForActions: effects.lastsForActions,

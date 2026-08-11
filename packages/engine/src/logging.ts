@@ -14,7 +14,7 @@ import type {
 type EffectLogModifier = {
   stat: StatKey;
   value: number;
-  actionsRemaining: number;
+  actionsRemaining?: number;
 };
 
 export function pushLog(state: BattleState, entry: BattleLogEntry): void {
@@ -38,7 +38,9 @@ export function logEffectApplied(
     effect,
     stat: modifier.stat,
     value: modifier.value,
-    actionsRemaining: modifier.actionsRemaining,
+    ...(modifier.actionsRemaining === undefined
+      ? {}
+      : { actionsRemaining: modifier.actionsRemaining }),
     actionId,
     origin,
     message: `${target.name} gains ${effect} (${modifier.stat} modified)`,

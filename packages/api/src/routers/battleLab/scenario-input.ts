@@ -45,6 +45,7 @@ type EffectRecord = {
   name: string;
   timingType: EffectTemplateInput["timingType"];
   effectType: EffectTemplateInput["effectType"];
+  isTaunt: boolean;
   triggerEveryActions: number | null;
   triggerCount: number | null;
   lastsForActions: number | null;
@@ -132,6 +133,7 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
           name: effect.name,
           timingType: effect.timingType,
           effectType: effect.effectType,
+          isTaunt: effect.isTaunt,
           triggerEveryActions: effect.triggerEveryActions,
           triggerCount: effect.triggerCount,
           lastsForActions: effect.lastsForActions,

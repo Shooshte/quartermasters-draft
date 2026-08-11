@@ -27,6 +27,7 @@ const effectInputShape = {
   triggerEveryActions: nullablePositiveInteger,
   triggerCount: nullablePositiveInteger,
   effectType: z.enum(["buff", "debuff", "healing", "damage"]),
+  isTaunt: z.boolean().default(false),
   lastsForActions: nullablePositiveInteger,
   meleeDmg: nullableNumber,
   health: nullableNumber,
@@ -65,11 +66,22 @@ type EffectTimingStatusInput = Pick<
   | "triggerCount"
   | "lastsForActions"
   | "effectType"
+  | "isTaunt"
   | (typeof EFFECT_STAT_FIELDS)[number]
 >;
 
 function isActionDurationApplicable(input: EffectTimingStatusInput): boolean {
   return (
+    input.timingType === "instant" &&
+    (input.isTaunt ||
+      ((input.effectType === "buff" || input.effectType === "debuff") &&
+        EFFECT_STAT_FIELDS.some((field) => input[field] !== null)))
+  );
+}
+
+function requiresActionDuration(input: EffectTimingStatusInput): boolean {
+  return (
+    !input.isTaunt &&
     input.timingType === "instant" &&
     (input.effectType === "buff" || input.effectType === "debuff") &&
     EFFECT_STAT_FIELDS.some((field) => input[field] !== null)
@@ -81,7 +93,7 @@ function needsTimingConfiguration(input: EffectTimingStatusInput): boolean {
     return input.triggerEveryActions === null || input.triggerCount === null;
   }
 
-  return isActionDurationApplicable(input) && input.lastsForActions === null;
+  return requiresActionDuration(input) && input.lastsForActions === null;
 }
 
 function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect: T) {
@@ -92,6 +104,14 @@ function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect
 }
 
 function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
+  if (input.isTaunt && input.timingType === "interval") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["timingType"],
+      message: "Taunt effects must use instant timing.",
+    });
+  }
+
   if (input.timingType === "interval") {
     if (input.triggerEveryActions === null) {
       ctx.addIssue({
@@ -109,7 +129,7 @@ function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
     }
   }
 
-  if (isActionDurationApplicable(input) && input.lastsForActions === null) {
+  if (requiresActionDuration(input) && input.lastsForActions === null) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["lastsForActions"],
@@ -181,6 +201,7 @@ export const effectsRouter = router({
         triggerEveryActions: effects.triggerEveryActions,
         triggerCount: effects.triggerCount,
         effectType: effects.effectType,
+        isTaunt: effects.isTaunt,
         lastsForActions: effects.lastsForActions,
         meleeDmg: effects.meleeDmg,
         health: effects.health,

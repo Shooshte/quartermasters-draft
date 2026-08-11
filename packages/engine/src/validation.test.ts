@@ -248,4 +248,83 @@ describe("battle input validation", () => {
       `Effect "${effect.name}" timing needs configuration.`,
     );
   });
+
+  it("accepts persistent instant taunts with stat modifiers during initialization", () => {
+    const effect = createEffect({
+      name: "Persistent Provoke",
+      effectType: "buff",
+      timingType: "instant",
+      isTaunt: true,
+      speed: 5,
+      dodge: 3,
+      lastsForActions: null,
+    });
+    const input = createBattleInput([
+      createScenario("A", {
+        support: [
+          createUnit("Caster", {
+            items: [createItem({ name: "Item", effects: effectSequence(effect) })],
+          }),
+        ],
+      }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => initializeBattleState(input)).not.toThrow();
+  });
+
+  it("rejects interval taunts", () => {
+    const effect = createEffect({
+      name: "Interval Provoke",
+      effectType: "buff",
+      timingType: "interval",
+      isTaunt: true,
+      triggerEveryActions: 1,
+      triggerCount: 1,
+    });
+    const input = createBattleInput([
+      createScenario("A", {
+        support: [
+          createUnit("Caster", {
+            items: [createItem({ name: "Item", effects: effectSequence(effect) })],
+          }),
+        ],
+      }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => validateBattleInput(input)).toThrowError(
+      'Taunt effect "Interval Provoke" must use instant timing.',
+    );
+  });
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    1.5,
+  ])("rejects an invalid timed taunt duration of %s", (lastsForActions) => {
+    const effect = createEffect({
+      name: "Invalid Timed Provoke",
+      effectType: "buff",
+      timingType: "instant",
+      isTaunt: true,
+      lastsForActions,
+    });
+    const input = createBattleInput([
+      createScenario("A", {
+        support: [
+          createUnit("Caster", {
+            items: [createItem({ name: "Item", effects: effectSequence(effect) })],
+          }),
+        ],
+      }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => validateBattleInput(input)).toThrowError(
+      'Taunt effect "Invalid Timed Provoke" must have a positive duration.',
+    );
+  });
 });

@@ -222,6 +222,76 @@ describe("action resolution", () => {
     expect(outcome.totalDamage).toBe(expectedDamage);
   });
 
+  it("aggregates item bonuses and active modifiers across all damage types for a basic attack", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
+            createUnit("Enchanted Archer", {
+              stats: createStats({ meleeDmg: 10, rangedDmg: 20, spellDmg: 30 }),
+              items: [
+                createItem({
+                  name: "Triune Armory",
+                  meleeDmg: 5,
+                  rangedDmg: 7,
+                  spellDmg: 11,
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 200 }) })],
+        }),
+      ]),
+    );
+    const attacker = state.scenarios[0].rows.ranged[0]!;
+    const target = state.scenarios[1].rows.tank[0]!;
+    attacker.activeEffects.push(
+      {
+        id: "melee-bonus",
+        name: "Melee Bonus",
+        sourceUnitId: attacker.instanceId,
+        sourceScenarioId: attacker.scenarioId,
+        targetUnitId: attacker.instanceId,
+        effectType: "buff",
+        timingType: "instant",
+        statKey: "meleeDmg",
+        value: 2,
+        actionsRemaining: 1,
+      },
+      {
+        id: "ranged-bonus",
+        name: "Ranged Bonus",
+        sourceUnitId: attacker.instanceId,
+        sourceScenarioId: attacker.scenarioId,
+        targetUnitId: attacker.instanceId,
+        effectType: "buff",
+        timingType: "instant",
+        statKey: "rangedDmg",
+        value: 3,
+        actionsRemaining: 1,
+      },
+      {
+        id: "spell-bonus",
+        name: "Spell Bonus",
+        sourceUnitId: attacker.instanceId,
+        sourceScenarioId: attacker.scenarioId,
+        targetUnitId: attacker.instanceId,
+        effectType: "buff",
+        timingType: "instant",
+        statKey: "spellDmg",
+        value: 4,
+        actionsRemaining: 1,
+      },
+    );
+
+    const outcome = resolveUnitAction(state, attacker);
+
+    expect(outcome).toMatchObject({ usedBasicAttack: true, totalDamage: 46 });
+    expect(target.currentHealth).toBe(154);
+  });
+
   it("applies crit and dodge modifiers multiplicatively to basic attack damage", () => {
     const state = initializeBattleState(
       createBattleInput([

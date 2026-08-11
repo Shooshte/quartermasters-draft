@@ -91,3 +91,42 @@ No test or delivery blockers. The repository emits the warnings listed above, bu
 ### Concerns
 
 - No blockers. Each pnpm invocation emitted the existing warning that the root `pnpm` field is no longer read by pnpm; it did not affect test execution.
+
+---
+
+## Final-review fixes: aggregate acceptance criteria and effective-stat regression (2026-08-11)
+
+### Changed files
+
+- `packages/engine/features/stats-and-modifiers.feature`
+  - Updated every basic-attack scenario to call it a “basic attack” rather than a “basic melee attack”.
+  - Updated the inherited 150-damage fixture expectations and formula comments: 25% critical is 188, no critical is 150, 30% dodge is 105, no dodge is 150, and 50% critical plus 20% dodge is 180.
+  - Updated the item-stat scenario to document its effective aggregate of 65 damage after its scenario-specific melee override and item bonus; updated the item-dodge scenario to 105 damage from the inherited 150 aggregate.
+  - Left the item direct-damage scenarios unchanged.
+- `packages/engine/src/action-resolution.test.ts`
+  - Added an action-resolution regression with 10/20/30 base melee/ranged/spell damage, item bonuses of 5/7/11, and active modifiers of 2/3/4 for the same damage types.
+  - The ranged attacker targets a tank, preserving the existing 50% row-distance multiplier. Its 92 effective aggregate damage resolves to 46 and lowers the selected target from 200 to 154 health.
+
+### TDD evidence
+
+1. Wrote the new action-resolution regression before changing production behavior. With the existing aggregate implementation present, its initial focused run passed: 16 files and 169 tests.
+2. RED: temporarily replaced the aggregate base stat in `performBasicAttack` with `attackerStats.meleeDmg`. `pnpm --filter @qd/engine test -- action-resolution.test.ts` exited 1 with 11 failures. The new regression received 9 damage instead of the expected 46, proving it detects omission of the other effective damage types.
+3. GREEN: restored `attackerStats.meleeDmg + attackerStats.rangedDmg + attackerStats.spellDmg`. The focused suite then passed with 16 files and 169 tests.
+
+### Exact test results
+
+- `pnpm --filter @qd/engine test -- action-resolution.test.ts` — exit 0; 16 test files passed, 169 tests passed.
+- `pnpm --filter @qd/engine test` — exit 0; 16 test files passed, 169 tests passed.
+- `pnpm run test` — exit 0; Turbo reported 10 successful tasks out of 10. Package totals: engine 169, db 70, api 155, shared 3, web 392, and e2e unit tests 4.
+- `pnpm run test:e2e` — exit 0; 293 Playwright tests passed in 1.7 minutes using four workers. Docker containers and network were torn down afterward.
+- `git diff --check` — exit 0; no whitespace errors.
+
+### Self-review
+
+- Confirmed the acceptance criteria’s critical and dodge formulas now start from the aggregate damage specified by the shared fixture, while item direct-damage examples retain their separate 50-damage semantics.
+- Confirmed the new regression exercises both item bonuses and active modifiers for melee, ranged, and spell damage through `resolveUnitAction`, without changing target selection or row-distance logic.
+- Confirmed the diff is scoped to the two requested engine files and this delivery report.
+
+### Concerns
+
+- No blockers. Existing pnpm deprecation/configuration warnings, npm unknown-configuration warnings in the e2e container, PostgreSQL truncation notices, and Playwright color warnings did not affect any command’s exit status.

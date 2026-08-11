@@ -1,9 +1,9 @@
-export type { BattleResult } from "./battle-engine";
 export { BattleEngine } from "./battle-engine";
 export type { BattleLogEntry } from "./log";
 export type {
   BattleInput,
   BattleOptions,
+  BattleResult,
   BattleScenarioState,
   BattleSeed,
   BattleState,

@@ -19,9 +19,9 @@ export function getEffectColorClass(effectType: EffectType): string {
 
 /** Abbreviated labels for modifier fields displayed in compact cells. */
 export const COMPACT_LABELS: Record<string, string> = {
-  durationTicks: "Duration (ticks)",
-  intervalTicks: "Interval (ticks)",
-  triggerCount: "Triggers",
+  lastsForActions: "Lasts for (affected-unit actions)",
+  triggerEveryActions: "Trigger every (affected-unit actions)",
+  triggerCount: "Trigger count",
   meleeDmg: "Mel",
   rangedDmg: "Rng",
   spellDmg: "Spl",
@@ -50,4 +50,4 @@ export const MODIFIER_GROUPS = [
 ] as const;
 
 /** Timing fields rendered together in the Timing section. */
-export const TIMING_FIELDS = ["durationTicks", "intervalTicks", "triggerCount"] as const;
+export const TIMING_FIELDS = ["lastsForActions", "triggerEveryActions", "triggerCount"] as const;

@@ -98,6 +98,7 @@ export interface CreatePageState {
     name: string;
     timingType: string;
     effectType: string;
+    needsTimingConfiguration: boolean;
     updatedAt: Date;
   }[];
   effectPage: number;

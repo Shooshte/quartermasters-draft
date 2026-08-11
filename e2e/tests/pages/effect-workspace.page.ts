@@ -25,6 +25,14 @@ export class EffectWorkspacePage {
     return this.page.getByTestId("effect-timing-type-select");
   }
 
+  get triggerEveryActionsInput() {
+    return this.page.getByTestId("effect-triggerEveryActions-input");
+  }
+
+  get lastsForActionsInput() {
+    return this.page.getByTestId("effect-lastsForActions-input");
+  }
+
   get effectTypeSelect() {
     return this.page.getByTestId("effect-effect-type-select");
   }

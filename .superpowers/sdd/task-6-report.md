@@ -65,3 +65,49 @@ The delegated review found no critical issues. Its stale-eligibility finding was
 - Self-target summaries now always read `Targets the caster.` and intentionally ignore target count and selection shape.
 - TDD RED: `pnpm --filter @qd/web test -- apps/web/tests/unit/create/scenario-workspace.test.tsx apps/web/tests/unit/create/unit-workspace-form.test.tsx` failed with the stale Add button enabled and the old self individual/adjacent copy.
 - GREEN: the same focused command passed with 46 files / 362 tests. It emitted the existing Node v22 versus required Node >=24 engine warning.
+
+## API validation and mapping addendum
+
+### Files changed
+
+- `packages/api/src/routers/scenarioBuilder/effects.ts`
+- `packages/api/src/routers/battleLab/load-scenario.ts`
+- `packages/api/src/routers/battleLab/scenario-input.ts`
+- `packages/api/src/__tests__/scenarioBuilder/effects.test.ts`
+- `packages/api/src/__tests__/battleLab/load-scenario.test.ts`
+- `packages/api/src/__tests__/battleLab/scenario-input.test.ts`
+- `packages/api/src/__tests__/battleLab/battle-lab.test.ts`
+
+### TDD RED/GREEN
+
+After replacing API fixtures with action timing fields and adding status, validation, mapping, alias-rejection, and battle-result coverage, focused API tests failed with seven intended assertions. They identified legacy tick fields, missing `needsTimingConfiguration`, unmapped scenario timing, and an obsolete result assertion. The green implementation accepts only `triggerEveryActions`, `triggerCount`, and `lastsForActions`; derives repair status on list/get/create/update output; maps action timing into the engine; and lets engine validation return `BAD_REQUEST` before replay insertion.
+
+### Verification and review
+
+- `pnpm --filter @qd/engine build` — passed
+- `pnpm --filter @qd/db build` — passed
+- Focused API tests and `pnpm --filter @qd/api test` — 152 passed
+- `pnpm --filter @qd/api typecheck` and `pnpm --filter @qd/api build` — passed
+- `pnpm run test` — 10 Turbo tasks passed
+- `pnpm run test:e2e` — passed
+- Scoped Biome check and `git diff --check` — passed
+- No API production code retains tick timing fields; legacy aliases are strictly rejected. No concerns identified.
+
+## Post-review P1: interval stat modifier duration validation
+
+The API validation was incorrectly requiring `lastsForActions` for every stat-bearing buff/debuff, including interval effects. Engine validation already scopes this duration requirement to instantaneous stat modifiers. The API now applies the same `timingType === "instant"` gate, while retaining the interval requirements for `triggerEveryActions` and `triggerCount`.
+
+### TDD evidence
+
+- RED: `pnpm --filter @qd/api test -- packages/api/src/__tests__/scenarioBuilder/effects.test.ts` failed exactly at the new regression: an interval buff with `meleeDmg`, valid trigger fields, and no duration was rejected with the `lastsForActions` validation error.
+- GREEN: the same focused command passed, 10 files / 153 tests. The regression verifies the mutation is accepted and returns `needsTimingConfiguration: false`.
+
+### Verification
+
+- `pnpm run test` — PASS, 10 Turbo tasks; API 10 files / 153 tests.
+- `pnpm run test:e2e` — PASS; Docker build and Playwright run completed successfully.
+- `git diff --check` — PASS.
+
+### Concern
+
+No behavioral concern identified. Package-manager configuration warnings were emitted by pnpm/npm during verification but did not affect command success.

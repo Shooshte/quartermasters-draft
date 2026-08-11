@@ -46,9 +46,10 @@ const replayOutput = {
   ] as const,
   result: {
     winnerId: "scenario-a",
-    ticksElapsed: 184,
+    actionsResolved: 184,
     finalState: {
-      tick: 184,
+      actionCount: 184,
+      batchCount: 93,
       status: "finished" as const,
       winnerId: "scenario-a",
       scenarios: [
@@ -64,7 +65,7 @@ const replayOutput = {
         },
       ] as const,
       log: [],
-      fatigueTickThreshold: 100,
+      fatigueActionThreshold: 500,
       fatigueDamageStart: 1,
     },
     log: [],

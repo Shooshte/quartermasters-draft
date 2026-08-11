@@ -84,7 +84,8 @@ describe("battle setup", () => {
     const engine = new BattleEngine(createBattleInput([alpha, bravo], 42));
     const state = engine.getState();
 
-    expect(state.tick).toBe(0);
+    expect(state.actionCount).toBe(0);
+    expect(state.batchCount).toBe(0);
     expect(state.scenarios[0].id).toBe("Alpha");
     expect(Object.keys(state.scenarios[0].rows)).toEqual(["tank", "melee", "ranged", "support"]);
     expect(getUnitByName(engine, "Alpha", "Templar").actionBar).toBe(0);

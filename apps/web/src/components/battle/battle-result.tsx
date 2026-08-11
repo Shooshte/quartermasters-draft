@@ -64,13 +64,13 @@ function displayEffects(unit: BattleUnit) {
 
   return unit.activeEffects
     .map((effect) => {
+      if (effect.actionsRemaining !== undefined) {
+        return `${effect.name} (${effect.actionsRemaining} actions remaining)`;
+      }
+
       if (effect.remainingTriggers !== undefined) {
         const triggerLabel = effect.remainingTriggers === 1 ? "trigger" : "triggers";
         return `${effect.name} (${effect.remainingTriggers} ${triggerLabel} remaining)`;
-      }
-
-      if (effect.expiresAtTick !== undefined) {
-        return `${effect.name} (until tick ${effect.expiresAtTick})`;
       }
 
       return effect.name;
@@ -204,9 +204,9 @@ export function BattleResultView({ scenarios, result }: BattleResultViewProps) {
           </div>
           <div className="self-center border-l border-primary/25 pl-4 text-right">
             <p className="text-lg font-semibold tabular-nums text-primary">
-              {result.ticksElapsed} ticks
+              {result.actionsResolved} actions resolved
             </p>
-            <p className="text-xs text-muted-foreground">Elapsed</p>
+            <p className="text-xs text-muted-foreground">Resolved</p>
           </div>
         </CardHeader>
       </Card>

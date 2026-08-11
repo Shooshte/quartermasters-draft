@@ -51,9 +51,9 @@ export interface EffectTemplateInput {
   name?: string;
   timingType: EffectTimingType;
   effectType: EffectCategory;
-  intervalTicks?: number | null;
+  triggerEveryActions?: number | null;
   triggerCount?: number | null;
-  durationTicks?: number | null;
+  lastsForActions?: number | null;
   meleeDmg?: number | null;
   health?: number | null;
   mana?: number | null;
@@ -117,9 +117,8 @@ export interface BattleInput {
 }
 
 export interface BattleOptions {
-  fatigueTickThreshold?: number;
+  fatigueActionThreshold?: number;
   fatigueDamageStart?: number;
-  resolveActionsOnTick?: boolean;
 }
 
 export interface BattleItemState {
@@ -149,9 +148,9 @@ export interface ActiveEffectState {
   statKey?: StatKey;
   value: number;
   remainingTriggers?: number;
-  nextTriggerTick?: number;
-  intervalTicks?: number;
-  expiresAtTick?: number;
+  actionsUntilTrigger?: number;
+  triggerEveryActions?: number;
+  actionsRemaining?: number;
   origin?: BattleLogOrigin;
 }
 
@@ -183,24 +182,25 @@ export interface BattleScenarioState {
 }
 
 export interface BattleState {
-  tick: number;
+  actionCount: number;
+  batchCount: number;
   status: "active" | "finished";
   winnerId: string | null;
   scenarios: [BattleScenarioState, BattleScenarioState];
   log: BattleLogEntry[];
-  fatigueTickThreshold: number;
+  fatigueActionThreshold: number;
   fatigueDamageStart: number;
 }
 
 export interface BattleResult {
   winnerId: string | null;
-  ticksElapsed: number;
+  actionsResolved: number;
   finalState: BattleState;
   log: BattleLogEntry[];
 }
 
 export interface ActionContext {
-  tick: number;
+  batchNumber: number;
   caster: BattleUnitState;
   targetIds: string[];
 }
@@ -217,7 +217,7 @@ export type BattleLogEntry =
   | BattleEndLogEntry;
 
 export interface BaseLogEntry {
-  tick: number;
+  batchNumber: number;
   type: string;
   message: string;
   actionId?: string;
@@ -264,7 +264,7 @@ export interface EffectApplyLogEntry extends BaseLogEntry {
   effect: string;
   stat: StatKey;
   value: number;
-  expiresAtTick: number;
+  actionsRemaining: number;
 }
 
 export interface EffectExpireLogEntry extends BaseLogEntry {
@@ -274,7 +274,7 @@ export interface EffectExpireLogEntry extends BaseLogEntry {
   effect: string;
   stat?: StatKey;
   value?: number;
-  expiresAtTick?: number;
+  actionsRemaining?: number;
 }
 
 export interface DamageLogEntry extends BaseLogEntry {

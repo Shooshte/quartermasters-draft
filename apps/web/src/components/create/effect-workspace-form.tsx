@@ -6,8 +6,10 @@ import {
 } from "./effect-colors";
 import {
   type EffectFormValues,
+  effectNeedsTimingConfiguration,
   effectRecordToFormValues,
   hasEffectFormErrors,
+  isActionDurationApplicable,
   isIntervalFieldDisabled,
   validateEffectForm,
 } from "./effect-form";
@@ -43,6 +45,8 @@ export function EffectWorkspaceForm({
   const intervalDisabled = isIntervalFieldDisabled(normalizedFormValues);
   const saveLabel = mode === "create" ? "Create Effect" : "Save Changes";
   const colorClass = getEffectColorClass(normalizedFormValues.effectType);
+  const needsTimingConfiguration = effectNeedsTimingConfiguration(normalizedFormValues);
+  const showActionDuration = isActionDurationApplicable(normalizedFormValues);
 
   return (
     <div className={`flex flex-col gap-4 ${colorClass}`} data-testid="effect-form-fields">
@@ -77,21 +81,34 @@ export function EffectWorkspaceForm({
       </div>
 
       <WorkspaceSection title="Timing">
+        {needsTimingConfiguration ? (
+          <p
+            className="mb-2 rounded-md border border-amber-400/70 bg-amber-950/40 px-3 py-2 text-sm font-medium text-amber-200"
+            role="alert"
+          >
+            Timing needs configuration
+          </p>
+        ) : null}
         <div className="grid grid-cols-3 gap-1.5">
-          {TIMING_FIELDS.map((field) => (
-            <WorkspaceNumericField
-              key={field}
-              id={`effect-${field}`}
-              testId={`effect-${field}-input`}
-              label={COMPACT_LABELS[field] ?? field}
-              value={normalizedFormValues[field]}
-              error={errors[field]}
-              disabled={field !== "durationTicks" && intervalDisabled}
-              step={1}
-              onChange={(value) => onFieldChange(field, toNumericValue(value))}
-            />
-          ))}
+          {TIMING_FIELDS.filter((field) => field !== "lastsForActions" || showActionDuration).map(
+            (field) => (
+              <WorkspaceNumericField
+                key={field}
+                id={`effect-${field}`}
+                testId={`effect-${field}-input`}
+                label={COMPACT_LABELS[field] ?? field}
+                value={normalizedFormValues[field]}
+                error={errors[field]}
+                disabled={field !== "lastsForActions" && intervalDisabled}
+                step={1}
+                onChange={(value) => onFieldChange(field, toNumericValue(value))}
+              />
+            ),
+          )}
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Timing advances only when the affected unit gets an action opportunity.
+        </p>
       </WorkspaceSection>
 
       {MODIFIER_GROUPS.map((group) => (

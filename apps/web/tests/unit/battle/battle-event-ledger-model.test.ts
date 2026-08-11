@@ -6,12 +6,12 @@ import {
 
 const origin = {
   kind: "basic-attack" as const,
-  actionId: "11:alpha:tank:1:1",
+  actionId: "action-alpha-tank-1",
   sourceUnitId: "alpha:tank:1",
 };
 
 const attack = {
-  tick: 11,
+  batchNumber: 4,
   type: "attack" as const,
   attacker: "Guard",
   attackerId: "alpha:tank:1",
@@ -20,11 +20,11 @@ const attack = {
   damage: 28,
   actionId: origin.actionId,
   origin,
-  message: "Tick 11: Guard attacks Guard for 28 damage",
+  message: "Guard attacks Guard for 28 damage",
 };
 
 const pairedDamage = {
-  tick: 11,
+  batchNumber: 4,
   type: "damage" as const,
   source: "Guard",
   sourceId: "alpha:tank:1",
@@ -33,26 +33,26 @@ const pairedDamage = {
   damage: 28,
   actionId: origin.actionId,
   origin,
-  message: "Tick 11: Guard hits Guard for 28 damage",
+  message: "Guard hits Guard for 28 damage",
 };
 
 const itemOrigin = {
   kind: "item-effect" as const,
-  actionId: "12:alpha:support:1:1",
+  actionId: "action-alpha-support-1",
   sourceUnitId: "alpha:support:1",
   item: { id: "hood", name: "Acolyte Hood", position: 1 },
   effect: { id: "all-stats", name: "+10 all stats", position: 1 },
 };
 
 const healthApplication = {
-  tick: 12,
+  batchNumber: 5,
   type: "effect-apply" as const,
   target: "Arcane Mage",
   targetId: "alpha:ranged:1",
   effect: "+10 all stats",
   stat: "health",
   value: 10,
-  expiresAtTick: 14,
+  actionsRemaining: 2,
   actionId: itemOrigin.actionId,
   origin: itemOrigin,
   message: "health modified",
@@ -64,23 +64,36 @@ describe("buildBattleEventGroups", () => {
 
     expect(groups).toEqual([
       {
-        kind: "turn",
-        key: origin.actionId,
-        actionId: origin.actionId,
-        actorId: "alpha:tank:1",
-        entries: [attack],
+        kind: "batch",
+        key: "batch:4",
+        batchNumber: 4,
+        phases: [
+          {
+            kind: "turns",
+            key: "batch:4:turns",
+            turns: [
+              {
+                kind: "turn",
+                key: origin.actionId,
+                actionId: origin.actionId,
+                actorId: "alpha:tank:1",
+                entries: [attack],
+              },
+            ],
+          },
+        ],
       },
     ]);
   });
 
-  it("keeps delayed effects standalone in chronological order", () => {
+  it("keeps delayed effects in their later action batch", () => {
     const delayedDamage = {
       ...pairedDamage,
-      tick: 18,
+      batchNumber: 7,
       actionId: undefined,
       origin: {
         kind: "item-effect" as const,
-        actionId: "11:alpha:tank:1:1",
+        actionId: origin.actionId,
         sourceUnitId: "alpha:tank:1",
         effect: { name: "Burning", position: 1 },
       },
@@ -89,16 +102,112 @@ describe("buildBattleEventGroups", () => {
     const groups = buildBattleEventGroups([attack, pairedDamage, delayedDamage]);
 
     expect(groups).toHaveLength(2);
-    expect(groups[1]).toMatchObject({ kind: "event", entry: delayedDamage });
+    expect(groups[1]).toMatchObject({
+      kind: "batch",
+      batchNumber: 7,
+      phases: [{ kind: "events", events: [{ kind: "event", entry: delayedDamage }] }],
+    });
+  });
+
+  it("groups simultaneous actions as peer turns in one batch", () => {
+    const secondOrigin = {
+      kind: "basic-attack" as const,
+      actionId: "action-bravo-melee-1",
+      sourceUnitId: "bravo:melee:1",
+    };
+    const secondAttack = {
+      ...attack,
+      attacker: "Blade",
+      attackerId: "bravo:melee:1",
+      target: "Guard",
+      targetId: "alpha:tank:1",
+      damage: 19,
+      actionId: secondOrigin.actionId,
+      origin: secondOrigin,
+      message: "Blade attacks Guard for 19 damage",
+    };
+
+    const groups = buildBattleEventGroups([attack, pairedDamage, secondAttack]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      kind: "batch",
+      batchNumber: 4,
+      phases: [
+        {
+          kind: "turns",
+          turns: [
+            { actionId: origin.actionId, actorId: "alpha:tank:1", entries: [attack] },
+            {
+              actionId: secondOrigin.actionId,
+              actorId: "bravo:melee:1",
+              entries: [secondAttack],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("preserves pre-action events, peer turns, and post-action events as ordered phases", () => {
+    const poisonDamage = {
+      ...pairedDamage,
+      actionId: undefined,
+      origin: {
+        kind: "item-effect" as const,
+        sourceUnitId: "bravo:support:1",
+        effect: { name: "Poison", position: 1 },
+      },
+      message: "Poison hits Guard for 28 damage",
+    };
+    const secondOrigin = {
+      kind: "basic-attack" as const,
+      actionId: "action-bravo-melee-1",
+      sourceUnitId: "bravo:melee:1",
+    };
+    const secondAttack = {
+      ...attack,
+      attackerId: "bravo:melee:1",
+      actionId: secondOrigin.actionId,
+      origin: secondOrigin,
+    };
+    const fatigue = {
+      batchNumber: 4,
+      type: "fatigue" as const,
+      target: "Guard",
+      targetId: "alpha:tank:1",
+      damage: 3,
+      origin: { kind: "fatigue" as const },
+      message: "Fatigue hits Guard for 3 damage",
+    };
+
+    const groups = buildBattleEventGroups([poisonDamage, attack, secondAttack, fatigue]);
+
+    expect(groups).toMatchObject([
+      {
+        batchNumber: 4,
+        phases: [
+          { kind: "events", events: [{ kind: "event", entry: poisonDamage }] },
+          {
+            kind: "turns",
+            turns: [
+              { actionId: origin.actionId, entries: [attack] },
+              { actionId: secondOrigin.actionId, entries: [secondAttack] },
+            ],
+          },
+          { kind: "events", events: [{ kind: "event", entry: fatigue }] },
+        ],
+      },
+    ]);
   });
 
   it("groups consecutive detailed expirations without a current action", () => {
     const healthExpiration = {
       ...healthApplication,
-      tick: 13,
+      batchNumber: 6,
       type: "effect-expire" as const,
       actionId: undefined,
-      expiresAtTick: 13,
+      actionsRemaining: 0,
       message: "health expired",
     };
     const speedExpiration = {
@@ -109,11 +218,24 @@ describe("buildBattleEventGroups", () => {
 
     expect(buildBattleEventGroups([healthExpiration, speedExpiration])).toEqual([
       {
-        kind: "effect",
-        key: "effect-expire:13:12:alpha:support:1:1:alpha:support:1:hood:all-stats:alpha:ranged:1",
-        eventType: "effect-expire",
-        effect: "+10 all stats",
-        entries: [healthExpiration, speedExpiration],
+        kind: "batch",
+        key: "batch:6",
+        batchNumber: 6,
+        phases: [
+          {
+            kind: "events",
+            key: "batch:6:events:0",
+            events: [
+              {
+                kind: "effect",
+                key: "effect-expire:6:action-alpha-support-1:alpha:support:1:hood:all-stats:alpha:ranged:1",
+                eventType: "effect-expire",
+                effect: "+10 all stats",
+                entries: [healthExpiration, speedExpiration],
+              },
+            ],
+          },
+        ],
       },
     ]);
   });
@@ -122,7 +244,7 @@ describe("buildBattleEventGroups", () => {
 describe("buildBattleLedgerItems", () => {
   it("groups consecutive item effect applications beneath their activation", () => {
     const activation = {
-      tick: 12,
+      batchNumber: 5,
       type: "item-activate" as const,
       actionId: itemOrigin.actionId,
       origin: itemOrigin,
@@ -135,10 +257,10 @@ describe("buildBattleLedgerItems", () => {
     };
 
     expect(buildBattleLedgerItems([activation, healthApplication, speedApplication])).toEqual([
-      { kind: "entry", key: "12:item-activate:0", entry: activation },
+      { kind: "entry", key: "5:item-activate:0", entry: activation },
       {
         kind: "effect",
-        key: "effect-apply:12:12:alpha:support:1:1:alpha:support:1:hood:all-stats:alpha:ranged:1",
+        key: "effect-apply:5:action-alpha-support-1:alpha:support:1:hood:all-stats:alpha:ranged:1",
         eventType: "effect-apply",
         effect: "+10 all stats",
         entries: [healthApplication, speedApplication],
@@ -149,7 +271,7 @@ describe("buildBattleLedgerItems", () => {
   it("groups consecutive metadata-complete effect expirations", () => {
     const healthExpiration = {
       ...healthApplication,
-      tick: 14,
+      batchNumber: 6,
       type: "effect-expire" as const,
       message: "health expired",
     };
@@ -162,7 +284,7 @@ describe("buildBattleLedgerItems", () => {
     expect(buildBattleLedgerItems([healthExpiration, speedExpiration])).toEqual([
       {
         kind: "effect",
-        key: "effect-expire:14:12:alpha:support:1:1:alpha:support:1:hood:all-stats:alpha:ranged:1",
+        key: "effect-expire:6:action-alpha-support-1:alpha:support:1:hood:all-stats:alpha:ranged:1",
         eventType: "effect-expire",
         effect: "+10 all stats",
         entries: [healthExpiration, speedExpiration],
@@ -174,7 +296,7 @@ describe("buildBattleLedgerItems", () => {
     const legacyEffect = { ...healthApplication, value: undefined };
 
     expect(buildBattleLedgerItems([legacyEffect])).toEqual([
-      { kind: "entry", key: "12:effect-apply:0", entry: legacyEffect },
+      { kind: "entry", key: "5:effect-apply:0", entry: legacyEffect },
     ]);
   });
 });

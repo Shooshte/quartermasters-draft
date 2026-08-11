@@ -99,24 +99,24 @@ function actionBar(engine: BattleEngine, scenarioId: string, name: string) {
 }
 
 describe("action bar", () => {
-  it("accumulates raw action bar when action resolution is disabled", () => {
-    const engine = new BattleEngine(makeBarBattle(), { resolveActionsOnTick: false });
-    engine.tick(3);
+  it("advances every living bar to the next readiness event", () => {
+    const engine = new BattleEngine(makeBarBattle());
+    engine.resolveNextBatch();
 
-    expect(actionBar(engine, "A", "Shield Bearer")).toBe(60);
-    expect(actionBar(engine, "A", "Blade Dancer")).toBe(90);
-    expect(actionBar(engine, "A", "Field Medic")).toBe(105);
-    expect(actionBar(engine, "B", "Shadow Striker")).toBe(120);
+    expect(actionBar(engine, "A", "Shield Bearer")).toBe(50);
+    expect(actionBar(engine, "A", "Blade Dancer")).toBe(75);
+    expect(actionBar(engine, "A", "Field Medic")).toBe(87.5);
+    expect(actionBar(engine, "B", "Shadow Striker")).toBe(0);
   });
 
   it("does not increment dead units", () => {
     const input = makeBarBattle();
     input.scenarios[0].rows!.tank![0]!.stats.health = 0;
-    const engine = new BattleEngine(input, { resolveActionsOnTick: false });
-    engine.tick(3);
+    const engine = new BattleEngine(input);
+    engine.resolveNextBatch();
 
     expect(actionBar(engine, "A", "Shield Bearer")).toBe(0);
-    expect(actionBar(engine, "A", "Blade Dancer")).toBe(90);
+    expect(actionBar(engine, "A", "Blade Dancer")).toBe(75);
   });
 
   it("resets to zero after acting and discards overflow", () => {
@@ -137,7 +137,7 @@ describe("action bar", () => {
       ]),
     );
 
-    engine.tick(2);
+    engine.resolveNextBatch();
     const unit = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
     expect(unit.actedCount).toBe(1);
     expect(unit.actionBar).toBe(0);
@@ -186,11 +186,12 @@ describe("action bar", () => {
       ]),
     );
 
-    engine.tick(2);
+    engine.resolveNextBatch();
+    engine.resolveNextBatch();
 
     const attackNames: string[] = [];
     for (const entry of engine.getState().log) {
-      if (entry.tick !== 2) continue;
+      if (entry.batchNumber !== 2) continue;
       if (entry.type === "attack") {
         attackNames.push(entry.attacker);
       }

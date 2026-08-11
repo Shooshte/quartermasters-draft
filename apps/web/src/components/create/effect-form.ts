@@ -5,10 +5,10 @@ export interface EffectFormValues {
   [key: string]: unknown;
   name: string;
   timingType: TimingType;
-  intervalTicks: number | null;
+  triggerEveryActions: number | null;
   triggerCount: number | null;
   effectType: EffectType;
-  durationTicks: number | null;
+  lastsForActions: number | null;
   meleeDmg: number | null;
   health: number | null;
   mana: number | null;
@@ -29,10 +29,10 @@ export type EffectFieldErrors = Partial<Record<keyof EffectFormValues, string>>;
 type EffectRecord = {
   name: string;
   timingType: TimingType;
-  intervalTicks: number | null;
+  triggerEveryActions: number | null;
   triggerCount: number | null;
   effectType: EffectType;
-  durationTicks: number | null;
+  lastsForActions: number | null;
   meleeDmg: number | null;
   health: number | null;
   mana: number | null;
@@ -49,9 +49,9 @@ type EffectRecord = {
 };
 
 export const EFFECT_NUMERIC_FIELDS = [
-  "intervalTicks",
+  "triggerEveryActions",
   "triggerCount",
-  "durationTicks",
+  "lastsForActions",
   "meleeDmg",
   "health",
   "mana",
@@ -68,19 +68,19 @@ export const EFFECT_NUMERIC_FIELDS = [
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
 const POSITIVE_INTEGER_FIELDS = [
-  "intervalTicks",
+  "triggerEveryActions",
   "triggerCount",
-  "durationTicks",
+  "lastsForActions",
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
 export function createDefaultEffectFormValues(): EffectFormValues {
   return {
     name: "",
     timingType: "instant",
-    intervalTicks: null,
+    triggerEveryActions: null,
     triggerCount: null,
     effectType: "buff",
-    durationTicks: null,
+    lastsForActions: null,
     meleeDmg: null,
     health: null,
     mana: null,
@@ -98,13 +98,14 @@ export function createDefaultEffectFormValues(): EffectFormValues {
 }
 
 export function effectRecordToFormValues(record: Partial<EffectRecord>): EffectFormValues {
-  return {
-    ...createDefaultEffectFormValues(),
-    ...record,
-    name: record.name ?? "",
-    timingType: record.timingType ?? "instant",
-    effectType: record.effectType ?? "buff",
-  };
+  const values = createDefaultEffectFormValues();
+  for (const field of EFFECT_NUMERIC_FIELDS) {
+    values[field] = record[field] ?? null;
+  }
+  values.name = record.name ?? "";
+  values.timingType = record.timingType ?? "instant";
+  values.effectType = record.effectType ?? "buff";
+  return values;
 }
 
 export function normalizeEffectFormValues(values: EffectFormValues): EffectFormValues {
@@ -113,8 +114,11 @@ export function normalizeEffectFormValues(values: EffectFormValues): EffectFormV
     name: values.name.trim(),
   };
   if (normalized.timingType === "instant") {
-    normalized.intervalTicks = null;
+    normalized.triggerEveryActions = null;
     normalized.triggerCount = null;
+  }
+  if (!isActionDurationApplicable(normalized)) {
+    normalized.lastsForActions = null;
   }
   return normalized;
 }
@@ -136,15 +140,46 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
   }
 
   if (normalized.timingType === "interval") {
-    if (normalized.intervalTicks === null) {
-      errors.intervalTicks = "Tick interval is required for interval timing.";
+    if (normalized.triggerEveryActions === null) {
+      errors.triggerEveryActions = "Trigger every actions is required for interval timing.";
     }
     if (normalized.triggerCount === null) {
       errors.triggerCount = "Trigger count is required for interval timing.";
     }
   }
 
+  if (effectNeedsTimingConfiguration(normalized) && normalized.timingType === "instant") {
+    errors.lastsForActions = "Lasts for actions is required for stat buffs and debuffs.";
+  }
+
   return errors;
+}
+
+const EFFECT_STAT_FIELDS = [
+  "health",
+  "mana",
+  "meleeDmg",
+  "rangedDmg",
+  "manaRegen",
+  "spellDmg",
+  "speed",
+  "dodge",
+  "criticalChance",
+] as const;
+
+export function effectNeedsTimingConfiguration(values: EffectFormValues): boolean {
+  if (values.timingType === "interval") {
+    return values.triggerEveryActions === null || values.triggerCount === null;
+  }
+  return isActionDurationApplicable(values) && values.lastsForActions === null;
+}
+
+export function isActionDurationApplicable(values: EffectFormValues): boolean {
+  return (
+    values.timingType === "instant" &&
+    (values.effectType === "buff" || values.effectType === "debuff") &&
+    EFFECT_STAT_FIELDS.some((field) => values[field] !== null)
+  );
 }
 
 export function hasEffectFormErrors(values: EffectFormValues): boolean {

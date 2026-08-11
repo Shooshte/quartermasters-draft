@@ -1,3 +1,10 @@
+import {
+  clonePlanningState,
+  getRecordedActionOperations,
+  type PlannedAction,
+  recordActionOperation,
+} from "./action-operations";
+import { compareReadyUnitOrder } from "./action-scheduler";
 import { applyItemEffectsToTargets } from "./effects";
 import { pushLog } from "./logging";
 import {
@@ -5,8 +12,7 @@ import {
   computeBasicDamageWithModifiers,
   getUnitEffectiveStats,
 } from "./math";
-import { compareUnitOrder } from "./rows";
-import { findScenario } from "./state";
+import { findScenario, findUnitById } from "./state";
 import type { UnitTargetingInput } from "./targeting";
 import { selectTargets } from "./targeting";
 import type { BattleLogOrigin, BattleState, BattleUnitState } from "./types";
@@ -29,8 +35,8 @@ function basicAttackTargeting(attacker: BattleUnitState): UnitTargetingInput {
 export function performBasicAttack(
   state: BattleState,
   attacker: BattleUnitState,
-  tick = state.tick,
-  actionId = `${tick}:${attacker.instanceId}:${attacker.actedCount + 1}`,
+  batchNumber = state.batchCount,
+  actionId = `${batchNumber}:${attacker.instanceId}:${attacker.actedCount + 1}`,
 ): number {
   const targets = selectTargets(state, attacker, basicAttackTargeting(attacker));
   const target = targets[0];
@@ -53,9 +59,10 @@ export function performBasicAttack(
     targetStats,
   );
 
+  recordActionOperation(state, { kind: "damage", targetId: target.instanceId, amount: damage });
   target.currentHealth = Math.max(0, target.currentHealth - damage);
   pushLog(state, {
-    tick,
+    batchNumber,
     type: "attack",
     attacker: attacker.name,
     attackerId: attacker.instanceId,
@@ -64,10 +71,10 @@ export function performBasicAttack(
     damage,
     actionId,
     origin: { kind: "basic-attack", actionId, sourceUnitId: attacker.instanceId },
-    message: `Tick ${tick}: ${attacker.name} attacks ${target.name} for ${damage} damage`,
+    message: `${attacker.name} attacks ${target.name} for ${damage} damage`,
   });
   pushLog(state, {
-    tick,
+    batchNumber,
     type: "damage",
     source: attacker.name,
     sourceId: attacker.instanceId,
@@ -76,30 +83,19 @@ export function performBasicAttack(
     damage,
     actionId,
     origin: { kind: "basic-attack", actionId, sourceUnitId: attacker.instanceId },
-    message: `Tick ${tick}: ${attacker.name} hits ${target.name} for ${damage} damage`,
+    message: `${attacker.name} hits ${target.name} for ${damage} damage`,
   });
-  if (target.currentHealth === 0) {
-    pushLog(state, {
-      tick,
-      type: "death",
-      unit: target.name,
-      unitId: target.instanceId,
-      actionId,
-      origin: { kind: "basic-attack", actionId, sourceUnitId: attacker.instanceId },
-      message: `Tick ${tick}: ${target.name} dies`,
-    });
-  }
   return damage;
 }
 
 export function resolveUnitAction(
   state: BattleState,
   unit: BattleUnitState,
-  tick = state.tick,
+  batchNumber = state.batchCount,
 ): ActionOutcome {
   const activatedItemNames: string[] = [];
   let totalDamage = 0;
-  const actionId = `${tick}:${unit.instanceId}:${unit.actedCount + 1}`;
+  const actionId = `${batchNumber}:${unit.instanceId}:${unit.actedCount + 1}`;
 
   const items = [...unit.items];
 
@@ -111,8 +107,22 @@ export function resolveUnitAction(
     const targets = selectTargets(state, unit, unit);
     if (targets.length === 0) continue;
 
-    unit.mana -= item.activationManaCost;
-    unit.currentHealth -= item.activationHealthCost;
+    if (item.activationManaCost > 0) {
+      recordActionOperation(state, {
+        kind: "mana-cost",
+        targetId: unit.instanceId,
+        amount: item.activationManaCost,
+      });
+      unit.mana -= item.activationManaCost;
+    }
+    if (item.activationHealthCost > 0) {
+      recordActionOperation(state, {
+        kind: "health-cost",
+        targetId: unit.instanceId,
+        amount: item.activationHealthCost,
+      });
+      unit.currentHealth -= item.activationHealthCost;
+    }
 
     const startingHealthByTarget = new Map(
       targets.map((target) => [target.instanceId, target.currentHealth]),
@@ -123,7 +133,7 @@ export function resolveUnitAction(
       sourceUnitId: unit.instanceId,
       item: { id: item.id, name: item.name, position: itemIndex + 1 },
     };
-    const result = applyItemEffectsToTargets(state, unit, item, targets, tick, origin);
+    const result = applyItemEffectsToTargets(state, unit, item, targets, batchNumber, origin);
     activatedItemNames.push(item.name);
     totalDamage += result.targets.reduce((sum, target) => {
       // biome-ignore lint/style/noNonNullAssertion: item effects only receive targets from battle state.
@@ -151,8 +161,33 @@ export function resolveUnitAction(
 
   return {
     usedBasicAttack: true,
-    totalDamage: performBasicAttack(state, unit, tick, actionId),
+    totalDamage: performBasicAttack(state, unit, batchNumber, actionId),
     activatedItemNames,
+  };
+}
+
+export function planUnitAction(
+  snapshot: BattleState,
+  actorId: string,
+  batchNumber: number,
+  random: () => number,
+  allocateEffectId: () => string,
+): PlannedAction {
+  const planningState = clonePlanningState(snapshot, random, allocateEffectId);
+  const actor = findUnitById(planningState, actorId);
+  if (!actor) {
+    throw new Error(`Action actor ${actorId} was not found in battle snapshot.`);
+  }
+  const actionId = `${batchNumber}:${actor.instanceId}:${actor.actedCount + 1}`;
+  const existingLogLength = planningState.log.length;
+
+  resolveUnitAction(planningState, actor, batchNumber);
+
+  return {
+    actorId,
+    actionId,
+    operations: getRecordedActionOperations(planningState),
+    log: structuredClone(planningState.log.slice(existingLogLength)),
   };
 }
 
@@ -160,15 +195,5 @@ export function buildReadyQueue(state: BattleState): BattleUnitState[] {
   return state.scenarios
     .flatMap((scenario) => Object.values(scenario.rows).flat())
     .filter((unit) => unit.currentHealth > 0 && unit.actionBar >= 100)
-    .sort((left, right) => {
-      const speedDiff = getUnitEffectiveStats(right).speed - getUnitEffectiveStats(left).speed;
-      if (speedDiff !== 0) return speedDiff;
-      if (left.scenarioId !== right.scenarioId) {
-        return (
-          state.scenarios.findIndex((scenario) => scenario.id === left.scenarioId) -
-          state.scenarios.findIndex((scenario) => scenario.id === right.scenarioId)
-        );
-      }
-      return compareUnitOrder(left, right);
-    });
+    .sort((left, right) => compareReadyUnitOrder(state, left, right));
 }

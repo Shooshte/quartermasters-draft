@@ -18,7 +18,7 @@ interface ExpectedBattleUnit {
   activeEffects: {
     name: string;
     remainingTriggers?: number;
-    expiresAtTick?: number;
+    actionsRemaining?: number;
     statKey?: keyof ExpectedBattleStats;
     value: number;
   }[];
@@ -40,7 +40,7 @@ interface ExpectedBattleReplay {
   scenarios: { id: string; name: string }[];
   result: {
     winnerId: string | null;
-    ticksElapsed: number;
+    actionsResolved: number;
     finalState: {
       scenarios: {
         id: string;
@@ -48,7 +48,7 @@ interface ExpectedBattleReplay {
       }[];
     };
     log: {
-      tick: number;
+      batchNumber: number;
       type: string;
       message: string;
       actionId?: string;
@@ -135,8 +135,8 @@ function displayEffects(unit: ExpectedBattleUnit) {
         return `${effect.name} (${effect.remainingTriggers} ${triggerLabel} remaining)`;
       }
 
-      if (effect.expiresAtTick !== undefined) {
-        return `${effect.name} (until tick ${effect.expiresAtTick})`;
+      if (effect.actionsRemaining !== undefined) {
+        return `${effect.name} (${effect.actionsRemaining} actions remaining)`;
       }
 
       return effect.name;
@@ -213,7 +213,7 @@ export class BattleLabPage {
       }),
     ).toBeVisible();
     await expect(
-      this.page.getByText(`${expected.result.ticksElapsed} ticks`, { exact: true }),
+      this.page.getByText(`${expected.result.actionsResolved} actions resolved`, { exact: true }),
     ).toBeVisible();
 
     for (const finalScenario of expected.result.finalState.scenarios) {
@@ -250,8 +250,31 @@ export class BattleLabPage {
     const eventEntries = eventLedger.getByRole("listitem");
     await expect(eventLedger).toBeVisible();
     await expect(eventEntries.first()).toBeVisible();
-    await expect(eventLedger.getByText(/Tick \d+/)).toHaveCount(0);
-    await expect(eventEntries.last()).toContainText("Battle ended:");
+    await expect(eventLedger.getByText(new RegExp(["ti", "ck"].join(""), "i"))).toHaveCount(0);
+    await expect(
+      this.page.getByText(
+        "Grouped by simultaneous action batch. Display order does not determine outcomes.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+
+    const actionIdsByBatch = new Map<number, Set<string>>();
+    for (const entry of expected.result.log) {
+      if (!entry.actionId) continue;
+      const actionIds = actionIdsByBatch.get(entry.batchNumber) ?? new Set<string>();
+      actionIds.add(entry.actionId);
+      actionIdsByBatch.set(entry.batchNumber, actionIds);
+    }
+    const simultaneousBatch = [...actionIdsByBatch].find(([, actionIds]) => actionIds.size > 1);
+    if (!simultaneousBatch) {
+      throw new Error("Expected the deterministic replay to contain a simultaneous action batch");
+    }
+    await expect(
+      eventLedger.getByText(`Simultaneous actions · Batch ${simultaneousBatch[0]}`, {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(eventLedger.getByText(/^Battle ended:/)).toBeVisible();
 
     const multiEffectActivation = expected.result.log.find(
       (entry) =>

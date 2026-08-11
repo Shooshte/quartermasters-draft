@@ -41,7 +41,13 @@ interface LibraryPanelProps {
   onScenarioSortChange: (sortBy: ScenarioSortBy, sortDir: ScenarioSortDir) => void;
   onDeleteScenario: (id: string, name: string) => void;
   // Effect-specific props
-  effectListItems: { id: string; name: string; timingType: string; effectType: string }[];
+  effectListItems: {
+    id: string;
+    name: string;
+    timingType: string;
+    effectType: string;
+    needsTimingConfiguration: boolean;
+  }[];
   effectPage: number;
   effectTotalPages: number;
   effectSortBy: EffectSortBy;

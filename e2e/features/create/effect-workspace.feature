@@ -13,22 +13,30 @@ Feature: Effect workspace CRUD
     Then the effect workspace should save the effect in edit mode
     And the URL should contain the created "effect_id"
 
-  Scenario: Tick interval fields are visible but disabled for instant timing
+  Scenario: Interval action fields are visible but disabled for instant timing
     When I start creating a new effect
     Then the interval timing fields should remain visible
     And the interval timing fields should be disabled for instant timing
 
-  Scenario: Create a new interval effect with required tick timing fields
-    When I create a new interval effect named "Battle Rhythm"
-    Then the saved effect should retain its tick timing values
+  Scenario: Configure an interval by affected-unit actions
+    When I create an interval effect named "Battle Rhythm"
+    And I set Trigger every affected-unit actions to 2
+    And I set Trigger count to 3
+    Then the saved effect retains those action timing values
 
   Scenario: Create a signed mana capacity modifier
     When I create a new effect named "Mana Drain" with mana -40
     Then reloading the effect by URL should show mana as -40
 
-  Scenario: Validation blocks save when tick interval fields are missing
-    When I select interval timing for a new effect without tick interval values
+  Scenario: Validation blocks save when action interval fields are missing
+    When I select interval timing for a new effect without action interval values
     Then saving should remain blocked
+
+  Scenario: A legacy timed effect requires configuration
+    Given an effect has incomplete migrated timing
+    When I open that effect
+    Then I see "Timing needs configuration"
+    And saving is blocked until valid action timing is entered
 
   Scenario: Edit an existing effect
     Given I have loaded the effect "Barbarian Roar" in the effect workspace

@@ -13,9 +13,10 @@ Feature: Game master Battle Lab
       Given both selected scenarios contain living units
       When the game master runs them with seed "balance-pass-3"
       Then the URL should contain a persisted replay ID
-      And the winner or draw and elapsed ticks should be visible
+      And the winner or draw and resolved action count should be visible
       And every final unit state should be visible
-      And the chronological battle log should be visible
+      And the action-batch battle log should be visible
+      And actions from the same batch should be grouped as simultaneous
 
     Scenario: Refresh a replay
       Given the game master has run a saved battle

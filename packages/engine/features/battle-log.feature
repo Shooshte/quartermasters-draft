@@ -5,21 +5,21 @@ Feature: Battle log output
     Given two opposing scenarios with seed 42
     When the battle is resolved
     Then the result contains a "log" array with at least 1 entry
-    And every entry references a non-decreasing tick number
+    And every entry references a non-decreasing batchNumber
     And the last entry declares a winner or draw
     And no entry follows the outcome
 
-  Scenario: Basic attacks include attacker, target, damage, and tick
+  Scenario: Basic attacks include attacker, target, damage, and batch number
     Given two opposing scenarios with seed 42
     When the battle is resolved
-    Then the log contains "Tick <tick>: <attacker> attacks <target> for <damage> damage"
-    And the basic attack entry includes tick, attacker, target, damage, and message
+    Then the log contains "<attacker> attacks <target> for <damage> damage"
+    And the basic attack entry includes batchNumber, attacker, target, damage, and message
 
   Scenario: Item activation is attributed to its item and ordered effects
     Given a unit activates item "Fire Sword" with effects "Flame Strike" then "Burn"
     When the effects resolve
-    Then the log contains "Tick <tick>: <caster> activates <item> on <targets>"
-    And the activation entry includes tick, caster, item, targets, effects, and message
+    Then the log contains "<caster> activates <item> on <targets>"
+    And the activation entry includes batchNumber, caster, item, targets, effects, and message
     And the effects are recorded in their activation order
     And every activation origin identifies an item and its effect
 
@@ -32,7 +32,7 @@ Feature: Battle log output
   Scenario: Unit death and effect expiration are logged
     Given a unit dies after receiving an effect that later expires
     When the battle is resolved
-    Then the log records the unit death and the effect expiration with their ticks
+    Then the log records the unit death and the effect expiration with their batchNumber values
 
   Scenario: Same inputs and seed produce identical log output
     Given two opposing scenarios with seed 42

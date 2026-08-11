@@ -107,12 +107,28 @@ describe("loadBattleScenario", () => {
         {
           itemId: "item-1",
           sequenceOrder: 2,
-          effect: { id: "effect-2", name: "Burn" },
+          effect: {
+            id: "effect-2",
+            name: "Burn",
+            timingType: "interval",
+            effectType: "damage",
+            triggerEveryActions: 2,
+            triggerCount: 3,
+            lastsForActions: null,
+          },
         },
         {
           itemId: "item-1",
           sequenceOrder: 1,
-          effect: { id: "effect-1", name: "Scorch" },
+          effect: {
+            id: "effect-1",
+            name: "Scorch",
+            timingType: "instant",
+            effectType: "debuff",
+            triggerEveryActions: null,
+            triggerCount: null,
+            lastsForActions: 3,
+          },
         },
       ],
     ]);
@@ -130,8 +146,11 @@ describe("loadBattleScenario", () => {
           name: "Oak Staff",
           allowedRowTypes: ["ranged", "support"],
           effects: [
-            { sequenceOrder: 1, effect: { name: "Scorch" } },
-            { sequenceOrder: 2, effect: { name: "Burn" } },
+            { sequenceOrder: 1, effect: { name: "Scorch", lastsForActions: 3 } },
+            {
+              sequenceOrder: 2,
+              effect: { name: "Burn", triggerEveryActions: 2, triggerCount: 3 },
+            },
           ],
         },
       ],

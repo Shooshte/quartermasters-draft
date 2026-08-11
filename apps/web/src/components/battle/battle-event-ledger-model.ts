@@ -1,5 +1,5 @@
 export type LedgerLogEntry = {
-  tick: number;
+  batchNumber: number;
   type: string;
   message: string;
   actionId?: string;
@@ -14,7 +14,7 @@ export type LedgerLogEntry = {
   targetId?: string;
   stat?: string;
   value?: number;
-  expiresAtTick?: number;
+  actionsRemaining?: number;
   attackerId?: string;
   casterId?: string;
   sourceId?: string;
@@ -35,14 +35,15 @@ export type BattleLedgerItem<T extends LedgerLogEntry = LedgerLogEntry> =
       entries: T[];
     };
 
-export type BattleEventGroup<T extends LedgerLogEntry = LedgerLogEntry> =
-  | {
-      kind: "turn";
-      key: string;
-      actionId: string;
-      actorId: string;
-      entries: T[];
-    }
+export type BattleTurnGroup<T extends LedgerLogEntry = LedgerLogEntry> = {
+  kind: "turn";
+  key: string;
+  actionId: string;
+  actorId: string;
+  entries: T[];
+};
+
+export type BattleUnattributedEvent<T extends LedgerLogEntry = LedgerLogEntry> =
   | {
       kind: "event";
       key: string;
@@ -56,6 +57,25 @@ export type BattleEventGroup<T extends LedgerLogEntry = LedgerLogEntry> =
       entries: T[];
     };
 
+export type BattleEventPhase<T extends LedgerLogEntry = LedgerLogEntry> =
+  | {
+      kind: "turns";
+      key: string;
+      turns: BattleTurnGroup<T>[];
+    }
+  | {
+      kind: "events";
+      key: string;
+      events: BattleUnattributedEvent<T>[];
+    };
+
+export type BattleEventGroup<T extends LedgerLogEntry = LedgerLogEntry> = {
+  kind: "batch";
+  key: string;
+  batchNumber: number;
+  phases: BattleEventPhase<T>[];
+};
+
 function isDetailedModifierEntry(entry: LedgerLogEntry): entry is LedgerLogEntry & {
   type: "effect-apply" | "effect-expire";
   origin: NonNullable<LedgerLogEntry["origin"]> & {
@@ -66,14 +86,14 @@ function isDetailedModifierEntry(entry: LedgerLogEntry): entry is LedgerLogEntry
     (entry.type === "effect-apply" || entry.type === "effect-expire") &&
     Boolean(entry.targetId && entry.origin?.effect && entry.stat) &&
     typeof entry.value === "number" &&
-    (entry.type === "effect-expire" || typeof entry.expiresAtTick === "number")
+    typeof entry.actionsRemaining === "number"
   );
 }
 
 function modifierGroupKey(entry: LedgerLogEntry) {
   return [
     entry.type,
-    entry.tick,
+    entry.batchNumber,
     entry.actionId ?? entry.origin?.actionId ?? "",
     entry.origin?.sourceUnitId ?? "",
     entry.origin?.item?.id ?? entry.origin?.item?.position ?? "",
@@ -91,7 +111,7 @@ export function buildBattleLedgerItems<T extends LedgerLogEntry>(
     if (!isDetailedModifierEntry(entry)) {
       items.push({
         kind: "entry",
-        key: `${entry.tick}:${entry.type}:${index}`,
+        key: `${entry.batchNumber}:${entry.type}:${index}`,
         entry,
       });
       continue;
@@ -139,38 +159,64 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
   const groups: BattleEventGroup<T>[] = [];
 
   for (const [index, entry] of log.entries()) {
-    const lastGroup = groups.at(-1);
+    let batch = groups.at(-1);
+    if (batch?.batchNumber !== entry.batchNumber) {
+      batch = {
+        kind: "batch",
+        key: `batch:${entry.batchNumber}`,
+        batchNumber: entry.batchNumber,
+        phases: [],
+      };
+      groups.push(batch);
+    }
+
     const entryActorId = actorId(entry);
 
-    if (
-      entry.actionId &&
-      entryActorId &&
-      lastGroup?.kind === "turn" &&
-      lastGroup.actionId === entry.actionId
-    ) {
-      if (!isPairedBasicAttackDamage(lastGroup.entries.at(-1), entry)) {
-        lastGroup.entries.push(entry);
+    if (entry.actionId && entryActorId) {
+      let turnPhase = batch.phases.find((phase) => phase.kind === "turns");
+      if (!turnPhase) {
+        turnPhase = {
+          kind: "turns",
+          key: `batch:${entry.batchNumber}:turns`,
+          turns: [],
+        };
+        batch.phases.push(turnPhase);
+      }
+
+      const turn = turnPhase.turns.find((candidate) => candidate.actionId === entry.actionId);
+      if (turn) {
+        if (!isPairedBasicAttackDamage(turn.entries.at(-1), entry)) {
+          turn.entries.push(entry);
+        }
+      } else {
+        turnPhase.turns.push({
+          kind: "turn",
+          key: entry.actionId,
+          actionId: entry.actionId,
+          actorId: entryActorId,
+          entries: [entry],
+        });
       }
       continue;
     }
 
-    if (entry.actionId && entryActorId) {
-      groups.push({
-        kind: "turn",
-        key: entry.actionId,
-        actionId: entry.actionId,
-        actorId: entryActorId,
-        entries: [entry],
-      });
-      continue;
+    let eventPhase = batch.phases.at(-1);
+    if (eventPhase?.kind !== "events") {
+      eventPhase = {
+        kind: "events",
+        key: `batch:${entry.batchNumber}:events:${batch.phases.length}`,
+        events: [],
+      };
+      batch.phases.push(eventPhase);
     }
 
     if (isDetailedModifierEntry(entry)) {
       const key = modifierGroupKey(entry);
-      if (lastGroup?.kind === "effect" && lastGroup.key === key) {
-        lastGroup.entries.push(entry);
+      const lastEvent = eventPhase.events.at(-1);
+      if (lastEvent?.kind === "effect" && lastEvent.key === key) {
+        lastEvent.entries.push(entry);
       } else {
-        groups.push({
+        eventPhase.events.push({
           kind: "effect",
           key,
           eventType: entry.type,
@@ -181,9 +227,9 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
       continue;
     }
 
-    groups.push({
+    eventPhase.events.push({
       kind: "event",
-      key: `${entry.tick}:${entry.type}:${index}`,
+      key: `${entry.batchNumber}:${entry.type}:${index}`,
       entry,
     });
   }

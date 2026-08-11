@@ -3,9 +3,10 @@ import type { inferRouterOutputs } from "@trpc/server";
 import { Card, CardContent, CardDescription, CardHeader } from "~/components/ui/card";
 import {
   type BattleLedgerItem,
+  type BattleTurnGroup,
+  type BattleUnattributedEvent,
   buildBattleEventGroups,
   buildBattleLedgerItems,
-  type LedgerLogEntry,
 } from "./battle-event-ledger-model";
 
 type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
@@ -16,7 +17,7 @@ type DetailedModifierEntry = Extract<BattleLogEntry, { type: "effect-apply" | "e
   value: number;
   target: string;
   targetId: string;
-  expiresAtTick: number;
+  actionsRemaining: number;
 };
 type EffectLedgerItem = Omit<
   Extract<BattleLedgerItem<BattleLogEntry>, { kind: "effect" }>,
@@ -153,7 +154,13 @@ function EventDescription({
         </p>
       );
     case "battle-end":
-      return <p className="font-medium text-foreground">Battle ended: {entry.outcome}.</p>;
+      return (
+        <p className="font-medium text-foreground">
+          {entry.message.includes("action limit")
+            ? `Battle ended at the action limit: ${entry.outcome}.`
+            : `Battle ended: ${entry.outcome}.`}
+        </p>
+      );
     default:
       return <p>{(entry as { message: string }).message}</p>;
   }
@@ -214,7 +221,7 @@ function EffectDescription({
           <p key={entryKey(entry)}>
             {displayStat(entry.stat)}: {displaySignedValue(entry.value)} on{" "}
             {unitLabel(unitIds, entry.targetId, entry.target ?? "Unknown target")}
-            {entry.expiresAtTick != null ? ` (until tick ${entry.expiresAtTick})` : ""}.
+            {` (${entry.actionsRemaining} actions remaining)`}.
           </p>
         ))}
       </div>
@@ -224,64 +231,105 @@ function EffectDescription({
 
 export function BattleEventLedger({ scenarios, result }: BattleEventLedgerProps) {
   const unitIds = createUnitDirectory(scenarios, result);
-  const groups = buildBattleEventGroups(result.log as BattleLogEntry[] as LedgerLogEntry[]);
+  const groups = buildBattleEventGroups(result.log);
+
+  function renderTurn(group: BattleTurnGroup<BattleLogEntry>) {
+    return (
+      <>
+        <p className="text-sm font-semibold text-foreground">
+          {unitLabel(unitIds, group.actorId, "Unknown unit")}
+        </p>
+        <div className="mt-2 space-y-2 border-l border-primary/30 pl-3 text-sm leading-5 text-foreground/90">
+          {buildBattleLedgerItems(group.entries).map((item) =>
+            item.kind === "effect" ? (
+              <div key={item.key}>
+                <EffectDescription group={item as EffectLedgerItem} unitIds={unitIds} />
+              </div>
+            ) : (
+              <div key={item.key}>
+                <EventDescription entry={item.entry as BattleLogEntry} unitIds={unitIds} />
+              </div>
+            ),
+          )}
+        </div>
+      </>
+    );
+  }
+
+  function renderEvent(group: BattleUnattributedEvent<BattleLogEntry>) {
+    if (group.kind === "effect") {
+      return <EffectDescription group={group as EffectLedgerItem} unitIds={unitIds} />;
+    }
+
+    const entry = group.entry as BattleLogEntry;
+    return (
+      <>
+        <EventDescription entry={entry} unitIds={unitIds} />
+        <SourceCaption entry={entry} unitIds={unitIds} />
+      </>
+    );
+  }
 
   return (
     <Card className="gap-0 overflow-hidden py-0">
       <CardHeader className="border-b border-border/70 px-5 py-4 sm:px-6">
         <div>
           <h3 className="text-base font-semibold">Event ledger</h3>
-          <CardDescription>Recorded in resolution order.</CardDescription>
+          <CardDescription>
+            Grouped by simultaneous action batch. Display order does not determine outcomes.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="px-0">
         <ol aria-label="Battle events" className="divide-y divide-border/70">
-          {groups.map((group) => {
-            if (group.kind === "event") {
-              const entry = group.entry as BattleLogEntry;
-              return (
-                <li
-                  key={group.key}
-                  className="px-4 py-3 text-sm leading-5 text-foreground/90 sm:px-5"
-                >
-                  <EventDescription entry={entry} unitIds={unitIds} />
-                  <SourceCaption entry={entry} unitIds={unitIds} />
-                </li>
-              );
-            }
+          {groups.map((group) => (
+            <li key={group.key} className="px-4 py-4 sm:px-5">
+              {group.phases.map((phase, phaseIndex) => {
+                if (phase.kind === "turns") {
+                  const simultaneous = phase.turns.length > 1;
+                  const onlyTurn = phase.turns.length === 1 ? phase.turns[0] : undefined;
 
-            if (group.kind === "effect") {
-              return (
-                <li
-                  key={group.key}
-                  className="px-4 py-3 text-sm leading-5 text-foreground/90 sm:px-5"
-                >
-                  <EffectDescription group={group as EffectLedgerItem} unitIds={unitIds} />
-                </li>
-              );
-            }
+                  return (
+                    <div
+                      key={phase.key}
+                      className={phaseIndex > 0 ? "mt-3 border-t border-border/70 pt-3" : undefined}
+                    >
+                      {simultaneous ? (
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Simultaneous actions · Batch {group.batchNumber}
+                          </p>
+                          <ul
+                            aria-label={`Simultaneous actions in batch ${group.batchNumber}`}
+                            className="mt-3 grid gap-3 md:grid-cols-2"
+                          >
+                            {phase.turns.map((turn) => (
+                              <li key={turn.key} className="rounded-md border border-border/70 p-3">
+                                {renderTurn(turn)}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : onlyTurn ? (
+                        renderTurn(onlyTurn)
+                      ) : null}
+                    </div>
+                  );
+                }
 
-            return (
-              <li key={group.key} className="px-4 py-4 sm:px-5">
-                <p className="text-sm font-semibold text-foreground">
-                  {unitLabel(unitIds, group.actorId, "Unknown unit")}
-                </p>
-                <div className="mt-2 space-y-2 border-l border-primary/30 pl-3 text-sm leading-5 text-foreground/90">
-                  {buildBattleLedgerItems(group.entries).map((item) =>
-                    item.kind === "effect" ? (
-                      <div key={item.key}>
-                        <EffectDescription group={item as EffectLedgerItem} unitIds={unitIds} />
-                      </div>
-                    ) : (
-                      <div key={item.key}>
-                        <EventDescription entry={item.entry as BattleLogEntry} unitIds={unitIds} />
-                      </div>
-                    ),
-                  )}
-                </div>
-              </li>
-            );
-          })}
+                return (
+                  <div
+                    key={phase.key}
+                    className={`${phaseIndex > 0 ? "mt-3 border-t border-border/70 pt-3" : ""} space-y-3 text-sm leading-5 text-foreground/90`}
+                  >
+                    {phase.events.map((event) => (
+                      <div key={event.key}>{renderEvent(event)}</div>
+                    ))}
+                  </div>
+                );
+              })}
+            </li>
+          ))}
         </ol>
       </CardContent>
     </Card>

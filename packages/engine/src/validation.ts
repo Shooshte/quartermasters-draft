@@ -2,6 +2,7 @@ import {
   type BattleInput,
   ROW_TYPES,
   type RowType,
+  STAT_KEYS,
   TARGET_PRIORITIES,
   TARGET_SCOPES,
   TARGET_SELECTION_SHAPES,
@@ -47,6 +48,7 @@ export function validateBattleInput(input: BattleInput): void {
     validateTargetingConfiguration(unit);
     validateTargetCount(unit);
     validateItemRows(unit, rowType);
+    validateEffectTiming(unit);
   }
 
   const livingUnits = deployedUnits
@@ -55,6 +57,26 @@ export function validateBattleInput(input: BattleInput): void {
 
   if (livingUnits.length === 0) {
     throw new InvalidBattleInputError("Battle initialization requires at least one living unit.");
+  }
+}
+
+function validateEffectTiming(unit: UnitInput): void {
+  for (const { effect } of (unit.items ?? []).flatMap((item) => item.effects ?? [])) {
+    const intervalTimingMissing =
+      effect.timingType === "interval" &&
+      (effect.triggerEveryActions == null || effect.triggerCount == null);
+    const hasStatModifier = STAT_KEYS.some((statKey) => effect[statKey] != null);
+    const actionDurationMissing =
+      effect.timingType === "instant" &&
+      (effect.effectType === "buff" || effect.effectType === "debuff") &&
+      hasStatModifier &&
+      effect.lastsForActions == null;
+
+    if (intervalTimingMissing || actionDurationMissing) {
+      throw new InvalidBattleInputError(
+        `Effect "${effect.name ?? "Effect"}" timing needs configuration.`,
+      );
+    }
   }
 }
 

@@ -212,6 +212,23 @@ describe("effect-form", () => {
     ).toMatchObject({ lastsForActions: expect.stringContaining("required") });
   });
 
+  it.each([
+    { timingType: "interval" as const, effectType: "buff" as const },
+    { timingType: "instant" as const, effectType: "healing" as const },
+    { timingType: "instant" as const, effectType: "damage" as const },
+  ])("rejects shield for $timingType $effectType effects", ({ timingType, effectType }) => {
+    const errors = validateEffectForm({
+      ...createDefaultEffectFormValues(),
+      name: "Unsupported Ward",
+      timingType,
+      effectType,
+      shield: 20,
+      ...(timingType === "interval" ? { triggerEveryActions: 1, triggerCount: 1 } : {}),
+    });
+
+    expect(errors.shield).toContain("only supported for instant buffs and debuffs");
+  });
+
   it("accepts a zero shield instant buff without an action duration", () => {
     const values = {
       ...createDefaultEffectFormValues(),

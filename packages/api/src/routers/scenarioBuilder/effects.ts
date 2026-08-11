@@ -75,24 +75,28 @@ type EffectTimingStatusInput = Pick<
 >;
 
 function isActionDurationApplicable(input: EffectTimingStatusInput): boolean {
+  return input.timingType === "instant" && (input.isTaunt || requiresActionDuration(input));
+}
+
+function requiresActionDuration(input: EffectTimingStatusInput): boolean {
   const hasDurationBearingStat = EFFECT_STAT_FIELDS.some((field) => {
     const value = input[field];
     return field === "shield" ? typeof value === "number" && value > 0 : typeof value === "number";
   });
   return (
-    input.timingType === "instant" &&
-    (input.isTaunt ||
-      ((input.effectType === "buff" || input.effectType === "debuff") &&
-        EFFECT_STAT_FIELDS.some((field) => input[field] !== null)))
-  );
-}
-
-function requiresActionDuration(input: EffectTimingStatusInput): boolean {
-  return (
     !input.isTaunt &&
     input.timingType === "instant" &&
     (input.effectType === "buff" || input.effectType === "debuff") &&
     hasDurationBearingStat
+  );
+}
+
+function hasUnsupportedShieldLifecycle(input: EffectTimingStatusInput): boolean {
+  const hasPositiveShield = typeof input.shield === "number" && input.shield > 0;
+  return (
+    hasPositiveShield &&
+    (input.timingType !== "instant" ||
+      (input.effectType !== "buff" && input.effectType !== "debuff"))
   );
 }
 
@@ -112,6 +116,14 @@ function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect
 }
 
 function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
+  if (hasUnsupportedShieldLifecycle(input)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["shield"],
+      message: "Shield is only supported for instant buffs and debuffs.",
+    });
+  }
+
   if (input.isTaunt && input.timingType === "interval") {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

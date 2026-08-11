@@ -166,6 +166,14 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
     }
   }
 
+  const hasPositiveShield = typeof normalized.shield === "number" && normalized.shield > 0;
+  const hasSupportedShieldLifecycle =
+    normalized.timingType === "instant" &&
+    (normalized.effectType === "buff" || normalized.effectType === "debuff");
+  if (hasPositiveShield && !hasSupportedShieldLifecycle) {
+    errors.shield = "Shield is only supported for instant buffs and debuffs.";
+  }
+
   if (normalized.timingType === "interval") {
     if (normalized.isTaunt) {
       errors.timingType = "Taunt effects must use instant timing.";

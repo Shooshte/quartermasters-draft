@@ -19,6 +19,7 @@ import type {
   ItemActivationLogEntry,
   StatKey,
 } from "./types";
+import { validateEffectShieldLifecycle } from "./validation";
 
 type ApplyItemEffectsResult = {
   targets: BattleUnitState[];
@@ -342,6 +343,8 @@ function applyEffectTemplate(
   origin: BattleLogOrigin | undefined,
   effectPosition: number,
 ): string[] {
+  validateEffectShieldLifecycle(effect);
+
   if (effect.timingType === "interval") {
     const activeEffects = queueIntervalEffect(
       state,

@@ -334,4 +334,42 @@ describe("battle input validation", () => {
       'Taunt effect "Invalid Timed Provoke" must have a positive duration.',
     );
   });
+
+  it.each([
+    createEffect({
+      name: "Interval ward",
+      effectType: "buff",
+      timingType: "interval",
+      triggerEveryActions: 1,
+      triggerCount: 1,
+      shield: 5,
+    }),
+    createEffect({
+      name: "Healing ward",
+      effectType: "healing",
+      timingType: "instant",
+      shield: 5,
+    }),
+    createEffect({
+      name: "Damage ward",
+      effectType: "damage",
+      timingType: "instant",
+      shield: 5,
+    }),
+  ])("rejects unsupported shield lifecycle for $name", (effect) => {
+    const input = createBattleInput([
+      createScenario("A", {
+        support: [
+          createUnit("Caster", {
+            items: [createItem({ name: "Item", effects: effectSequence(effect) })],
+          }),
+        ],
+      }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => validateBattleInput(input)).toThrowError(
+      `Effect "${effect.name}" shield is only supported for instant buffs and debuffs.`,
+    );
+  });
 });

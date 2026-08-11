@@ -619,6 +619,33 @@ describe("effectsRouter", () => {
       expect(mockInsertFn).not.toHaveBeenCalled();
     });
 
+    it.each([
+      {
+        name: "Interval ward",
+        timingType: "interval" as const,
+        effectType: "buff" as const,
+        triggerEveryActions: 1,
+        triggerCount: 1,
+      },
+      {
+        name: "Healing ward",
+        timingType: "instant" as const,
+        effectType: "healing" as const,
+      },
+      {
+        name: "Damage ward",
+        timingType: "instant" as const,
+        effectType: "damage" as const,
+      },
+    ])("rejects unsupported shield lifecycle for $name", async (configuration) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(caller.effects.create({ ...configuration, shield: 25 })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
     it("accepts a zero shield instant buff without an action duration", async () => {
       const values = vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([

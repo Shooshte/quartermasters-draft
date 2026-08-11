@@ -91,6 +91,34 @@ function processActionOpportunities(state: ReturnType<typeof createEffectState>,
 }
 
 describe("effects", () => {
+  it("rejects an unsupported shield lifecycle during direct effect application", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+
+    expect(() =>
+      applyItemEffects(
+        state,
+        mage,
+        createItem({
+          name: "Unsupported Ward",
+          effects: effectSequence(
+            createEffect({
+              name: "Interval Ward",
+              effectType: "buff",
+              timingType: "interval",
+              triggerEveryActions: 1,
+              triggerCount: 1,
+              shield: 20,
+            }),
+          ),
+        }),
+        1,
+      ),
+    ).toThrowError(
+      'Effect "Interval Ward" shield is only supported for instant buffs and debuffs.',
+    );
+  });
+
   it("creates one persistent taunt status even when the effect has multiple stat modifiers", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

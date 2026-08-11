@@ -97,6 +97,7 @@ function createUnitState(
     targetCount: unit.targetCount ?? 1,
     selectionShape: unit.selectionShape ?? "individual",
     activeEffects: [],
+    shieldLayers: [],
     actedCount: 0,
   };
 }

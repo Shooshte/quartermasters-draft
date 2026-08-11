@@ -156,6 +156,12 @@ export interface ActiveEffectState {
   origin?: BattleLogOrigin;
 }
 
+export interface ShieldLayer {
+  id: string;
+  remaining: number;
+  activeEffectId?: string;
+}
+
 export interface BattleUnitState {
   instanceId: string;
   templateId?: string;
@@ -174,6 +180,7 @@ export interface BattleUnitState {
   targetCount: number;
   selectionShape: TargetSelectionShape;
   activeEffects: ActiveEffectState[];
+  shieldLayers: ShieldLayer[];
   actedCount: number;
 }
 

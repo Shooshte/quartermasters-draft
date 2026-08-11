@@ -1,11 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   type ActionOperation,
+  applyDamage,
   commitPlannedActions,
   type PlannedAction,
 } from "./action-operations";
 import { initializeBattleState } from "./state";
-import { createBattleInput, createScenario, createStats, createUnit } from "./test-helpers";
+import {
+  createBattleInput,
+  createScenario,
+  createShieldLayer,
+  createStats,
+  createUnit,
+} from "./test-helpers";
 
 function operationState(leftHealth: number, rightHealth: number) {
   return initializeBattleState(
@@ -28,16 +35,63 @@ function operationState(leftHealth: number, rightHealth: number) {
   );
 }
 
-function planned(actorId: string, operation: ActionOperation): PlannedAction {
+function planned(actorId: string, operation: ActionOperation | ActionOperation[]): PlannedAction {
   return {
     actorId,
     actionId: `1:${actorId}:1`,
-    operations: [operation],
+    operations: Array.isArray(operation) ? operation : [operation],
     log: [],
   };
 }
 
 describe("simultaneous action operations", () => {
+  it("consumes the oldest shield layer before health", () => {
+    const state = operationState(100, 100);
+    const unit = state.scenarios[0].rows.tank[0]!;
+    unit.shieldLayers = [
+      { id: "first", remaining: 5 },
+      { id: "second", remaining: 8 },
+    ];
+
+    expect(applyDamage(unit, 10, false)).toBe(0);
+    expect(unit.currentHealth).toBe(100);
+    expect(unit.shieldLayers).toEqual([{ id: "second", remaining: 3 }]);
+  });
+
+  it("applies bypassing damage directly to health", () => {
+    const state = operationState(100, 100);
+    const unit = state.scenarios[0].rows.tank[0]!;
+    unit.shieldLayers = [{ id: "ward", remaining: 20 }];
+
+    expect(applyDamage(unit, 30, true)).toBe(30);
+    expect(unit.currentHealth).toBe(70);
+    expect(unit.shieldLayers).toEqual([{ id: "ward", remaining: 20 }]);
+  });
+
+  it("replays shield grants and damage in recorded order", () => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+
+    commitPlannedActions(
+      state,
+      [
+        planned("caster", [
+          { kind: "damage", targetId: target.instanceId, amount: 10 },
+          {
+            kind: "grant-shield",
+            targetId: target.instanceId,
+            layer: createShieldLayer("late-shield", 5),
+          },
+          { kind: "damage", targetId: target.instanceId, amount: 3 },
+        ]),
+      ],
+      1,
+    );
+
+    expect(target.currentHealth).toBe(90);
+    expect(target.shieldLayers).toEqual([createShieldLayer("late-shield", 2)]);
+  });
+
   it("aggregates healing and damage before clamping", () => {
     const state = operationState(100, 100);
     const target = state.scenarios[1].rows.tank[0]!;

@@ -1,13 +1,20 @@
 import { getUnitEffectiveStats } from "./math";
 import { allUnits, asInternalState, cloneState, findUnitById } from "./state";
-import type { ActiveEffectState, BattleLogEntry, BattleState } from "./types";
+import type {
+  ActiveEffectState,
+  BattleLogEntry,
+  BattleState,
+  BattleUnitState,
+  ShieldLayer,
+} from "./types";
 
 export type ActionOperation =
-  | { kind: "damage"; targetId: string; amount: number }
+  | { kind: "damage"; targetId: string; amount: number; bypassesShield?: true }
   | { kind: "healing"; targetId: string; amount: number }
   | { kind: "health-cost"; targetId: string; amount: number }
   | { kind: "mana-cost"; targetId: string; amount: number }
-  | { kind: "add-effect"; targetId: string; effect: ActiveEffectState };
+  | { kind: "add-effect"; targetId: string; effect: ActiveEffectState }
+  | { kind: "grant-shield"; targetId: string; layer: ShieldLayer };
 
 export type PlannedAction = {
   actorId: string;
@@ -57,6 +64,58 @@ function zeroTotals(): OperationTotals {
   return { damage: 0, healing: 0, healthCost: 0, manaCost: 0 };
 }
 
+export function applyDamage(unit: BattleUnitState, amount: number, bypassesShield = false): number {
+  let remainingDamage = amount;
+  if (!bypassesShield) {
+    for (const layer of unit.shieldLayers) {
+      const absorbed = Math.min(layer.remaining, remainingDamage);
+      layer.remaining -= absorbed;
+      remainingDamage -= absorbed;
+      if (remainingDamage === 0) break;
+    }
+    unit.shieldLayers = unit.shieldLayers.filter((layer) => layer.remaining > 0);
+  }
+  const healthDamage = Math.min(unit.currentHealth, remainingDamage);
+  unit.currentHealth -= healthDamage;
+  return healthDamage;
+}
+
+function hasShieldResolution(
+  target: BattleUnitState,
+  operations: readonly ActionOperation[],
+): boolean {
+  return (
+    target.shieldLayers.length > 0 ||
+    operations.some((operation) => operation.kind === "grant-shield")
+  );
+}
+
+function applyShieldAwareOperations(
+  target: BattleUnitState,
+  operations: readonly ActionOperation[],
+  maximumHealth: number,
+): void {
+  for (const operation of operations) {
+    switch (operation.kind) {
+      case "damage":
+        applyDamage(target, operation.amount, operation.bypassesShield === true);
+        break;
+      case "healing":
+        target.currentHealth = Math.min(maximumHealth, target.currentHealth + operation.amount);
+        break;
+      case "health-cost":
+        applyDamage(target, operation.amount);
+        break;
+      case "grant-shield":
+        target.shieldLayers.push(structuredClone(operation.layer));
+        break;
+      case "add-effect":
+      case "mana-cost":
+        break;
+    }
+  }
+}
+
 export function commitPlannedActions(
   state: BattleState,
   plans: readonly PlannedAction[],
@@ -94,8 +153,12 @@ export function commitPlannedActions(
   }
 
   const totals = new Map<string, OperationTotals>();
+  const operationsByTarget = new Map<string, ActionOperation[]>();
   for (const plan of plans) {
     for (const operation of plan.operations) {
+      const targetOperations = operationsByTarget.get(operation.targetId) ?? [];
+      targetOperations.push(operation);
+      operationsByTarget.set(operation.targetId, targetOperations);
       if (operation.kind === "add-effect") continue;
       const targetTotals = totals.get(operation.targetId) ?? zeroTotals();
       switch (operation.kind) {
@@ -111,6 +174,8 @@ export function commitPlannedActions(
         case "mana-cost":
           targetTotals.manaCost += operation.amount;
           break;
+        case "grant-shield":
+          break;
       }
       totals.set(operation.targetId, targetTotals);
     }
@@ -118,14 +183,22 @@ export function commitPlannedActions(
 
   for (const [targetId, target] of targets) {
     const targetTotals = totals.get(targetId) ?? zeroTotals();
+    const operations = operationsByTarget.get(targetId) ?? [];
     const updatedStats = getUnitEffectiveStats(target);
-    target.currentHealth = Math.max(
-      0,
-      Math.min(
-        updatedStats.health,
-        target.currentHealth + targetTotals.healing - targetTotals.damage - targetTotals.healthCost,
-      ),
-    );
+    if (hasShieldResolution(target, operations)) {
+      applyShieldAwareOperations(target, operations, updatedStats.health);
+    } else {
+      target.currentHealth = Math.max(
+        0,
+        Math.min(
+          updatedStats.health,
+          target.currentHealth +
+            targetTotals.healing -
+            targetTotals.damage -
+            targetTotals.healthCost,
+        ),
+      );
+    }
     const oldMaximumMana = oldManaMaximums.get(targetId);
     if (oldMaximumMana === undefined) {
       throw new Error(`Mana capacity for action operation target ${targetId} was not recorded.`);

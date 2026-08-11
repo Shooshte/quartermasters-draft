@@ -38,6 +38,8 @@ const effectInputShape = {
   speed: nullableNumber,
   dodge: nullableNumber,
   criticalChance: nullableNumber,
+  shield: nullableNumber,
+  bypassesShield: z.boolean().default(false),
   directHealing: nullableNumber,
   directMeleeDmg: nullableNumber,
   directRangedDmg: nullableNumber,
@@ -56,6 +58,7 @@ const EFFECT_STAT_FIELDS = [
   "speed",
   "dodge",
   "criticalChance",
+  "shield",
 ] as const;
 
 type EffectTimingInput = z.infer<typeof effectInputBaseSchema>;
@@ -84,7 +87,7 @@ function requiresActionDuration(input: EffectTimingStatusInput): boolean {
     !input.isTaunt &&
     input.timingType === "instant" &&
     (input.effectType === "buff" || input.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => input[field] !== null)
+    EFFECT_STAT_FIELDS.some((field) => typeof input[field] === "number")
   );
 }
 
@@ -212,6 +215,8 @@ export const effectsRouter = router({
         speed: effects.speed,
         dodge: effects.dodge,
         criticalChance: effects.criticalChance,
+        shield: effects.shield,
+        bypassesShield: effects.bypassesShield,
         updatedAt: effects.updatedAt,
       })
       .from(effects);

@@ -58,6 +58,8 @@ type EffectRecord = {
   speed: number | null;
   dodge: number | null;
   criticalChance: number | null;
+  shield: number | null;
+  bypassesShield: boolean;
   directHealing: number | null;
   directMeleeDmg: number | null;
   directRangedDmg: number | null;
@@ -146,6 +148,8 @@ export function toScenarioInput(records: BattleScenarioRecords): ScenarioInput {
           speed: effect.speed,
           dodge: effect.dodge,
           criticalChance: effect.criticalChance,
+          shield: effect.shield,
+          bypassesShield: effect.bypassesShield,
           directHealing: effect.directHealing,
           directMeleeDmg: effect.directMeleeDmg,
           directRangedDmg: effect.directRangedDmg,

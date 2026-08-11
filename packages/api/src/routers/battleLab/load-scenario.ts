@@ -120,6 +120,8 @@ export async function loadBattleScenario(
               speed: effects.speed,
               dodge: effects.dodge,
               criticalChance: effects.criticalChance,
+              shield: effects.shield,
+              bypassesShield: effects.bypassesShield,
               directHealing: effects.directHealing,
               directMeleeDmg: effects.directMeleeDmg,
               directRangedDmg: effects.directRangedDmg,

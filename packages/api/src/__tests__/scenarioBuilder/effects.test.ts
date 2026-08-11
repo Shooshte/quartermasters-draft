@@ -395,6 +395,64 @@ describe("effectsRouter", () => {
       );
     });
 
+    it("persists shield configuration", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "e-shield",
+            name: "Ward",
+            timingType: "instant",
+            effectType: "buff",
+            lastsForActions: 3,
+            shield: 25,
+            bypassesShield: true,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const created = await createCaller(gmCtx).effects.create({
+        name: "Ward",
+        timingType: "instant",
+        effectType: "buff",
+        lastsForActions: 3,
+        shield: 25,
+        bypassesShield: true,
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ shield: 25, bypassesShield: true }),
+      );
+      expect(created).toMatchObject({ shield: 25, bypassesShield: true });
+    });
+
+    it("defaults legacy shield fields", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "e-defaults",
+            name: "Legacy Ward",
+            timingType: "instant",
+            effectType: "buff",
+            shield: null,
+            bypassesShield: false,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const created = await createCaller(gmCtx).effects.create({
+        name: "Legacy Ward",
+        timingType: "instant",
+        effectType: "buff",
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ shield: null, bypassesShield: false }),
+      );
+      expect(created).toMatchObject({ shield: null, bypassesShield: false });
+    });
+
     it("creates a valid interval effect", async () => {
       mockInsertFn.mockReturnValue(
         chainable([
@@ -540,6 +598,21 @@ describe("effectsRouter", () => {
           timingType: "instant",
           effectType: "buff",
           meleeDmg: 5,
+          lastsForActions: null,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it("requires lastsForActions for an instant shield buff", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Fleeting Ward",
+          timingType: "instant",
+          effectType: "buff",
+          shield: 25,
           lastsForActions: null,
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });

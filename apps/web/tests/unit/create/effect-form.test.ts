@@ -111,6 +111,20 @@ describe("effect-form", () => {
     expect(validateEffectForm(persistentTaunt).lastsForActions).toBeUndefined();
   });
 
+  it("permits a persistent instant taunt with stat modifiers", () => {
+    const errors = validateEffectForm({
+      ...createDefaultEffectFormValues(),
+      name: "Persistent Challenge",
+      effectType: "buff",
+      isTaunt: true,
+      speed: 3,
+      lastsForActions: null,
+    });
+
+    expect(errors.lastsForActions).toBeUndefined();
+    expect(errors).toEqual({});
+  });
+
   it("marks interval fields disabled for instant timing", () => {
     expect(isIntervalFieldDisabled({ timingType: "instant" })).toBe(true);
     expect(isIntervalFieldDisabled({ timingType: "interval" })).toBe(false);
@@ -125,6 +139,19 @@ describe("effect-form", () => {
 
     expect(errors.triggerEveryActions).toContain("required");
     expect(errors.triggerCount).toContain("required");
+  });
+
+  it("rejects an interval taunt", () => {
+    const errors = validateEffectForm({
+      ...createDefaultEffectFormValues(),
+      name: "Periodic Challenge",
+      timingType: "interval",
+      triggerEveryActions: 1,
+      triggerCount: 1,
+      isTaunt: true,
+    });
+
+    expect(errors.timingType).toContain("instant");
   });
 
   it("requires duration for a stat-bearing instant buff", () => {

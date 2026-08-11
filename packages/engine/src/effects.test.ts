@@ -125,6 +125,42 @@ describe("effects", () => {
     expect(mage.activeEffects.find((effect) => effect.isTaunt)?.actionsRemaining).toBeUndefined();
   });
 
+  it("keeps stat modifiers from a persistent taunt active indefinitely", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+
+    applyItemEffects(
+      state,
+      cleric,
+      createItem({
+        name: "Persistent Provoking Staff",
+        effects: effectSequence(
+          createEffect({
+            name: "Persistent Provoke",
+            effectType: "buff",
+            timingType: "instant",
+            isTaunt: true,
+            speed: 3,
+            dodge: 5,
+            lastsForActions: null,
+          }),
+        ),
+      }),
+    );
+
+    const modifiers = mage.activeEffects.filter((effect) => effect.statKey !== undefined);
+    expect(modifiers).toEqual([
+      expect.objectContaining({ statKey: "speed" }),
+      expect.objectContaining({ statKey: "dodge" }),
+    ]);
+    expect(modifiers.map((effect) => effect.actionsRemaining)).toEqual([undefined, undefined]);
+
+    processActionOpportunities(state, 1);
+
+    expect(getUnitEffectiveStats(mage)).toMatchObject({ speed: 8, dodge: 15 });
+  });
+
   it("sets the configured duration on an instant timed taunt", () => {
     const state = createEffectState();
     const mage = state.scenarios[0].rows.ranged[0]!;

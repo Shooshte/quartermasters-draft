@@ -144,6 +144,9 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
   }
 
   if (normalized.timingType === "interval") {
+    if (normalized.isTaunt) {
+      errors.timingType = "Taunt effects must use instant timing.";
+    }
     if (normalized.triggerEveryActions === null) {
       errors.triggerEveryActions = "Trigger every actions is required for interval timing.";
     }
@@ -184,6 +187,7 @@ export function isActionDurationApplicable(values: EffectFormValues): boolean {
 
 function requiresActionDuration(values: EffectFormValues): boolean {
   return (
+    !values.isTaunt &&
     values.timingType === "instant" &&
     (values.effectType === "buff" || values.effectType === "debuff") &&
     EFFECT_STAT_FIELDS.some((field) => values[field] !== null)

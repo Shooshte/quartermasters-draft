@@ -81,6 +81,7 @@ function isActionDurationApplicable(input: EffectTimingStatusInput): boolean {
 
 function requiresActionDuration(input: EffectTimingStatusInput): boolean {
   return (
+    !input.isTaunt &&
     input.timingType === "instant" &&
     (input.effectType === "buff" || input.effectType === "debuff") &&
     EFFECT_STAT_FIELDS.some((field) => input[field] !== null)
@@ -103,6 +104,14 @@ function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect
 }
 
 function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
+  if (input.isTaunt && input.timingType === "interval") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["timingType"],
+      message: "Taunt effects must use instant timing.",
+    });
+  }
+
   if (input.timingType === "interval") {
     if (input.triggerEveryActions === null) {
       ctx.addIssue({

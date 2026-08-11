@@ -335,6 +335,36 @@ describe("effectsRouter", () => {
       expect(result).toMatchObject({ id: "taunt-1", isTaunt: true, lastsForActions: null });
     });
 
+    it("accepts a persistent instant taunt with stat modifiers", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "taunt-modifier-1",
+            name: "Persistent Challenge",
+            timingType: "instant",
+            effectType: "buff",
+            isTaunt: true,
+            speed: 3,
+            lastsForActions: null,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      await createCaller(gmCtx).effects.create({
+        name: "Persistent Challenge",
+        timingType: "instant",
+        effectType: "buff",
+        isTaunt: true,
+        speed: 3,
+        lastsForActions: null,
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ isTaunt: true, speed: 3, lastsForActions: null }),
+      );
+    });
+
     it("retains a positive duration for a timed instant taunt", async () => {
       const values = vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([
@@ -395,6 +425,22 @@ describe("effectsRouter", () => {
         triggerEveryActions: 2,
         triggerCount: 3,
       });
+    });
+
+    it("rejects an interval taunt", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Periodic Challenge",
+          timingType: "interval",
+          triggerEveryActions: 1,
+          triggerCount: 1,
+          effectType: "buff",
+          isTaunt: true,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
     });
 
     it("creates a stat-bearing interval buff without an action duration", async () => {

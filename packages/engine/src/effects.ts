@@ -191,7 +191,9 @@ function applyInstantEffect(
         statKey: modifier.statKey,
         value:
           effect.effectType === "debuff" ? normalizeDebuffValue(modifier.value) : modifier.value,
-        actionsRemaining: effect.lastsForActions ?? 0,
+        ...(effect.isTaunt && effect.lastsForActions == null
+          ? {}
+          : { actionsRemaining: effect.lastsForActions ?? 0 }),
         origin,
       };
       recordActionOperation(state, {

@@ -57,12 +57,23 @@ export type BattleUnattributedEvent<T extends LedgerLogEntry = LedgerLogEntry> =
       entries: T[];
     };
 
+export type BattleEventPhase<T extends LedgerLogEntry = LedgerLogEntry> =
+  | {
+      kind: "turns";
+      key: string;
+      turns: BattleTurnGroup<T>[];
+    }
+  | {
+      kind: "events";
+      key: string;
+      events: BattleUnattributedEvent<T>[];
+    };
+
 export type BattleEventGroup<T extends LedgerLogEntry = LedgerLogEntry> = {
   kind: "batch";
   key: string;
   batchNumber: number;
-  turns: BattleTurnGroup<T>[];
-  events: BattleUnattributedEvent<T>[];
+  phases: BattleEventPhase<T>[];
 };
 
 function isDetailedModifierEntry(entry: LedgerLogEntry): entry is LedgerLogEntry & {
@@ -154,8 +165,7 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
         kind: "batch",
         key: `batch:${entry.batchNumber}`,
         batchNumber: entry.batchNumber,
-        turns: [],
-        events: [],
+        phases: [],
       };
       groups.push(batch);
     }
@@ -163,13 +173,23 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
     const entryActorId = actorId(entry);
 
     if (entry.actionId && entryActorId) {
-      const turn = batch.turns.find((candidate) => candidate.actionId === entry.actionId);
+      let turnPhase = batch.phases.find((phase) => phase.kind === "turns");
+      if (!turnPhase) {
+        turnPhase = {
+          kind: "turns",
+          key: `batch:${entry.batchNumber}:turns`,
+          turns: [],
+        };
+        batch.phases.push(turnPhase);
+      }
+
+      const turn = turnPhase.turns.find((candidate) => candidate.actionId === entry.actionId);
       if (turn) {
         if (!isPairedBasicAttackDamage(turn.entries.at(-1), entry)) {
           turn.entries.push(entry);
         }
       } else {
-        batch.turns.push({
+        turnPhase.turns.push({
           kind: "turn",
           key: entry.actionId,
           actionId: entry.actionId,
@@ -180,13 +200,23 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
       continue;
     }
 
+    let eventPhase = batch.phases.at(-1);
+    if (eventPhase?.kind !== "events") {
+      eventPhase = {
+        kind: "events",
+        key: `batch:${entry.batchNumber}:events:${batch.phases.length}`,
+        events: [],
+      };
+      batch.phases.push(eventPhase);
+    }
+
     if (isDetailedModifierEntry(entry)) {
       const key = modifierGroupKey(entry);
-      const lastEvent = batch.events.at(-1);
+      const lastEvent = eventPhase.events.at(-1);
       if (lastEvent?.kind === "effect" && lastEvent.key === key) {
         lastEvent.entries.push(entry);
       } else {
-        batch.events.push({
+        eventPhase.events.push({
           kind: "effect",
           key,
           eventType: entry.type,
@@ -197,7 +227,7 @@ export function buildBattleEventGroups<T extends LedgerLogEntry>(
       continue;
     }
 
-    batch.events.push({
+    eventPhase.events.push({
       kind: "event",
       key: `${entry.batchNumber}:${entry.type}:${index}`,
       entry,

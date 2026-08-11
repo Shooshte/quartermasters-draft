@@ -67,16 +67,21 @@ describe("buildBattleEventGroups", () => {
         kind: "batch",
         key: "batch:4",
         batchNumber: 4,
-        turns: [
+        phases: [
           {
-            kind: "turn",
-            key: origin.actionId,
-            actionId: origin.actionId,
-            actorId: "alpha:tank:1",
-            entries: [attack],
+            kind: "turns",
+            key: "batch:4:turns",
+            turns: [
+              {
+                kind: "turn",
+                key: origin.actionId,
+                actionId: origin.actionId,
+                actorId: "alpha:tank:1",
+                entries: [attack],
+              },
+            ],
           },
         ],
-        events: [],
       },
     ]);
   });
@@ -100,8 +105,7 @@ describe("buildBattleEventGroups", () => {
     expect(groups[1]).toMatchObject({
       kind: "batch",
       batchNumber: 7,
-      turns: [],
-      events: [{ kind: "event", entry: delayedDamage }],
+      phases: [{ kind: "events", events: [{ kind: "event", entry: delayedDamage }] }],
     });
   });
 
@@ -129,16 +133,72 @@ describe("buildBattleEventGroups", () => {
     expect(groups[0]).toMatchObject({
       kind: "batch",
       batchNumber: 4,
-      turns: [
-        { actionId: origin.actionId, actorId: "alpha:tank:1", entries: [attack] },
+      phases: [
         {
-          actionId: secondOrigin.actionId,
-          actorId: "bravo:melee:1",
-          entries: [secondAttack],
+          kind: "turns",
+          turns: [
+            { actionId: origin.actionId, actorId: "alpha:tank:1", entries: [attack] },
+            {
+              actionId: secondOrigin.actionId,
+              actorId: "bravo:melee:1",
+              entries: [secondAttack],
+            },
+          ],
         },
       ],
-      events: [],
     });
+  });
+
+  it("preserves pre-action events, peer turns, and post-action events as ordered phases", () => {
+    const poisonDamage = {
+      ...pairedDamage,
+      actionId: undefined,
+      origin: {
+        kind: "item-effect" as const,
+        sourceUnitId: "bravo:support:1",
+        effect: { name: "Poison", position: 1 },
+      },
+      message: "Poison hits Guard for 28 damage",
+    };
+    const secondOrigin = {
+      kind: "basic-attack" as const,
+      actionId: "action-bravo-melee-1",
+      sourceUnitId: "bravo:melee:1",
+    };
+    const secondAttack = {
+      ...attack,
+      attackerId: "bravo:melee:1",
+      actionId: secondOrigin.actionId,
+      origin: secondOrigin,
+    };
+    const fatigue = {
+      batchNumber: 4,
+      type: "fatigue" as const,
+      target: "Guard",
+      targetId: "alpha:tank:1",
+      damage: 3,
+      origin: { kind: "fatigue" as const },
+      message: "Fatigue hits Guard for 3 damage",
+    };
+
+    const groups = buildBattleEventGroups([poisonDamage, attack, secondAttack, fatigue]);
+
+    expect(groups).toMatchObject([
+      {
+        batchNumber: 4,
+        phases: [
+          { kind: "events", events: [{ kind: "event", entry: poisonDamage }] },
+          {
+            kind: "turns",
+            turns: [
+              { actionId: origin.actionId, entries: [attack] },
+              { actionId: secondOrigin.actionId, entries: [secondAttack] },
+            ],
+          },
+          { kind: "events", events: [{ kind: "event", entry: fatigue }] },
+        ],
+      },
+    ]);
   });
 
   it("groups consecutive detailed expirations without a current action", () => {
@@ -161,14 +221,19 @@ describe("buildBattleEventGroups", () => {
         kind: "batch",
         key: "batch:6",
         batchNumber: 6,
-        turns: [],
-        events: [
+        phases: [
           {
-            kind: "effect",
-            key: "effect-expire:6:action-alpha-support-1:alpha:support:1:hood:all-stats:alpha:ranged:1",
-            eventType: "effect-expire",
-            effect: "+10 all stats",
-            entries: [healthExpiration, speedExpiration],
+            kind: "events",
+            key: "batch:6:events:0",
+            events: [
+              {
+                kind: "effect",
+                key: "effect-expire:6:action-alpha-support-1:alpha:support:1:hood:all-stats:alpha:ranged:1",
+                eventType: "effect-expire",
+                effect: "+10 all stats",
+                entries: [healthExpiration, speedExpiration],
+              },
+            ],
           },
         ],
       },

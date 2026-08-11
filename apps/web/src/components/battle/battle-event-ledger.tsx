@@ -282,42 +282,54 @@ export function BattleEventLedger({ scenarios, result }: BattleEventLedgerProps)
       </CardHeader>
       <CardContent className="px-0">
         <ol aria-label="Battle events" className="divide-y divide-border/70">
-          {groups.map((group) => {
-            const simultaneous = group.turns.length > 1;
-            const onlyTurn = group.turns.length === 1 ? group.turns[0] : undefined;
-            return (
-              <li key={group.key} className="px-4 py-4 sm:px-5">
-                {simultaneous ? (
-                  <>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Simultaneous actions · Batch {group.batchNumber}
-                    </p>
-                    <ul
-                      aria-label={`Simultaneous actions in batch ${group.batchNumber}`}
-                      className="mt-3 grid gap-3 md:grid-cols-2"
+          {groups.map((group) => (
+            <li key={group.key} className="px-4 py-4 sm:px-5">
+              {group.phases.map((phase, phaseIndex) => {
+                if (phase.kind === "turns") {
+                  const simultaneous = phase.turns.length > 1;
+                  const onlyTurn = phase.turns.length === 1 ? phase.turns[0] : undefined;
+
+                  return (
+                    <div
+                      key={phase.key}
+                      className={phaseIndex > 0 ? "mt-3 border-t border-border/70 pt-3" : undefined}
                     >
-                      {group.turns.map((turn) => (
-                        <li key={turn.key} className="rounded-md border border-border/70 p-3">
-                          {renderTurn(turn)}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : onlyTurn ? (
-                  renderTurn(onlyTurn)
-                ) : null}
-                {group.events.length > 0 ? (
+                      {simultaneous ? (
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Simultaneous actions · Batch {group.batchNumber}
+                          </p>
+                          <ul
+                            aria-label={`Simultaneous actions in batch ${group.batchNumber}`}
+                            className="mt-3 grid gap-3 md:grid-cols-2"
+                          >
+                            {phase.turns.map((turn) => (
+                              <li key={turn.key} className="rounded-md border border-border/70 p-3">
+                                {renderTurn(turn)}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : onlyTurn ? (
+                        renderTurn(onlyTurn)
+                      ) : null}
+                    </div>
+                  );
+                }
+
+                return (
                   <div
-                    className={`${group.turns.length > 0 ? "mt-3 border-t border-border/70 pt-3" : ""} space-y-3 text-sm leading-5 text-foreground/90`}
+                    key={phase.key}
+                    className={`${phaseIndex > 0 ? "mt-3 border-t border-border/70 pt-3" : ""} space-y-3 text-sm leading-5 text-foreground/90`}
                   >
-                    {group.events.map((event) => (
+                    {phase.events.map((event) => (
                       <div key={event.key}>{renderEvent(event)}</div>
                     ))}
                   </div>
-                ) : null}
-              </li>
-            );
-          })}
+                );
+              })}
+            </li>
+          ))}
         </ol>
       </CardContent>
     </Card>

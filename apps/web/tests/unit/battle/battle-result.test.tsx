@@ -318,6 +318,83 @@ describe("BattleResultView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders pre-action effects before peer turns and post-action events afterward", () => {
+    const actionId = "action-dawn-warden-8";
+    const simultaneousActionId = "action-iron-guard-8";
+    const result = {
+      ...fixture.result,
+      log: [
+        {
+          batchNumber: 4,
+          type: "damage",
+          source: attackLog.target,
+          sourceId: attackLog.targetId,
+          target: attackLog.attacker,
+          targetId: attackLog.attackerId,
+          damage: 5,
+          origin: {
+            kind: "item-effect",
+            sourceUnitId: attackLog.targetId,
+            effect: { name: "Poison", position: 1 },
+          },
+          message: "Poison hits Dawn Warden for 5 damage",
+        },
+        {
+          ...attackLog,
+          batchNumber: 4,
+          actionId,
+          origin: {
+            kind: "basic-attack",
+            actionId,
+            sourceUnitId: attackLog.attackerId,
+          },
+        },
+        {
+          ...attackLog,
+          batchNumber: 4,
+          attacker: attackLog.target,
+          attackerId: attackLog.targetId,
+          target: attackLog.attacker,
+          targetId: attackLog.attackerId,
+          damage: 21,
+          actionId: simultaneousActionId,
+          origin: {
+            kind: "basic-attack",
+            actionId: simultaneousActionId,
+            sourceUnitId: attackLog.targetId,
+          },
+          message: "Iron Guard attacks Dawn Warden for 21 damage",
+        },
+        {
+          batchNumber: 4,
+          type: "fatigue",
+          target: attackLog.attacker,
+          targetId: attackLog.attackerId,
+          damage: 3,
+          origin: { kind: "fatigue" },
+          message: "Fatigue hits Dawn Warden for 3 damage",
+        },
+      ],
+    } as unknown as ReplayOutput["result"];
+
+    render(<BattleResultView scenarios={fixture.scenarios} result={result} />);
+
+    const events = screen.getByRole("list", { name: "Battle events" });
+    const poison = within(events).getByText(/Poison dealt 5 damage/);
+    const simultaneousActions = within(events).getByText("Simultaneous actions · Batch 4");
+    const fatigue = within(events).getByText(/Fatigue dealt 3 damage/);
+
+    expect(poison.compareDocumentPosition(simultaneousActions)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(simultaneousActions.compareDocumentPosition(fatigue)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(
+      within(events).getByRole("list", { name: "Simultaneous actions in batch 4" }),
+    ).toBeVisible();
+  });
+
   it("shows item-effect attribution on immediate and delayed outcomes", () => {
     const actionId = "action-dawn-warden-8";
     const itemOrigin = {

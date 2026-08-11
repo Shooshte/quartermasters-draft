@@ -4,6 +4,7 @@ import {
   type PlannedAction,
   recordActionOperation,
 } from "./action-operations";
+import { compareReadyUnitOrder } from "./action-scheduler";
 import { applyItemEffectsToTargets } from "./effects";
 import { pushLog } from "./logging";
 import {
@@ -11,7 +12,6 @@ import {
   computeBasicDamageWithModifiers,
   getUnitEffectiveStats,
 } from "./math";
-import { compareUnitOrder } from "./rows";
 import { findScenario, findUnitById } from "./state";
 import type { UnitTargetingInput } from "./targeting";
 import { selectTargets } from "./targeting";
@@ -195,15 +195,5 @@ export function buildReadyQueue(state: BattleState): BattleUnitState[] {
   return state.scenarios
     .flatMap((scenario) => Object.values(scenario.rows).flat())
     .filter((unit) => unit.currentHealth > 0 && unit.actionBar >= 100)
-    .sort((left, right) => {
-      const speedDiff = getUnitEffectiveStats(right).speed - getUnitEffectiveStats(left).speed;
-      if (speedDiff !== 0) return speedDiff;
-      if (left.scenarioId !== right.scenarioId) {
-        return (
-          state.scenarios.findIndex((scenario) => scenario.id === left.scenarioId) -
-          state.scenarios.findIndex((scenario) => scenario.id === right.scenarioId)
-        );
-      }
-      return compareUnitOrder(left, right);
-    });
+    .sort((left, right) => compareReadyUnitOrder(state, left, right));
 }

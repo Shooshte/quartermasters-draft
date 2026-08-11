@@ -18,6 +18,6 @@ Feature: Event-driven ATB action scheduling
     When the next ready batch is scheduled
     Then "Frozen" uses scheduling speed 1
 
-  # Speed, scenario, row, and slot ordering remain the deterministic order for seeded
-  # RNG consumption and battle logs. Exact scheduler ties are emitted by
-  # ascending unit instance ID.
+  # Ready cohorts use descending scheduling speed, then input scenario order,
+  # row order, and slot so seeded RNG consumption and battle logs stay deterministic.
+  # Instance ID is only the final fallback when every positional key is tied.

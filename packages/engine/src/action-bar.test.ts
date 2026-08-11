@@ -201,13 +201,13 @@ describe("action bar", () => {
     }
 
     expect(attackNames).toEqual([
+      "B Support 1",
+      "A Tank 1",
       "A Melee 1",
       "A Melee 2",
       "A Ranged 1",
-      "A Tank 1",
-      "B Melee 1",
-      "B Support 1",
       "B Tank 1",
+      "B Melee 1",
     ]);
   });
 });

@@ -38,17 +38,34 @@ describe("event-driven action scheduler", () => {
     ]);
   });
 
-  it("orders exact readiness ties by ascending instance ID", () => {
+  it("orders a ready cohort by speed, scenario input order, row order, and slot", () => {
     const state = initializeBattleState(
       createBattleInput([
-        createScenario("Z", { tank: [createUnit("Zed", { stats: createStats({ speed: 10 }) })] }),
-        createScenario("A", { tank: [createUnit("Ada", { stats: createStats({ speed: 10 }) })] }),
+        createScenario("Z", {
+          melee: [
+            createUnit("Z Melee 1", { stats: createStats({ speed: 20 }) }),
+            createUnit("Z Melee 2", { stats: createStats({ speed: 20 }) }),
+          ],
+          tank: [createUnit("Z Tank", { stats: createStats({ speed: 20 }) })],
+          support: [createUnit("Z Fast", { stats: createStats({ speed: 30 }) })],
+        }),
+        createScenario("A", {
+          tank: [createUnit("A Tank", { stats: createStats({ speed: 20 }) })],
+        }),
       ]),
     );
+    for (const scenario of state.scenarios) {
+      for (const unit of Object.values(scenario.rows).flat()) {
+        unit.actionBar = 100;
+      }
+    }
 
     expect(advanceToNextReadyBatch(state).map((unit) => unit.instanceId)).toEqual([
-      "A:tank:1",
+      "Z:support:1",
       "Z:tank:1",
+      "Z:melee:1",
+      "Z:melee:2",
+      "A:tank:1",
     ]);
   });
 

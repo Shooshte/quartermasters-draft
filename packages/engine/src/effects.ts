@@ -211,7 +211,7 @@ function applyInstantEffect(
         {
           stat: modifier.statKey,
           value: activeEffect.value,
-          actionsRemaining: effect.lastsForActions ?? 0,
+          actionsRemaining: activeEffect.actionsRemaining,
         },
         origin.actionId,
         origin,

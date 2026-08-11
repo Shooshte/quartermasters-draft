@@ -266,7 +266,7 @@ export interface EffectApplyLogEntry extends BaseLogEntry {
   effect: string;
   stat: StatKey;
   value: number;
-  actionsRemaining: number;
+  actionsRemaining?: number;
 }
 
 export interface EffectExpireLogEntry extends BaseLogEntry {

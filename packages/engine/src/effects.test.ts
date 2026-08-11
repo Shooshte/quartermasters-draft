@@ -155,6 +155,11 @@ describe("effects", () => {
       expect.objectContaining({ statKey: "dodge" }),
     ]);
     expect(modifiers.map((effect) => effect.actionsRemaining)).toEqual([undefined, undefined]);
+    expect(
+      state.log
+        .filter((entry) => entry.type === "effect-apply")
+        .map((entry) => entry.actionsRemaining),
+    ).toEqual([undefined, undefined]);
 
     processActionOpportunities(state, 1);
 

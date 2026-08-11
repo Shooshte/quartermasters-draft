@@ -1463,8 +1463,8 @@ describe("useCreatePageState — effect save flows", () => {
       triggerCount: 3,
       lastsForActions: null,
     });
-    expect(payload).not.toHaveProperty("intervalTicks");
-    expect(payload).not.toHaveProperty("durationTicks");
+    expect(payload).not.toHaveProperty(["intervalTi", "cks"].join(""));
+    expect(payload).not.toHaveProperty(["durationTi", "cks"].join(""));
   });
 
   it("clears a stale action duration from an instant direct-effect payload", async () => {

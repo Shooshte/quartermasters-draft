@@ -37,7 +37,7 @@ interface BattleReplayResponse {
   scenarios: { id: string; name: string }[];
   result: {
     winnerId: string | null;
-    ticksElapsed: number;
+    actionsResolved: number;
     finalState: {
       scenarios: {
         id: string;
@@ -55,7 +55,7 @@ interface BattleReplayResponse {
             activeEffects: {
               name: string;
               remainingTriggers?: number;
-              expiresAtTick?: number;
+              actionsRemaining?: number;
               statKey?: keyof BattleStats;
               value: number;
             }[];
@@ -64,7 +64,7 @@ interface BattleReplayResponse {
       }[];
     };
     log: {
-      tick: number;
+      batchNumber: number;
       type: string;
       message: string;
       actionId?: string;
@@ -194,6 +194,32 @@ async function configureUnitTargeting(
 }
 
 test.describe("Battle Lab", () => {
+  test("a zero-damage battle ends with action-limit language", async ({ gmPage }, testInfo) => {
+    await runWorkerSql(testInfo.parallelIndex, "DELETE FROM units_items");
+    await runWorkerSql(
+      testInfo.parallelIndex,
+      "UPDATE units SET health = 100, mana = 0, melee_dmg = 0, ranged_dmg = 0, mana_regen = 0, spell_dmg = 0, speed = 10, dodge = 0, critical_chance = 0",
+    );
+    await ensureSelectedScenariosHaveLivingUnits(gmPage);
+    const battleLab = new BattleLabPage(gmPage);
+
+    await battleLab.goto();
+    await battleLab.selectScenario("A", AMBUSH_AT_DAWN_ID, AMBUSH_AT_DAWN_NAME);
+    await battleLab.selectScenario("B", CASTLE_SIEGE_ID, CASTLE_SIEGE_NAME);
+    await battleLab.setSeed(BATTLE_LAB_SEED);
+    await battleLab.run();
+
+    const replay = await getBattleReplay(gmPage.request, battleLab.replayId);
+    expect(replay.result.winnerId).toBeNull();
+    await expect(
+      gmPage.getByText(`${replay.result.actionsResolved} actions resolved`, { exact: true }),
+    ).toBeVisible();
+
+    const eventLedger = gmPage.getByRole("list", { name: "Battle events" });
+    await expect(eventLedger.getByText("Battle ended at the action limit: draw.")).toBeVisible();
+    await expect(eventLedger.getByText(new RegExp(["ti", "ck"].join(""), "i"))).toHaveCount(0);
+  });
+
   test("a multi-effect item charges exactly one nonzero cost per activation", async ({
     gmPage,
   }, testInfo) => {

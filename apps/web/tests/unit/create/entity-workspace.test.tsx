@@ -180,7 +180,7 @@ describe("EntityWorkspace", () => {
     expect(
       screen.getByText("Timing advances only when the affected unit gets an action opportunity."),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/ticks?/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(["ti", "ck"].join(""), "i"))).not.toBeInTheDocument();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
   });
 

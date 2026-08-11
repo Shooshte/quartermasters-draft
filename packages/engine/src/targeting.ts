@@ -134,9 +134,7 @@ function canTargetEnemies(scope: TargetScope): boolean {
 function intervalDirectDamage(effect: EffectTemplateInput): number {
   if (effect.effectType === "healing") return 0;
   return (
-    (effect.directMeleeDmg ?? 0) +
-    (effect.directRangedDmg ?? 0) +
-    (effect.directSpellDmg ?? 0)
+    (effect.directMeleeDmg ?? 0) + (effect.directRangedDmg ?? 0) + (effect.directSpellDmg ?? 0)
   );
 }
 

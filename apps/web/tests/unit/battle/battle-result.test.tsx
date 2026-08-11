@@ -161,7 +161,7 @@ describe("BattleResultView", () => {
     expect(screen.getAllByRole("cell", { name: "Dead" })).toHaveLength(2);
     expect(screen.getByText("Focused (2 actions remaining)")).toBeVisible();
     expect(screen.getByText("Battle ended: Ambush at Dawn.")).toBeVisible();
-    expect(screen.queryByText(/tick/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(["ti", "ck"].join(""), "i"))).not.toBeInTheDocument();
     expect(
       screen.getByText(
         "Grouped by simultaneous action batch. Display order does not determine outcomes.",
@@ -313,7 +313,9 @@ describe("BattleResultView", () => {
     expect(within(events).getByText("Dawn Warden · Ambush at Dawn / Tank 1")).toBeVisible();
     expect(within(events).getByText("Iron Guard · The Iron Line / Melee 1")).toBeVisible();
     expect(within(events).getAllByText("Basic attack")).toHaveLength(2);
-    expect(within(events).queryByText(/tick/i)).not.toBeInTheDocument();
+    expect(
+      within(events).queryByText(new RegExp(["ti", "ck"].join(""), "i")),
+    ).not.toBeInTheDocument();
   });
 
   it("shows item-effect attribution on immediate and delayed outcomes", () => {

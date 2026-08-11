@@ -85,7 +85,7 @@ Feature: Battle win conditions
     And the fatigue action threshold is 2
     When the battle is resolved
     Then the battle should finish as a draw
-    And the terminal output should describe the action limit, not a tick limit
+    And the terminal output should describe the action limit, not the legacy time-step limit
 
   Scenario: Multiple units across rows still determine the correct winner
     Given army A has the following units:

@@ -17,25 +17,25 @@ test.describe("Effect Workspace CRUD", () => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openNew();
 
-    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toBeVisible();
+    await expect(effect.triggerEveryActionsInput).toBeVisible();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeVisible();
-    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toBeDisabled();
+    await expect(effect.triggerEveryActionsInput).toBeDisabled();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeDisabled();
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toHaveCount(0);
+    await expect(effect.lastsForActionsInput).toHaveCount(0);
     await effect.setEffectType("damage");
     await gmPage.getByTestId("effect-directSpellDmg-input").fill("4");
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toHaveCount(0);
+    await expect(effect.lastsForActionsInput).toHaveCount(0);
     await effect.setEffectType("buff");
     await gmPage.getByTestId("effect-speed-input").fill("2");
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeVisible();
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeEnabled();
-    await effect.setTimingType("interval");
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toHaveCount(0);
-    await expect(
-      gmPage.getByText("Trigger every (affected-unit actions)", { exact: true }),
-    ).toBeVisible();
+    await expect(effect.lastsForActionsInput).toBeVisible();
+    await expect(effect.lastsForActionsInput).toBeEnabled();
     await expect(
       gmPage.getByText("Lasts for (affected-unit actions)", { exact: true }),
+    ).toBeVisible();
+    await effect.setTimingType("interval");
+    await expect(effect.lastsForActionsInput).toHaveCount(0);
+    await expect(
+      gmPage.getByText("Trigger every (affected-unit actions)", { exact: true }),
     ).toBeVisible();
   });
 
@@ -61,7 +61,7 @@ test.describe("Effect Workspace CRUD", () => {
     await expect(gmPage.getByRole("alert")).toHaveText("Timing needs configuration");
     await expect(effect.saveButton).toBeDisabled();
 
-    await gmPage.getByTestId("effect-triggerEveryActions-input").fill("2");
+    await effect.triggerEveryActionsInput.fill("2");
     await gmPage.getByTestId("effect-triggerCount-input").fill("3");
 
     await expect(gmPage.getByRole("alert")).not.toBeVisible();
@@ -69,7 +69,7 @@ test.describe("Effect Workspace CRUD", () => {
     await effect.saveUpdate();
 
     await gmPage.reload();
-    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toHaveValue("2");
+    await expect(effect.triggerEveryActionsInput).toHaveValue("2");
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toHaveValue("3");
   });
 
@@ -104,12 +104,12 @@ test.describe("Effect Workspace CRUD", () => {
 
     await effect.fillName("Battle Rhythm");
     await effect.setTimingType("interval");
-    await gmPage.getByTestId("effect-triggerEveryActions-input").fill("2");
+    await effect.triggerEveryActionsInput.fill("2");
     await gmPage.getByTestId("effect-triggerCount-input").fill("3");
     await effect.saveCreate();
 
     await expect(effect.timingTypeSelect).toHaveValue("interval");
-    await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toHaveValue("2");
+    await expect(effect.triggerEveryActionsInput).toHaveValue("2");
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toHaveValue("3");
   });
 
@@ -119,9 +119,9 @@ test.describe("Effect Workspace CRUD", () => {
 
     await effect.fillName("Mana Drain");
     await gmPage.getByTestId("effect-mana-input").fill("-40");
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeVisible();
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeEnabled();
-    await gmPage.getByTestId("effect-lastsForActions-input").fill("3");
+    await expect(effect.lastsForActionsInput).toBeVisible();
+    await expect(effect.lastsForActionsInput).toBeEnabled();
+    await effect.lastsForActionsInput.fill("3");
     await effect.saveCreate();
     await gmPage.reload();
 

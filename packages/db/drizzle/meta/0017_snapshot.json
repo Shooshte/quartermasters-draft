@@ -111,12 +111,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -201,12 +197,8 @@
           "name": "battle_replays_scenario_a_id_scenarios_id_fk",
           "tableFrom": "battle_replays",
           "tableTo": "scenarios",
-          "columnsFrom": [
-            "scenario_a_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scenario_a_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -214,12 +206,8 @@
           "name": "battle_replays_scenario_b_id_scenarios_id_fk",
           "tableFrom": "battle_replays",
           "tableTo": "scenarios",
-          "columnsFrom": [
-            "scenario_b_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scenario_b_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -385,9 +373,7 @@
         "effects_name_unique": {
           "name": "effects_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -509,9 +495,7 @@
         "items_name_unique": {
           "name": "items_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -574,12 +558,8 @@
           "name": "items_allowed_rows_item_id_items_id_fk",
           "tableFrom": "items_allowed_rows",
           "tableTo": "items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -589,10 +569,7 @@
         "items_allowed_rows_item_id_row_type_unique": {
           "name": "items_allowed_rows_item_id_row_type_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "item_id",
-            "row_type"
-          ]
+          "columns": ["item_id", "row_type"]
         }
       },
       "policies": {},
@@ -666,12 +643,8 @@
           "name": "items_effects_item_id_items_id_fk",
           "tableFrom": "items_effects",
           "tableTo": "items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -679,12 +652,8 @@
           "name": "items_effects_effect_template_id_effects_id_fk",
           "tableFrom": "items_effects",
           "tableTo": "effects",
-          "columnsFrom": [
-            "effect_template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["effect_template_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -694,10 +663,7 @@
         "items_effects_item_id_sequence_order_unique": {
           "name": "items_effects_item_id_sequence_order_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "item_id",
-            "sequence_order"
-          ]
+          "columns": ["item_id", "sequence_order"]
         }
       },
       "policies": {},
@@ -748,9 +714,7 @@
         "scenarios_name_unique": {
           "name": "scenarios_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -818,12 +782,8 @@
           "name": "scenarios_rows_scenario_id_scenarios_id_fk",
           "tableFrom": "scenarios_rows",
           "tableTo": "scenarios",
-          "columnsFrom": [
-            "scenario_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scenario_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -833,10 +793,7 @@
         "scenarios_rows_scenario_id_row_type_unique": {
           "name": "scenarios_rows_scenario_id_row_type_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "scenario_id",
-            "row_type"
-          ]
+          "columns": ["scenario_id", "row_type"]
         }
       },
       "policies": {},
@@ -924,12 +881,8 @@
           "name": "scenarios_rows_units_row_id_scenarios_rows_id_fk",
           "tableFrom": "scenarios_rows_units",
           "tableTo": "scenarios_rows",
-          "columnsFrom": [
-            "row_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["row_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -937,12 +890,8 @@
           "name": "scenarios_rows_units_unit_id_units_id_fk",
           "tableFrom": "scenarios_rows_units",
           "tableTo": "units",
-          "columnsFrom": [
-            "unit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["unit_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -952,10 +901,7 @@
         "scenarios_rows_units_row_id_slot_unique": {
           "name": "scenarios_rows_units_row_id_slot_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "row_id",
-            "slot"
-          ]
+          "columns": ["row_id", "slot"]
         }
       },
       "policies": {},
@@ -1059,12 +1005,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1074,9 +1016,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -1216,9 +1156,7 @@
         "units_name_unique": {
           "name": "units_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -1302,12 +1240,8 @@
           "name": "units_items_item_id_items_id_fk",
           "tableFrom": "units_items",
           "tableTo": "items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1315,12 +1249,8 @@
           "name": "units_items_unit_id_units_id_fk",
           "tableFrom": "units_items",
           "tableTo": "units",
-          "columnsFrom": [
-            "unit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["unit_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1330,10 +1260,7 @@
         "units_items_unit_id_priority_unique": {
           "name": "units_items_unit_id_priority_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "unit_id",
-            "priority"
-          ]
+          "columns": ["unit_id", "priority"]
         }
       },
       "policies": {},
@@ -1426,9 +1353,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1507,69 +1432,37 @@
     "public.effect_type": {
       "name": "effect_type",
       "schema": "public",
-      "values": [
-        "buff",
-        "debuff",
-        "healing",
-        "damage"
-      ]
+      "values": ["buff", "debuff", "healing", "damage"]
     },
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "gm",
-        "player"
-      ]
+      "values": ["gm", "player"]
     },
     "public.row_type": {
       "name": "row_type",
       "schema": "public",
-      "values": [
-        "support",
-        "ranged",
-        "melee",
-        "tank"
-      ]
+      "values": ["support", "ranged", "melee", "tank"]
     },
     "public.target_priority": {
       "name": "target_priority",
       "schema": "public",
-      "values": [
-        "highest_health",
-        "lowest_health",
-        "highest_damage",
-        "support",
-        "random"
-      ]
+      "values": ["highest_health", "lowest_health", "highest_damage", "support", "random"]
     },
     "public.target_scope": {
       "name": "target_scope",
       "schema": "public",
-      "values": [
-        "self",
-        "self_allies",
-        "self_enemies",
-        "allies",
-        "enemies",
-        "both"
-      ]
+      "values": ["self", "self_allies", "self_enemies", "allies", "enemies", "both"]
     },
     "public.target_selection_shape": {
       "name": "target_selection_shape",
       "schema": "public",
-      "values": [
-        "individual",
-        "adjacent"
-      ]
+      "values": ["individual", "adjacent"]
     },
     "public.timing_type": {
       "name": "timing_type",
       "schema": "public",
-      "values": [
-        "instant",
-        "interval"
-      ]
+      "values": ["instant", "interval"]
     }
   },
   "schemas": {},

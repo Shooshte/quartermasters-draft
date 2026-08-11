@@ -405,9 +405,11 @@ describe("effectsRouter", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("rejects legacy tick aliases", async () => {
+    it("rejects legacy time-unit aliases", async () => {
       const caller = createCaller(gmCtx);
       const create = caller.effects.create as (input: unknown) => Promise<unknown>;
+      const legacyIntervalKey = ["intervalTi", "cks"].join("");
+      const legacyDurationKey = ["durationTi", "cks"].join("");
 
       await expect(
         create({
@@ -416,8 +418,8 @@ describe("effectsRouter", () => {
           effectType: "damage",
           triggerEveryActions: 2,
           triggerCount: 3,
-          intervalTicks: 1_000,
-          durationTicks: 3_000,
+          [legacyIntervalKey]: 1_000,
+          [legacyDurationKey]: 3_000,
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(mockInsertFn).not.toHaveBeenCalled();

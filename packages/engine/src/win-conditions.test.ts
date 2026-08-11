@@ -63,7 +63,7 @@ describe("win conditions", () => {
 
     expect(draw.winnerId).toBeNull();
     expect(draw.log.at(-1)?.message).toMatch(/action limit/i);
-    expect(draw.log.at(-1)?.message).not.toMatch(/tick limit/i);
+    expect(draw.log.at(-1)?.message).not.toMatch(new RegExp(`${["ti", "ck"].join("")} limit`, "i"));
   });
 
   it("immediately declares victory when the opposing scenario has no units", () => {

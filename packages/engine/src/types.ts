@@ -117,9 +117,8 @@ export interface BattleInput {
 }
 
 export interface BattleOptions {
-  fatigueTickThreshold?: number;
+  fatigueActionThreshold?: number;
   fatigueDamageStart?: number;
-  resolveActionsOnTick?: boolean;
 }
 
 export interface BattleItemState {
@@ -183,24 +182,25 @@ export interface BattleScenarioState {
 }
 
 export interface BattleState {
-  tick: number;
+  actionCount: number;
+  batchCount: number;
   status: "active" | "finished";
   winnerId: string | null;
   scenarios: [BattleScenarioState, BattleScenarioState];
   log: BattleLogEntry[];
-  fatigueTickThreshold: number;
+  fatigueActionThreshold: number;
   fatigueDamageStart: number;
 }
 
 export interface BattleResult {
   winnerId: string | null;
-  ticksElapsed: number;
+  actionsResolved: number;
   finalState: BattleState;
   log: BattleLogEntry[];
 }
 
 export interface ActionContext {
-  tick: number;
+  batchNumber: number;
   caster: BattleUnitState;
   targetIds: string[];
 }

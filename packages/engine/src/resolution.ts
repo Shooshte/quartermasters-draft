@@ -35,7 +35,7 @@ function basicAttackTargeting(attacker: BattleUnitState): UnitTargetingInput {
 export function performBasicAttack(
   state: BattleState,
   attacker: BattleUnitState,
-  batchNumber = state.tick,
+  batchNumber = state.batchCount,
   actionId = `${batchNumber}:${attacker.instanceId}:${attacker.actedCount + 1}`,
 ): number {
   const targets = selectTargets(state, attacker, basicAttackTargeting(attacker));
@@ -91,7 +91,7 @@ export function performBasicAttack(
 export function resolveUnitAction(
   state: BattleState,
   unit: BattleUnitState,
-  batchNumber = state.tick,
+  batchNumber = state.batchCount,
 ): ActionOutcome {
   const activatedItemNames: string[] = [];
   let totalDamage = 0;

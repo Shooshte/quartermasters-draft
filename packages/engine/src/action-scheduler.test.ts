@@ -65,13 +65,11 @@ describe("event-driven action scheduler", () => {
     const dead = state.scenarios[0].rows.melee[1]!;
     dead.currentHealth = 0;
     dead.actionBar = 12;
-    const beforeTick = state.tick;
     const beforeLog = [...state.log];
     const beforeActedCount = dead.actedCount;
 
     advanceToNextReadyBatch(state);
 
-    expect(state.tick).toBe(beforeTick);
     expect(state.log).toEqual(beforeLog);
     expect(dead.actionBar).toBe(12);
     expect(dead.actedCount).toBe(beforeActedCount);

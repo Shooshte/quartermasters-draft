@@ -1,5 +1,5 @@
 Feature: Mana regeneration and item activation spending
-  Mana regenerates for living units and is spent once for every successful item activation.
+  Mana regenerates once for each surviving ready actor immediately before affordability checks.
 
   Background:
     Given the unit starts with 100 mana and 100 mana capacity
@@ -7,13 +7,22 @@ Feature: Mana regeneration and item activation spending
 
   Scenario: Mana regeneration is capped by capacity
     Given the unit has 90 mana
-    When 2 ticks pass
-    Then the unit has 100 mana
+    When the unit is ready to act
+    Then the unit has 100 mana before item affordability is checked
 
-  Scenario: Dead units do not regenerate mana
-    Given the unit is dead
-    When 5 ticks pass
-    Then the unit has 100 mana
+  Scenario: Every surviving actor in a ready cohort regenerates once
+    Given two living units become ready in the same batch
+    And both units have spent mana
+    When the ready batch is resolved
+    Then each ready unit regenerates mana exactly once
+    And no non-ready unit regenerates mana
+
+  Scenario: A ready unit killed by a pre-action effect does not regenerate
+    Given the unit is ready
+    And a due periodic effect kills the unit before actions are planned
+    When the ready batch is resolved
+    Then the dead unit does not regenerate mana
+    And the dead unit does not act
 
   Scenario: Capacity changes preserve missing mana
     Given the unit has 70 mana

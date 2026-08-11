@@ -47,7 +47,6 @@ function makeManaEngine() {
         ],
       }),
     ]),
-    { resolveActionsOnTick: false },
   );
 }
 
@@ -60,13 +59,44 @@ describe("mana system", () => {
         }),
         createScenario("B", { tank: [createUnit("Dummy")] }),
       ]),
-      { resolveActionsOnTick: false },
     );
 
-    engine.tick(50);
+    engine.resolveNextBatch();
 
     const warrior = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
     expect(warrior.mana).toBe(20);
+  });
+
+  it("regenerates mana once for each surviving ready actor before affordability", () => {
+    const engine = new BattleEngine(
+      createBattleInput([
+        createScenario("A", {
+          support: [
+            createUnit("Caster", {
+              stats: createStats({ mana: 100, manaRegen: 5, speed: 100 }),
+              startingActionBar: 100,
+              items: [
+                createItem({
+                  name: "Expensive Focus",
+                  activationManaCost: 90,
+                  effects: activationEffects("Focus"),
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("B", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 1_000, speed: 1 }) })],
+        }),
+      ]),
+    );
+
+    engine.resolveNextBatch();
+    engine.resolveNextBatch();
+
+    const caster = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
+    expect(caster.mana).toBe(15);
+    expect(caster.actedCount).toBe(2);
   });
 
   it("preserves mana deficit when capacity effects apply and expire", () => {
@@ -84,7 +114,7 @@ describe("mana system", () => {
 
   it("starts living units full and does not regenerate past capacity", () => {
     const engine = makeManaEngine();
-    engine.tick(4);
+    engine.resolveNextBatch();
     const warrior = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
     expect(warrior.mana).toBe(100);
 
@@ -97,9 +127,8 @@ describe("mana system", () => {
           tank: [createUnit("Dummy", { stats: createStats({ health: 100, speed: 1 }) })],
         }),
       ]),
-      { resolveActionsOnTick: false },
     );
-    capped.tick(50);
+    capped.resolveNextBatch();
     expect(Object.values(capped.getState().scenarios[0].rows).flat()[0]?.mana).toBe(100);
   });
 
@@ -111,9 +140,8 @@ describe("mana system", () => {
         }),
         createScenario("B", { tank: [createUnit("Dummy")] }),
       ]),
-      { resolveActionsOnTick: false },
     );
-    engine.tick(5);
+    engine.resolveNextBatch();
     const dead = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
     expect(dead.mana).toBe(100);
   });
@@ -149,7 +177,7 @@ describe("mana system", () => {
       ]),
     );
 
-    engine.tick(1);
+    engine.resolveNextBatch();
     const after = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
     expect(after.mana).toBe(20);
     expect(after.currentHealth).toBe(65);
@@ -184,7 +212,7 @@ describe("mana system", () => {
       ]),
     );
 
-    engine.tick(1);
+    engine.resolveNextBatch();
     const activationLogs = engine
       .getState()
       .log.filter((entry) => entry.type === "item-activation");
@@ -219,7 +247,7 @@ describe("mana system", () => {
       ]),
     );
 
-    engine.tick(1);
+    engine.resolveNextBatch();
 
     const after = Object.values(engine.getState().scenarios[0].rows).flat()[0]!;
     expect(after.mana).toBe(30);

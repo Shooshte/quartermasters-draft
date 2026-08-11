@@ -36,7 +36,6 @@ export function clonePlanningState(
   const internal = asInternalState(planningState);
   internal.__rng = random;
   internal.__effectCounter = 0;
-  internal.__resolveActionsOnTick = false;
   internal.__scenarioOrder = planningState.scenarios.map((scenario) => scenario.id);
   internal.__allocateEffectId = allocateEffectId;
   (planningState as ActionPlanningState).__actionOperations = [];

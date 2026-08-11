@@ -20,7 +20,6 @@ type InternalBattleState = BattleState & {
   __rng: () => number;
   __effectCounter: number;
   __allocateEffectId?: () => string;
-  __resolveActionsOnTick: boolean;
   __scenarioOrder: string[];
 };
 
@@ -131,16 +130,16 @@ export function initializeBattleState(
   validateBattleInput(input);
 
   const state: InternalBattleState = {
-    tick: 0,
+    actionCount: 0,
+    batchCount: 0,
     status: "active",
     winnerId: null,
     scenarios: input.scenarios.map(createScenarioState) as BattleState["scenarios"],
     log: [],
-    fatigueTickThreshold: options.fatigueTickThreshold ?? 100,
+    fatigueActionThreshold: options.fatigueActionThreshold ?? 500,
     fatigueDamageStart: options.fatigueDamageStart ?? 1,
     __rng: createSeededRandom(input.seed),
     __effectCounter: 0,
-    __resolveActionsOnTick: options.resolveActionsOnTick ?? true,
     __scenarioOrder: input.scenarios.map((scenario) => scenario.id),
   };
 
@@ -149,10 +148,6 @@ export function initializeBattleState(
 
 export function asInternalState(state: BattleState): InternalBattleState {
   return state as InternalBattleState;
-}
-
-export function getResolveActionsOnTick(state: BattleState): boolean {
-  return asInternalState(state).__resolveActionsOnTick;
 }
 
 export function nextRandom(state: BattleState): number {
@@ -196,12 +191,13 @@ export function opposingScenarioId(state: BattleState, scenarioId: string): stri
 
 export function cloneState(state: BattleState): BattleState {
   return structuredClone({
-    tick: state.tick,
+    actionCount: state.actionCount,
+    batchCount: state.batchCount,
     status: state.status,
     winnerId: state.winnerId,
     scenarios: state.scenarios,
     log: state.log,
-    fatigueTickThreshold: state.fatigueTickThreshold,
+    fatigueActionThreshold: state.fatigueActionThreshold,
     fatigueDamageStart: state.fatigueDamageStart,
   } satisfies BattleState);
 }

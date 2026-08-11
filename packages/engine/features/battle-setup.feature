@@ -91,6 +91,9 @@ Feature: Battle initialization and validation
       When the battle is initialized with seed 42
       Then the battle state should contain scenario "Alpha" with 4 rows and 4 total units
       And the battle state should contain scenario "Bravo" with 4 rows and 4 total units
+      And actionCount should be 0
+      And batchCount should be 0
+      And the fatigue action threshold should default to 500
 
   # ── Action bar starts at zero ────────────────────────────────────────
 

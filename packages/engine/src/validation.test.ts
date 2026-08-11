@@ -3,10 +3,12 @@ import { initializeBattleState } from "./state";
 import {
   createBattleInput,
   createBattleInputWithSeed,
+  createEffect,
   createItem,
   createScenario,
   createStats,
   createUnit,
+  effectSequence,
 } from "./test-helpers";
 import type { BattleInput } from "./types";
 import { InvalidBattleInputError, validateBattleInput } from "./validation";
@@ -197,5 +199,53 @@ describe("battle input validation", () => {
         ]),
       ),
     ).toThrowError("Caster cannot be deployed in tank");
+  });
+
+  it.each([
+    createEffect({
+      name: "Incomplete interval",
+      effectType: "damage",
+      timingType: "interval",
+      triggerEveryActions: 1,
+      triggerCount: null,
+      directSpellDmg: 5,
+    }),
+    createEffect({
+      name: "Interval without cadence",
+      effectType: "damage",
+      timingType: "interval",
+      triggerEveryActions: null,
+      triggerCount: 1,
+      directSpellDmg: 5,
+    }),
+    createEffect({
+      name: "Incomplete buff",
+      effectType: "buff",
+      timingType: "instant",
+      speed: 5,
+      lastsForActions: null,
+    }),
+    createEffect({
+      name: "Incomplete debuff",
+      effectType: "debuff",
+      timingType: "instant",
+      dodge: -5,
+      lastsForActions: null,
+    }),
+  ])("rejects action-timed effect configurations with missing durations", (effect) => {
+    const input = createBattleInput([
+      createScenario("A", {
+        support: [
+          createUnit("Caster", {
+            items: [createItem({ name: "Item", effects: effectSequence(effect) })],
+          }),
+        ],
+      }),
+      createScenario("B", { tank: [createUnit("Enemy")] }),
+    ]);
+
+    expect(() => validateBattleInput(input)).toThrowError(
+      `Effect "${effect.name}" timing needs configuration.`,
+    );
   });
 });

@@ -115,14 +115,21 @@ export function logFatigue(
   pushLog(state, entry);
 }
 
-export function logBattleEnd(state: BattleState, batchNumber: number, winnerId: string | null): void {
+export function logBattleEnd(
+  state: BattleState,
+  batchNumber: number,
+  winnerId: string | null,
+  endedByActionLimit = false,
+): void {
   const outcome = winnerId === null ? "draw" : winnerId;
   const entry: BattleEndLogEntry = {
     batchNumber,
     type: "battle-end",
     outcome,
     winnerId,
-    message: `Battle ends: ${outcome}`,
+    message: endedByActionLimit
+      ? `Battle ends at the action limit: ${outcome}`
+      : `Battle ends: ${outcome}`,
   };
   pushLog(state, entry);
 }

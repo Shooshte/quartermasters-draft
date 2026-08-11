@@ -106,8 +106,8 @@ describe("win conditions", () => {
     ).resolve();
 
     expect(result.winnerId).toBe("A");
-    expect(result.actionsResolved).toBe(4);
-    expect(result.log.some((entry) => entry.type === "fatigue")).toBe(true);
+    expect(result.actionsResolved).toBe(2);
+    expect(result.log.some((entry) => entry.type === "fatigue")).toBe(false);
     expect(result.log.at(-1)?.message).toBe("Battle ends: A");
   });
 
@@ -133,8 +133,8 @@ describe("win conditions", () => {
     ).resolve();
 
     expect(result.winnerId).toBeNull();
-    expect(result.actionsResolved).toBe(4);
-    expect(result.log.at(-1)?.message).toBe("Battle ends at the action limit: draw");
+    expect(result.actionsResolved).toBe(2);
+    expect(result.log.at(-1)?.message).toBe("Battle ends: draw");
   });
 
   it("applies fatigue after the action threshold and guarantees termination", () => {

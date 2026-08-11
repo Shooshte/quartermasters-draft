@@ -44,10 +44,7 @@ export function performBasicAttack(
 
   const attackerStats = getUnitEffectiveStats(attacker);
   const targetStats = getUnitEffectiveStats(target);
-  const baseStat =
-    attacker.rowType === "tank" || attacker.rowType === "melee"
-      ? attackerStats.meleeDmg
-      : attackerStats.rangedDmg;
+  const baseStat = attackerStats.meleeDmg + attackerStats.rangedDmg + attackerStats.spellDmg;
   const distanceAdjustedDamage = computeBasicAttackDamage(
     baseStat,
     attacker.rowType,

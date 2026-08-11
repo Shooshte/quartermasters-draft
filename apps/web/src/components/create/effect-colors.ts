@@ -29,6 +29,7 @@ export const COMPACT_LABELS: Record<string, string> = {
   mana: "Mana",
   dodge: "Dodge",
   criticalChance: "Crit",
+  shield: "Shield",
   speed: "Speed",
   manaRegen: "Mana Regen",
   directHealing: "Heal",
@@ -40,7 +41,11 @@ export const COMPACT_LABELS: Record<string, string> = {
 /** Modifier field groups rendered as categorized sections. */
 export const MODIFIER_GROUPS = [
   { label: "Combat Buff", fields: ["meleeDmg", "rangedDmg", "spellDmg"] as const, cols: 3 },
-  { label: "Defense Buff", fields: ["health", "dodge", "criticalChance"] as const, cols: 3 },
+  {
+    label: "Defense Buff",
+    fields: ["health", "dodge", "criticalChance", "shield"] as const,
+    cols: 4,
+  },
   { label: "Utility Buff", fields: ["mana", "speed", "manaRegen"] as const, cols: 3 },
   {
     label: "One Time Effect",

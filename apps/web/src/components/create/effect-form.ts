@@ -19,6 +19,8 @@ export interface EffectFormValues {
   speed: number | null;
   dodge: number | null;
   criticalChance: number | null;
+  shield: number | null;
+  bypassesShield: boolean;
   directHealing: number | null;
   directMeleeDmg: number | null;
   directRangedDmg: number | null;
@@ -44,6 +46,8 @@ type EffectRecord = {
   speed: number | null;
   dodge: number | null;
   criticalChance: number | null;
+  shield: number | null;
+  bypassesShield: boolean;
   directHealing: number | null;
   directMeleeDmg: number | null;
   directRangedDmg: number | null;
@@ -63,6 +67,7 @@ export const EFFECT_NUMERIC_FIELDS = [
   "speed",
   "dodge",
   "criticalChance",
+  "shield",
   "directHealing",
   "directMeleeDmg",
   "directRangedDmg",
@@ -93,6 +98,8 @@ export function createDefaultEffectFormValues(): EffectFormValues {
     speed: null,
     dodge: null,
     criticalChance: null,
+    shield: null,
+    bypassesShield: false,
     directHealing: null,
     directMeleeDmg: null,
     directRangedDmg: null,
@@ -109,6 +116,7 @@ export function effectRecordToFormValues(record: Partial<EffectRecord>): EffectF
   values.timingType = record.timingType ?? "instant";
   values.effectType = record.effectType ?? "buff";
   values.isTaunt = record.isTaunt ?? false;
+  values.bypassesShield = record.bypassesShield ?? false;
   return values;
 }
 
@@ -172,6 +180,7 @@ const EFFECT_STAT_FIELDS = [
   "speed",
   "dodge",
   "criticalChance",
+  "shield",
 ] as const;
 
 export function effectNeedsTimingConfiguration(values: EffectFormValues): boolean {

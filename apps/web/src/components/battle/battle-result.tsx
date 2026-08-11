@@ -78,6 +78,10 @@ function displayEffects(unit: BattleUnit) {
     .join(", ");
 }
 
+function remainingShield(unit: BattleUnit) {
+  return unit.shieldLayers.reduce((total, layer) => total + layer.remaining, 0);
+}
+
 function FinalStateLedger({
   scenario,
   name,
@@ -105,6 +109,7 @@ function FinalStateLedger({
               <TableHead>Row</TableHead>
               <TableHead>Slot</TableHead>
               <TableHead>Health</TableHead>
+              <TableHead>Shield</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Mana</TableHead>
               <TableHead>Stats</TableHead>
@@ -115,7 +120,7 @@ function FinalStateLedger({
           <TableBody>
             {units.length === 0 ? (
               <TableRow disableHover>
-                <TableCell colSpan={9} className="px-4 py-5 text-muted-foreground italic">
+                <TableCell colSpan={10} className="px-4 py-5 text-muted-foreground italic">
                   No units in this scenario.
                 </TableCell>
               </TableRow>
@@ -132,6 +137,7 @@ function FinalStateLedger({
                     <TableCell className="tabular-nums">
                       {unit.currentHealth} / {effective.health}
                     </TableCell>
+                    <TableCell className="tabular-nums">{remainingShield(unit)}</TableCell>
                     <TableCell>
                       <span
                         className={

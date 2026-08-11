@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { EffectWorkspaceForm } from "~/components/create/effect-workspace-form";
 import {
   createDefaultEffectFormValues,
   effectRecordToFormValues,
@@ -18,6 +22,8 @@ describe("effect-form", () => {
       triggerCount: null,
       lastsForActions: null,
       mana: null,
+      shield: null,
+      bypassesShield: false,
     });
   });
 
@@ -35,6 +41,40 @@ describe("effect-form", () => {
     expect(result.meleeDmg).toBe(2);
     expect(result.lastsForActions).toBe(3);
     expect(result.isTaunt).toBe(true);
+  });
+
+  it("maps shield configuration from API records to form values", () => {
+    const result = effectRecordToFormValues({
+      name: "Ward",
+      shield: 20,
+      bypassesShield: true,
+    });
+
+    expect(result.shield).toBe(20);
+    expect(result.bypassesShield).toBe(true);
+  });
+
+  it("renders shield authoring controls", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+
+    render(
+      createElement(EffectWorkspaceForm, {
+        mode: "create",
+        formValues: { ...createDefaultEffectFormValues(), name: "Ward", shield: 20 },
+        onFieldChange,
+        onSave: vi.fn(),
+        isSaving: false,
+        saveError: null,
+      }),
+    );
+
+    expect(screen.getByTestId("effect-shield-input")).toHaveValue(20);
+    const bypassesShield = screen.getByTestId("effect-bypassesShield-input");
+    expect(bypassesShield).not.toBeChecked();
+
+    await user.click(bypassesShield);
+    expect(onFieldChange).toHaveBeenCalledWith("bypassesShield", true);
   });
 
   it("does not copy API metadata into mutation-ready form values", () => {
@@ -164,6 +204,12 @@ describe("effect-form", () => {
     });
 
     expect(errors.lastsForActions).toContain("required");
+  });
+
+  it("requires duration for an instant shield buff", () => {
+    expect(
+      validateEffectForm({ ...createDefaultEffectFormValues(), name: "Ward", shield: 20 }),
+    ).toMatchObject({ lastsForActions: expect.stringContaining("required") });
   });
 
   it("does not require duration for an interval stat buff", () => {

@@ -124,7 +124,7 @@ export const effects = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull().unique(),
     timingType: timingTypeEnum("timing_type").notNull(),
-    intervalTicks: integer("interval_ticks"),
+    triggerEveryActions: integer("trigger_every_actions"),
     triggerCount: integer("trigger_count"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -141,7 +141,7 @@ export const effects = pgTable(
     dodge: real("dodge"),
     criticalChance: real("critical_chance"),
     effectType: effectTypeEnum("effect_type").notNull().default("buff"),
-    durationTicks: integer("duration_ticks"),
+    lastsForActions: integer("lasts_for_actions"),
     directHealing: real("direct_healing"),
     directMeleeDmg: real("direct_melee_dmg"),
     directRangedDmg: real("direct_ranged_dmg"),
@@ -149,24 +149,16 @@ export const effects = pgTable(
   },
   (table) => [
     check(
-      "interval_ticks_positive",
-      sql`${table.intervalTicks} IS NULL OR ${table.intervalTicks} > 0`,
+      "trigger_every_actions_positive",
+      sql`${table.triggerEveryActions} IS NULL OR ${table.triggerEveryActions} > 0`,
     ),
     check(
       "trigger_count_positive",
       sql`${table.triggerCount} IS NULL OR ${table.triggerCount} > 0`,
     ),
     check(
-      "duration_ticks_positive",
-      sql`${table.durationTicks} IS NULL OR ${table.durationTicks} > 0`,
-    ),
-    check(
-      "interval_fields_required",
-      sql`${table.timingType} != 'interval' OR (${table.intervalTicks} IS NOT NULL AND ${table.triggerCount} IS NOT NULL)`,
-    ),
-    check(
-      "instant_fields_forbidden",
-      sql`${table.timingType} != 'instant' OR (${table.intervalTicks} IS NULL AND ${table.triggerCount} IS NULL)`,
+      "lasts_for_actions_positive",
+      sql`${table.lastsForActions} IS NULL OR ${table.lastsForActions} > 0`,
     ),
   ],
 );

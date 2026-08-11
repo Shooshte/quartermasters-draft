@@ -89,21 +89,36 @@ describe("effectSeedData", () => {
     expect(timingTypes).toContain("interval");
   });
 
-  it("interval records have intervalTicks and triggerCount set", () => {
+  it("interval records have action trigger timing and triggerCount set", () => {
     const intervalRecords = effectSeedData.filter((t) => t.timingType === "interval");
     expect(intervalRecords.length).toBeGreaterThan(0);
     for (const template of intervalRecords) {
-      expect(template.intervalTicks).toBeDefined();
+      expect(template.triggerEveryActions).toBeDefined();
       expect(template.triggerCount).toBeDefined();
     }
   });
 
-  it("instant records do not have intervalTicks or triggerCount set", () => {
-    const instantRecords = effectSeedData.filter((t) => t.timingType === "instant");
-    expect(instantRecords.length).toBeGreaterThan(0);
-    for (const template of instantRecords) {
-      expect(template.intervalTicks).toBeUndefined();
-      expect(template.triggerCount).toBeUndefined();
+  it("stat-bearing instant buffs and debuffs have action duration timing", () => {
+    const statBearingInstantRecords = effectSeedData.filter(
+      (template) =>
+        template.timingType === "instant" &&
+        (template.effectType === "buff" || template.effectType === "debuff") &&
+        [
+          template.meleeDmg,
+          template.health,
+          template.mana,
+          template.rangedDmg,
+          template.manaRegen,
+          template.spellDmg,
+          template.speed,
+          template.dodge,
+          template.criticalChance,
+        ].some((value) => value !== undefined && value !== null),
+    );
+
+    expect(statBearingInstantRecords.length).toBeGreaterThan(0);
+    for (const template of statBearingInstantRecords) {
+      expect(template.lastsForActions).toBeDefined();
     }
   });
 

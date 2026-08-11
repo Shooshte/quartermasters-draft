@@ -107,7 +107,7 @@ function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
   const hasModifier =
     (input.effectType === "buff" || input.effectType === "debuff") &&
     EFFECT_STAT_FIELDS.some((field) => input[field] !== null);
-  if (hasModifier && input.lastsForActions === null) {
+  if (input.timingType === "instant" && hasModifier && input.lastsForActions === null) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["lastsForActions"],

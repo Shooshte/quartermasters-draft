@@ -92,3 +92,22 @@ After replacing API fixtures with action timing fields and adding status, valida
 - `pnpm run test:e2e` — passed
 - Scoped Biome check and `git diff --check` — passed
 - No API production code retains tick timing fields; legacy aliases are strictly rejected. No concerns identified.
+
+## Post-review P1: interval stat modifier duration validation
+
+The API validation was incorrectly requiring `lastsForActions` for every stat-bearing buff/debuff, including interval effects. Engine validation already scopes this duration requirement to instantaneous stat modifiers. The API now applies the same `timingType === "instant"` gate, while retaining the interval requirements for `triggerEveryActions` and `triggerCount`.
+
+### TDD evidence
+
+- RED: `pnpm --filter @qd/api test -- packages/api/src/__tests__/scenarioBuilder/effects.test.ts` failed exactly at the new regression: an interval buff with `meleeDmg`, valid trigger fields, and no duration was rejected with the `lastsForActions` validation error.
+- GREEN: the same focused command passed, 10 files / 153 tests. The regression verifies the mutation is accepted and returns `needsTimingConfiguration: false`.
+
+### Verification
+
+- `pnpm run test` — PASS, 10 Turbo tasks; API 10 files / 153 tests.
+- `pnpm run test:e2e` — PASS; Docker build and Playwright run completed successfully.
+- `git diff --check` — PASS.
+
+### Concern
+
+No behavioral concern identified. Package-manager configuration warnings were emitted by pnpm/npm during verification but did not affect command success.

@@ -337,6 +337,39 @@ describe("effectsRouter", () => {
       });
     });
 
+    it("creates a stat-bearing interval buff without an action duration", async () => {
+      mockInsertFn.mockReturnValue(
+        chainable([
+          {
+            id: "e3",
+            name: "Periodic Strength",
+            timingType: "interval",
+            effectType: "buff",
+            triggerEveryActions: 2,
+            triggerCount: 3,
+            lastsForActions: null,
+            meleeDmg: 5,
+          },
+        ]),
+      );
+
+      const result = await createCaller(gmCtx).effects.create({
+        name: "Periodic Strength",
+        timingType: "interval",
+        effectType: "buff",
+        triggerEveryActions: 2,
+        triggerCount: 3,
+        meleeDmg: 5,
+        lastsForActions: null,
+      });
+
+      expect(result).toMatchObject({
+        id: "e3",
+        lastsForActions: null,
+        needsTimingConfiguration: false,
+      });
+    });
+
     it("rejects missing interval fields for interval timing", async () => {
       const caller = createCaller(gmCtx);
       await expect(

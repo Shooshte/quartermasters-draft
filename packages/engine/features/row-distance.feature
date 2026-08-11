@@ -12,7 +12,7 @@ Feature: Row distance damage penalty
   Damage multiplier  = max(0, 1 - 0.25 * distance)
 
   Background:
-    Given a unit with 100 meleeDmg and 100 rangedDmg
+    Given a unit with 40 meleeDmg, 35 rangedDmg, and 25 spellDmg
 
   Scenario Outline: Basic attack damage across all row combinations
     When the unit in the <attacker_row> row basic-attacks a target in the <target_row> row
@@ -36,6 +36,10 @@ Feature: Row distance damage penalty
       | support      | melee      | 0               |
       | support      | ranged     | 0               |
       | support      | support    | 0               |
+
+  Scenario: Basic attacks aggregate all damage types
+    When the unit in the tank row basic-attacks a target in the tank row
+    Then the attack should deal 100 damage
 
   Scenario: Zero-damage basic attack deals no damage
     When the unit in the melee row basic-attacks a target in the support row

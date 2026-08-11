@@ -90,14 +90,26 @@ describe("win conditions", () => {
         createScenario("A", {
           tank: [
             createUnit("a-1", {
-              stats: createStats({ health: 100, meleeDmg: 10, speed: 100 }),
+              stats: createStats({
+                health: 100,
+                meleeDmg: 10,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
         createScenario("B", {
           tank: [
             createUnit("b-1", {
-              stats: createStats({ health: 20, meleeDmg: 0, speed: 100 }),
+              stats: createStats({
+                health: 20,
+                meleeDmg: 0,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
@@ -117,14 +129,26 @@ describe("win conditions", () => {
         createScenario("A", {
           tank: [
             createUnit("a-1", {
-              stats: createStats({ health: 3, meleeDmg: 10, speed: 100 }),
+              stats: createStats({
+                health: 3,
+                meleeDmg: 10,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
         createScenario("B", {
           tank: [
             createUnit("b-1", {
-              stats: createStats({ health: 20, meleeDmg: 0, speed: 100 }),
+              stats: createStats({
+                health: 20,
+                meleeDmg: 0,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),

@@ -84,8 +84,8 @@ describe("action resolution", () => {
     expect(
       plans.map((plan) => plan.operations.find((operation) => operation.kind === "damage")),
     ).toEqual([
-      { kind: "damage", targetId: "Bravo:tank:1", amount: 10 },
-      { kind: "damage", targetId: "Bravo:tank:1", amount: 10 },
+      { kind: "damage", targetId: "Bravo:tank:1", amount: 20 },
+      { kind: "damage", targetId: "Bravo:tank:1", amount: 20 },
     ]);
     expect(plans.map((plan) => plan.actionId)).toEqual([
       "3:Alpha:ranged:1:1",
@@ -94,7 +94,7 @@ describe("action resolution", () => {
     expect(state.scenarios[1].rows.tank.map((unit) => unit.currentHealth)).toEqual([200, 150]);
 
     commitPlannedActions(state, plans, 3);
-    expect(state.scenarios[1].rows.tank.map((unit) => unit.currentHealth)).toEqual([180, 150]);
+    expect(state.scenarios[1].rows.tank.map((unit) => unit.currentHealth)).toEqual([160, 150]);
   });
 
   it("consumes one shared random stream across isolated plans", () => {
@@ -171,14 +171,14 @@ describe("action resolution", () => {
     const attackDamage = plans[1]?.operations.find((operation) => operation.kind === "damage");
     const addedEffect = plans[0]?.operations.find((operation) => operation.kind === "add-effect");
 
-    expect(attackDamage).toEqual({ kind: "damage", targetId: "Alpha:tank:1", amount: 20 });
+    expect(attackDamage).toEqual({ kind: "damage", targetId: "Alpha:tank:1", amount: 40 });
     expect(addedEffect).toMatchObject({
       kind: "add-effect",
       effect: { id: "planned-effect-1", name: "Defended" },
     });
     commitPlannedActions(state, plans, 4);
     expect(state.scenarios[0].rows.tank[0]).toMatchObject({
-      currentHealth: 180,
+      currentHealth: 160,
       activeEffects: [{ name: "Defended", statKey: "dodge", value: 50 }],
     });
   });
@@ -189,18 +189,107 @@ describe("action resolution", () => {
 
     expect(resolveUnitAction(state, warrior)).toEqual({
       usedBasicAttack: true,
-      totalDamage: 15,
+      totalDamage: 20,
       activatedItemNames: [],
     });
     expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("uses ranged damage with row distance for ranged-row basic attackers", () => {
-    const state = makeStateWithWarrior("ranged");
-    const outcome = resolveUnitAction(state, state.scenarios[0].rows.ranged[0]!);
+  it.each([
+    ["tank", 24],
+    ["melee", 18],
+    ["ranged", 12],
+    ["support", 6],
+  ] as const)("uses aggregate damage from the %s row", (row, expectedDamage) => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          [row]: [
+            createUnit("Archer", {
+              stats: createStats({ meleeDmg: 13, rangedDmg: 7, spellDmg: 4 }),
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 200 }) })],
+        }),
+      ]),
+    );
+
+    const outcome = resolveUnitAction(state, state.scenarios[0].rows[row][0]!);
 
     expect(outcome.usedBasicAttack).toBe(true);
-    expect(outcome.totalDamage).toBe(3);
+    expect(outcome.totalDamage).toBe(expectedDamage);
+  });
+
+  it("aggregates item bonuses and active modifiers across all damage types for a basic attack", () => {
+    const state = initializeBattleState(
+      createBattleInput([
+        createScenario("Alpha", {
+          ranged: [
+            createUnit("Enchanted Archer", {
+              stats: createStats({ meleeDmg: 10, rangedDmg: 20, spellDmg: 30 }),
+              items: [
+                createItem({
+                  name: "Triune Armory",
+                  meleeDmg: 5,
+                  rangedDmg: 7,
+                  spellDmg: 11,
+                }),
+              ],
+            }),
+          ],
+        }),
+        createScenario("Bravo", {
+          tank: [createUnit("Dummy", { stats: createStats({ health: 200 }) })],
+        }),
+      ]),
+    );
+    const attacker = state.scenarios[0].rows.ranged[0]!;
+    const target = state.scenarios[1].rows.tank[0]!;
+    attacker.activeEffects.push(
+      {
+        id: "melee-bonus",
+        name: "Melee Bonus",
+        sourceUnitId: attacker.instanceId,
+        sourceScenarioId: attacker.scenarioId,
+        targetUnitId: attacker.instanceId,
+        effectType: "buff",
+        timingType: "instant",
+        statKey: "meleeDmg",
+        value: 2,
+        actionsRemaining: 1,
+      },
+      {
+        id: "ranged-bonus",
+        name: "Ranged Bonus",
+        sourceUnitId: attacker.instanceId,
+        sourceScenarioId: attacker.scenarioId,
+        targetUnitId: attacker.instanceId,
+        effectType: "buff",
+        timingType: "instant",
+        statKey: "rangedDmg",
+        value: 3,
+        actionsRemaining: 1,
+      },
+      {
+        id: "spell-bonus",
+        name: "Spell Bonus",
+        sourceUnitId: attacker.instanceId,
+        sourceScenarioId: attacker.scenarioId,
+        targetUnitId: attacker.instanceId,
+        effectType: "buff",
+        timingType: "instant",
+        statKey: "spellDmg",
+        value: 4,
+        actionsRemaining: 1,
+      },
+    );
+
+    const outcome = resolveUnitAction(state, attacker);
+
+    expect(outcome).toMatchObject({ usedBasicAttack: true, totalDamage: 46 });
+    expect(target.currentHealth).toBe(154);
   });
 
   it("applies crit and dodge modifiers multiplicatively to basic attack damage", () => {
@@ -217,7 +306,7 @@ describe("action resolution", () => {
       ]),
     );
 
-    expect(resolveUnitAction(state, state.scenarios[0].rows.tank[0]!).totalDamage).toBe(24);
+    expect(resolveUnitAction(state, state.scenarios[0].rows.tank[0]!).totalDamage).toBe(48);
   });
 
   it("uses the attacker's target priority for a basic attack", () => {
@@ -238,7 +327,7 @@ describe("action resolution", () => {
     resolveUnitAction(state, state.scenarios[0].rows.tank[0]!);
 
     expect(state.scenarios[1].rows.tank[0]!.currentHealth).toBe(200);
-    expect(state.scenarios[1].rows.tank[1]!.currentHealth).toBe(40);
+    expect(state.scenarios[1].rows.tank[1]!.currentHealth).toBe(20);
   });
 
   it("pays exactly once and retains original target IDs across ordered effects", () => {
@@ -340,7 +429,7 @@ describe("action resolution", () => {
 
     expect(resolveUnitAction(state, warrior)).toEqual({
       usedBasicAttack: true,
-      totalDamage: 11,
+      totalDamage: 15,
       activatedItemNames: [],
     });
     expect(warrior.mana).toBe(50);

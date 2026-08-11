@@ -1,0 +1,1 @@
+ALTER TABLE "effects" ADD COLUMN "is_taunt" boolean DEFAULT false NOT NULL;

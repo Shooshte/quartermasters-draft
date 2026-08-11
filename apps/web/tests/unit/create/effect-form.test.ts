@@ -13,6 +13,7 @@ describe("effect-form", () => {
       name: "",
       timingType: "instant",
       effectType: "buff",
+      isTaunt: false,
       triggerEveryActions: null,
       triggerCount: null,
       lastsForActions: null,
@@ -27,11 +28,13 @@ describe("effect-form", () => {
       effectType: "buff",
       meleeDmg: 2,
       lastsForActions: 3,
+      isTaunt: true,
     });
 
     expect(result.name).toBe("Barbarian Roar");
     expect(result.meleeDmg).toBe(2);
     expect(result.lastsForActions).toBe(3);
+    expect(result.isTaunt).toBe(true);
   });
 
   it("does not copy API metadata into mutation-ready form values", () => {
@@ -90,6 +93,22 @@ describe("effect-form", () => {
     });
 
     expect(result.lastsForActions).toBe(4);
+  });
+
+  it("retains a taunt duration and permits a persistent instant taunt", () => {
+    const persistentTaunt = normalizeEffectFormValues({
+      ...createDefaultEffectFormValues(),
+      name: "Challenge",
+      isTaunt: true,
+    });
+    const timedTaunt = normalizeEffectFormValues({
+      ...persistentTaunt,
+      lastsForActions: 4,
+    });
+
+    expect(persistentTaunt.lastsForActions).toBeNull();
+    expect(timedTaunt.lastsForActions).toBe(4);
+    expect(validateEffectForm(persistentTaunt).lastsForActions).toBeUndefined();
   });
 
   it("marks interval fields disabled for instant timing", () => {

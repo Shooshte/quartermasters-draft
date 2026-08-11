@@ -1,3 +1,5 @@
+import { Checkbox } from "~/components/ui/checkbox";
+import { Label } from "~/components/ui/label";
 import {
   COMPACT_LABELS,
   getEffectColorClass,
@@ -81,6 +83,14 @@ export function EffectWorkspaceForm({
       </div>
 
       <WorkspaceSection title="Timing">
+        <div className="mb-3 flex items-center gap-2">
+          <Checkbox
+            id="effect-is-taunt"
+            checked={normalizedFormValues.isTaunt}
+            onCheckedChange={(checked) => onFieldChange("isTaunt", checked === true)}
+          />
+          <Label htmlFor="effect-is-taunt">Taunt</Label>
+        </div>
         {needsTimingConfiguration ? (
           <p
             className="mb-2 rounded-md border border-amber-400/70 bg-amber-950/40 px-3 py-2 text-sm font-medium text-amber-200"

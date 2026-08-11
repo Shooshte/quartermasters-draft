@@ -125,6 +125,7 @@ describe("loadBattleScenario", () => {
             name: "Scorch",
             timingType: "instant",
             effectType: "debuff",
+            isTaunt: true,
             triggerEveryActions: null,
             triggerCount: null,
             lastsForActions: 3,
@@ -146,7 +147,10 @@ describe("loadBattleScenario", () => {
           name: "Oak Staff",
           allowedRowTypes: ["ranged", "support"],
           effects: [
-            { sequenceOrder: 1, effect: { name: "Scorch", lastsForActions: 3 } },
+            {
+              sequenceOrder: 1,
+              effect: { name: "Scorch", isTaunt: true, lastsForActions: 3 },
+            },
             {
               sequenceOrder: 2,
               effect: { name: "Burn", triggerEveryActions: 2, triggerCount: 3 },

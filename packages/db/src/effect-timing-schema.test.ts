@@ -3,6 +3,17 @@ import { describe, expect, it } from "vitest";
 import { effects } from "./schema";
 
 describe("effects timing schema", () => {
+  it("stores taunt capability as false by default", () => {
+    const config = getTableConfig(effects);
+    const tauntColumn = config.columns.find((column) => column.name === "is_taunt");
+
+    expect(tauntColumn).toMatchObject({
+      name: "is_taunt",
+      notNull: true,
+      default: false,
+    });
+  });
+
   it("stores affected-unit action timing", () => {
     const config = getTableConfig(effects);
     const columns = config.columns.map((column) => column.name);

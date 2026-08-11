@@ -8,6 +8,7 @@ export interface EffectFormValues {
   triggerEveryActions: number | null;
   triggerCount: number | null;
   effectType: EffectType;
+  isTaunt: boolean;
   lastsForActions: number | null;
   meleeDmg: number | null;
   health: number | null;
@@ -32,6 +33,7 @@ type EffectRecord = {
   triggerEveryActions: number | null;
   triggerCount: number | null;
   effectType: EffectType;
+  isTaunt: boolean;
   lastsForActions: number | null;
   meleeDmg: number | null;
   health: number | null;
@@ -80,6 +82,7 @@ export function createDefaultEffectFormValues(): EffectFormValues {
     triggerEveryActions: null,
     triggerCount: null,
     effectType: "buff",
+    isTaunt: false,
     lastsForActions: null,
     meleeDmg: null,
     health: null,
@@ -105,6 +108,7 @@ export function effectRecordToFormValues(record: Partial<EffectRecord>): EffectF
   values.name = record.name ?? "";
   values.timingType = record.timingType ?? "instant";
   values.effectType = record.effectType ?? "buff";
+  values.isTaunt = record.isTaunt ?? false;
   return values;
 }
 
@@ -148,7 +152,7 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
     }
   }
 
-  if (effectNeedsTimingConfiguration(normalized) && normalized.timingType === "instant") {
+  if (requiresActionDuration(normalized) && normalized.lastsForActions === null) {
     errors.lastsForActions = "Lasts for actions is required for stat buffs and debuffs.";
   }
 
@@ -171,10 +175,14 @@ export function effectNeedsTimingConfiguration(values: EffectFormValues): boolea
   if (values.timingType === "interval") {
     return values.triggerEveryActions === null || values.triggerCount === null;
   }
-  return isActionDurationApplicable(values) && values.lastsForActions === null;
+  return requiresActionDuration(values) && values.lastsForActions === null;
 }
 
 export function isActionDurationApplicable(values: EffectFormValues): boolean {
+  return values.timingType === "instant" && (values.isTaunt || requiresActionDuration(values));
+}
+
+function requiresActionDuration(values: EffectFormValues): boolean {
   return (
     values.timingType === "instant" &&
     (values.effectType === "buff" || values.effectType === "debuff") &&

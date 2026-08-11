@@ -305,6 +305,66 @@ describe("effectsRouter", () => {
       expect(result).toMatchObject({ id: "e1", name: "New Effect" });
     });
 
+    it("accepts and returns a persistent instant taunt", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "taunt-1",
+            name: "Challenge",
+            timingType: "instant",
+            effectType: "buff",
+            isTaunt: true,
+            triggerEveryActions: null,
+            triggerCount: null,
+            lastsForActions: null,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const result = await createCaller(gmCtx).effects.create({
+        name: "Challenge",
+        timingType: "instant",
+        effectType: "buff",
+        isTaunt: true,
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ isTaunt: true, lastsForActions: null }),
+      );
+      expect(result).toMatchObject({ id: "taunt-1", isTaunt: true, lastsForActions: null });
+    });
+
+    it("retains a positive duration for a timed instant taunt", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "taunt-2",
+            name: "Provoke",
+            timingType: "instant",
+            effectType: "buff",
+            isTaunt: true,
+            triggerEveryActions: null,
+            triggerCount: null,
+            lastsForActions: 2,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      await createCaller(gmCtx).effects.create({
+        name: "Provoke",
+        timingType: "instant",
+        effectType: "buff",
+        isTaunt: true,
+        lastsForActions: 2,
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ isTaunt: true, lastsForActions: 2 }),
+      );
+    });
+
     it("creates a valid interval effect", async () => {
       mockInsertFn.mockReturnValue(
         chainable([

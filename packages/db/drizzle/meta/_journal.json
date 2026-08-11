@@ -127,6 +127,13 @@
       "when": 1786453837220,
       "tag": "0017_event_driven_effect_timing",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786472900016,
+      "tag": "0018_add_effect_taunt",
+      "breakpoints": true
     }
   ]
 }

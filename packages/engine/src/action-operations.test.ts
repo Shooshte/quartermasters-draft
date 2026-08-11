@@ -223,6 +223,39 @@ describe("simultaneous action operations", () => {
   });
 
   it.each([
+    ["self-grant plan before sibling damage", ["self-grant", "sibling"]],
+    ["sibling damage before self-grant plan", ["sibling", "self-grant"]],
+  ] as const)("aggregates pre-batch shield absorption with %s", (_label, planOrder) => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+    target.shieldLayers = [{ id: "existing-shield", remaining: 10 }];
+    const plans: Record<(typeof planOrder)[number], PlannedAction> = {
+      "self-grant": planned("self-grant", [
+        {
+          kind: "grant-shield",
+          targetId: target.instanceId,
+          layer: createShieldLayer("same-plan-shield", 20),
+        },
+        { kind: "damage", targetId: target.instanceId, amount: 25 },
+      ]),
+      sibling: planned("sibling", {
+        kind: "damage",
+        targetId: target.instanceId,
+        amount: 5,
+      }),
+    };
+
+    commitPlannedActions(
+      state,
+      planOrder.map((kind) => plans[kind]),
+      1,
+    );
+
+    expect(target.currentHealth).toBe(100);
+    expect(target.shieldLayers).toEqual([]);
+  });
+
+  it.each([
     ["shield and healing before sibling bypass damage", ["shield", "healing", "damage"]],
     ["sibling bypass damage before healing and shield", ["damage", "healing", "shield"]],
   ] as const)("aggregates %s before one health clamp", (_label, planOrder) => {

@@ -130,9 +130,10 @@ function applyShieldAwarePlans(
   plans: readonly PlannedAction[],
   maximumHealth: number,
 ): void {
-  let existingLayers = target.shieldLayers;
   const grantedLayers: ShieldLayer[] = [];
   const totals = zeroTotals();
+  let shieldableDamage = 0;
+  let shieldableDamageAfterOwnGrants = 0;
 
   for (const plan of plans) {
     let planLayers: ShieldLayer[] = [];
@@ -140,31 +141,33 @@ function applyShieldAwarePlans(
       if (operation.targetId !== target.instanceId) continue;
       switch (operation.kind) {
         case "damage": {
-          let remainingDamage = nonNegativeHealthAmount(operation.amount);
-          if (operation.bypassesShield !== true) {
-            const existingAbsorption = absorbDamage(existingLayers, remainingDamage);
-            existingLayers = existingAbsorption.layers;
-            const planAbsorption = absorbDamage(planLayers, existingAbsorption.remainingDamage);
+          const damage = nonNegativeHealthAmount(operation.amount);
+          if (operation.bypassesShield === true) {
+            totals.damage += damage;
+          } else {
+            shieldableDamage += damage;
+            const planAbsorption = absorbDamage(planLayers, damage);
             planLayers = planAbsorption.layers;
-            remainingDamage = planAbsorption.remainingDamage;
+            shieldableDamageAfterOwnGrants += planAbsorption.remainingDamage;
           }
-          totals.damage += remainingDamage;
           break;
         }
         case "healing":
           totals.healing += nonNegativeHealthAmount(operation.amount);
           break;
         case "health-cost": {
-          const existingAbsorption = absorbDamage(existingLayers, operation.amount);
-          existingLayers = existingAbsorption.layers;
-          const planAbsorption = absorbDamage(planLayers, existingAbsorption.remainingDamage);
+          const healthCost = nonNegativeHealthAmount(operation.amount);
+          shieldableDamage += healthCost;
+          const planAbsorption = absorbDamage(planLayers, healthCost);
           planLayers = planAbsorption.layers;
-          totals.healthCost += planAbsorption.remainingDamage;
+          shieldableDamageAfterOwnGrants += planAbsorption.remainingDamage;
           break;
         }
         case "grant-shield":
           if (nonNegativeHealthAmount(operation.layer.remaining) > 0) {
-            planLayers.push(structuredClone(operation.layer));
+            const layer = structuredClone(operation.layer);
+            grantedLayers.push(layer);
+            planLayers.push(structuredClone(layer));
           }
           break;
         case "add-effect":
@@ -172,10 +175,19 @@ function applyShieldAwarePlans(
           break;
       }
     }
-    grantedLayers.push(...planLayers);
   }
 
-  target.shieldLayers = [...existingLayers, ...grantedLayers];
+  const existingCapacity = target.shieldLayers.reduce(
+    (total, layer) => total + nonNegativeHealthAmount(layer.remaining),
+    0,
+  );
+  const shieldableHealthDamage = Math.max(0, shieldableDamageAfterOwnGrants - existingCapacity);
+  const absorbedDamage = shieldableDamage - shieldableHealthDamage;
+  target.shieldLayers = absorbDamage(
+    [...target.shieldLayers, ...grantedLayers],
+    absorbedDamage,
+  ).layers;
+  totals.damage += shieldableHealthDamage;
   target.currentHealth = Math.max(
     0,
     Math.min(

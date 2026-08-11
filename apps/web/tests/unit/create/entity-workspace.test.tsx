@@ -154,7 +154,7 @@ describe("EntityWorkspace", () => {
     expect(onFieldChange).toHaveBeenCalledWith("name", "TestX");
   });
 
-  it("renders action timing fields with guidance and disables interval fields for instant timing", () => {
+  it("renders interval action timing fields with guidance and disables them for instant timing", () => {
     render(
       <EntityWorkspace
         workspace={makeWorkspace({
@@ -176,12 +176,52 @@ describe("EntityWorkspace", () => {
     expect(screen.getByTestId("effect-effect-type-select")).toBeInTheDocument();
     expect(screen.getByTestId("effect-triggerEveryActions-input")).toBeDisabled();
     expect(screen.getByTestId("effect-triggerCount-input")).toBeDisabled();
-    expect(screen.getByTestId("effect-lastsForActions-input")).toBeEnabled();
+    expect(screen.queryByTestId("effect-lastsForActions-input")).not.toBeInTheDocument();
     expect(
       screen.getByText("Timing advances only when the affected unit gets an action opportunity."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/ticks?/i)).not.toBeInTheDocument();
     expect(screen.getByTestId("entity-save-button")).toHaveTextContent("Create Effect");
+  });
+
+  it("shows an enabled action duration only for an instant stat modifier", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "effect",
+          formValues: {
+            name: "Haste",
+            timingType: "instant",
+            effectType: "buff",
+            speed: 2,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.getByTestId("effect-lastsForActions-input")).toBeEnabled();
+  });
+
+  it("does not render an action duration for an instant direct effect", () => {
+    render(
+      <EntityWorkspace
+        workspace={makeWorkspace({
+          mode: "create",
+          entityType: "effect",
+          formValues: {
+            name: "Arc Spark",
+            timingType: "instant",
+            effectType: "damage",
+            directSpellDmg: 4,
+          },
+        })}
+        {...defaultProps}
+      />,
+    );
+
+    expect(screen.queryByTestId("effect-lastsForActions-input")).not.toBeInTheDocument();
   });
 
   it("renders the item editor with effect picker and stat inputs", () => {

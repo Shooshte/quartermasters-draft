@@ -1447,6 +1447,7 @@ describe("useCreatePageState — effect save flows", () => {
       result.current.updateEntityField("timingType", "interval");
       result.current.updateEntityField("triggerEveryActions", 2);
       result.current.updateEntityField("triggerCount", 3);
+      result.current.updateEntityField("lastsForActions", 4);
     });
 
     await act(async () => {
@@ -1464,6 +1465,43 @@ describe("useCreatePageState — effect save flows", () => {
     });
     expect(payload).not.toHaveProperty("intervalTicks");
     expect(payload).not.toHaveProperty("durationTicks");
+  });
+
+  it("clears a stale action duration from an instant direct-effect payload", async () => {
+    mockEffectsCreate.mockResolvedValueOnce({
+      id: "e-created",
+      name: "Arc Spark",
+      timingType: "instant",
+      effectType: "damage",
+      triggerEveryActions: null,
+      triggerCount: null,
+      lastsForActions: null,
+    });
+
+    const { result } = renderHook(() => useCreatePageState({ tab: "Effects" }, vi.fn()), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.createNew("Effects");
+      result.current.updateEntityField("name", "Arc Spark");
+      result.current.updateEntityField("effectType", "damage");
+      result.current.updateEntityField("directSpellDmg", 4);
+      result.current.updateEntityField("lastsForActions", 4);
+    });
+
+    await act(async () => {
+      await result.current.saveEntity();
+    });
+
+    expect(mockEffectsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Arc Spark",
+        effectType: "damage",
+        directSpellDmg: 4,
+        lastsForActions: null,
+      }),
+    );
   });
 
   it("successful update clears dirty state", async () => {

@@ -78,3 +78,19 @@ Result: 46 test files passed, 384 tests passed.
 ## Concerns / Follow-Up
 
 - Global web typecheck cannot turn green until Task 8 updates the battle ledger/result presentation to the new engine contracts. Those files were explicitly excluded from Task 7 and were not edited.
+
+## Important Review Remediation: Duration Applicability
+
+`lastsForActions` is now rendered and enabled only for instant buff/debuff effects that have at least one stat modifier. It is omitted for interval effects and instant direct effects. Both the client payload normalizer and the API mutation normalizer clear inapplicable stale durations to `null`, covering direct API callers as well as the workspace UI.
+
+### TDD Evidence
+
+- **RED:** `pnpm --filter @qd/web test -- apps/web/tests/unit/create/effect-form.test.ts apps/web/tests/unit/create/entity-workspace.test.tsx apps/web/tests/unit/create/use-create-page-state.test.tsx` failed with six intended assertions: durations were retained in interval/direct payloads and the field remained rendered for ineligible effects.
+- **GREEN:** The same focused web suite passed with 46 files / 389 tests, and `pnpm --filter @qd/api test -- packages/api/src/__tests__/scenarioBuilder/effects.test.ts` passed with 10 files / 155 tests.
+
+### Verification
+
+- `pnpm run test` — passed (10 Turbo tasks).
+- `pnpm run test:e2e` — passed (full Docker-backed Playwright suite).
+- `git diff --check` — passed.
+- `pnpm run lint` remains blocked only by pre-existing repository-wide formatting drift in DB migration metadata and `packages/engine/src/targeting.ts`; the two touched source/test files were formatted and no lint output cites the remediation changes.

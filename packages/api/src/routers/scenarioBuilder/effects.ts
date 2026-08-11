@@ -68,15 +68,20 @@ type EffectTimingStatusInput = Pick<
   | (typeof EFFECT_STAT_FIELDS)[number]
 >;
 
+function isActionDurationApplicable(input: EffectTimingStatusInput): boolean {
+  return (
+    input.timingType === "instant" &&
+    (input.effectType === "buff" || input.effectType === "debuff") &&
+    EFFECT_STAT_FIELDS.some((field) => input[field] !== null)
+  );
+}
+
 function needsTimingConfiguration(input: EffectTimingStatusInput): boolean {
   if (input.timingType === "interval") {
     return input.triggerEveryActions === null || input.triggerCount === null;
   }
 
-  const hasModifier =
-    (input.effectType === "buff" || input.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => input[field] !== null);
-  return hasModifier && input.lastsForActions === null;
+  return isActionDurationApplicable(input) && input.lastsForActions === null;
 }
 
 function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect: T) {
@@ -104,10 +109,7 @@ function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
     }
   }
 
-  const hasModifier =
-    (input.effectType === "buff" || input.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => input[field] !== null);
-  if (input.timingType === "instant" && hasModifier && input.lastsForActions === null) {
+  if (isActionDurationApplicable(input) && input.lastsForActions === null) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["lastsForActions"],
@@ -124,6 +126,7 @@ function normalizeEffectInput<T extends z.infer<typeof effectInputSchema>>(input
     name: input.name.trim(),
     triggerEveryActions: input.timingType === "instant" ? null : input.triggerEveryActions,
     triggerCount: input.timingType === "instant" ? null : input.triggerCount,
+    lastsForActions: isActionDurationApplicable(input) ? input.lastsForActions : null,
   };
 }
 

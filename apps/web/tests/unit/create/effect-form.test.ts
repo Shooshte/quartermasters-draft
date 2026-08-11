@@ -53,18 +53,42 @@ describe("effect-form", () => {
     expect(result).not.toHaveProperty("updatedAt");
   });
 
-  it("normalizes instant timing by clearing interval fields and retaining duration", () => {
+  it("normalizes an interval effect by clearing its action duration", () => {
     const result = normalizeEffectFormValues({
       ...createDefaultEffectFormValues(),
       name: "  Test  ",
+      timingType: "interval",
       triggerEveryActions: 2,
       triggerCount: 2,
       lastsForActions: 4,
     });
 
     expect(result.name).toBe("Test");
-    expect(result.triggerEveryActions).toBeNull();
-    expect(result.triggerCount).toBeNull();
+    expect(result.triggerEveryActions).toBe(2);
+    expect(result.triggerCount).toBe(2);
+    expect(result.lastsForActions).toBeNull();
+  });
+
+  it("normalizes an instant direct effect by clearing its action duration", () => {
+    const result = normalizeEffectFormValues({
+      ...createDefaultEffectFormValues(),
+      name: "Arc Spark",
+      effectType: "damage",
+      directSpellDmg: 4,
+      lastsForActions: 4,
+    });
+
+    expect(result.lastsForActions).toBeNull();
+  });
+
+  it("retains an action duration for an instant stat modifier", () => {
+    const result = normalizeEffectFormValues({
+      ...createDefaultEffectFormValues(),
+      name: "Haste",
+      speed: 2,
+      lastsForActions: 4,
+    });
+
     expect(result.lastsForActions).toBe(4);
   });
 
@@ -123,7 +147,7 @@ describe("effect-form", () => {
     expect(errors.lastsForActions).toBeUndefined();
   });
 
-  it("validates positive integer action timing fields", () => {
+  it("validates positive interval timing fields while ignoring an inapplicable duration", () => {
     const errors = validateEffectForm({
       ...createDefaultEffectFormValues(),
       name: "Rage",
@@ -135,6 +159,6 @@ describe("effect-form", () => {
 
     expect(errors.triggerEveryActions).toContain("positive integer");
     expect(errors.triggerCount).toContain("positive integer");
-    expect(errors.lastsForActions).toContain("positive integer");
+    expect(errors.lastsForActions).toBeUndefined();
   });
 });

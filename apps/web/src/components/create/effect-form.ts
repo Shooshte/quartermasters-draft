@@ -117,6 +117,9 @@ export function normalizeEffectFormValues(values: EffectFormValues): EffectFormV
     normalized.triggerEveryActions = null;
     normalized.triggerCount = null;
   }
+  if (!isActionDurationApplicable(normalized)) {
+    normalized.lastsForActions = null;
+  }
   return normalized;
 }
 
@@ -168,11 +171,15 @@ export function effectNeedsTimingConfiguration(values: EffectFormValues): boolea
   if (values.timingType === "interval") {
     return values.triggerEveryActions === null || values.triggerCount === null;
   }
+  return isActionDurationApplicable(values) && values.lastsForActions === null;
+}
 
-  const hasModifier =
+export function isActionDurationApplicable(values: EffectFormValues): boolean {
+  return (
+    values.timingType === "instant" &&
     (values.effectType === "buff" || values.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => values[field] !== null);
-  return hasModifier && values.lastsForActions === null;
+    EFFECT_STAT_FIELDS.some((field) => values[field] !== null)
+  );
 }
 
 export function hasEffectFormErrors(values: EffectFormValues): boolean {

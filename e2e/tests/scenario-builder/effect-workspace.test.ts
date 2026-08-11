@@ -13,16 +13,24 @@ test.beforeEach(async ({ resetDb }) => {
 });
 
 test.describe("Effect Workspace CRUD", () => {
-  test("interval action fields are visible but disabled for instant timing", async ({ gmPage }) => {
+  test("shows action duration only for instant stat modifiers", async ({ gmPage }) => {
     const effect = new EffectWorkspacePage(gmPage);
     await effect.openNew();
 
     await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toBeVisible();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeVisible();
-    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeVisible();
     await expect(gmPage.getByTestId("effect-triggerEveryActions-input")).toBeDisabled();
     await expect(gmPage.getByTestId("effect-triggerCount-input")).toBeDisabled();
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toHaveCount(0);
+    await effect.setEffectType("damage");
+    await gmPage.getByTestId("effect-directSpellDmg-input").fill("4");
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toHaveCount(0);
+    await effect.setEffectType("buff");
+    await gmPage.getByTestId("effect-speed-input").fill("2");
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeVisible();
     await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeEnabled();
+    await effect.setTimingType("interval");
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toHaveCount(0);
     await expect(
       gmPage.getByText("Trigger every (affected-unit actions)", { exact: true }),
     ).toBeVisible();
@@ -111,6 +119,8 @@ test.describe("Effect Workspace CRUD", () => {
 
     await effect.fillName("Mana Drain");
     await gmPage.getByTestId("effect-mana-input").fill("-40");
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeVisible();
+    await expect(gmPage.getByTestId("effect-lastsForActions-input")).toBeEnabled();
     await gmPage.getByTestId("effect-lastsForActions-input").fill("3");
     await effect.saveCreate();
     await gmPage.reload();

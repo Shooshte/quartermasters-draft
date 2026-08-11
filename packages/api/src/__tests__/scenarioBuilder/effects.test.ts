@@ -370,6 +370,34 @@ describe("effectsRouter", () => {
       });
     });
 
+    it.each([
+      {
+        name: "Periodic Strength",
+        timingType: "interval" as const,
+        effectType: "buff" as const,
+        triggerEveryActions: 2,
+        triggerCount: 3,
+        meleeDmg: 5,
+      },
+      {
+        name: "Arc Spark",
+        timingType: "instant" as const,
+        effectType: "damage" as const,
+        directSpellDmg: 4,
+      },
+    ])("clears invalid action duration before creating %s", async (input) => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi
+          .fn()
+          .mockResolvedValue([{ id: "e-normalized", ...input, lastsForActions: null }]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      await createCaller(gmCtx).effects.create({ ...input, lastsForActions: 4 });
+
+      expect(values).toHaveBeenCalledWith(expect.objectContaining({ lastsForActions: null }));
+    });
+
     it("rejects missing interval fields for interval timing", async () => {
       const caller = createCaller(gmCtx);
       await expect(

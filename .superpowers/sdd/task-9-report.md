@@ -117,3 +117,10 @@ Every pnpm command emitted the repository's existing warning that root `pnpm.onl
 The event-driven action-batch series is ready for integration: acceptance contracts, unit coverage, builds, and the complete browser suite pass on the migrated/reseeded stack.
 
 Concern: the documented root focused command forwards an extra argument separator and does not behave as a normal Playwright title grep. Use `pnpm --filter @qd/e2e test:e2e --grep "effect|battle"` for reliable focused title filtering. No product or data-integrity concerns remain.
+
+## Review Follow-up Evidence
+
+- Added a browser-visible reload assertion that the signed mana capacity duration remains `3` in `effect.lastsForActionsInput`.
+- Reloaded the newly created interval effect before checking its persisted timing values, keeping the journey explicitly on the post-save state.
+- TDD red probe: the duration assertion intentionally expected `4` and failed with `Expected: "4"; Received: "3"`.
+- TDD green probe: restored the required expected value and ran `pnpm --filter @qd/e2e test:e2e --grep "creates and reloads a signed mana capacity modifier|create a new interval effect"`; 2 tests passed.

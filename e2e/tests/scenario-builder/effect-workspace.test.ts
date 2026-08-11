@@ -107,6 +107,7 @@ test.describe("Effect Workspace CRUD", () => {
     await effect.triggerEveryActionsInput.fill("2");
     await gmPage.getByTestId("effect-triggerCount-input").fill("3");
     await effect.saveCreate();
+    await gmPage.reload();
 
     await expect(effect.timingTypeSelect).toHaveValue("interval");
     await expect(effect.triggerEveryActionsInput).toHaveValue("2");
@@ -126,6 +127,7 @@ test.describe("Effect Workspace CRUD", () => {
     await gmPage.reload();
 
     await expect(gmPage.getByTestId("effect-mana-input")).toHaveValue("-40");
+    await expect(effect.lastsForActionsInput).toHaveValue("3");
   });
 
   test("edit an existing effect and persist changes", async ({ gmPage }) => {

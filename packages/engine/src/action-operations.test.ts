@@ -125,6 +125,29 @@ describe("simultaneous action operations", () => {
     expect(target.shieldLayers).toEqual([createShieldLayer("late-shield", 2)]);
   });
 
+  it("lets a shield grant protect later damage in the same plan", () => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+
+    commitPlannedActions(
+      state,
+      [
+        planned("caster", [
+          {
+            kind: "grant-shield",
+            targetId: target.instanceId,
+            layer: createShieldLayer("early-shield", 5),
+          },
+          { kind: "damage", targetId: target.instanceId, amount: 8 },
+        ]),
+      ],
+      1,
+    );
+
+    expect(target.currentHealth).toBe(97);
+    expect(target.shieldLayers).toEqual([]);
+  });
+
   it("aggregates healing and damage before clamping", () => {
     const state = operationState(100, 100);
     const target = state.scenarios[1].rows.tank[0]!;
@@ -168,6 +191,71 @@ describe("simultaneous action operations", () => {
 
     expect(target.currentHealth).toBe(80);
     expect(target.shieldLayers).toEqual([{ id: "ward", remaining: 25 }]);
+  });
+
+  it.each([
+    ["shield grant before sibling damage", ["shield", "damage"]],
+    ["sibling damage before shield grant", ["damage", "shield"]],
+  ] as const)("does not let a cross-plan %s absorb same-batch damage", (_label, planOrder) => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+    const plans: Record<(typeof planOrder)[number], PlannedAction> = {
+      shield: planned("protector", {
+        kind: "grant-shield",
+        targetId: target.instanceId,
+        layer: createShieldLayer("same-batch-shield", 20),
+      }),
+      damage: planned("attacker", {
+        kind: "damage",
+        targetId: target.instanceId,
+        amount: 30,
+      }),
+    };
+
+    commitPlannedActions(
+      state,
+      planOrder.map((kind) => plans[kind]),
+      1,
+    );
+
+    expect(target.currentHealth).toBe(70);
+    expect(target.shieldLayers).toEqual([createShieldLayer("same-batch-shield", 20)]);
+  });
+
+  it.each([
+    ["shield and healing before sibling bypass damage", ["shield", "healing", "damage"]],
+    ["sibling bypass damage before healing and shield", ["damage", "healing", "shield"]],
+  ] as const)("aggregates %s before one health clamp", (_label, planOrder) => {
+    const state = operationState(100, 100);
+    const target = state.scenarios[1].rows.tank[0]!;
+    target.currentHealth = 90;
+    const plans: Record<(typeof planOrder)[number], PlannedAction> = {
+      shield: planned("protector", {
+        kind: "grant-shield",
+        targetId: target.instanceId,
+        layer: createShieldLayer("same-batch-shield", 20),
+      }),
+      healing: planned("healer", {
+        kind: "healing",
+        targetId: target.instanceId,
+        amount: 20,
+      }),
+      damage: planned("attacker", {
+        kind: "damage",
+        targetId: target.instanceId,
+        amount: 30,
+        bypassesShield: true,
+      }),
+    };
+
+    commitPlannedActions(
+      state,
+      planOrder.map((kind) => plans[kind]),
+      1,
+    );
+
+    expect(target.currentHealth).toBe(80);
+    expect(target.shieldLayers).toEqual([createShieldLayer("same-batch-shield", 20)]);
   });
 
   it("commits both lethal same-batch actions", () => {

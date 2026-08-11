@@ -619,6 +619,33 @@ describe("effectsRouter", () => {
       expect(mockInsertFn).not.toHaveBeenCalled();
     });
 
+    it("accepts a zero shield instant buff without an action duration", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "e-zero-shield",
+            name: "Empty Ward",
+            timingType: "instant",
+            effectType: "buff",
+            shield: 0,
+            lastsForActions: null,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const result = await createCaller(gmCtx).effects.create({
+        name: "Empty Ward",
+        timingType: "instant",
+        effectType: "buff",
+        shield: 0,
+        lastsForActions: null,
+      });
+
+      expect(values).toHaveBeenCalledWith(expect.objectContaining({ lastsForActions: null }));
+      expect(result).toMatchObject({ shield: 0, needsTimingConfiguration: false });
+    });
+
     it.each([
       "shield",
       "directHealing",

@@ -210,11 +210,16 @@ export function isActionDurationApplicable(values: EffectFormValues): boolean {
 }
 
 function requiresActionDuration(values: EffectFormValues): boolean {
+  const hasDurationBearingStat = EFFECT_STAT_FIELDS.some((field) =>
+    field === "shield"
+      ? typeof values[field] === "number" && values[field] > 0
+      : values[field] !== null,
+  );
   return (
     !values.isTaunt &&
     values.timingType === "instant" &&
     (values.effectType === "buff" || values.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => values[field] !== null)
+    hasDurationBearingStat
   );
 }
 

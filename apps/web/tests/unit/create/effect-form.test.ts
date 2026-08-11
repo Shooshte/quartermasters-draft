@@ -212,6 +212,18 @@ describe("effect-form", () => {
     ).toMatchObject({ lastsForActions: expect.stringContaining("required") });
   });
 
+  it("accepts a zero shield instant buff without an action duration", () => {
+    const values = {
+      ...createDefaultEffectFormValues(),
+      name: "Empty Ward",
+      shield: 0,
+      lastsForActions: 4,
+    };
+
+    expect(normalizeEffectFormValues(values).lastsForActions).toBeNull();
+    expect(validateEffectForm(values).lastsForActions).toBeUndefined();
+  });
+
   it.each([
     "shield",
     "directHealing",

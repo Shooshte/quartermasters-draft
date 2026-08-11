@@ -75,6 +75,10 @@ type EffectTimingStatusInput = Pick<
 >;
 
 function isActionDurationApplicable(input: EffectTimingStatusInput): boolean {
+  const hasDurationBearingStat = EFFECT_STAT_FIELDS.some((field) => {
+    const value = input[field];
+    return field === "shield" ? typeof value === "number" && value > 0 : typeof value === "number";
+  });
   return (
     input.timingType === "instant" &&
     (input.isTaunt ||
@@ -88,7 +92,7 @@ function requiresActionDuration(input: EffectTimingStatusInput): boolean {
     !input.isTaunt &&
     input.timingType === "instant" &&
     (input.effectType === "buff" || input.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => typeof input[field] === "number")
+    hasDurationBearingStat
   );
 }
 

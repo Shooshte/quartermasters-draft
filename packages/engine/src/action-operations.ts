@@ -68,17 +68,30 @@ export function nonNegativeHealthAmount(amount: number): number {
   return Number.isFinite(amount) ? Math.max(0, amount) : 0;
 }
 
+function absorbDamage(
+  shieldLayers: readonly ShieldLayer[],
+  amount: number,
+): { layers: ShieldLayer[]; remainingDamage: number } {
+  let remainingDamage = nonNegativeHealthAmount(amount);
+  for (const layer of shieldLayers) {
+    const availableShield = nonNegativeHealthAmount(layer.remaining);
+    const absorbed = Math.min(availableShield, remainingDamage);
+    layer.remaining = availableShield - absorbed;
+    remainingDamage -= absorbed;
+    if (remainingDamage === 0) break;
+  }
+  return {
+    layers: shieldLayers.filter((layer) => layer.remaining > 0),
+    remainingDamage,
+  };
+}
+
 export function applyDamage(unit: BattleUnitState, amount: number, bypassesShield = false): number {
   let remainingDamage = nonNegativeHealthAmount(amount);
   if (!bypassesShield) {
-    for (const layer of unit.shieldLayers) {
-      const availableShield = nonNegativeHealthAmount(layer.remaining);
-      const absorbed = Math.min(availableShield, remainingDamage);
-      layer.remaining = availableShield - absorbed;
-      remainingDamage -= absorbed;
-      if (remainingDamage === 0) break;
-    }
-    unit.shieldLayers = unit.shieldLayers.filter((layer) => layer.remaining > 0);
+    const absorbed = absorbDamage(unit.shieldLayers, remainingDamage);
+    unit.shieldLayers = absorbed.layers;
+    remainingDamage = absorbed.remainingDamage;
   }
   const healthDamage = Math.min(unit.currentHealth, remainingDamage);
   unit.currentHealth -= healthDamage;
@@ -112,32 +125,64 @@ function hasShieldResolution(
   );
 }
 
-function applyShieldAwareOperations(
+function applyShieldAwarePlans(
   target: BattleUnitState,
-  operations: readonly ActionOperation[],
+  plans: readonly PlannedAction[],
   maximumHealth: number,
 ): void {
-  for (const operation of operations) {
-    switch (operation.kind) {
-      case "damage":
-        applyDamage(target, operation.amount, operation.bypassesShield === true);
-        break;
-      case "healing":
-        applyHealing(target, operation.amount, maximumHealth);
-        break;
-      case "health-cost":
-        applyDamage(target, operation.amount);
-        break;
-      case "grant-shield":
-        if (nonNegativeHealthAmount(operation.layer.remaining) > 0) {
-          target.shieldLayers.push(structuredClone(operation.layer));
+  let existingLayers = target.shieldLayers;
+  const grantedLayers: ShieldLayer[] = [];
+  const totals = zeroTotals();
+
+  for (const plan of plans) {
+    let planLayers: ShieldLayer[] = [];
+    for (const operation of plan.operations) {
+      if (operation.targetId !== target.instanceId) continue;
+      switch (operation.kind) {
+        case "damage": {
+          let remainingDamage = nonNegativeHealthAmount(operation.amount);
+          if (operation.bypassesShield !== true) {
+            const existingAbsorption = absorbDamage(existingLayers, remainingDamage);
+            existingLayers = existingAbsorption.layers;
+            const planAbsorption = absorbDamage(planLayers, existingAbsorption.remainingDamage);
+            planLayers = planAbsorption.layers;
+            remainingDamage = planAbsorption.remainingDamage;
+          }
+          totals.damage += remainingDamage;
+          break;
         }
-        break;
-      case "add-effect":
-      case "mana-cost":
-        break;
+        case "healing":
+          totals.healing += nonNegativeHealthAmount(operation.amount);
+          break;
+        case "health-cost": {
+          const existingAbsorption = absorbDamage(existingLayers, operation.amount);
+          existingLayers = existingAbsorption.layers;
+          const planAbsorption = absorbDamage(planLayers, existingAbsorption.remainingDamage);
+          planLayers = planAbsorption.layers;
+          totals.healthCost += planAbsorption.remainingDamage;
+          break;
+        }
+        case "grant-shield":
+          if (nonNegativeHealthAmount(operation.layer.remaining) > 0) {
+            planLayers.push(structuredClone(operation.layer));
+          }
+          break;
+        case "add-effect":
+        case "mana-cost":
+          break;
+      }
     }
+    grantedLayers.push(...planLayers);
   }
+
+  target.shieldLayers = [...existingLayers, ...grantedLayers];
+  target.currentHealth = Math.max(
+    0,
+    Math.min(
+      maximumHealth,
+      target.currentHealth + totals.healing - totals.damage - totals.healthCost,
+    ),
+  );
 }
 
 export function commitPlannedActions(
@@ -210,7 +255,7 @@ export function commitPlannedActions(
     const operations = operationsByTarget.get(targetId) ?? [];
     const updatedStats = getUnitEffectiveStats(target);
     if (hasShieldResolution(target, operations)) {
-      applyShieldAwareOperations(target, operations, updatedStats.health);
+      applyShieldAwarePlans(target, plans, updatedStats.health);
     } else {
       target.currentHealth = Math.max(
         0,

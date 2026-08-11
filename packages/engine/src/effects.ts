@@ -531,17 +531,44 @@ export function processPreActionEffects(
     }
   }
 
-  const affectedTargets = new Map<string, BattleUnitState>();
+  const eventsByTarget = new Map<string, PendingIntervalEvent[]>();
   for (const event of events) {
-    affectedTargets.set(event.target.instanceId, event.target);
-    if (event.kind === "healing") {
-      event.target.currentHealth = Math.min(
-        getUnitEffectiveStats(event.target).health,
-        event.target.currentHealth + event.amount,
-      );
-    } else {
-      applyDamage(event.target, event.amount, event.effect.bypassesShield === true);
+    const targetEvents = eventsByTarget.get(event.target.instanceId) ?? [];
+    targetEvents.push(event);
+    eventsByTarget.set(event.target.instanceId, targetEvents);
+  }
+  const affectedTargets = new Map<string, BattleUnitState>();
+  for (const targetEvents of eventsByTarget.values()) {
+    const target = targetEvents[0]!.target;
+    affectedTargets.set(target.instanceId, target);
+    if (target.shieldLayers.length > 0) {
+      for (const event of targetEvents) {
+        if (event.kind === "healing") {
+          target.currentHealth = Math.min(
+            getUnitEffectiveStats(target).health,
+            target.currentHealth + event.amount,
+          );
+        } else {
+          applyDamage(target, event.amount, event.effect.bypassesShield === true);
+        }
+      }
+      continue;
     }
+
+    const totals = targetEvents.reduce(
+      (accumulator, event) => {
+        accumulator[event.kind] += event.amount;
+        return accumulator;
+      },
+      { damage: 0, healing: 0 },
+    );
+    target.currentHealth = Math.max(
+      0,
+      Math.min(
+        getUnitEffectiveStats(target).health,
+        target.currentHealth + totals.healing - totals.damage,
+      ),
+    );
   }
   for (const target of affectedTargets.values()) {
     if (target.currentHealth !== 0) continue;

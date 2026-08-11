@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyItemEffects,
+  applyItemEffectsToTargets,
   completeResolvedActionEffects,
   processPreActionEffects,
 } from "./effects";
@@ -696,6 +697,56 @@ describe("effects", () => {
       .filter((entry) => entry.origin?.effect?.name === "Triad")
       .map((entry) => entry.damage);
     expect(damages).toEqual([10, 20, 30]);
+  });
+
+  it("aggregates simultaneous no-shield interval healing and damage before clamping", () => {
+    const state = createEffectState();
+    const mage = state.scenarios[0].rows.ranged[0]!;
+    const cleric = state.scenarios[0].rows.support[0]!;
+    const warrior = state.scenarios[1].rows.tank[0]!;
+    warrior.baseStats.health = 100;
+    warrior.currentHealth = 100;
+
+    applyItemEffectsToTargets(
+      state,
+      cleric,
+      createItem({
+        name: "Restoration",
+        effects: effectSequence(
+          createEffect({
+            name: "Restoration",
+            effectType: "healing",
+            timingType: "interval",
+            directHealing: 30,
+            triggerEveryActions: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+      [warrior],
+    );
+    applyItemEffectsToTargets(
+      state,
+      mage,
+      createItem({
+        name: "Burn",
+        effects: effectSequence(
+          createEffect({
+            name: "Burn",
+            effectType: "damage",
+            timingType: "interval",
+            directSpellDmg: 20,
+            triggerEveryActions: 1,
+            triggerCount: 1,
+          }),
+        ),
+      }),
+      [warrior],
+    );
+
+    processPreActionEffects(state, [warrior.instanceId], 1);
+
+    expect(warrior.currentHealth).toBe(100);
   });
 
   it("lets flagged interval damage bypass shields", () => {

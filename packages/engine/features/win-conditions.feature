@@ -54,6 +54,14 @@ Feature: Battle win conditions
     And actionsResolved should be 0
     And batchCount should be 0
 
+  Scenario: Army B with no units loses immediately
+    Given army A has one living unit
+    And army B has no units
+    When the battle is resolved
+    Then the battle result winnerId should be "A"
+    And actionsResolved should be 0
+    And batchCount should be 0
+
   Scenario: Fatigue starts only after the configured action threshold
     Given the fatigue action threshold is 2
     And two zero-damage units become ready together in every batch

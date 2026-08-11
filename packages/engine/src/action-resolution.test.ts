@@ -195,11 +195,16 @@ describe("action resolution", () => {
     expect(state.log.some((entry) => entry.type === "item-activation")).toBe(false);
   });
 
-  it("uses aggregate damage with row distance for basic attackers", () => {
+  it.each([
+    ["tank", 24],
+    ["melee", 18],
+    ["ranged", 12],
+    ["support", 6],
+  ] as const)("uses aggregate damage from the %s row", (row, expectedDamage) => {
     const state = initializeBattleState(
       createBattleInput([
         createScenario("Alpha", {
-          ranged: [
+          [row]: [
             createUnit("Archer", {
               stats: createStats({ meleeDmg: 13, rangedDmg: 7, spellDmg: 4 }),
             }),
@@ -211,10 +216,10 @@ describe("action resolution", () => {
       ]),
     );
 
-    const outcome = resolveUnitAction(state, state.scenarios[0].rows.ranged[0]!);
+    const outcome = resolveUnitAction(state, state.scenarios[0].rows[row][0]!);
 
     expect(outcome.usedBasicAttack).toBe(true);
-    expect(outcome.totalDamage).toBe(12);
+    expect(outcome.totalDamage).toBe(expectedDamage);
   });
 
   it("applies crit and dodge modifiers multiplicatively to basic attack damage", () => {

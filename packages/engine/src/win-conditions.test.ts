@@ -90,14 +90,26 @@ describe("win conditions", () => {
         createScenario("A", {
           tank: [
             createUnit("a-1", {
-              stats: createStats({ health: 100, meleeDmg: 10, speed: 100 }),
+              stats: createStats({
+                health: 100,
+                meleeDmg: 10,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
         createScenario("B", {
           tank: [
             createUnit("b-1", {
-              stats: createStats({ health: 20, meleeDmg: 0, speed: 100 }),
+              stats: createStats({
+                health: 20,
+                meleeDmg: 0,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
@@ -106,8 +118,8 @@ describe("win conditions", () => {
     ).resolve();
 
     expect(result.winnerId).toBe("A");
-    expect(result.actionsResolved).toBe(2);
-    expect(result.log.some((entry) => entry.type === "fatigue")).toBe(false);
+    expect(result.actionsResolved).toBe(4);
+    expect(result.log.some((entry) => entry.type === "fatigue")).toBe(true);
     expect(result.log.at(-1)?.message).toBe("Battle ends: A");
   });
 
@@ -117,14 +129,26 @@ describe("win conditions", () => {
         createScenario("A", {
           tank: [
             createUnit("a-1", {
-              stats: createStats({ health: 3, meleeDmg: 10, speed: 100 }),
+              stats: createStats({
+                health: 3,
+                meleeDmg: 10,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
         createScenario("B", {
           tank: [
             createUnit("b-1", {
-              stats: createStats({ health: 20, meleeDmg: 0, speed: 100 }),
+              stats: createStats({
+                health: 20,
+                meleeDmg: 0,
+                rangedDmg: 0,
+                spellDmg: 0,
+                speed: 100,
+              }),
             }),
           ],
         }),
@@ -133,8 +157,8 @@ describe("win conditions", () => {
     ).resolve();
 
     expect(result.winnerId).toBeNull();
-    expect(result.actionsResolved).toBe(2);
-    expect(result.log.at(-1)?.message).toBe("Battle ends: draw");
+    expect(result.actionsResolved).toBe(4);
+    expect(result.log.at(-1)?.message).toBe("Battle ends at the action limit: draw");
   });
 
   it("applies fatigue after the action threshold and guarantees termination", () => {

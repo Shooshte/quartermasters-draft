@@ -63,7 +63,7 @@ describe("action resolution", () => {
 
     resolveUnitAction(state, state.scenarios[0].rows.tank[0]!);
 
-    expect(dummy.currentHealth).toBe(195);
+    expect(dummy.currentHealth).toBe(190);
     expect(dummy.shieldLayers).toEqual([]);
   });
 

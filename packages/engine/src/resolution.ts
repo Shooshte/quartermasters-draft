@@ -1,4 +1,5 @@
 import {
+  applyDamage,
   clonePlanningState,
   getRecordedActionOperations,
   type PlannedAction,
@@ -57,7 +58,7 @@ export function performBasicAttack(
   );
 
   recordActionOperation(state, { kind: "damage", targetId: target.instanceId, amount: damage });
-  target.currentHealth = Math.max(0, target.currentHealth - damage);
+  applyDamage(target, damage);
   pushLog(state, {
     batchNumber,
     type: "attack",
@@ -118,7 +119,7 @@ export function resolveUnitAction(
         targetId: unit.instanceId,
         amount: item.activationHealthCost,
       });
-      unit.currentHealth -= item.activationHealthCost;
+      applyDamage(unit, item.activationHealthCost);
     }
 
     const startingHealthByTarget = new Map(

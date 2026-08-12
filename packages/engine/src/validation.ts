@@ -1,5 +1,6 @@
 import {
   type BattleInput,
+  type EffectTemplateInput,
   ROW_TYPES,
   type RowType,
   STAT_KEYS,
@@ -62,6 +63,8 @@ export function validateBattleInput(input: BattleInput): void {
 
 function validateEffectTiming(unit: UnitInput): void {
   for (const { effect } of (unit.items ?? []).flatMap((item) => item.effects ?? [])) {
+    validateEffectShieldLifecycle(effect);
+
     if (effect.isTaunt && effect.timingType === "interval") {
       throw new InvalidBattleInputError(
         `Taunt effect "${effect.name ?? "Effect"}" must use instant timing.`,
@@ -82,11 +85,12 @@ function validateEffectTiming(unit: UnitInput): void {
       effect.timingType === "interval" &&
       (effect.triggerEveryActions == null || effect.triggerCount == null);
     const hasStatModifier = STAT_KEYS.some((statKey) => effect[statKey] != null);
+    const hasShield = typeof effect.shield === "number" && effect.shield > 0;
     const actionDurationMissing =
       !effect.isTaunt &&
       effect.timingType === "instant" &&
       (effect.effectType === "buff" || effect.effectType === "debuff") &&
-      hasStatModifier &&
+      (hasStatModifier || hasShield) &&
       effect.lastsForActions == null;
 
     if (intervalTimingMissing || actionDurationMissing) {
@@ -94,6 +98,19 @@ function validateEffectTiming(unit: UnitInput): void {
         `Effect "${effect.name ?? "Effect"}" timing needs configuration.`,
       );
     }
+  }
+}
+
+export function validateEffectShieldLifecycle(effect: EffectTemplateInput): void {
+  const hasPositiveShield = typeof effect.shield === "number" && effect.shield > 0;
+  const hasSupportedLifecycle =
+    effect.timingType === "instant" &&
+    (effect.effectType === "buff" || effect.effectType === "debuff");
+
+  if (hasPositiveShield && !hasSupportedLifecycle) {
+    throw new InvalidBattleInputError(
+      `Effect "${effect.name ?? "Effect"}" shield is only supported for instant buffs and debuffs.`,
+    );
   }
 }
 

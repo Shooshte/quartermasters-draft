@@ -395,6 +395,64 @@ describe("effectsRouter", () => {
       );
     });
 
+    it("persists shield configuration", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "e-shield",
+            name: "Ward",
+            timingType: "instant",
+            effectType: "buff",
+            lastsForActions: 3,
+            shield: 25,
+            bypassesShield: true,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const created = await createCaller(gmCtx).effects.create({
+        name: "Ward",
+        timingType: "instant",
+        effectType: "buff",
+        lastsForActions: 3,
+        shield: 25,
+        bypassesShield: true,
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ shield: 25, bypassesShield: true }),
+      );
+      expect(created).toMatchObject({ shield: 25, bypassesShield: true });
+    });
+
+    it("defaults legacy shield fields", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "e-defaults",
+            name: "Legacy Ward",
+            timingType: "instant",
+            effectType: "buff",
+            shield: null,
+            bypassesShield: false,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const created = await createCaller(gmCtx).effects.create({
+        name: "Legacy Ward",
+        timingType: "instant",
+        effectType: "buff",
+      });
+
+      expect(values).toHaveBeenCalledWith(
+        expect.objectContaining({ shield: null, bypassesShield: false }),
+      );
+      expect(created).toMatchObject({ shield: null, bypassesShield: false });
+    });
+
     it("creates a valid interval effect", async () => {
       mockInsertFn.mockReturnValue(
         chainable([
@@ -544,6 +602,132 @@ describe("effectsRouter", () => {
         }),
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it("requires lastsForActions for an instant shield buff", async () => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Fleeting Ward",
+          timingType: "instant",
+          effectType: "buff",
+          shield: 25,
+          lastsForActions: null,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      {
+        name: "Interval ward",
+        timingType: "interval" as const,
+        effectType: "buff" as const,
+        triggerEveryActions: 1,
+        triggerCount: 1,
+      },
+      {
+        name: "Healing ward",
+        timingType: "instant" as const,
+        effectType: "healing" as const,
+      },
+      {
+        name: "Damage ward",
+        timingType: "instant" as const,
+        effectType: "damage" as const,
+      },
+    ])("rejects unsupported shield lifecycle for $name", async (configuration) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(caller.effects.create({ ...configuration, shield: 25 })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it("accepts a zero shield instant buff without an action duration", async () => {
+      const values = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([
+          {
+            id: "e-zero-shield",
+            name: "Empty Ward",
+            timingType: "instant",
+            effectType: "buff",
+            shield: 0,
+            lastsForActions: null,
+          },
+        ]),
+      });
+      mockInsertFn.mockReturnValue({ values });
+
+      const result = await createCaller(gmCtx).effects.create({
+        name: "Empty Ward",
+        timingType: "instant",
+        effectType: "buff",
+        shield: 0,
+        lastsForActions: null,
+      });
+
+      expect(values).toHaveBeenCalledWith(expect.objectContaining({ lastsForActions: null }));
+      expect(result).toMatchObject({ shield: 0, needsTimingConfiguration: false });
+    });
+
+    it.each([
+      "shield",
+      "directHealing",
+      "directMeleeDmg",
+      "directRangedDmg",
+      "directSpellDmg",
+    ] as const)("rejects a negative %s amount", async (field) => {
+      const caller = createCaller(gmCtx);
+
+      await expect(
+        caller.effects.create({
+          name: "Invalid signed effect",
+          timingType: "instant",
+          effectType: "damage",
+          [field]: -1,
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockInsertFn).not.toHaveBeenCalled();
+    });
+
+    it("accepts zero shield, damage, and healing amounts", async () => {
+      mockInsertFn.mockReturnValue(
+        chainable([
+          {
+            id: "e-zero",
+            name: "Zero effect",
+            timingType: "instant",
+            effectType: "damage",
+            shield: 0,
+            directHealing: 0,
+            directMeleeDmg: 0,
+            directRangedDmg: 0,
+            directSpellDmg: 0,
+          },
+        ]),
+      );
+
+      const result = await createCaller(gmCtx).effects.create({
+        name: "Zero effect",
+        timingType: "instant",
+        effectType: "damage",
+        shield: 0,
+        directHealing: 0,
+        directMeleeDmg: 0,
+        directRangedDmg: 0,
+        directSpellDmg: 0,
+      });
+
+      expect(result).toMatchObject({
+        shield: 0,
+        directHealing: 0,
+        directMeleeDmg: 0,
+        directRangedDmg: 0,
+        directSpellDmg: 0,
+      });
     });
 
     it.each([

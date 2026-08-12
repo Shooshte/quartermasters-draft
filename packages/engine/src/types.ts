@@ -64,6 +64,8 @@ export interface EffectTemplateInput {
   speed?: number | null;
   dodge?: number | null;
   criticalChance?: number | null;
+  shield?: number | null;
+  bypassesShield?: boolean;
   directHealing?: number | null;
   directMeleeDmg?: number | null;
   directRangedDmg?: number | null;
@@ -153,7 +155,14 @@ export interface ActiveEffectState {
   triggerEveryActions?: number;
   actionsRemaining?: number;
   isTaunt?: boolean;
+  bypassesShield?: boolean;
   origin?: BattleLogOrigin;
+}
+
+export interface ShieldLayer {
+  id: string;
+  remaining: number;
+  activeEffectId?: string;
 }
 
 export interface BattleUnitState {
@@ -174,6 +183,7 @@ export interface BattleUnitState {
   targetCount: number;
   selectionShape: TargetSelectionShape;
   activeEffects: ActiveEffectState[];
+  shieldLayers: ShieldLayer[];
   actedCount: number;
 }
 

@@ -134,6 +134,13 @@
       "when": 1786472900016,
       "tag": "0018_add_effect_taunt",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786485351386,
+      "tag": "0019_purple_scourge",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import { expect, test } from "../db-reset.fixture";
 import {
   AMBUSH_AT_DAWN_ID,
   AMBUSH_AT_DAWN_NAME,
+  ARCANE_DAMAGE_ID,
   BARBARIAN_ID,
   BATTLE_LAB_SEED,
   CASTLE_SIEGE_ID,
@@ -52,6 +53,7 @@ interface BattleReplayResponse {
             itemBonusStats: BattleStats;
             mana: number;
             actedCount: number;
+            shieldLayers: { remaining: number }[];
             activeEffects: {
               name: string;
               remainingTriggers?: number;
@@ -193,7 +195,91 @@ async function configureUnitTargeting(
   );
 }
 
+async function configureShieldLedgerFixture(parallelIndex: number, request: APIRequestContext) {
+  const ambush = await getScenario(request, AMBUSH_AT_DAWN_ID);
+  await updateScenario(
+    request,
+    ambush,
+    ambush.name,
+    ambush.rows.map((row) => ({
+      rowType: row.rowType,
+      unitIds: row.rowType === "support" ? [RANGER_ID] : [],
+    })),
+  );
+
+  const castle = await getScenario(request, CASTLE_SIEGE_ID);
+  await updateScenario(
+    request,
+    castle,
+    castle.name,
+    castle.rows.map((row) => ({
+      rowType: row.rowType,
+      unitIds: row.rowType === "tank" ? [TEMPLAR_ID] : [],
+    })),
+  );
+
+  await runWorkerSql(parallelIndex, "DELETE FROM units_items");
+  await runWorkerSql(parallelIndex, "DELETE FROM items_effects");
+  await runWorkerSql(
+    parallelIndex,
+    `UPDATE effects
+     SET shield = 15, direct_spell_dmg = NULL, bypasses_shield = false, lasts_for_actions = 4
+     WHERE id = 'a0000000-0000-0000-0000-000000000009'`,
+  );
+  await runWorkerSql(
+    parallelIndex,
+    `UPDATE effects
+     SET direct_spell_dmg = 10, shield = NULL, bypasses_shield = false
+     WHERE id = '${ARCANE_DAMAGE_ID}'`,
+  );
+  await runWorkerSql(
+    parallelIndex,
+    `INSERT INTO items_effects (id, item_id, effect_template_id, sequence_order)
+     VALUES
+       ('c1000000-0000-0000-0000-000000000091', '${LEATHER_SHIELD_ID}', 'a0000000-0000-0000-0000-000000000009', 1),
+       ('c1000000-0000-0000-0000-000000000092', '${IRON_SWORD_ID}', '${ARCANE_DAMAGE_ID}', 1)`,
+  );
+  await runWorkerSql(
+    parallelIndex,
+    `UPDATE units
+     SET name = 'Shielded Unit', health = 100, mana = 5, melee_dmg = 0, ranged_dmg = 0,
+         mana_regen = 0, spell_dmg = 0, speed = 10, dodge = 0, critical_chance = 0,
+         target_scope = 'self', target_priority = 'highest_health', target_count = 1,
+         selection_shape = 'individual'
+     WHERE id = '${RANGER_ID}'`,
+  );
+  await runWorkerSql(
+    parallelIndex,
+    `UPDATE units
+     SET name = 'Shield Breaker', health = 10, mana = 0, melee_dmg = 0, ranged_dmg = 0,
+         mana_regen = 0, spell_dmg = 0, speed = 10, dodge = 0, critical_chance = 0,
+         target_scope = 'self', target_priority = 'highest_health', target_count = 1,
+         selection_shape = 'individual'
+     WHERE id = '${TEMPLAR_ID}'`,
+  );
+  await runWorkerSql(
+    parallelIndex,
+    `INSERT INTO units_items (id, unit_id, item_id, priority)
+     VALUES
+       ('a1000000-0000-0000-0000-000000000091', '${RANGER_ID}', '${LEATHER_SHIELD_ID}', 1),
+       ('a1000000-0000-0000-0000-000000000092', '${TEMPLAR_ID}', '${IRON_SWORD_ID}', 1)`,
+  );
+}
+
 test.describe("Battle Lab", () => {
+  test("shows remaining Shield in the final state ledger", async ({ gmPage }, testInfo) => {
+    await configureShieldLedgerFixture(testInfo.parallelIndex, gmPage.request);
+    const battleLab = new BattleLabPage(gmPage);
+
+    await battleLab.goto();
+    await battleLab.selectScenario("A", AMBUSH_AT_DAWN_ID, AMBUSH_AT_DAWN_NAME);
+    await battleLab.selectScenario("B", CASTLE_SIEGE_ID, CASTLE_SIEGE_NAME);
+    await battleLab.setSeed(BATTLE_LAB_SEED);
+    await battleLab.run();
+
+    await expect(battleLab.finalStateCell("Shielded Unit", "Shield")).toHaveText("15");
+  });
+
   test("a zero-damage battle ends with action-limit language", async ({ gmPage }, testInfo) => {
     await runWorkerSql(testInfo.parallelIndex, "DELETE FROM units_items");
     await runWorkerSql(

@@ -1,4 +1,4 @@
-import { commitPlannedActions } from "./action-operations";
+import { applyDamage, commitPlannedActions } from "./action-operations";
 import { advanceToNextReadyBatch } from "./action-scheduler";
 import { completeResolvedActionEffects, processPreActionEffects } from "./effects";
 import { logBattleEnd, logFatigue, pushLog } from "./logging";
@@ -65,7 +65,7 @@ function applyActionFatigue(
 
   const survivors = allUnits(state).filter((unit) => unit.currentHealth > 0);
   for (const unit of survivors) {
-    unit.currentHealth = Math.max(0, unit.currentHealth - damage);
+    applyDamage(unit, damage);
   }
   for (const unit of survivors) {
     logFatigue(state, batchNumber, unit, damage);

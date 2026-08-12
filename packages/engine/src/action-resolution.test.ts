@@ -56,6 +56,17 @@ function makeStateWithWarrior(
 }
 
 describe("action resolution", () => {
+  it("uses shields for basic attacks", () => {
+    const state = makeStateWithWarrior("tank");
+    const dummy = state.scenarios[1].rows.tank[0]!;
+    dummy.shieldLayers = [{ id: "ward", remaining: 10 }];
+
+    resolveUnitAction(state, state.scenarios[0].rows.tank[0]!);
+
+    expect(dummy.currentHealth).toBe(190);
+    expect(dummy.shieldLayers).toEqual([]);
+  });
+
   it("plans same-batch targeting from one common snapshot", () => {
     const state = initializeBattleState(
       createBattleInput([
@@ -528,5 +539,22 @@ describe("action resolution", () => {
     expect(outcome.activatedItemNames).toEqual(["Blood Blade", "Fire Sword"]);
     expect(warrior.currentHealth).toBe(80);
     expect(warrior.mana).toBe(0);
+  });
+
+  it("uses shields for activation health costs", () => {
+    const state = makeStateWithWarrior("melee", [
+      createItem({
+        name: "Blood Blade",
+        activationHealthCost: 20,
+        effects: effectSequence(damageEffect("Strike")),
+      }),
+    ]);
+    const warrior = state.scenarios[0].rows.melee[0]!;
+    warrior.shieldLayers = [{ id: "ward", remaining: 25 }];
+
+    resolveUnitAction(state, warrior);
+
+    expect(warrior.currentHealth).toBe(100);
+    expect(warrior.shieldLayers).toEqual([{ id: "ward", remaining: 5 }]);
   });
 });

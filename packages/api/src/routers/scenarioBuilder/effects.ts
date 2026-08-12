@@ -19,6 +19,7 @@ const effectListInput = createListInputSchema(
 );
 
 const nullableNumber = z.number().nullable().default(null);
+const nullableNonNegativeNumber = z.number().finite().nonnegative().nullable().default(null);
 const nullablePositiveInteger = z.number().int().positive().nullable().default(null);
 
 const effectInputShape = {
@@ -38,10 +39,12 @@ const effectInputShape = {
   speed: nullableNumber,
   dodge: nullableNumber,
   criticalChance: nullableNumber,
-  directHealing: nullableNumber,
-  directMeleeDmg: nullableNumber,
-  directRangedDmg: nullableNumber,
-  directSpellDmg: nullableNumber,
+  shield: nullableNonNegativeNumber,
+  bypassesShield: z.boolean().default(false),
+  directHealing: nullableNonNegativeNumber,
+  directMeleeDmg: nullableNonNegativeNumber,
+  directRangedDmg: nullableNonNegativeNumber,
+  directSpellDmg: nullableNonNegativeNumber,
 } satisfies z.ZodRawShape;
 
 const effectInputBaseSchema = z.object(effectInputShape).strict();
@@ -56,6 +59,7 @@ const EFFECT_STAT_FIELDS = [
   "speed",
   "dodge",
   "criticalChance",
+  "shield",
 ] as const;
 
 type EffectTimingInput = z.infer<typeof effectInputBaseSchema>;
@@ -71,20 +75,28 @@ type EffectTimingStatusInput = Pick<
 >;
 
 function isActionDurationApplicable(input: EffectTimingStatusInput): boolean {
-  return (
-    input.timingType === "instant" &&
-    (input.isTaunt ||
-      ((input.effectType === "buff" || input.effectType === "debuff") &&
-        EFFECT_STAT_FIELDS.some((field) => input[field] !== null)))
-  );
+  return input.timingType === "instant" && (input.isTaunt || requiresActionDuration(input));
 }
 
 function requiresActionDuration(input: EffectTimingStatusInput): boolean {
+  const hasDurationBearingStat = EFFECT_STAT_FIELDS.some((field) => {
+    const value = input[field];
+    return field === "shield" ? typeof value === "number" && value > 0 : typeof value === "number";
+  });
   return (
     !input.isTaunt &&
     input.timingType === "instant" &&
     (input.effectType === "buff" || input.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => input[field] !== null)
+    hasDurationBearingStat
+  );
+}
+
+function hasUnsupportedShieldLifecycle(input: EffectTimingStatusInput): boolean {
+  const hasPositiveShield = typeof input.shield === "number" && input.shield > 0;
+  return (
+    hasPositiveShield &&
+    (input.timingType !== "instant" ||
+      (input.effectType !== "buff" && input.effectType !== "debuff"))
   );
 }
 
@@ -104,6 +116,14 @@ function withTimingConfigurationStatus<T extends EffectTimingStatusInput>(effect
 }
 
 function validateTimingFields(input: EffectTimingInput, ctx: z.RefinementCtx) {
+  if (hasUnsupportedShieldLifecycle(input)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["shield"],
+      message: "Shield is only supported for instant buffs and debuffs.",
+    });
+  }
+
   if (input.isTaunt && input.timingType === "interval") {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -212,6 +232,8 @@ export const effectsRouter = router({
         speed: effects.speed,
         dodge: effects.dodge,
         criticalChance: effects.criticalChance,
+        shield: effects.shield,
+        bypassesShield: effects.bypassesShield,
         updatedAt: effects.updatedAt,
       })
       .from(effects);

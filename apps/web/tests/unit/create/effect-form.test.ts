@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { createElement } from "react";
+import { describe, expect, it, vi } from "vitest";
 import {
   createDefaultEffectFormValues,
   effectRecordToFormValues,
@@ -6,6 +9,7 @@ import {
   normalizeEffectFormValues,
   validateEffectForm,
 } from "~/components/create/effect-form";
+import { EffectWorkspaceForm } from "~/components/create/effect-workspace-form";
 
 describe("effect-form", () => {
   it("provides action timing defaults for a new effect", () => {
@@ -18,6 +22,8 @@ describe("effect-form", () => {
       triggerCount: null,
       lastsForActions: null,
       mana: null,
+      shield: null,
+      bypassesShield: false,
     });
   });
 
@@ -35,6 +41,40 @@ describe("effect-form", () => {
     expect(result.meleeDmg).toBe(2);
     expect(result.lastsForActions).toBe(3);
     expect(result.isTaunt).toBe(true);
+  });
+
+  it("maps shield configuration from API records to form values", () => {
+    const result = effectRecordToFormValues({
+      name: "Ward",
+      shield: 20,
+      bypassesShield: true,
+    });
+
+    expect(result.shield).toBe(20);
+    expect(result.bypassesShield).toBe(true);
+  });
+
+  it("renders shield authoring controls", async () => {
+    const user = userEvent.setup();
+    const onFieldChange = vi.fn();
+
+    render(
+      createElement(EffectWorkspaceForm, {
+        mode: "create",
+        formValues: { ...createDefaultEffectFormValues(), name: "Ward", shield: 20 },
+        onFieldChange,
+        onSave: vi.fn(),
+        isSaving: false,
+        saveError: null,
+      }),
+    );
+
+    expect(screen.getByTestId("effect-shield-input")).toHaveValue(20);
+    const bypassesShield = screen.getByTestId("effect-bypassesShield-input");
+    expect(bypassesShield).not.toBeChecked();
+
+    await user.click(bypassesShield);
+    expect(onFieldChange).toHaveBeenCalledWith("bypassesShield", true);
   });
 
   it("does not copy API metadata into mutation-ready form values", () => {
@@ -164,6 +204,73 @@ describe("effect-form", () => {
     });
 
     expect(errors.lastsForActions).toContain("required");
+  });
+
+  it("requires duration for an instant shield buff", () => {
+    expect(
+      validateEffectForm({ ...createDefaultEffectFormValues(), name: "Ward", shield: 20 }),
+    ).toMatchObject({ lastsForActions: expect.stringContaining("required") });
+  });
+
+  it.each([
+    { timingType: "interval" as const, effectType: "buff" as const },
+    { timingType: "instant" as const, effectType: "healing" as const },
+    { timingType: "instant" as const, effectType: "damage" as const },
+  ])("rejects shield for $timingType $effectType effects", ({ timingType, effectType }) => {
+    const errors = validateEffectForm({
+      ...createDefaultEffectFormValues(),
+      name: "Unsupported Ward",
+      timingType,
+      effectType,
+      shield: 20,
+      ...(timingType === "interval" ? { triggerEveryActions: 1, triggerCount: 1 } : {}),
+    });
+
+    expect(errors.shield).toContain("only supported for instant buffs and debuffs");
+  });
+
+  it("accepts a zero shield instant buff without an action duration", () => {
+    const values = {
+      ...createDefaultEffectFormValues(),
+      name: "Empty Ward",
+      shield: 0,
+      lastsForActions: 4,
+    };
+
+    expect(normalizeEffectFormValues(values).lastsForActions).toBeNull();
+    expect(validateEffectForm(values).lastsForActions).toBeUndefined();
+  });
+
+  it.each([
+    "shield",
+    "directHealing",
+    "directMeleeDmg",
+    "directRangedDmg",
+    "directSpellDmg",
+  ] as const)("rejects a negative %s amount", (field) => {
+    const errors = validateEffectForm({
+      ...createDefaultEffectFormValues(),
+      name: "Invalid signed effect",
+      effectType: "damage",
+      [field]: -1,
+    });
+
+    expect(errors[field]).toContain("zero or greater");
+  });
+
+  it("accepts zero shield, damage, and healing amounts", () => {
+    expect(
+      validateEffectForm({
+        ...createDefaultEffectFormValues(),
+        name: "Zero effect",
+        effectType: "damage",
+        shield: 0,
+        directHealing: 0,
+        directMeleeDmg: 0,
+        directRangedDmg: 0,
+        directSpellDmg: 0,
+      }),
+    ).toEqual({});
   });
 
   it("does not require duration for an interval stat buff", () => {

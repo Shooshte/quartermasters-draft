@@ -19,6 +19,8 @@ export interface EffectFormValues {
   speed: number | null;
   dodge: number | null;
   criticalChance: number | null;
+  shield: number | null;
+  bypassesShield: boolean;
   directHealing: number | null;
   directMeleeDmg: number | null;
   directRangedDmg: number | null;
@@ -44,6 +46,8 @@ type EffectRecord = {
   speed: number | null;
   dodge: number | null;
   criticalChance: number | null;
+  shield: number | null;
+  bypassesShield: boolean;
   directHealing: number | null;
   directMeleeDmg: number | null;
   directRangedDmg: number | null;
@@ -63,6 +67,7 @@ export const EFFECT_NUMERIC_FIELDS = [
   "speed",
   "dodge",
   "criticalChance",
+  "shield",
   "directHealing",
   "directMeleeDmg",
   "directRangedDmg",
@@ -73,6 +78,14 @@ const POSITIVE_INTEGER_FIELDS = [
   "triggerEveryActions",
   "triggerCount",
   "lastsForActions",
+] as const satisfies readonly (keyof EffectFormValues)[];
+
+const NON_NEGATIVE_AMOUNT_FIELDS = [
+  "shield",
+  "directHealing",
+  "directMeleeDmg",
+  "directRangedDmg",
+  "directSpellDmg",
 ] as const satisfies readonly (keyof EffectFormValues)[];
 
 export function createDefaultEffectFormValues(): EffectFormValues {
@@ -93,6 +106,8 @@ export function createDefaultEffectFormValues(): EffectFormValues {
     speed: null,
     dodge: null,
     criticalChance: null,
+    shield: null,
+    bypassesShield: false,
     directHealing: null,
     directMeleeDmg: null,
     directRangedDmg: null,
@@ -109,6 +124,7 @@ export function effectRecordToFormValues(record: Partial<EffectRecord>): EffectF
   values.timingType = record.timingType ?? "instant";
   values.effectType = record.effectType ?? "buff";
   values.isTaunt = record.isTaunt ?? false;
+  values.bypassesShield = record.bypassesShield ?? false;
   return values;
 }
 
@@ -143,6 +159,21 @@ export function validateEffectForm(values: EffectFormValues): EffectFieldErrors 
     }
   }
 
+  for (const field of NON_NEGATIVE_AMOUNT_FIELDS) {
+    const value = normalized[field];
+    if (value !== null && (!Number.isFinite(value) || value < 0)) {
+      errors[field] = "Must be zero or greater.";
+    }
+  }
+
+  const hasPositiveShield = typeof normalized.shield === "number" && normalized.shield > 0;
+  const hasSupportedShieldLifecycle =
+    normalized.timingType === "instant" &&
+    (normalized.effectType === "buff" || normalized.effectType === "debuff");
+  if (hasPositiveShield && !hasSupportedShieldLifecycle) {
+    errors.shield = "Shield is only supported for instant buffs and debuffs.";
+  }
+
   if (normalized.timingType === "interval") {
     if (normalized.isTaunt) {
       errors.timingType = "Taunt effects must use instant timing.";
@@ -172,6 +203,7 @@ const EFFECT_STAT_FIELDS = [
   "speed",
   "dodge",
   "criticalChance",
+  "shield",
 ] as const;
 
 export function effectNeedsTimingConfiguration(values: EffectFormValues): boolean {
@@ -186,11 +218,16 @@ export function isActionDurationApplicable(values: EffectFormValues): boolean {
 }
 
 function requiresActionDuration(values: EffectFormValues): boolean {
+  const hasDurationBearingStat = EFFECT_STAT_FIELDS.some((field) =>
+    field === "shield"
+      ? typeof values[field] === "number" && values[field] > 0
+      : values[field] !== null,
+  );
   return (
     !values.isTaunt &&
     values.timingType === "instant" &&
     (values.effectType === "buff" || values.effectType === "debuff") &&
-    EFFECT_STAT_FIELDS.some((field) => values[field] !== null)
+    hasDurationBearingStat
   );
 }
 

@@ -1,4 +1,9 @@
-import { recordActionOperation } from "./action-operations";
+import {
+  applyDamage,
+  applyHealing,
+  nonNegativeHealthAmount,
+  recordActionOperation,
+} from "./action-operations";
 import { logEffectApplied, logEffectExpired, logHeal, pushLog } from "./logging";
 import { computeSpellDamageWithModifiers, getUnitEffectiveStats } from "./math";
 import { clampHealth, findUnitById, nextEffectId, reconcileManaForCapacityChange } from "./state";
@@ -14,6 +19,7 @@ import type {
   ItemActivationLogEntry,
   StatKey,
 } from "./types";
+import { validateEffectShieldLifecycle } from "./validation";
 
 type ApplyItemEffectsResult = {
   targets: BattleUnitState[];
@@ -124,35 +130,82 @@ function applyInstantEffect(
   const casterStats = getUnitEffectiveStats(caster);
   const targetStats = getUnitEffectiveStats(target);
   const maxHealth = getUnitEffectiveStats(target).health;
+  const shieldAmount =
+    typeof effect.shield === "number" ? nonNegativeHealthAmount(effect.shield) : 0;
+  let timedShieldEffect: ActiveEffectState | undefined;
+
+  if (
+    shieldAmount > 0 &&
+    (effect.effectType === "buff" || effect.effectType === "debuff") &&
+    typeof effect.lastsForActions === "number"
+  ) {
+    timedShieldEffect = {
+      id: nextEffectId(state),
+      name: effect.name ?? "Effect",
+      sourceUnitId: caster.instanceId,
+      sourceScenarioId: caster.scenarioId,
+      targetUnitId: target.instanceId,
+      effectType: effect.effectType,
+      timingType: effect.timingType,
+      value: 0,
+      actionsRemaining: effect.lastsForActions,
+      origin,
+    };
+    recordActionOperation(state, {
+      kind: "add-effect",
+      targetId: target.instanceId,
+      effect: timedShieldEffect,
+    });
+    target.activeEffects.push(timedShieldEffect);
+    appliedModifiers.push(timedShieldEffect);
+  }
+
+  if (shieldAmount > 0) {
+    const layer = {
+      id: timedShieldEffect ? `shield-${timedShieldEffect.id}` : `shield-${nextEffectId(state)}`,
+      remaining: shieldAmount,
+      ...(timedShieldEffect ? { activeEffectId: timedShieldEffect.id } : {}),
+    };
+    recordActionOperation(state, { kind: "grant-shield", targetId: target.instanceId, layer });
+    target.shieldLayers.push(layer);
+  }
 
   if (typeof effect.directHealing === "number") {
-    const amount = effect.directHealing;
+    const amount = nonNegativeHealthAmount(effect.directHealing);
     recordActionOperation(state, { kind: "healing", targetId: target.instanceId, amount });
-    target.currentHealth = Math.min(maxHealth, target.currentHealth + amount);
+    applyHealing(target, amount, maxHealth);
     logHeal(state, batchNumber, caster, target, amount, origin, origin.actionId);
   }
 
   const directDamage =
     effect.directMeleeDmg ?? effect.directRangedDmg ?? effect.directSpellDmg ?? null;
   if (typeof directDamage === "number") {
-    const modifiedDamage = computeSpellDamageWithModifiers(directDamage, casterStats, targetStats);
+    const modifiedDamage = nonNegativeHealthAmount(
+      computeSpellDamageWithModifiers(
+        nonNegativeHealthAmount(directDamage),
+        casterStats,
+        targetStats,
+      ),
+    );
     recordActionOperation(state, {
       kind: "damage",
       targetId: target.instanceId,
       amount: modifiedDamage,
+      ...(effect.bypassesShield === true ? { bypassesShield: true } : {}),
     });
-    target.currentHealth = Math.max(0, target.currentHealth - modifiedDamage);
+    applyDamage(target, modifiedDamage, effect.bypassesShield === true);
     logDamage(state, batchNumber, caster, target, modifiedDamage, origin, origin.actionId);
   }
 
   if (effect.effectType === "healing" && typeof effect.health === "number") {
+    const amount = nonNegativeHealthAmount(effect.health);
     recordActionOperation(state, {
       kind: "healing",
       targetId: target.instanceId,
-      amount: effect.health,
+      amount,
     });
-    target.currentHealth = Math.min(maxHealth, target.currentHealth + effect.health);
-    logHeal(state, batchNumber, caster, target, effect.health, origin, origin.actionId);
+    applyHealing(target, amount, maxHealth);
+    logHeal(state, batchNumber, caster, target, amount, origin, origin.actionId);
   }
 
   if (effect.isTaunt) {
@@ -245,10 +298,11 @@ function queueIntervalEffect(
         targetUnitId: target.instanceId,
         effectType: effect.effectType,
         timingType: effect.timingType,
-        value: healing,
+        value: nonNegativeHealthAmount(healing),
         remainingTriggers: effect.triggerCount ?? 0,
         actionsUntilTrigger: effect.triggerEveryActions ?? 0,
         triggerEveryActions: effect.triggerEveryActions ?? 0,
+        bypassesShield: effect.bypassesShield === true,
         origin,
       });
     }
@@ -267,10 +321,11 @@ function queueIntervalEffect(
         targetUnitId: target.instanceId,
         effectType: effect.effectType,
         timingType: effect.timingType,
-        value,
+        value: nonNegativeHealthAmount(value),
         remainingTriggers: effect.triggerCount ?? 0,
         actionsUntilTrigger: effect.triggerEveryActions ?? 0,
         triggerEveryActions: effect.triggerEveryActions ?? 0,
+        bypassesShield: effect.bypassesShield === true,
         origin,
       });
     }
@@ -288,6 +343,8 @@ function applyEffectTemplate(
   origin: BattleLogOrigin | undefined,
   effectPosition: number,
 ): string[] {
+  validateEffectShieldLifecycle(effect);
+
   if (effect.timingType === "interval") {
     const activeEffects = queueIntervalEffect(
       state,
@@ -466,14 +523,15 @@ export function processPreActionEffects(
       continue;
     }
 
-    const amount =
+    const amount = nonNegativeHealthAmount(
       effect.effectType === "healing"
         ? effect.value
         : computeSpellDamageWithModifiers(
-            effect.value,
+            nonNegativeHealthAmount(effect.value),
             getUnitEffectiveStats(source),
             getUnitEffectiveStats(target),
-          );
+          ),
+    );
     events.push({
       effect,
       source,
@@ -490,27 +548,54 @@ export function processPreActionEffects(
     }
   }
 
-  const totals = new Map<string, { target: BattleUnitState; damage: number; healing: number }>();
+  const eventsByTarget = new Map<string, PendingIntervalEvent[]>();
   for (const event of events) {
-    const total = totals.get(event.target.instanceId) ?? {
-      target: event.target,
-      damage: 0,
-      healing: 0,
-    };
-    total[event.kind] += event.amount;
-    totals.set(event.target.instanceId, total);
+    const targetEvents = eventsByTarget.get(event.target.instanceId) ?? [];
+    targetEvents.push(event);
+    eventsByTarget.set(event.target.instanceId, targetEvents);
   }
-  for (const { target, damage, healing } of totals.values()) {
+  const affectedTargets = new Map<string, BattleUnitState>();
+  for (const targetEvents of eventsByTarget.values()) {
+    const firstEvent = targetEvents[0];
+    if (!firstEvent) continue;
+    const target = firstEvent.target;
+    affectedTargets.set(target.instanceId, target);
+    const hasShieldableDamage = targetEvents.some(
+      (event) =>
+        event.kind === "damage" && event.effect.bypassesShield !== true && event.amount > 0,
+    );
+    if (target.shieldLayers.length > 0 && hasShieldableDamage) {
+      for (const event of targetEvents) {
+        if (event.kind === "healing") {
+          applyHealing(target, event.amount, getUnitEffectiveStats(target).health);
+        } else {
+          applyDamage(target, event.amount, event.effect.bypassesShield === true);
+        }
+      }
+      continue;
+    }
+
+    const totals = targetEvents.reduce(
+      (accumulator, event) => {
+        accumulator[event.kind] += event.amount;
+        return accumulator;
+      },
+      { damage: 0, healing: 0 },
+    );
     target.currentHealth = Math.max(
       0,
-      Math.min(getUnitEffectiveStats(target).health, target.currentHealth + healing - damage),
+      Math.min(
+        getUnitEffectiveStats(target).health,
+        target.currentHealth + totals.healing - totals.damage,
+      ),
     );
-    if (target.currentHealth === 0) {
-      for (const { effect } of intervalSnapshot.filter(
-        (entry) => entry.target.instanceId === target.instanceId,
-      )) {
-        expiredEffectIds.add(effect.id);
-      }
+  }
+  for (const target of affectedTargets.values()) {
+    if (target.currentHealth !== 0) continue;
+    for (const { effect } of intervalSnapshot.filter(
+      (entry) => entry.target.instanceId === target.instanceId,
+    )) {
+      expiredEffectIds.add(effect.id);
     }
   }
 
@@ -522,7 +607,7 @@ export function processPreActionEffects(
       logDamage(state, batchNumber, event.source, event.target, event.amount, origin);
     }
   }
-  for (const { target } of totals.values()) {
+  for (const target of affectedTargets.values()) {
     if (target.currentHealth === 0) {
       logDeath(state, batchNumber, target);
     }
@@ -565,6 +650,10 @@ export function completeResolvedActionEffects(
 
     unit.activeEffects = unit.activeEffects.filter(
       (effect) => !expired.some((candidate) => candidate.id === effect.id),
+    );
+    const expiredIds = new Set(expired.map((effect) => effect.id));
+    unit.shieldLayers = unit.shieldLayers.filter(
+      (layer) => layer.activeEffectId === undefined || !expiredIds.has(layer.activeEffectId),
     );
     const updatedStats = getUnitEffectiveStats(unit);
     clampHealth(unit, updatedStats.health);

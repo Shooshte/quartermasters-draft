@@ -15,6 +15,7 @@ interface ExpectedBattleUnit {
   itemBonusStats: ExpectedBattleStats;
   mana: number;
   actedCount: number;
+  shieldLayers: { remaining: number }[];
   activeEffects: {
     name: string;
     remainingTriggers?: number;
@@ -181,6 +182,16 @@ export class BattleLabPage {
     await expect(this.page).toHaveURL(/\/replay\/[0-9a-f-]{36}$/);
   }
 
+  finalStateCell(unitName: string, column: "Shield") {
+    const columnIndexes = { Shield: 4 } as const;
+    return this.page
+      .getByRole("table")
+      .getByRole("row")
+      .filter({ has: this.page.getByRole("cell", { name: unitName, exact: true }) })
+      .getByRole("cell")
+      .nth(columnIndexes[column]);
+  }
+
   private async expectSelectedScenario(side: ScenarioSide, scenario: ExpectedSelection) {
     const picker = this.scenarioPicker(side);
     await expect(picker).toContainText(scenario.name);
@@ -237,6 +248,7 @@ export class BattleLabPage {
           displayRow(unit.rowType),
           String(unit.slot),
           `${unit.currentHealth} / ${effective.health}`,
+          String(unit.shieldLayers.reduce((total, layer) => total + layer.remaining, 0)),
           unit.currentHealth > 0 ? "Alive" : "Dead",
           `${unit.mana} / ${effective.mana}`,
           displayStats(unit),

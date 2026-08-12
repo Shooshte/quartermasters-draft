@@ -50,6 +50,7 @@ function unit(overrides: Partial<BattleUnit>): BattleUnit {
     targetCount: 1,
     selectionShape: "individual",
     activeEffects: [],
+    shieldLayers: [],
     actedCount: 7,
     ...overrides,
   };
@@ -96,6 +97,10 @@ const fixture: Pick<ReplayOutput, "scenarios" | "result"> = {
           rows: {
             tank: [
               unit({
+                shieldLayers: [
+                  { id: "ward-1", remaining: 10 },
+                  { id: "ward-2", remaining: 5 },
+                ],
                 activeEffects: [
                   {
                     id: "focused-1",
@@ -157,6 +162,9 @@ describe("BattleResultView", () => {
     expect(screen.getByRole("heading", { name: "Ambush at Dawn wins" })).toBeVisible();
     expect(screen.getByText("184 actions resolved")).toBeVisible();
     expect(screen.getByRole("cell", { name: "82 / 120" })).toBeVisible();
+    const firstLedger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
+    expect(within(firstLedger).getByRole("columnheader", { name: "Shield" })).toBeVisible();
+    expect(within(firstLedger).getByRole("cell", { name: "15" })).toBeVisible();
     expect(screen.getByRole("cell", { name: "Alive" })).toBeVisible();
     expect(screen.getAllByRole("cell", { name: "Dead" })).toHaveLength(2);
     expect(screen.getByText("Focused (2 actions remaining)")).toBeVisible();
@@ -168,7 +176,6 @@ describe("BattleResultView", () => {
       ),
     ).toBeVisible();
 
-    const firstLedger = screen.getByRole("table", { name: "Ambush at Dawn final state" });
     const unitNames = within(firstLedger)
       .getAllByRole("row")
       .slice(1)

@@ -68,6 +68,8 @@ const burn = {
   speed: null,
   dodge: null,
   criticalChance: null,
+  shield: null,
+  bypassesShield: false,
   directHealing: null,
   directMeleeDmg: null,
   directRangedDmg: null,
@@ -92,6 +94,8 @@ const scorch = {
   speed: -5,
   dodge: -6,
   criticalChance: -7,
+  shield: 25,
+  bypassesShield: true,
   directHealing: 0,
   directMeleeDmg: 1,
   directRangedDmg: 2,
@@ -162,6 +166,15 @@ describe("toScenarioInput", () => {
         support: [],
       },
     });
+  });
+
+  it("maps shield configuration into item effects", () => {
+    const records = buildRecords();
+    records.assignments = [{ rowType: "tank", slot: 1, unit: mage }];
+
+    expect(
+      toScenarioInput(records).rows?.tank?.[0]?.items?.[0]?.effects?.[0]?.effect,
+    ).toMatchObject({ shield: 25, bypassesShield: true });
   });
 
   it("preserves duplicate unit assignments and duplicate item priority links", () => {

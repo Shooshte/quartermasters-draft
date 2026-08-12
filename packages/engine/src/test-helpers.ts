@@ -5,10 +5,23 @@ import type {
   ItemInput,
   RowType,
   ScenarioInput,
+  ShieldLayer,
   StatKey,
   UnitInput,
   UnitStats,
 } from "./types";
+
+export function createShieldLayer(
+  id: string,
+  remaining: number,
+  activeEffectId?: string,
+): ShieldLayer {
+  return {
+    id,
+    remaining,
+    ...(activeEffectId === undefined ? {} : { activeEffectId }),
+  };
+}
 
 export function createStats(overrides: Partial<UnitStats> = {}): UnitStats {
   return {
@@ -44,6 +57,8 @@ export function createEffect(
     speed: null,
     dodge: null,
     criticalChance: null,
+    shield: null,
+    bypassesShield: false,
     directHealing: null,
     directMeleeDmg: null,
     directRangedDmg: null,

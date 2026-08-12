@@ -140,6 +140,8 @@ export const effects = pgTable(
     speed: real("speed"),
     dodge: real("dodge"),
     criticalChance: real("critical_chance"),
+    shield: real("shield"),
+    bypassesShield: boolean("bypasses_shield").notNull().default(false),
     effectType: effectTypeEnum("effect_type").notNull().default("buff"),
     isTaunt: boolean("is_taunt").notNull().default(false),
     lastsForActions: integer("lasts_for_actions"),

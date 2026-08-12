@@ -115,6 +115,8 @@ describe("loadBattleScenario", () => {
             triggerEveryActions: 2,
             triggerCount: 3,
             lastsForActions: null,
+            shield: null,
+            bypassesShield: false,
           },
         },
         {
@@ -129,6 +131,8 @@ describe("loadBattleScenario", () => {
             triggerEveryActions: null,
             triggerCount: null,
             lastsForActions: 3,
+            shield: 25,
+            bypassesShield: true,
           },
         },
       ],
@@ -149,7 +153,13 @@ describe("loadBattleScenario", () => {
           effects: [
             {
               sequenceOrder: 1,
-              effect: { name: "Scorch", isTaunt: true, lastsForActions: 3 },
+              effect: {
+                name: "Scorch",
+                isTaunt: true,
+                lastsForActions: 3,
+                shield: 25,
+                bypassesShield: true,
+              },
             },
             {
               sequenceOrder: 2,

@@ -140,6 +140,18 @@ export function EffectWorkspaceForm({
               />
             ))}
           </div>
+          {group.label === "Defense Buff" ? (
+            <label className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                id="effect-bypassesShield"
+                data-testid="effect-bypassesShield-input"
+                type="checkbox"
+                checked={normalizedFormValues.bypassesShield}
+                onChange={(event) => onFieldChange("bypassesShield", event.target.checked)}
+              />
+              Bypasses shield
+            </label>
+          ) : null}
         </WorkspaceSection>
       ))}
 

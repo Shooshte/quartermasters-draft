@@ -8,16 +8,17 @@ export const unit = (name, s = {}, rest = {}) => ({ name, stats: stats(s), ...re
 export const effect = (e = {}) => ({name: 'Effect', timingType:'instant', effectType:'damage', isTaunt:false, ...e});
 export const item = (...effects) => ({name:'Item', effects:effects.map((effect,i)=>({sequenceOrder:i+1,effect}))});
 export const battle = (a, b, seed = 42) => ({scenarios:[{id:'A',rows:a},{id:'B',rows:b}],seed});
-export function trace(input, options = {}) {
+export function trace(input, options = {}, maxBatches = 2000) {
   const engine = new BattleEngine(input, options);
   let previousLogLength = 0;
   const compact = (state) => { const log = state.log.slice(previousLogLength); previousLogLength = state.log.length; return {...state,log}; };
   const initial = compact(engine.getState());
   const batches = [];
-  while(engine.getState().status !== 'finished') {
+  while(engine.getState().status !== 'finished' && batches.length < maxBatches) {
     if (batches.length > 2000) throw Error('Reference failed to terminate');
     batches.push(compact(engine.resolveNextBatch()));
   }
+  if(maxBatches===2000 && engine.getState().status !== 'finished')throw Error('Reference failed to terminate within 2000 batches');
   return {initial,batches};
 }
 export function directedCases() {

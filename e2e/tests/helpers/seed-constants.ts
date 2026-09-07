@@ -5,7 +5,7 @@
 
 // ─── tRPC Base Path ──────────────────────────────────────────────────────────
 
-export const TRPC_BASE = "/api/trpc";
+export const API_BASE = "/api/v1";
 
 // ─── Effect IDs ──────────────────────────────────────────────────────────────
 

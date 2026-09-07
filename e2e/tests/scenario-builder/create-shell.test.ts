@@ -1,6 +1,6 @@
 import { expect, test } from "../auth/auth.fixtures";
 import { test as dbTest } from "../db-reset.fixture";
-
+import { deleteEntityViaApi } from "../helpers/rest-api";
 import {
   AMBUSH_AT_DAWN_ID,
   BARBARIAN_ID,
@@ -9,7 +9,6 @@ import {
   IRON_SWORD_ID,
   UNKNOWN_UUID,
 } from "../helpers/seed-constants";
-import { deleteEntityViaApi } from "../helpers/trpc-api";
 
 // ─── Core Shell Layout ───────────────────────────────────────────────────────
 

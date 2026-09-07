@@ -1,8 +1,8 @@
 // Source of truth: e2e/features/create/library-effects-tab.feature
 // Also covers effect-workspace.feature deletion scenarios.
 import { expect, test } from "../db-reset.fixture";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/rest-api";
 import { BARBARIAN_ROAR_ID, ZODIAC_BURST_ID } from "../helpers/seed-constants";
-import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { EFFECTS_TAB } from "../pages/library-tab-configs";
 

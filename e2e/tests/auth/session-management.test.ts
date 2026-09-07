@@ -217,7 +217,7 @@ test.describe("Session Management", () => {
     await context.close();
   });
 
-  for (const activity of ["SSR navigation", "tRPC request"] as const) {
+  for (const activity of ["browser navigation", "API request"] as const) {
     test(`remembered ${activity} advances the persistent cookie in the browser`, async ({
       browser,
     }, testInfo) => {
@@ -232,17 +232,20 @@ test.describe("Session Management", () => {
         .poll(() => Math.floor(Date.now() / 1000))
         .toBeGreaterThan(Math.floor(initial.expires - 30 * 24 * 3600) + 1);
       const before = await ageLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex, 61 * 60);
-      if (activity === "SSR navigation") {
-        const response = await page.goto("/create");
-        expect(response).not.toBeNull();
-        expect(await response?.headerValue("set-cookie")).toContain("better-auth.session_token=");
+      if (activity === "browser navigation") {
+        const responsePromise = page.waitForResponse(
+          (response) => new URL(response.url()).pathname === "/api/v1/auth/session",
+        );
+        await page.goto("/create");
+        const response = await responsePromise;
+        expect(await response.headerValue("set-cookie")).toContain("better-auth.session_token=");
         await expect(page).toHaveURL(/\/create/);
       } else {
         const responsePromise = page.waitForResponse((response) =>
-          response.url().includes("/api/trpc/battleLab.scenarioOptions"),
+          response.url().includes("/api/v1/battle/scenario-options"),
         );
         const status = await page.evaluate(async () => {
-          const response = await fetch("/api/trpc/battleLab.scenarioOptions");
+          const response = await fetch("/api/v1/battle/scenario-options");
           return response.status;
         });
         expect(status).toBe(200);

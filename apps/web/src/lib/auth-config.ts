@@ -1,10 +1,9 @@
+import { sessionPolicy } from "./session-policy";
+
 export const authConfig = {
+  ...sessionPolicy(),
   emailAndPassword: {
     enabled: true,
-  },
-  session: {
-    expiresIn: 60 * 60, // 1 hour in seconds
-    updateAge: 0, // Sliding expiration: refresh on every request
   },
   user: {
     additionalFields: {

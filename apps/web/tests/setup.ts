@@ -6,13 +6,14 @@ process.env.DATABASE_URL ??= "postgres://postgres:password@localhost:5432/quarte
 
 afterEach(() => {
   cleanup();
-  vi.mocked(window.scrollTo).mockClear();
+  if (typeof window !== "undefined") vi.mocked(window.scrollTo).mockClear();
 });
 
-Object.defineProperty(window, "scrollTo", {
-  configurable: true,
-  value: vi.fn(),
-});
+if (typeof window !== "undefined")
+  Object.defineProperty(window, "scrollTo", {
+    configurable: true,
+    value: vi.fn(),
+  });
 
 // Polyfill ResizeObserver for jsdom (required by Radix UI components)
 if (typeof globalThis.ResizeObserver === "undefined") {

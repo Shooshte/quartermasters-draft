@@ -4,9 +4,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { auth } from "~/lib/auth";
 import { authClient } from "~/lib/auth-client";
-import { getProtectedRouteSessionOptions } from "~/lib/auth-session";
+import { getProtectedSession } from "~/lib/auth-session.server";
 import { getUserRole, mapDbRole } from "~/lib/route-utils";
 
 type RequestHeadersLike = Headers | Record<string, string | string[] | undefined>;
@@ -22,7 +21,7 @@ function getCookieHeader(headers: RequestHeadersLike): string {
 
 const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
-  const session = await auth.api.getSession(getProtectedRouteSessionOptions(new Headers(headers)));
+  const session = await getProtectedSession(new Headers(headers));
   if (!session) {
     const cookieHeader = getCookieHeader(headers);
     const hadSession = cookieHeader

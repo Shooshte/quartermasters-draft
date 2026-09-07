@@ -47,3 +47,27 @@ it("normalizes only a policy rejection at the tRPC read boundary", async () => {
     route.server.handlers.GET({ request: new Request("http://localhost:3000/api/trpc/test") }),
   ).rejects.toBe(failure);
 });
+
+it("forwards all clearing cookies on a policy rejection", async () => {
+  const { APIError } = await import("better-auth/api");
+  const headers = new Headers();
+  headers.append("set-cookie", "better-auth.session_token=; Max-Age=0; HttpOnly");
+  headers.append("set-cookie", "better-auth.dont_remember=; Max-Age=0");
+  mocks.getSession.mockRejectedValueOnce(
+    new APIError(
+      "UNAUTHORIZED",
+      {
+        code: "SESSION_POLICY_REJECTED",
+        message: "Session expired or revoked",
+      },
+      headers,
+    ),
+  );
+  const route = Route as unknown as {
+    server: { handlers: { GET: (args: { request: Request }) => Promise<Response> } };
+  };
+  const response = await route.server.handlers.GET({
+    request: new Request("http://localhost:3000/api/trpc/test"),
+  });
+  expect(response.headers.getSetCookie()).toEqual(headers.getSetCookie());
+});

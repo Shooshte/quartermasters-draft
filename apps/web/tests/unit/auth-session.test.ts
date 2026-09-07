@@ -25,7 +25,7 @@ describe("session policy rejection normalization", () => {
           }),
         ),
       ),
-    ).toBeNull();
+    ).toEqual({ response: null, headers: new Headers() });
     const error = new Error("database unavailable");
     await expect(normalizeSessionRead(Promise.reject(error))).rejects.toBe(error);
     const other = new APIError("UNAUTHORIZED", { code: "OTHER_ERROR", message: "Other" });

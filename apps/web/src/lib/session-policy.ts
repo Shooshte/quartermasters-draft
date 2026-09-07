@@ -60,10 +60,12 @@ export function sessionPolicy() {
         const now = new Date();
         if (+current.session.expiresAt <= +now) {
           deleteSessionCookie(ctx);
-          throw new APIError("UNAUTHORIZED", {
-            code: SESSION_POLICY_REJECTED,
-            message: "Session expired or revoked",
-          });
+          throw new APIError(
+            "UNAUTHORIZED",
+            { code: SESSION_POLICY_REJECTED, message: "Session expired or revoked" },
+            // Better Call supplies responseHeaders at runtime but omits it from the middleware type.
+            (ctx as typeof ctx & { responseHeaders: Headers }).responseHeaders,
+          );
         }
         if (ctx.query?.disableRefresh) return;
         const rememberMe = current.session.rememberMe === true;
@@ -75,10 +77,12 @@ export function sessionPolicy() {
         // updateSession does not insert: a concurrent logout must never recreate the token.
         if (!updated) {
           deleteSessionCookie(ctx);
-          throw new APIError("UNAUTHORIZED", {
-            code: SESSION_POLICY_REJECTED,
-            message: "Session expired or revoked",
-          });
+          throw new APIError(
+            "UNAUTHORIZED",
+            { code: SESSION_POLICY_REJECTED, message: "Session expired or revoked" },
+            // Better Call supplies responseHeaders at runtime but omits it from the middleware type.
+            (ctx as typeof ctx & { responseHeaders: Headers }).responseHeaders,
+          );
         }
         if (rememberMe) expireCookie(ctx, ctx.context.authCookies.dontRememberToken);
         await setSessionCookie(ctx, { session: updated, user: current.user }, !rememberMe, {

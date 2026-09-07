@@ -39,3 +39,23 @@ it("forwards cookie clearing for expired sessions and preserves unrelated errors
   mocks.getSession.mockRejectedValueOnce(error);
   await expect(getProtectedSession(new Headers())).rejects.toBe(error);
 });
+
+it("forwards all clearing cookies on a policy rejection", async () => {
+  const { APIError } = await import("better-auth/api");
+  const headers = new Headers();
+  headers.append("set-cookie", "better-auth.session_token=; Max-Age=0; HttpOnly");
+  headers.append("set-cookie", "better-auth.dont_remember=; Max-Age=0");
+  mocks.getSession.mockRejectedValueOnce(
+    new APIError(
+      "UNAUTHORIZED",
+      {
+        code: "SESSION_POLICY_REJECTED",
+        message: "Session expired or revoked",
+      },
+      headers,
+    ),
+  );
+  const { getProtectedSession } = await import("../../src/lib/auth-session.server");
+  expect(await getProtectedSession(new Headers())).toBeNull();
+  expect(mocks.responseHeaders.getSetCookie()).toEqual(headers.getSetCookie());
+});

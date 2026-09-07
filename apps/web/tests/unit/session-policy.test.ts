@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { authConfig } from "../../src/lib/auth-config";
+import { normalizeSessionRead } from "../../src/lib/auth-session";
 
 const hour = 3600000;
 const month = 30 * 24 * hour;
@@ -196,4 +197,24 @@ describe("server-owned session policy", () => {
     await auth.api.signOut({ headers });
     expect(await auth.api.getSession({ headers })).toBeNull();
   });
+});
+
+it.each([
+  "expiry",
+  "logout race",
+])("preserves clearing headers on normalized %s rejection", async (reason) => {
+  const { auth, headers } = await setup(false);
+  if (reason === "expiry") vi.setSystemTime(+start + hour);
+  else {
+    const context = await auth.$context;
+    vi.spyOn(context.internalAdapter, "updateSession").mockResolvedValueOnce(null);
+  }
+  const result = await normalizeSessionRead(auth.api.getSession({ headers, returnHeaders: true }));
+  expect(result?.response).toBeNull();
+  expect(result?.headers.getSetCookie()).toEqual(
+    expect.arrayContaining([
+      expect.stringMatching(/^better-auth.session_token=;.*Max-Age=0/),
+      expect.stringMatching(/^better-auth.dont_remember=;.*Max-Age=0/),
+    ]),
+  );
 });

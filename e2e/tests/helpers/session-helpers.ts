@@ -45,8 +45,9 @@ function parseSessionRow(values: string[]): SessionRow {
 export async function getLatestSessionForUser(
   userId: string,
   workerIndex: number,
+  runSql = runWorkerSql,
 ): Promise<SessionRow> {
-  const rows = await runWorkerSql(
+  const rows = await runSql(
     workerIndex,
     [
       "SELECT id, user_id, token,",
@@ -142,4 +143,36 @@ export async function countSessionsByToken(token: string, workerIndex: number): 
     ["SELECT COUNT(*)", "FROM session", `WHERE token = '${escapeSqlLiteral(token)}';`].join(" "),
   );
   return Number(rows[0][0]);
+}
+
+export async function ageLatestSessionForUser(
+  userId: string,
+  workerIndex: number,
+  seconds: number,
+  runSql = runWorkerSql,
+): Promise<SessionRow> {
+  if (!Number.isSafeInteger(seconds) || seconds <= 0) {
+    throw new Error("Session age must be a positive integer number of seconds");
+  }
+  const session = await waitForStableSession({
+    readSession: () => getLatestSessionForUser(userId, workerIndex, runSql),
+  });
+  await runSql(
+    workerIndex,
+    [
+      "UPDATE session",
+      `SET updated_at = updated_at - INTERVAL '${seconds} seconds',`,
+      `expires_at = expires_at - INTERVAL '${seconds} seconds'`,
+      `WHERE id = '${escapeSqlLiteral(session.id)}';`,
+    ].join(" "),
+  );
+  const aged = await getLatestSessionForUser(userId, workerIndex, runSql);
+  if (
+    aged.id !== session.id ||
+    aged.updatedAtEpoch !== session.updatedAtEpoch - seconds ||
+    aged.expiresAtEpoch !== session.expiresAtEpoch - seconds
+  ) {
+    throw new Error(`Session aging update did not take effect for ${session.id}`);
+  }
+  return aged;
 }

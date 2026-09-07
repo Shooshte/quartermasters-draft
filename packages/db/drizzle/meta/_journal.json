@@ -141,6 +141,13 @@
       "when": 1786485351386,
       "tag": "0019_purple_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788776864553,
+      "tag": "0020_fearless_frightful_four",
+      "breakpoints": true
     }
   ]
 }

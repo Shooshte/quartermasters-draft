@@ -2,9 +2,9 @@
 
 import type { BrowserContext } from "@playwright/test";
 import {
+  ageLatestSessionForUser,
   countSessionsByToken,
   deleteSessionsForUser,
-  expireLatestSessionForUser,
   getLatestSessionForUser,
 } from "../helpers/session-helpers";
 import { expect, test } from "../worker-base.fixture";
@@ -28,6 +28,27 @@ function getAuthCookies(context: BrowserContext) {
     .then((cookies) => cookies.filter((cookie) => cookie.name.startsWith("better-auth")));
 }
 
+function expectIssuedLifetime(
+  session: { expiresAtEpoch: number; updatedAtEpoch: number },
+  seconds: number,
+) {
+  expect(Math.abs(session.expiresAtEpoch - session.updatedAtEpoch - seconds)).toBeLessThanOrEqual(
+    1,
+  );
+  const remaining = session.expiresAtEpoch - Math.floor(Date.now() / 1000);
+  expect(remaining).toBeGreaterThan(seconds - 10);
+  expect(remaining).toBeLessThanOrEqual(seconds + 2);
+}
+
+async function sessionCookie(context: BrowserContext) {
+  const cookie = (await getAuthCookies(context)).find((cookie) =>
+    cookie.name.endsWith("session_token"),
+  );
+  expect(cookie).toBeDefined();
+  if (!cookie) throw new Error("Session token cookie missing");
+  return cookie;
+}
+
 test.describe("Session Management", () => {
   test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
     await deleteSessionsForUser(GM_USER_ID, testInfo.parallelIndex);
@@ -48,11 +69,10 @@ test.describe("Session Management", () => {
       expect(cookie.expires).toBeLessThanOrEqual(0);
     }
 
-    const nowEpoch = Math.floor(Date.now() / 1000);
     const session = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
-    expect(session.expiresAtEpoch).toBeGreaterThan(nowEpoch);
+    expectIssuedLifetime(session, 3600);
 
-    await expireLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    await ageLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex, 61 * 60);
 
     await page.goto("/create");
     await page.waitForURL("**/login**");
@@ -76,11 +96,10 @@ test.describe("Session Management", () => {
       expect(cookie.expires).toBeLessThanOrEqual(0);
     }
 
-    const nowEpoch = Math.floor(Date.now() / 1000);
     const session = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
-    expect(session.expiresAtEpoch).toBeGreaterThan(nowEpoch);
+    expectIssuedLifetime(session, 3600);
 
-    await expireLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    await ageLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex, 61 * 60);
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
@@ -102,10 +121,14 @@ test.describe("Session Management", () => {
     expect(authCookies.length).toBeGreaterThan(0);
     expect(authCookies.some((cookie) => cookie.expires > 0)).toBe(true);
     const session = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
-    expect(session.expiresAtEpoch).toBeGreaterThan(Math.floor(Date.now() / 1000));
+    expectIssuedLifetime(session, 30 * 24 * 3600);
+    const before = await ageLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex, 61 * 60);
 
     await page.goto("/play");
     await expect(page).toHaveURL(/\/play/);
+    const renewed = await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex);
+    expect(renewed.expiresAtEpoch).toBeGreaterThan(before.expiresAtEpoch);
+    expectIssuedLifetime(renewed, 30 * 24 * 3600);
     await context.close();
   });
 
@@ -115,11 +138,11 @@ test.describe("Session Management", () => {
     await login(page, PLAYER_EMAIL, PLAYER_PASSWORD, { rememberMe: true });
     await page.waitForURL("**/play");
 
-    await expireLatestSessionForUser(
-      PLAYER_USER_ID,
-      testInfo.parallelIndex,
-      "NOW() - INTERVAL '31 days'",
+    expectIssuedLifetime(
+      await getLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex),
+      30 * 24 * 3600,
     );
+    await ageLatestSessionForUser(PLAYER_USER_ID, testInfo.parallelIndex, 31 * 24 * 3600);
 
     await page.goto("/play");
     await page.waitForURL("**/login**");
@@ -181,19 +204,83 @@ test.describe("Session Management", () => {
     await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
     await page.waitForURL("**/create");
 
-    const beforeActivity = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+    for (let renewal = 0; renewal < 2; renewal++) {
+      const before = await ageLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex, 59 * 60);
+      await page.goto("/create");
+      await expect(page).toHaveURL(/\/create/);
+      const after = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+      expect(after.token).toBe(before.token);
+      expect(after.expiresAtEpoch).toBeGreaterThan(before.expiresAtEpoch);
+      expectIssuedLifetime(after, 3600);
+    }
 
-    // Wait >1s so that the database updated_at / expires_at timestamps
-    // (which have 1-second granularity) will differ after the next request.
-    await page.waitForTimeout(1_100);
+    await context.close();
+  });
+
+  for (const activity of ["SSR navigation", "tRPC request"] as const) {
+    test(`remembered ${activity} advances the persistent cookie in the browser`, async ({
+      browser,
+    }, testInfo) => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: true });
+      await page.waitForURL("**/create");
+      const initial = await sessionCookie(context);
+      expect(initial.expires - Date.now() / 1000).toBeGreaterThan(30 * 24 * 3600 - 10);
+      // Cross the cookie's whole-second timestamp boundary without causing auth activity.
+      await expect
+        .poll(() => Math.floor(Date.now() / 1000))
+        .toBeGreaterThan(Math.floor(initial.expires - 30 * 24 * 3600) + 1);
+      const before = await ageLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex, 61 * 60);
+      if (activity === "SSR navigation") {
+        const response = await page.goto("/create");
+        expect(response).not.toBeNull();
+        expect(await response?.headerValue("set-cookie")).toContain("better-auth.session_token=");
+        await expect(page).toHaveURL(/\/create/);
+      } else {
+        const responsePromise = page.waitForResponse((response) =>
+          response.url().includes("/api/trpc/battleLab.scenarioOptions"),
+        );
+        const status = await page.evaluate(async () => {
+          const response = await fetch("/api/trpc/battleLab.scenarioOptions");
+          return response.status;
+        });
+        expect(status).toBe(200);
+        const response = await responsePromise;
+        expect(await response.headerValue("set-cookie")).toContain("better-auth.session_token=");
+      }
+      const renewedCookie = await sessionCookie(context);
+      expect(renewedCookie.value).toBe(initial.value);
+      expect(renewedCookie.expires).toBeGreaterThan(initial.expires);
+      expect(renewedCookie.expires - Date.now() / 1000).toBeGreaterThan(30 * 24 * 3600 - 10);
+      const after = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
+      expect(after.expiresAtEpoch).toBeGreaterThan(before.expiresAtEpoch);
+      expectIssuedLifetime(after, 30 * 24 * 3600);
+      await context.close();
+    });
+  }
+
+  test("deleting the dont_remember marker cannot lengthen a short session", async ({
+    browser,
+  }, testInfo) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await login(page, GM_EMAIL, GM_PASSWORD, { rememberMe: false });
+    await page.waitForURL("**/create");
+    const marker = (await getAuthCookies(context)).find((cookie) =>
+      cookie.name.includes("dont_remember"),
+    );
+    expect(marker).toBeDefined();
+    await context.clearCookies({ name: /dont_remember/ });
+    await ageLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex, 59 * 60);
     await page.goto("/create");
     await expect(page).toHaveURL(/\/create/);
-
-    const afterActivity = await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex);
-    expect(afterActivity.token).toBe(beforeActivity.token);
-    expect(afterActivity.expiresAtEpoch).toBeGreaterThanOrEqual(beforeActivity.expiresAtEpoch);
-    expect(afterActivity.updatedAtEpoch).toBeGreaterThanOrEqual(beforeActivity.updatedAtEpoch);
-
+    expectIssuedLifetime(await getLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex), 3600);
+    expect((await sessionCookie(context)).expires).toBe(-1);
+    await ageLatestSessionForUser(GM_USER_ID, testInfo.parallelIndex, 61 * 60);
+    await page.goto("/create");
+    await expectPath(page, "/login");
+    await expectQueryParams(page, { next: "/create", reason: "expired" });
     await context.close();
   });
 

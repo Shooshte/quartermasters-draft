@@ -1,6 +1,5 @@
-import type { AppRouter } from "@qd/api";
-import type { inferRouterOutputs } from "@trpc/server";
-import { trpc } from "~/lib/trpc";
+import type { ItemListOutput } from "@qd/api-client";
+import { api } from "~/lib/api";
 import {
   ITEMS_PAGE_SIZE,
   type ItemSortBy,
@@ -14,14 +13,13 @@ export function useItemList(
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  type ItemListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["items"]["list"];
   const list = useEntityList<ItemListOutput["items"][number], ItemSortBy>({
     enabled: isActiveTab || backgroundEnabled,
     initialSortBy: "name",
     pageSize: ITEMS_PAGE_SIZE,
     queryKey: ["scenarioBuilder", "items", "list", linkageFilter],
     queryPage: ({ page, sortBy, sortDir }) =>
-      trpc.scenarioBuilder.items.list.query({
+      api.scenarioBuilder.items.list.query({
         page,
         limit: ITEMS_PAGE_SIZE,
         sortBy,

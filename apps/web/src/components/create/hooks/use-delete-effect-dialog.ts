@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { trpc } from "~/lib/trpc";
+import { api } from "~/lib/api";
 import type { CreatePageNavigate, WorkspaceState } from "../types";
 import { createIdleWorkspace, EFFECTS_PAGE_SIZE } from "../types";
 import { useDeleteEntityDialog } from "./use-delete-entity-dialog";
@@ -50,7 +50,7 @@ export function useDeleteEffectDialog({
     );
   };
   const dialog = useDeleteEntityDialog({
-    deleteEntity: (id) => trpc.scenarioBuilder.effects.delete.mutate({ id }),
+    deleteEntity: (id) => api.scenarioBuilder.effects.delete.mutate({ id }),
     invalidate: () => queryClient.invalidateQueries({ queryKey: ["scenarioBuilder", "effects"] }),
     onDeleted: (id) => {
       if (entityWorkspace.entityId === id) {

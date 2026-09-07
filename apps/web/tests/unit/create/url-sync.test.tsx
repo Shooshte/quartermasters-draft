@@ -9,13 +9,13 @@ const { mockQuery, mockListQuery } = vi.hoisted(() => ({
   mockListQuery: vi.fn().mockResolvedValue({ items: [] }),
 }));
 
-vi.mock("~/lib/trpc", () => {
+vi.mock("~/lib/api", () => {
   const createRouterProxy = () => ({
     list: { query: mockListQuery },
     get: { query: mockQuery },
   });
   return {
-    trpc: {
+    api: {
       scenarioBuilder: {
         effects: createRouterProxy(),
         items: createRouterProxy(),

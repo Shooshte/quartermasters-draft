@@ -1,6 +1,5 @@
-import type { AppRouter } from "@qd/api";
-import type { inferRouterOutputs } from "@trpc/server";
-import { trpc } from "~/lib/trpc";
+import type { UnitListOutput } from "@qd/api-client";
+import { api } from "~/lib/api";
 import {
   type LibraryLinkageFilter,
   UNITS_PAGE_SIZE,
@@ -14,14 +13,13 @@ export function useUnitList(
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  type UnitListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["units"]["list"];
   const list = useEntityList<UnitListOutput["items"][number], UnitSortBy>({
     enabled: isActiveTab || backgroundEnabled,
     initialSortBy: "name",
     pageSize: UNITS_PAGE_SIZE,
     queryKey: ["scenarioBuilder", "units", "list", linkageFilter],
     queryPage: ({ page, sortBy, sortDir }) =>
-      trpc.scenarioBuilder.units.list.query({
+      api.scenarioBuilder.units.list.query({
         page,
         limit: UNITS_PAGE_SIZE,
         sortBy,

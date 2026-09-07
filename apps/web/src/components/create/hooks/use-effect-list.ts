@@ -1,6 +1,5 @@
-import type { AppRouter } from "@qd/api";
-import type { inferRouterOutputs } from "@trpc/server";
-import { trpc } from "~/lib/trpc";
+import type { EffectListOutput } from "@qd/api-client";
+import { api } from "~/lib/api";
 import {
   EFFECTS_PAGE_SIZE,
   type EffectSortBy,
@@ -14,14 +13,13 @@ export function useEffectList(
   backgroundEnabled: boolean,
   linkageFilter: LibraryLinkageFilter,
 ) {
-  type EffectListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["effects"]["list"];
   const list = useEntityList<EffectListOutput["items"][number], EffectSortBy>({
     enabled: isActiveTab || backgroundEnabled,
     initialSortBy: "name",
     pageSize: EFFECTS_PAGE_SIZE,
     queryKey: ["scenarioBuilder", "effects", "list", linkageFilter],
     queryPage: ({ page, sortBy, sortDir }) =>
-      trpc.scenarioBuilder.effects.list.query({
+      api.scenarioBuilder.effects.list.query({
         page,
         limit: EFFECTS_PAGE_SIZE,
         sortBy,

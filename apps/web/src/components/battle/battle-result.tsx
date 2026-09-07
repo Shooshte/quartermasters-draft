@@ -1,5 +1,4 @@
-import type { AppRouter } from "@qd/api";
-import type { inferRouterOutputs } from "@trpc/server";
+import type { ReplayOutput } from "@qd/api-client";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import {
   Table,
@@ -11,7 +10,6 @@ import {
 } from "~/components/ui/table";
 import { BattleEventLedger } from "./battle-event-ledger";
 
-type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
 type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["rows"]["tank"][number];
 
 interface BattleResultViewProps {

@@ -1,6 +1,6 @@
 import { UserRole as Roles, type UserRole } from "@qd/shared";
 
-/** Extract the database role string from a Better Auth user object. */
+/** Extract the role string from the browser session adapter. */
 export function getUserRole(user: Record<string, unknown>): string {
   return (user as { role?: string }).role ?? "player";
 }

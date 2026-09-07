@@ -1,41 +1,9 @@
 import { UserRole } from "@qd/shared";
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
+import { api } from "~/lib/api";
 import { authClient } from "~/lib/auth-client";
-import { getProtectedSession } from "~/lib/auth-session.server";
-import { getUserRole, mapDbRole } from "~/lib/route-utils";
-
-type RequestHeadersLike = Headers | Record<string, string | string[] | undefined>;
-
-function getCookieHeader(headers: RequestHeadersLike): string {
-  if (headers instanceof Headers) {
-    return headers.get("cookie") ?? "";
-  }
-
-  const cookie = headers.cookie;
-  return Array.isArray(cookie) ? cookie.join("; ") : (cookie ?? "");
-}
-
-const getAuthSession = createServerFn({ method: "GET" }).handler(async () => {
-  const headers = getRequestHeaders();
-  const session = await getProtectedSession(new Headers(headers));
-  if (!session) {
-    const cookieHeader = getCookieHeader(headers);
-    const hadSession = cookieHeader
-      .split(";")
-      .some((cookie) => cookie.trim().startsWith("better-auth."));
-    return { authenticated: false as const, hadSession };
-  }
-  const dbRole = getUserRole(session.user);
-  return {
-    authenticated: true as const,
-    userId: session.user.id,
-    userRole: mapDbRole(dbRole) ?? UserRole.PLAYER,
-  };
-});
 
 export const Route = createFileRoute("/_authenticated")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -48,14 +16,14 @@ export const Route = createFileRoute("/_authenticated")({
     };
   },
   beforeLoad: async ({ location }) => {
-    const result = await getAuthSession();
-    if (!result.authenticated) {
+    const result = await api.auth.session();
+    if (!("userId" in result) || !result.authenticated) {
       const excludedPaths = ["/login", "/403"];
       const search: Record<string, string> = {};
       if (!excludedPaths.includes(location.pathname)) {
         search.next = location.href;
       }
-      if (result.hadSession) {
+      if ("hadSession" in result && result.hadSession) {
         search.reason = "expired";
       }
       throw redirect({

@@ -1,6 +1,5 @@
-import type { AppRouter } from "@qd/api";
-import type { inferRouterOutputs } from "@trpc/server";
-import { trpc } from "~/lib/trpc";
+import type { ScenarioListOutput } from "@qd/api-client";
+import { api } from "~/lib/api";
 import {
   SCENARIOS_PAGE_SIZE,
   type ScenarioLibraryLinkageFilter,
@@ -14,14 +13,13 @@ export function useScenarioList(
   backgroundEnabled: boolean,
   linkageFilter: ScenarioLibraryLinkageFilter,
 ) {
-  type ScenarioListOutput = inferRouterOutputs<AppRouter>["scenarioBuilder"]["scenarios"]["list"];
   const list = useEntityList<ScenarioListOutput["items"][number], ScenarioSortBy>({
     enabled: isActiveTab || backgroundEnabled,
     initialSortBy: "name",
     pageSize: SCENARIOS_PAGE_SIZE,
     queryKey: ["scenarioBuilder", "scenarios", "list", linkageFilter],
     queryPage: ({ page, sortBy, sortDir }) =>
-      trpc.scenarioBuilder.scenarios.list.query({
+      api.scenarioBuilder.scenarios.list.query({
         page,
         limit: SCENARIOS_PAGE_SIZE,
         sortBy,

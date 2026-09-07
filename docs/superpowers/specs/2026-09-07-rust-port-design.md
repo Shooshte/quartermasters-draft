@@ -1,6 +1,6 @@
 # Rust backend and battle engine migration
 
-Status: implementation authorized by the user on 2026-09-08, in a new worktree with commits and a PR targeting develop.
+Status: implementation authorized by the user following review, in a new worktree with commits and a PR targeting develop.
 
 ## Scope and decisions
 

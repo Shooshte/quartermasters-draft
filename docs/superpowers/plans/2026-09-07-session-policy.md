@@ -95,8 +95,8 @@ expect(after.expiresAtEpoch - Math.floor(Date.now() / 1000)).toBeGreaterThan(359
 - [x] After each implementation task, generate a diff package and dispatch an independent reviewer for spec compliance and code quality. Resolve important findings and re-review before proceeding.
 - [x] Dispatch final whole-branch review against base 247bf8b. Inspect session expiry/security, cookie propagation, migration behavior and strength of regression assertions.
 - [x] Run `pnpm run test --force`, `pnpm run lint`, and `pnpm run test:e2e` from the worktree. Confirm exit 0 and record totals. E2E also builds production artifacts and pushes the current schema plus seed to PostgreSQL. Separately execute the actual migration chain against PostgreSQL with legacy session fixtures and assert expiry is capped, never extended.
-- [ ] Commit the finished implementation and plan using an explicit file list and a message describing the corrected session policy. Verify clean status.
-- [ ] Push with `git push -u origin codex/fix-session-policy`, then verify the remote branch SHA matches local HEAD. Keep the separate worktree for follow-up. Do not merge develop.
+- [x] Commit the finished implementation and plan using an explicit file list and a message describing the corrected session policy. Verify clean status.
+- [x] Push with `git push -u origin codex/fix-session-policy`, then verify the remote branch SHA matches local HEAD. Keep the separate worktree for follow-up. Do not merge develop.
 
 ## Final validation
 
@@ -106,3 +106,5 @@ expect(after.expiresAtEpoch - Math.floor(Date.now() / 1000)).toBeGreaterThan(359
 - `pnpm run test:e2e`: 298 Chromium tests passed with four workers.
 - Full PostgreSQL migration chain and existing long/short/expired session fixtures passed; expiry never extended.
 - Existing sessions become non-remembered and are capped at their last activity plus one hour. A fresh sign-in is needed to opt into remembered sessions.
+
+Implementation committed as `c8668e3` and pushed to `origin/codex/fix-session-policy`; remote commit verified. This documentation update records the completed delivery.

@@ -81,3 +81,37 @@ async fn install_legacy_for_test(
     }
     Ok(())
 }
+
+#[sqlx::test(migrations = false)]
+async fn history_free_schema_is_adopted_only_when_it_matches_known_schema(pool: PgPool) {
+    install_legacy_for_test(&pool).await.unwrap();
+    seed(&pool).await.unwrap();
+    sqlx::raw_sql("DROP SCHEMA drizzle CASCADE")
+        .execute(&pool)
+        .await
+        .unwrap();
+    migrate(&pool).await.unwrap();
+    let users: i64 = sqlx::query_scalar("SELECT count(*) FROM \"user\"")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(users, 2);
+}
+
+#[sqlx::test(migrations = false)]
+async fn drifted_history_free_schema_is_rejected(pool: PgPool) {
+    install_legacy_for_test(&pool).await.unwrap();
+    sqlx::raw_sql(
+        "DROP SCHEMA drizzle CASCADE; ALTER TABLE effects DROP CONSTRAINT effects_name_unique",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    assert!(migrate(&pool).await.is_err());
+    let adopted: bool =
+        sqlx::query_scalar("SELECT to_regclass('public._sqlx_migrations') IS NOT NULL")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert!(!adopted);
+}

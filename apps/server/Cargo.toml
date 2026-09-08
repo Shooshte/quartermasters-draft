@@ -1,0 +1,30 @@
+[package]
+name = "qd-server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.9", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "json"] }
+qd-db = { path = "../../crates/qd-db" }
+qd-api-types = { path = "../../crates/qd-api-types" }
+qd-engine = { path = "../../crates/qd-engine" }
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+hmac = "0.12"
+percent-encoding = "2"
+rand = "0.9"
+scrypt = "0.11"
+sha2 = "0.10"
+subtle = "2"
+unicode-normalization = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+url = "2"

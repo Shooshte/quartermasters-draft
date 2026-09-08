@@ -2,7 +2,7 @@ import { UserRole } from "@qd/shared";
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import { api } from "~/lib/api";
+import { api, clearApiSessionExpiry, hasExpiredApiSession } from "~/lib/api";
 import { authClient } from "~/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated")({
       if (!excludedPaths.includes(location.pathname)) {
         search.next = location.href;
       }
-      if ("hadSession" in result && result.hadSession) {
+      if (hasExpiredApiSession() || ("hadSession" in result && result.hadSession)) {
         search.reason = "expired";
       }
       throw redirect({
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_authenticated")({
         search,
       });
     }
+    clearApiSessionExpiry();
     return { userRole: result.userRole };
   },
   component: AuthenticatedLayout,

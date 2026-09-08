@@ -1,6 +1,6 @@
 import type { SessionResponse } from "@qd/api-client";
 import { useEffect, useState } from "react";
-import { api } from "./api";
+import { api, clearApiSessionExpiry } from "./api";
 
 type BrowserSession = { user: { id: string; role: "gm" | "player" } } | null;
 function toSession(response: SessionResponse): BrowserSession {
@@ -10,6 +10,7 @@ function toSession(response: SessionResponse): BrowserSession {
 }
 
 function notifySessionChanged() {
+  clearApiSessionExpiry();
   window.dispatchEvent(new Event("qd:session-changed"));
 }
 async function getSession() {

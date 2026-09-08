@@ -56,3 +56,13 @@ Retained web acceptance behavior tests: login form, invalid credentials, safe re
 - Backend consumes authoritative request DTOs and must validate semantic numeric/linkage constraints, normalize UUIDs and return the documented logical payloads. API list results still use `items/page/limit/totalCount`.
 - Parent should review the moved policy checklist against Rust test coverage before retiring reference packages.
 - Parent owns pnpm lock update and Biome exclusion of generated OpenAPI/TypeScript files; standard generation drift check validates those files instead.
+
+## Review follow-up: preserve expiry after a protected REST 401
+
+Confirmed P2: a protected API 401 clears session cookies before router revalidation. The following `/auth/session` correctly returns `hadSession:false`, so the previous guard lost the original expiry notice.
+
+The browser adapter now records protected 401 expiry context before emitting its authorization event, includes the HTTP status in that event, and the route guard combines the recorded context with the session response. A 403 does not create an expiry marker. A confirmed authenticated guard or successful explicit login/logout clears the marker, preventing stale notices after an authentication change.
+
+Test-first evidence: the integrated real adapter callback + router guard regression failed with `reason` undefined after a simulated401/cookie-clear/session-false sequence. The403 control passed. Separate successful-login/logout reset tests failed with stale `reason=expired` before adding their reset; all now pass. Existing deep-link `next` URL and visible expired notice assertions remain intact.
+
+Follow-up verification: `pnpm --filter @qd/web test` passed419 tests/47 files; targeted browser/session tests passed9; web typecheck and production build passed; scoped Biome and diff checks passed. Rust numeric contract changes and overall root/E2E checks remain parent-owned.

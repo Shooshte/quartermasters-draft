@@ -1,7 +1,8 @@
 # qd-engine
 
-A standalone deterministic Rust battle engine. It depends only on serde and
-serde_json and has no database, network, Node.js, or rendering dependency.
+A standalone deterministic Rust battle engine. It uses serde, serde_json, and
+ryu-js for JavaScript-compatible number formatting. It has no database, network,
+Node.js, or rendering dependency.
 
 ```rust
 use qd_engine::{BattleEngine, resolve_json};

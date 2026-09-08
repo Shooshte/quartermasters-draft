@@ -1,6 +1,6 @@
 import { expect, test } from "../auth/auth.fixtures";
 import { test as dbTest } from "../db-reset.fixture";
-
+import { deleteEntityViaApi } from "../helpers/rest-api";
 import {
   AMBUSH_AT_DAWN_ID,
   BARBARIAN_ID,
@@ -9,7 +9,6 @@ import {
   IRON_SWORD_ID,
   UNKNOWN_UUID,
 } from "../helpers/seed-constants";
-import { deleteEntityViaApi } from "../helpers/trpc-api";
 
 // ─── Core Shell Layout ───────────────────────────────────────────────────────
 
@@ -68,6 +67,9 @@ test.describe("Create Shell — Layout", () => {
   test("library tabs header matches scenario and entity header heights", async ({ gmPage }) => {
     await gmPage.goto("/create");
 
+    await expect(gmPage.getByTestId("library-tabs-header")).toBeVisible();
+    await expect(gmPage.getByTestId("scenario-workspace-header")).toBeVisible();
+    await expect(gmPage.getByTestId("entity-workspace-header")).toBeVisible();
     const headerHeights = await gmPage.evaluate(() => {
       const libraryHeader = document.querySelector('[data-testid="library-tabs-header"]');
       const scenarioHeader = document.querySelector('[data-testid="scenario-workspace-header"]');

@@ -18,17 +18,6 @@ vi.mock("~/lib/auth-client", () => ({
   },
 }));
 
-// Mock the server fn (getAuthSession) — not available in jsdom
-vi.mock("@tanstack/react-start", () => ({
-  createServerFn: () => ({
-    handler: () => vi.fn(),
-  }),
-}));
-
-vi.mock("@tanstack/react-start/server", () => ({
-  getRequestHeaders: vi.fn(),
-}));
-
 function stubWindowLocation(path: string, assignSpy: ReturnType<typeof vi.fn>) {
   const url = new URL(path, "http://localhost:3000");
   vi.stubGlobal("location", {

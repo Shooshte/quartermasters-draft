@@ -1,27 +1,26 @@
-FROM node:24-alpine AS base
+FROM node:24-bookworm-slim AS web-build
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 WORKDIR /app
-
-FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/web/package.json apps/web/
-COPY e2e/package.json e2e/
-COPY packages/api/package.json packages/api/
-COPY packages/db/package.json packages/db/
-COPY packages/engine/package.json packages/engine/
-COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile
-
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
-COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
-COPY --from=deps /app/packages/engine/node_modules ./packages/engine/node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @qd/web... build
 
-FROM base AS production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app .
+FROM rust:1.97.1-bookworm AS rust-build
+WORKDIR /app
+COPY . .
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo build --locked --release -p qd-server -p qd-db \
+    && mkdir -p /out && cp target/release/qd-server target/release/qd-db /out/
+
+FROM debian:bookworm-slim AS production
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 --create-home qd
+WORKDIR /app
+COPY --from=rust-build /out/qd-server /usr/local/bin/qd-server
+COPY --from=rust-build /out/qd-db /usr/local/bin/qd-db
+COPY --from=web-build /app/apps/web/dist /app/web
+ENV WEB_DIST_DIR=/app/web HOST=0.0.0.0 PORT=3000
+USER qd
+EXPOSE 3000
+CMD ["qd-server"]

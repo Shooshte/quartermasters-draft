@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { trpc } from "~/lib/trpc";
+import { api } from "~/lib/api";
 import { createDefaultEffectFormValues, effectRecordToFormValues } from "../effect-form";
 import {
   createDefaultItemFormValues,
@@ -123,7 +123,7 @@ export function useWorkspaceLoader({
   const entityDetectEffects = useQuery({
     queryKey: ["scenarioBuilder", "effects", "get", search.entity_id],
     queryFn: () =>
-      trpc.scenarioBuilder.effects.get.query({
+      api.scenarioBuilder.effects.get.query({
         id: getRequiredSearchId(search.entity_id, "entity_id"),
       }),
     enabled: !!search.entity_id && !entityInitRef.current,
@@ -132,7 +132,7 @@ export function useWorkspaceLoader({
   const entityDetectItems = useQuery({
     queryKey: ["scenarioBuilder", "items", "get", search.entity_id],
     queryFn: () =>
-      trpc.scenarioBuilder.items.get.query({
+      api.scenarioBuilder.items.get.query({
         id: getRequiredSearchId(search.entity_id, "entity_id"),
       }),
     enabled: !!search.entity_id && !entityInitRef.current,
@@ -141,7 +141,7 @@ export function useWorkspaceLoader({
   const entityDetectUnits = useQuery({
     queryKey: ["scenarioBuilder", "units", "get", search.entity_id],
     queryFn: () =>
-      trpc.scenarioBuilder.units.get.query({
+      api.scenarioBuilder.units.get.query({
         id: getRequiredSearchId(search.entity_id, "entity_id"),
       }),
     enabled: !!search.entity_id && !entityInitRef.current,
@@ -230,7 +230,7 @@ export function useWorkspaceLoader({
   const effectQuery = useQuery({
     queryKey: ["scenarioBuilder", "effects", "get", search.effect_id],
     queryFn: () =>
-      trpc.scenarioBuilder.effects.get.query({
+      api.scenarioBuilder.effects.get.query({
         id: getRequiredSearchId(search.effect_id, "effect_id"),
       }),
     enabled: !!search.effect_id && !effectInitRef.current,
@@ -289,7 +289,7 @@ export function useWorkspaceLoader({
   const itemQuery = useQuery({
     queryKey: ["scenarioBuilder", "items", "get", search.item_id],
     queryFn: () =>
-      trpc.scenarioBuilder.items.get.query({
+      api.scenarioBuilder.items.get.query({
         id: getRequiredSearchId(search.item_id, "item_id"),
       }),
     enabled: !!search.item_id && !itemInitRef.current,
@@ -348,7 +348,7 @@ export function useWorkspaceLoader({
   const unitQuery = useQuery({
     queryKey: ["scenarioBuilder", "units", "get", search.unit_id],
     queryFn: () =>
-      trpc.scenarioBuilder.units.get.query({
+      api.scenarioBuilder.units.get.query({
         id: getRequiredSearchId(search.unit_id, "unit_id"),
       }),
     enabled: !!search.unit_id && !unitInitRef.current,
@@ -408,7 +408,7 @@ export function useWorkspaceLoader({
   const scenarioQuery = useQuery({
     queryKey: ["scenarioBuilder", "scenarios", "get", search.scenario_id],
     queryFn: () =>
-      trpc.scenarioBuilder.scenarios.get.query({
+      api.scenarioBuilder.scenarios.get.query({
         id: getRequiredSearchId(search.scenario_id, "scenario_id"),
       }),
     enabled: !!search.scenario_id && !scenarioInitRef.current,
@@ -467,7 +467,7 @@ export function useWorkspaceLoader({
         };
       });
       try {
-        const data = await trpc.scenarioBuilder[routerKey].get.query({ id });
+        const data = await api.scenarioBuilder[routerKey].get.query({ id });
         if (pendingEntityIdRef.current !== id) return;
         const entityData = data as { name: string; [key: string]: unknown };
         setEntityWorkspace({
@@ -548,7 +548,7 @@ export function useWorkspaceLoader({
         isDirty: false,
       }));
       try {
-        const data = await trpc.scenarioBuilder.scenarios.get.query({ id });
+        const data = await api.scenarioBuilder.scenarios.get.query({ id });
         if (pendingScenarioIdRef.current !== id) return;
         const scenarioData = data as { name: string; [key: string]: unknown };
         setScenarioWorkspace({

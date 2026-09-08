@@ -10,8 +10,8 @@ const { scenarioOptionsQuery, createMutation, getQuery, navigate } = vi.hoisted(
   navigate: vi.fn(),
 }));
 
-vi.mock("~/lib/trpc", () => ({
-  trpc: {
+vi.mock("~/lib/api", () => ({
+  api: {
     battleLab: {
       scenarioOptions: { query: scenarioOptionsQuery },
       create: { mutate: createMutation },

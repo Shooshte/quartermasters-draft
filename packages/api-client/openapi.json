@@ -1,0 +1,4893 @@
+{
+  "components": {
+    "schemas": {
+      "ActiveEffectState": {
+        "properties": {
+          "actionsRemaining": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "actionsUntilTrigger": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "bypassesShield": {
+            "type": "boolean"
+          },
+          "effectType": {
+            "$ref": "#/components/schemas/EffectCategory"
+          },
+          "id": {
+            "type": "string"
+          },
+          "isTaunt": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/BattleLogOrigin"
+          },
+          "remainingTriggers": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sourceScenarioId": {
+            "type": "string"
+          },
+          "sourceUnitId": {
+            "type": "string"
+          },
+          "statKey": {
+            "$ref": "#/components/schemas/StatKey"
+          },
+          "targetUnitId": {
+            "type": "string"
+          },
+          "timingType": {
+            "$ref": "#/components/schemas/EffectTimingType"
+          },
+          "triggerEveryActions": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "value": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sourceUnitId",
+          "sourceScenarioId",
+          "targetUnitId",
+          "effectType",
+          "timingType",
+          "value"
+        ],
+        "type": "object"
+      },
+      "ApiError": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "details": {},
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ApiErrorEnvelope": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiError"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "AttackLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "attacker": {
+                "type": "string"
+              },
+              "attackerId": {
+                "type": "string"
+              },
+              "damage": {
+                "format": "double",
+                "type": "number"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "attacker",
+              "attackerId",
+              "target",
+              "targetId",
+              "damage"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "BaseLogEntry": {
+        "properties": {
+          "actionId": {
+            "type": "string"
+          },
+          "batchNumber": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/BattleLogOrigin"
+          }
+        },
+        "required": [
+          "batchNumber",
+          "message"
+        ],
+        "type": "object"
+      },
+      "BattleEffectTemplate": {
+        "properties": {
+          "bypassesShield": {
+            "type": "boolean"
+          },
+          "criticalChance": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directHealing": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directMeleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directRangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directSpellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "dodge": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "effectType": {
+            "$ref": "#/components/schemas/EffectCategory"
+          },
+          "health": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isTaunt": {
+            "type": "boolean"
+          },
+          "lastsForActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "mana": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "shield": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speed": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timingType": {
+            "$ref": "#/components/schemas/EffectTimingType"
+          },
+          "triggerCount": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "triggerEveryActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "timingType",
+          "effectType",
+          "isTaunt"
+        ],
+        "type": "object"
+      },
+      "BattleEndLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "outcome": {
+                "type": "string"
+              },
+              "winnerId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "outcome",
+              "winnerId"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "BattleItemEffect": {
+        "properties": {
+          "effect": {
+            "$ref": "#/components/schemas/BattleEffectTemplate"
+          },
+          "sequenceOrder": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sequenceOrder",
+          "effect"
+        ],
+        "type": "object"
+      },
+      "BattleItemState": {
+        "properties": {
+          "activationHealthCost": {
+            "format": "double",
+            "type": "number"
+          },
+          "activationManaCost": {
+            "format": "double",
+            "type": "number"
+          },
+          "allowedRowTypes": {
+            "items": {
+              "$ref": "#/components/schemas/RowType"
+            },
+            "type": "array"
+          },
+          "criticalChance": {
+            "format": "double",
+            "type": "number"
+          },
+          "dodge": {
+            "format": "double",
+            "type": "number"
+          },
+          "effects": {
+            "items": {
+              "$ref": "#/components/schemas/BattleItemEffect"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": "number"
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "dodge",
+          "criticalChance",
+          "activationManaCost",
+          "activationHealthCost",
+          "effects"
+        ],
+        "type": "object"
+      },
+      "BattleLogEntry": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttackLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "attack"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemActivationLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "item-activation"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EffectApplyLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "effect-apply"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EffectExpireLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "effect-expire"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DamageLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "damage"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HealLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "heal"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DeathLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "death"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FatigueLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "fatigue"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BattleEndLogEntry"
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "battle-end"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            ]
+          }
+        ]
+      },
+      "BattleLogOrigin": {
+        "properties": {
+          "actionId": {
+            "type": "string"
+          },
+          "effect": {
+            "$ref": "#/components/schemas/BattleLogSourceRef"
+          },
+          "item": {
+            "$ref": "#/components/schemas/BattleLogSourceRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/BattleLogOriginKind"
+          },
+          "sourceUnitId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "type": "object"
+      },
+      "BattleLogOriginKind": {
+        "enum": [
+          "basic-attack",
+          "item-effect",
+          "fatigue"
+        ],
+        "type": "string"
+      },
+      "BattleLogSourceRef": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "position"
+        ],
+        "type": "object"
+      },
+      "BattleResult": {
+        "properties": {
+          "actionsResolved": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "finalState": {
+            "$ref": "#/components/schemas/BattleState"
+          },
+          "log": {
+            "items": {
+              "$ref": "#/components/schemas/BattleLogEntry"
+            },
+            "type": "array"
+          },
+          "winnerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "winnerId",
+          "actionsResolved",
+          "finalState",
+          "log"
+        ],
+        "type": "object"
+      },
+      "BattleRows": {
+        "properties": {
+          "melee": {
+            "items": {
+              "$ref": "#/components/schemas/BattleUnitState"
+            },
+            "type": "array"
+          },
+          "ranged": {
+            "items": {
+              "$ref": "#/components/schemas/BattleUnitState"
+            },
+            "type": "array"
+          },
+          "support": {
+            "items": {
+              "$ref": "#/components/schemas/BattleUnitState"
+            },
+            "type": "array"
+          },
+          "tank": {
+            "items": {
+              "$ref": "#/components/schemas/BattleUnitState"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "tank",
+          "melee",
+          "ranged",
+          "support"
+        ],
+        "type": "object"
+      },
+      "BattleScenarioState": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rows": {
+            "$ref": "#/components/schemas/BattleRows"
+          }
+        },
+        "required": [
+          "id",
+          "rows"
+        ],
+        "type": "object"
+      },
+      "BattleState": {
+        "properties": {
+          "actionCount": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "batchCount": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fatigueActionThreshold": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "fatigueDamageStart": {
+            "format": "double",
+            "type": "number"
+          },
+          "log": {
+            "items": {
+              "$ref": "#/components/schemas/BattleLogEntry"
+            },
+            "type": "array"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/BattleScenarioState"
+            },
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BattleStatus"
+          },
+          "winnerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "actionCount",
+          "batchCount",
+          "status",
+          "winnerId",
+          "scenarios",
+          "log",
+          "fatigueActionThreshold",
+          "fatigueDamageStart"
+        ],
+        "type": "object"
+      },
+      "BattleStatus": {
+        "enum": [
+          "active",
+          "finished"
+        ],
+        "type": "string"
+      },
+      "BattleUnitState": {
+        "properties": {
+          "actedCount": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "actionBar": {
+            "format": "double",
+            "type": "number"
+          },
+          "activeEffects": {
+            "items": {
+              "$ref": "#/components/schemas/ActiveEffectState"
+            },
+            "type": "array"
+          },
+          "baseStats": {
+            "$ref": "#/components/schemas/UnitStats"
+          },
+          "currentHealth": {
+            "format": "double",
+            "type": "number"
+          },
+          "instanceId": {
+            "type": "string"
+          },
+          "itemBonusStats": {
+            "$ref": "#/components/schemas/UnitStats"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BattleItemState"
+            },
+            "type": "array"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rowType": {
+            "$ref": "#/components/schemas/RowType"
+          },
+          "scenarioId": {
+            "type": "string"
+          },
+          "selectionShape": {
+            "$ref": "#/components/schemas/TargetSelectionShape"
+          },
+          "shieldLayers": {
+            "items": {
+              "$ref": "#/components/schemas/ShieldLayer"
+            },
+            "type": "array"
+          },
+          "slot": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "targetCount": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "targetPriority": {
+            "$ref": "#/components/schemas/TargetPriority"
+          },
+          "targetScope": {
+            "$ref": "#/components/schemas/TargetScope"
+          },
+          "templateId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "instanceId",
+          "scenarioId",
+          "rowType",
+          "slot",
+          "name",
+          "baseStats",
+          "itemBonusStats",
+          "currentHealth",
+          "mana",
+          "actionBar",
+          "items",
+          "targetScope",
+          "targetPriority",
+          "targetCount",
+          "selectionShape",
+          "activeEffects",
+          "shieldLayers",
+          "actedCount"
+        ],
+        "type": "object"
+      },
+      "DamageLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "damage": {
+                "format": "double",
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "sourceId",
+              "target",
+              "targetId",
+              "damage"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "DeathLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "unit": {
+                "type": "string"
+              },
+              "unitId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "unit",
+              "unitId"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Effect": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EffectData"
+          },
+          {
+            "properties": {
+              "createdAt": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "needsTimingConfiguration": {
+                "type": "boolean"
+              },
+              "updatedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdAt",
+              "updatedAt",
+              "needsTimingConfiguration"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EffectApplyLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "actionsRemaining": {
+                "format": "int32",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "effect": {
+                "type": "string"
+              },
+              "stat": {
+                "$ref": "#/components/schemas/StatKey"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              },
+              "value": {
+                "format": "double",
+                "type": "number"
+              }
+            },
+            "required": [
+              "target",
+              "targetId",
+              "effect",
+              "stat",
+              "value"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EffectCategory": {
+        "enum": [
+          "buff",
+          "debuff",
+          "healing",
+          "damage"
+        ],
+        "type": "string"
+      },
+      "EffectData": {
+        "properties": {
+          "bypassesShield": {
+            "type": "boolean"
+          },
+          "criticalChance": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directHealing": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directMeleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directRangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directSpellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "dodge": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "effectType": {
+            "$ref": "#/components/schemas/EffectCategory"
+          },
+          "health": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "isTaunt": {
+            "type": "boolean"
+          },
+          "lastsForActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "mana": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "shield": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speed": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timingType": {
+            "$ref": "#/components/schemas/EffectTimingType"
+          },
+          "triggerCount": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "triggerEveryActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "timingType",
+          "effectType",
+          "isTaunt",
+          "bypassesShield",
+          "triggerEveryActions",
+          "triggerCount",
+          "lastsForActions",
+          "health",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "speed",
+          "dodge",
+          "criticalChance",
+          "shield",
+          "directHealing",
+          "directMeleeDmg",
+          "directRangedDmg",
+          "directSpellDmg"
+        ],
+        "type": "object"
+      },
+      "EffectExpireLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "actionsRemaining": {
+                "format": "int32",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "effect": {
+                "type": "string"
+              },
+              "stat": {
+                "$ref": "#/components/schemas/StatKey"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              },
+              "value": {
+                "format": "double",
+                "type": "number"
+              }
+            },
+            "required": [
+              "target",
+              "targetId",
+              "effect"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EffectInput": {
+        "additionalProperties": false,
+        "properties": {
+          "bypassesShield": {
+            "type": "boolean"
+          },
+          "criticalChance": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directHealing": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directMeleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directRangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "directSpellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "dodge": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "effectType": {
+            "$ref": "#/components/schemas/EffectCategory"
+          },
+          "health": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "isTaunt": {
+            "type": "boolean"
+          },
+          "lastsForActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "mana": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "shield": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speed": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timingType": {
+            "$ref": "#/components/schemas/EffectTimingType"
+          },
+          "triggerCount": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "triggerEveryActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "timingType",
+          "effectType"
+        ],
+        "type": "object"
+      },
+      "EffectList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EffectListItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "page": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalCount": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "totalCount",
+          "page",
+          "limit"
+        ],
+        "type": "object"
+      },
+      "EffectListItem": {
+        "properties": {
+          "bypassesShield": {
+            "type": "boolean"
+          },
+          "criticalChance": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "dodge": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "effectType": {
+            "$ref": "#/components/schemas/EffectCategory"
+          },
+          "health": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "isTaunt": {
+            "type": "boolean"
+          },
+          "lastsForActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "mana": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "needsTimingConfiguration": {
+            "type": "boolean"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "shield": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speed": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timingType": {
+            "$ref": "#/components/schemas/EffectTimingType"
+          },
+          "triggerCount": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "triggerEveryActions": {
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "timingType",
+          "effectType",
+          "triggerEveryActions",
+          "triggerCount",
+          "lastsForActions",
+          "health",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "speed",
+          "dodge",
+          "criticalChance",
+          "shield",
+          "id",
+          "updatedAt",
+          "needsTimingConfiguration"
+        ],
+        "type": "object"
+      },
+      "EffectTimingType": {
+        "enum": [
+          "instant",
+          "interval"
+        ],
+        "type": "string"
+      },
+      "FatigueLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "damage": {
+                "format": "double",
+                "type": "number"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "target",
+              "targetId",
+              "damage"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "HealLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "amount": {
+                "format": "double",
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source",
+              "sourceId",
+              "target",
+              "targetId",
+              "amount"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "Item": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ItemInput"
+          },
+          {
+            "properties": {
+              "createdAt": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "updatedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdAt",
+              "updatedAt"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ItemActivationLogEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseLogEntry"
+          },
+          {
+            "properties": {
+              "caster": {
+                "type": "string"
+              },
+              "casterId": {
+                "type": "string"
+              },
+              "effects": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "item": {
+                "type": "string"
+              },
+              "targetIds": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "targets": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "caster",
+              "casterId",
+              "item",
+              "targets",
+              "targetIds",
+              "effects"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ItemInput": {
+        "properties": {
+          "activationHealthCost": {
+            "format": "double",
+            "type": "number"
+          },
+          "activationManaCost": {
+            "format": "double",
+            "type": "number"
+          },
+          "allowedRowTypes": {
+            "items": {
+              "$ref": "#/components/schemas/RowType"
+            },
+            "type": "array"
+          },
+          "criticalChance": {
+            "format": "double",
+            "type": "number"
+          },
+          "dodge": {
+            "format": "double",
+            "type": "number"
+          },
+          "effectIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": "number"
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "dodge",
+          "criticalChance",
+          "activationManaCost",
+          "activationHealthCost",
+          "effectIds",
+          "allowedRowTypes"
+        ],
+        "type": "object"
+      },
+      "ItemList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemListItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "page": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalCount": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "totalCount",
+          "page",
+          "limit"
+        ],
+        "type": "object"
+      },
+      "ItemListItem": {
+        "properties": {
+          "criticalChance": {
+            "format": "double",
+            "type": "number"
+          },
+          "dodge": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": "number"
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "dodge",
+          "criticalChance",
+          "id",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "LinkageFilter": {
+        "oneOf": [
+          {
+            "properties": {
+              "mode": {
+                "enum": [
+                  "all"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "mode": {
+                "enum": [
+                  "linked"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "mode": {
+                "enum": [
+                  "unlinked"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "mode"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "mode": {
+                "enum": [
+                  "scenario"
+                ],
+                "type": "string"
+              },
+              "scenarioId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "scenarioId",
+              "mode"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ListInput": {
+        "properties": {
+          "limit": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "linkageFilter": {
+            "$ref": "#/components/schemas/LinkageFilter"
+          },
+          "page": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "sortDir": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "LoginInput": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "rememberMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "Replay": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReplayInput"
+          },
+          {
+            "properties": {
+              "createdAt": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdAt"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ReplayInput": {
+        "properties": {
+          "scenarioAId": {
+            "type": "string"
+          },
+          "scenarioBId": {
+            "type": "string"
+          },
+          "seed": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenarioAId",
+          "scenarioBId",
+          "seed"
+        ],
+        "type": "object"
+      },
+      "ReplayOutput": {
+        "properties": {
+          "replay": {
+            "$ref": "#/components/schemas/Replay"
+          },
+          "result": {
+            "$ref": "#/components/schemas/BattleResult"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioOption"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "replay",
+          "scenarios",
+          "result"
+        ],
+        "type": "object"
+      },
+      "RowType": {
+        "enum": [
+          "tank",
+          "melee",
+          "ranged",
+          "support"
+        ],
+        "type": "string"
+      },
+      "Scenario": {
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioRow"
+            },
+            "type": "array"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "rows",
+          "id",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ScenarioAssignment": {
+        "properties": {
+          "assignmentId": {
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "unitId": {
+            "type": "string"
+          },
+          "unitName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignmentId",
+          "unitId",
+          "unitName",
+          "position"
+        ],
+        "type": "object"
+      },
+      "ScenarioInput": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioRowInput"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "rows"
+        ],
+        "type": "object"
+      },
+      "ScenarioList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioListItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "page": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalCount": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "totalCount",
+          "page",
+          "limit"
+        ],
+        "type": "object"
+      },
+      "ScenarioListItem": {
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ScenarioOption": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "ScenarioRow": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioAssignment"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "rowType": {
+            "$ref": "#/components/schemas/RowType"
+          }
+        },
+        "required": [
+          "id",
+          "rowType",
+          "assignments"
+        ],
+        "type": "object"
+      },
+      "ScenarioRowInput": {
+        "properties": {
+          "rowType": {
+            "$ref": "#/components/schemas/RowType"
+          },
+          "unitIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "rowType",
+          "unitIds"
+        ],
+        "type": "object"
+      },
+      "SessionResponse": {
+        "oneOf": [
+          {
+            "properties": {
+              "authenticated": {
+                "type": "boolean"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "userRole": {
+                "$ref": "#/components/schemas/UserRole"
+              }
+            },
+            "required": [
+              "authenticated",
+              "userId",
+              "userRole"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "authenticated": {
+                "type": "boolean"
+              },
+              "hadSession": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "authenticated",
+              "hadSession"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ShieldLayer": {
+        "properties": {
+          "activeEffectId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "remaining": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "remaining"
+        ],
+        "type": "object"
+      },
+      "StatKey": {
+        "enum": [
+          "health",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "speed",
+          "dodge",
+          "criticalChance"
+        ],
+        "type": "string"
+      },
+      "Success": {
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "type": "object"
+      },
+      "TargetPriority": {
+        "enum": [
+          "highest_health",
+          "lowest_health",
+          "highest_damage",
+          "support",
+          "random"
+        ],
+        "type": "string"
+      },
+      "TargetScope": {
+        "enum": [
+          "self",
+          "self_allies",
+          "self_enemies",
+          "allies",
+          "enemies",
+          "both"
+        ],
+        "type": "string"
+      },
+      "TargetSelectionShape": {
+        "enum": [
+          "individual",
+          "adjacent"
+        ],
+        "type": "string"
+      },
+      "Unit": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UnitData"
+          },
+          {
+            "properties": {
+              "createdAt": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "updatedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdAt",
+              "updatedAt"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "UnitData": {
+        "properties": {
+          "criticalChance": {
+            "format": "double",
+            "type": "number"
+          },
+          "dodge": {
+            "format": "double",
+            "type": "number"
+          },
+          "health": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": "number"
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "selectionShape": {
+            "$ref": "#/components/schemas/TargetSelectionShape"
+          },
+          "speed": {
+            "format": "double",
+            "type": "number"
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "targetCount": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "targetPriority": {
+            "$ref": "#/components/schemas/TargetPriority"
+          },
+          "targetScope": {
+            "$ref": "#/components/schemas/TargetScope"
+          }
+        },
+        "required": [
+          "name",
+          "health",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "speed",
+          "dodge",
+          "criticalChance",
+          "targetScope",
+          "targetPriority",
+          "targetCount",
+          "selectionShape",
+          "itemIds"
+        ],
+        "type": "object"
+      },
+      "UnitInput": {
+        "properties": {
+          "criticalChance": {
+            "format": "double",
+            "type": "number"
+          },
+          "dodge": {
+            "format": "double",
+            "type": "number"
+          },
+          "health": {
+            "format": "double",
+            "type": "number"
+          },
+          "itemIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": "number"
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "selectionShape": {
+            "$ref": "#/components/schemas/TargetSelectionShape"
+          },
+          "speed": {
+            "format": "double",
+            "type": "number"
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "targetCount": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "targetPriority": {
+            "$ref": "#/components/schemas/TargetPriority"
+          },
+          "targetScope": {
+            "$ref": "#/components/schemas/TargetScope"
+          }
+        },
+        "required": [
+          "name",
+          "health",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "speed",
+          "dodge",
+          "criticalChance",
+          "itemIds"
+        ],
+        "type": "object"
+      },
+      "UnitList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UnitListItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "page": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalCount": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "totalCount",
+          "page",
+          "limit"
+        ],
+        "type": "object"
+      },
+      "UnitListItem": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "UnitStats": {
+        "properties": {
+          "criticalChance": {
+            "format": "double",
+            "type": "number"
+          },
+          "dodge": {
+            "format": "double",
+            "type": "number"
+          },
+          "health": {
+            "format": "double",
+            "type": "number"
+          },
+          "mana": {
+            "format": "double",
+            "type": "number"
+          },
+          "manaRegen": {
+            "format": "double",
+            "type": "number"
+          },
+          "meleeDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "rangedDmg": {
+            "format": "double",
+            "type": "number"
+          },
+          "speed": {
+            "format": "double",
+            "type": "number"
+          },
+          "spellDmg": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "health",
+          "mana",
+          "meleeDmg",
+          "rangedDmg",
+          "manaRegen",
+          "spellDmg",
+          "speed",
+          "dodge",
+          "criticalChance"
+        ],
+        "type": "object"
+      },
+      "UserRole": {
+        "enum": [
+          "game_master",
+          "player"
+        ],
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "Quartermasters Draft API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/battle/scenario-options": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScenarioOption"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/effects": {
+      "get": {
+        "parameters": [
+          {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListInput"
+                }
+              }
+            },
+            "description": "URL-encoded JSON list filters; defaults page=1, limit=20, sortBy=name, sortDir=asc, linkageFilter.mode=all; limit 1..500.",
+            "in": "query",
+            "name": "input"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EffectList"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EffectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Effect"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/effects/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Effect"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EffectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Effect"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/items": {
+      "get": {
+        "parameters": [
+          {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListInput"
+                }
+              }
+            },
+            "description": "URL-encoded JSON list filters; defaults page=1, limit=20, sortBy=name, sortDir=asc, linkageFilter.mode=all; limit 1..500.",
+            "in": "query",
+            "name": "input"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemList"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/items/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/replays": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayOutput"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayOutput"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/scenarios": {
+      "get": {
+        "parameters": [
+          {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListInput"
+                }
+              }
+            },
+            "description": "URL-encoded JSON list filters; defaults page=1, limit=20, sortBy=name, sortDir=asc, linkageFilter.mode=all; limit 1..500.",
+            "in": "query",
+            "name": "input"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioList"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scenario"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/scenarios/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scenario"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scenario"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/units": {
+      "get": {
+        "parameters": [
+          {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListInput"
+                }
+              }
+            },
+            "description": "URL-encoded JSON list filters; defaults page=1, limit=20, sortBy=name, sortDir=asc, linkageFilter.mode=all; limit 1..500.",
+            "in": "query",
+            "name": "input"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitList"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unit"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    },
+    "/api/v1/units/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unit"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Unit"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid input"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal error"
+          }
+        }
+      }
+    }
+  }
+}

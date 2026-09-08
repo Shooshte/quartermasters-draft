@@ -1,6 +1,6 @@
 import { expect, test } from "../db-reset.fixture";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/rest-api";
 import { IRON_SWORD_ID } from "../helpers/seed-constants";
-import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { ItemWorkspacePage } from "../pages/item-workspace.page";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { ITEMS_TAB } from "../pages/library-tab-configs";

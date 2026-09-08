@@ -1,0 +1,23 @@
+{
+  "name": "@qd/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "generate": "node scripts/generate.mjs",
+    "check:generated": "node scripts/generate.mjs --check"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.10.1",
+    "typescript": "5.9.3"
+  }
+}

@@ -15,7 +15,13 @@
       "!**/coverage",
       "!**/playwright-report",
       "!**/test-results",
-      "!apps/web/src/routeTree.gen.ts"
+      "!apps/web/src/routeTree.gen.ts",
+      "!packages/api-client/src/generated.ts",
+      "!packages/api-client/openapi.json",
+      "!fixtures/engine-parity",
+      "!crates/qd-db/seed-data.json",
+      "!crates/qd-db/schema-signatures.json",
+      "!crates/qd-db/legacy-schema-signatures.json"
     ]
   },
   "formatter": {

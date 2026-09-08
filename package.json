@@ -6,20 +6,21 @@
     "node": ">=24 <26"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "biome check . && turbo run typecheck",
+    "build": "pnpm --filter @qd/web... build && cargo build --release --workspace",
+    "dev": "bash scripts/dev.sh",
+    "lint": "biome check . && turbo run typecheck && cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "typecheck": "turbo run typecheck",
-    "check": "pnpm run lint && pnpm run deps:check && pnpm run test && pnpm run build",
+    "check": "pnpm run api:check && pnpm run lint && pnpm run deps:check && pnpm run test && pnpm run build",
     "deps:check": "DATABASE_URL=postgres://postgres:password@localhost:5432/quartermasters_draft knip",
-    "test": "turbo run test",
+    "test": "turbo run test && pnpm run test:rust",
     "test:e2e": "pnpm --filter @qd/e2e test:e2e",
-    "db:generate": "turbo run db:generate",
-    "db:migrate": "turbo run db:migrate",
-    "db:push": "pnpm --filter @qd/db db:push",
-    "db:seed": "pnpm --filter @qd/db db:seed"
+    "db:migrate": "cargo run -p qd-db -- migrate",
+    "db:seed": "cargo run -p qd-db -- seed",
+    "test:rust": "bash scripts/test-rust.sh",
+    "api:generate": "pnpm --filter @qd/api-client generate",
+    "api:check": "pnpm --filter @qd/api-client check:generated"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",

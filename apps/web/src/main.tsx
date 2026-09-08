@@ -1,0 +1,10 @@
+import { RouterProvider } from "@tanstack/react-router";
+import { createRoot } from "react-dom/client";
+import { watchSessionChanges } from "./lib/session-revalidation";
+import { getRouter } from "./router";
+import "./styles/app.css";
+const router = getRouter();
+watchSessionChanges(router);
+const root = document.getElementById("root");
+if (!root) throw new Error("Application root is missing.");
+createRoot(root).render(<RouterProvider router={router} />);

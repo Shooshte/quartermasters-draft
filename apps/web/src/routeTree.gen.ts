@@ -16,8 +16,6 @@ import { Route as AuthenticatedPlayRouteImport } from './routes/_authenticated/p
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedBattleRouteImport } from './routes/_authenticated/battle'
 import { Route as Authenticated403RouteImport } from './routes/_authenticated/403'
-import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc.$'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth.$'
 import { Route as AuthenticatedReplayIdRouteImport } from './routes/_authenticated/replay.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -54,16 +52,6 @@ const Authenticated403Route = Authenticated403RouteImport.update({
   path: '/403',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
-  id: '/api/trpc/$',
-  path: '/api/trpc/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedReplayIdRoute = AuthenticatedReplayIdRouteImport.update({
   id: '/replay/$id',
   path: '/replay/$id',
@@ -78,8 +66,6 @@ export interface FileRoutesByFullPath {
   '/create': typeof AuthenticatedCreateRoute
   '/play': typeof AuthenticatedPlayRoute
   '/replay/$id': typeof AuthenticatedReplayIdRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -89,8 +75,6 @@ export interface FileRoutesByTo {
   '/play': typeof AuthenticatedPlayRoute
   '/': typeof AuthenticatedIndexRoute
   '/replay/$id': typeof AuthenticatedReplayIdRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,8 +86,6 @@ export interface FileRoutesById {
   '/_authenticated/play': typeof AuthenticatedPlayRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/replay/$id': typeof AuthenticatedReplayIdRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/trpc/$': typeof ApiTrpcSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -115,19 +97,8 @@ export interface FileRouteTypes {
     | '/create'
     | '/play'
     | '/replay/$id'
-    | '/api/auth/$'
-    | '/api/trpc/$'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/login'
-    | '/403'
-    | '/battle'
-    | '/create'
-    | '/play'
-    | '/'
-    | '/replay/$id'
-    | '/api/auth/$'
-    | '/api/trpc/$'
+  to: '/login' | '/403' | '/battle' | '/create' | '/play' | '/' | '/replay/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -138,15 +109,11 @@ export interface FileRouteTypes {
     | '/_authenticated/play'
     | '/_authenticated/'
     | '/_authenticated/replay/$id'
-    | '/api/auth/$'
-    | '/api/trpc/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -200,20 +167,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Authenticated403RouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/trpc/$': {
-      id: '/api/trpc/$'
-      path: '/api/trpc/$'
-      fullPath: '/api/trpc/$'
-      preLoaderRoute: typeof ApiTrpcSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/replay/$id': {
       id: '/_authenticated/replay/$id'
       path: '/replay/$id'
@@ -249,18 +202,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

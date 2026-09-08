@@ -32,7 +32,7 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: session, isPending: sessionLoading } = authClient.useSession();
+  const { data: session, isPending: sessionLoading, error: sessionError } = authClient.useSession();
 
   // Redirect already-authenticated users
   useEffect(() => {
@@ -147,9 +147,9 @@ function LoginPage() {
               </p>
             )}
 
-            {error && (
+            {Boolean(error || sessionError) && (
               <p className="text-sm text-destructive" role="alert">
-                {error}
+                {error ?? "Unable to check your session. Please try signing in again."}
               </p>
             )}
 

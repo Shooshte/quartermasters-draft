@@ -1,5 +1,4 @@
-import type { AppRouter } from "@qd/api";
-import type { inferRouterOutputs } from "@trpc/server";
+import type { ReplayOutput } from "@qd/api-client";
 import { Card, CardContent, CardDescription, CardHeader } from "~/components/ui/card";
 import {
   type BattleLedgerItem,
@@ -9,7 +8,6 @@ import {
   buildBattleLedgerItems,
 } from "./battle-event-ledger-model";
 
-type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
 type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["rows"]["tank"][number];
 type BattleLogEntry = ReplayOutput["result"]["log"][number];
 type DetailedModifierEntry = Extract<BattleLogEntry, { type: "effect-apply" | "effect-expire" }> & {

@@ -1,10 +1,8 @@
-import type { AppRouter } from "@qd/api";
+import type { ReplayOutput } from "@qd/api-client";
 import { render, screen, within } from "@testing-library/react";
-import type { inferRouterOutputs } from "@trpc/server";
 import { describe, expect, it, vi } from "vitest";
 import { BattleResultView } from "~/components/battle/battle-result";
 
-type ReplayOutput = inferRouterOutputs<AppRouter>["battleLab"]["get"];
 type BattleUnit = ReplayOutput["result"]["finalState"]["scenarios"][number]["rows"]["tank"][number];
 
 const stats = {

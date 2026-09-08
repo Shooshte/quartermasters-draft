@@ -70,6 +70,14 @@ describe("Login page", () => {
     mockUseSession.mockReturnValue({ data: null, isPending: false });
   });
 
+  it("shows an actionable session service error instead of silently treating it as logged out", async () => {
+    mockUseSession.mockReturnValue({ data: null, isPending: false, error: new Error("Offline") });
+    await renderLoginRoute();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Unable to check your session. Please try signing in again.",
+    );
+  });
+
   it("renders email, password, remember me, and submit button", async () => {
     await renderLoginRoute();
 

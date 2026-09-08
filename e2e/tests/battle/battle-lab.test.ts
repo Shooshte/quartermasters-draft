@@ -1,8 +1,10 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { expect, test } from "../db-reset.fixture";
+import { parseApiResponse } from "../helpers/rest-api";
 import {
   AMBUSH_AT_DAWN_ID,
   AMBUSH_AT_DAWN_NAME,
+  API_BASE,
   ARCANE_DAMAGE_ID,
   BARBARIAN_ID,
   BATTLE_LAB_SEED,
@@ -14,9 +16,7 @@ import {
   RANGER_ID,
   SAMURAI_ID,
   TEMPLAR_ID,
-  TRPC_BASE,
 } from "../helpers/seed-constants";
-import { parseTrpcResponse } from "../helpers/trpc-api";
 import { runWorkerSql } from "../helpers/worker-db";
 import { BattleLabPage } from "../pages/battle-lab.page";
 
@@ -106,20 +106,18 @@ test.afterEach(async ({ resetDb }) => {
 });
 
 async function getScenario(request: APIRequestContext, id: string): Promise<ScenarioRecord> {
-  const input = encodeURIComponent(JSON.stringify({ json: { id } }));
-  const response = await request.get(`${TRPC_BASE}/scenarioBuilder.scenarios.get?input=${input}`);
+  const response = await request.get(`${API_BASE}/scenarios/${id}`);
   await expect(response).toBeOK();
-  return parseTrpcResponse(response);
+  return parseApiResponse(response);
 }
 
 async function getBattleReplay(
   request: APIRequestContext,
   id: string,
 ): Promise<BattleReplayResponse> {
-  const input = encodeURIComponent(JSON.stringify({ json: { id } }));
-  const response = await request.get(`${TRPC_BASE}/battleLab.get?input=${input}`);
+  const response = await request.get(`${API_BASE}/replays/${id}`);
   await expect(response).toBeOK();
-  return parseTrpcResponse(response);
+  return parseApiResponse(response);
 }
 
 async function updateScenario(
@@ -131,18 +129,15 @@ async function updateScenario(
     unitIds: row.assignments.map((assignment) => assignment.unitId),
   })),
 ): Promise<ScenarioRecord> {
-  const response = await request.post(`${TRPC_BASE}/scenarioBuilder.scenarios.update`, {
+  const response = await request.put(`${API_BASE}/scenarios/${scenario.id}`, {
     data: {
-      json: {
-        id: scenario.id,
-        name,
-        rows,
-      },
+      name,
+      rows,
     },
     headers: { "Content-Type": "application/json" },
   });
   await expect(response).toBeOK();
-  return parseTrpcResponse(response);
+  return parseApiResponse(response);
 }
 
 async function ensureSelectedScenariosHaveLivingUnits(page: Page) {

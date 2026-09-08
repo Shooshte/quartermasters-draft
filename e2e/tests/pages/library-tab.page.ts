@@ -11,7 +11,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 export interface LibraryTabConfig {
   /** Tab label displayed in the UI (e.g. "Effects", "Scenarios") */
   tabName: string;
-  /** tRPC entity namespace (e.g. "effects", "scenarios") */
+  /** REST resource name (e.g. "effects", "scenarios") */
   entityType: string;
   /** URL search param name for the entity ID (e.g. "effect_id", "scenario_id") */
   idParamName: string;
@@ -60,9 +60,12 @@ export class LibraryTabPage {
 
   /** Run an action that should refetch the active library list and wait for the response */
   async waitForListRefetch(action: () => Promise<void>): Promise<void> {
-    const procedureName = `scenarioBuilder.${this.config.entityType}.list`;
+    const resourcePath = `/api/v1/${this.config.entityType}`;
     const responsePromise = this.page.waitForResponse(
-      (response) => response.url().includes(procedureName) && response.ok(),
+      (response) =>
+        new URL(response.url()).pathname === resourcePath &&
+        response.request().method() === "GET" &&
+        response.ok(),
       { timeout: 15_000 },
     );
 

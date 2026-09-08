@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { trpc } from "~/lib/trpc";
+import { api } from "~/lib/api";
 import {
   effectRecordToFormValues,
   normalizeEffectFormValues,
@@ -319,13 +319,13 @@ export function useCreatePageState(
   const effectOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "effects", "all-options"],
     queryFn: () =>
-      loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.effects.list.query(input)),
+      loadAllWorkspaceOptions((input) => api.scenarioBuilder.effects.list.query(input)),
     enabled: entityWorkspace.entityType === "item",
   });
 
   const itemOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "items", "all-options"],
-    queryFn: () => loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.items.list.query(input)),
+    queryFn: () => loadAllWorkspaceOptions((input) => api.scenarioBuilder.items.list.query(input)),
     enabled: entityWorkspace.entityType === "unit",
   });
 
@@ -333,16 +333,16 @@ export function useCreatePageState(
     queryKey: ["scenarioBuilder", "units", "all-options-for-scenarios"],
     queryFn: async () => {
       const units = await loadAllWorkspaceOptions((input) =>
-        trpc.scenarioBuilder.units.list.query(input),
+        api.scenarioBuilder.units.list.query(input),
       );
       const unitRecords = await Promise.all(
         units.map((unit: { id: string; name: string }) =>
-          trpc.scenarioBuilder.units.get.query({ id: unit.id }),
+          api.scenarioBuilder.units.get.query({ id: unit.id }),
         ),
       );
       const itemIds = [...new Set(unitRecords.flatMap((unit) => unit.itemIds))];
       const itemRecords = await Promise.all(
-        itemIds.map((id) => trpc.scenarioBuilder.items.get.query({ id })),
+        itemIds.map((id) => api.scenarioBuilder.items.get.query({ id })),
       );
       const allowedRowsByItemId = new Map(
         itemRecords.map((item) => [item.id, item.allowedRowTypes as ScenarioRowType[]]),
@@ -364,7 +364,7 @@ export function useCreatePageState(
   const scenarioFilterOptionsQuery = useQuery({
     queryKey: ["scenarioBuilder", "scenarios", "all-options-for-filter"],
     queryFn: () =>
-      loadAllWorkspaceOptions((input) => trpc.scenarioBuilder.scenarios.list.query(input)),
+      loadAllWorkspaceOptions((input) => api.scenarioBuilder.scenarios.list.query(input)),
     enabled: backgroundEnabled,
   });
 
@@ -496,7 +496,7 @@ export function useCreatePageState(
       setScenarioSaveError(null);
 
       if (currentScenarioWorkspace.mode === "create") {
-        const created = await trpc.scenarioBuilder.scenarios.create.mutate(normalized);
+        const created = await api.scenarioBuilder.scenarios.create.mutate(normalized);
         const createdData = created as { id: string; name: string; [key: string]: unknown };
         queryClient.setQueryData(
           ["scenarioBuilder", "scenarios", "get", createdData.id],
@@ -522,7 +522,7 @@ export function useCreatePageState(
           replace: true,
         });
       } else if (currentScenarioWorkspace.mode === "edit" && currentScenarioWorkspace.entityId) {
-        const updated = await trpc.scenarioBuilder.scenarios.update.mutate({
+        const updated = await api.scenarioBuilder.scenarios.update.mutate({
           id: currentScenarioWorkspace.entityId,
           ...normalized,
         });
@@ -570,7 +570,7 @@ export function useCreatePageState(
         setEntitySaveError(null);
 
         if (currentEntityWorkspace.mode === "create") {
-          const created = await trpc.scenarioBuilder.effects.create.mutate(normalized);
+          const created = await api.scenarioBuilder.effects.create.mutate(normalized);
           queryClient.setQueryData(["scenarioBuilder", "effects", "get", created.id], created);
           const nextWorkspace: WorkspaceState = {
             mode: "edit",
@@ -595,7 +595,7 @@ export function useCreatePageState(
             replace: true,
           });
         } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
-          const updated = await trpc.scenarioBuilder.effects.update.mutate({
+          const updated = await api.scenarioBuilder.effects.update.mutate({
             id: currentEntityWorkspace.entityId,
             ...normalized,
           });
@@ -630,7 +630,7 @@ export function useCreatePageState(
         setEntitySaveError(null);
 
         if (currentEntityWorkspace.mode === "create") {
-          const created = await trpc.scenarioBuilder.items.create.mutate(normalized);
+          const created = await api.scenarioBuilder.items.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(
             ["scenarioBuilder", "items", "get", createdData.id],
@@ -659,7 +659,7 @@ export function useCreatePageState(
             replace: true,
           });
         } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
-          const updated = await trpc.scenarioBuilder.items.update.mutate({
+          const updated = await api.scenarioBuilder.items.update.mutate({
             id: currentEntityWorkspace.entityId,
             ...normalized,
           });
@@ -705,7 +705,7 @@ export function useCreatePageState(
         setEntitySaveError(null);
 
         if (currentEntityWorkspace.mode === "create") {
-          const created = await trpc.scenarioBuilder.units.create.mutate(normalized);
+          const created = await api.scenarioBuilder.units.create.mutate(normalized);
           const createdData = created as { id: string; name: string; [key: string]: unknown };
           queryClient.setQueryData(
             ["scenarioBuilder", "units", "get", createdData.id],
@@ -734,7 +734,7 @@ export function useCreatePageState(
             replace: true,
           });
         } else if (currentEntityWorkspace.mode === "edit" && currentEntityWorkspace.entityId) {
-          const updated = await trpc.scenarioBuilder.units.update.mutate({
+          const updated = await api.scenarioBuilder.units.update.mutate({
             id: currentEntityWorkspace.entityId,
             ...normalized,
           });

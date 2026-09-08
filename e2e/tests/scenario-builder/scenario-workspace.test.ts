@@ -47,6 +47,7 @@ test.describe("Scenario Workspace", () => {
     await scenario.fillName("Ambush at Dawn");
     await saveEntityAndWait(gmPage, "scenarios", "create", {
       saveButtonTestId: "scenario-save-button",
+      expectedStatus: 409,
     });
 
     await expect(scenario.saveError).toHaveText("A scenario with this name already exists");

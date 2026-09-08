@@ -1,59 +1,27 @@
-import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import postgres from "postgres";
-import * as schema from "../../../packages/db/src/schema";
-import {
-  effectSeedData,
-  itemAllowedRowSeedData,
-  itemSeedData,
-  itemsEffectsSeedData,
-  scenarioSeedData,
-  scenariosRowsSeedData,
-  scenariosRowsUnitsSeedData,
-  unitSeedData,
-  unitsItemsSeedData,
-} from "../../../packages/db/src/seed-data";
 
+const execFileAsync = promisify(execFile);
 const POSTGRES_HOST = process.env.E2E_POSTGRES_HOST ?? "127.0.0.1";
 const POSTGRES_PORT = process.env.E2E_POSTGRES_PORT ?? "5433";
 const POSTGRES_USER = process.env.E2E_POSTGRES_USER ?? "postgres";
 const POSTGRES_PASSWORD = process.env.E2E_POSTGRES_PASSWORD ?? "password";
-
-const TRUNCATE_APP_TABLES_SQL = `
-  TRUNCATE TABLE
-    scenarios_rows_units,
-    scenarios_rows,
-    scenarios,
-    units_items,
-    units,
-    items_allowed_rows,
-    items_effects,
-    items,
-    effects
-  RESTART IDENTITY CASCADE
-`;
-
-function createWorkerDb(dbName: string) {
-  const client = postgres(
-    `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${dbName}`,
-    { max: 1 },
-  );
-
-  return {
-    client,
-    db: drizzle({ client, schema }),
-  };
-}
-
-const workerDbs = new Map<string, ReturnType<typeof createWorkerDb>>();
+const workerDbs = new Map<string, ReturnType<typeof postgres>>();
 
 function getWorkerDb(dbName: string) {
   const existing = workerDbs.get(dbName);
   if (existing) return existing;
-
-  const created = createWorkerDb(dbName);
-  workerDbs.set(dbName, created);
-  return created;
+  const client = postgres({
+    host: POSTGRES_HOST,
+    port: Number(POSTGRES_PORT),
+    username: POSTGRES_USER,
+    password: POSTGRES_PASSWORD,
+    database: dbName,
+    max: 1,
+  });
+  workerDbs.set(dbName, client);
+  return client;
 }
 
 export function getWorkerDbName(parallelIndex: number) {
@@ -61,20 +29,10 @@ export function getWorkerDbName(parallelIndex: number) {
 }
 
 export async function resetWorkerDb(dbName: string) {
-  const { db } = getWorkerDb(dbName);
-
-  await db.transaction(async (tx) => {
-    await tx.execute(sql.raw(TRUNCATE_APP_TABLES_SQL));
-    await tx.insert(schema.effects).values(effectSeedData);
-    await tx.insert(schema.items).values(itemSeedData);
-    await tx.insert(schema.itemsAllowedRows).values(itemAllowedRowSeedData);
-    await tx.insert(schema.itemsEffects).values(itemsEffectsSeedData);
-    await tx.insert(schema.units).values(unitSeedData);
-    await tx.insert(schema.unitsItems).values(unitsItemsSeedData);
-    await tx.insert(schema.scenarios).values(scenarioSeedData);
-    await tx.insert(schema.scenariosRows).values(scenariosRowsSeedData);
-    await tx.insert(schema.scenariosRowsUnits).values(scenariosRowsUnitsSeedData);
-  });
+  const match = /^qd_worker_(\d+)$/.exec(dbName);
+  if (!match) throw new Error(`Invalid E2E database name: ${dbName}`);
+  // Exercise the same Rust seed/reset implementation used by the development CLI.
+  await execFileAsync("docker", ["exec", `qd-e2e-app-${match[1]}`, "qd-db", "reset-game-data"]);
 }
 
 export async function resetWorkerDbByIndex(parallelIndex: number) {
@@ -82,13 +40,12 @@ export async function resetWorkerDbByIndex(parallelIndex: number) {
 }
 
 export async function runWorkerSql(parallelIndex: number, sql: string): Promise<string[][]> {
-  const dbName = getWorkerDbName(parallelIndex);
-  const { client } = getWorkerDb(dbName);
+  const client = getWorkerDb(getWorkerDbName(parallelIndex));
   const result = await client.unsafe(sql);
   return result.map((row: Record<string, unknown>) => Object.values(row).map(String));
 }
 
 export async function closeAllWorkerDbs() {
-  await Promise.all([...workerDbs.values()].map(({ client }) => client.end()));
+  await Promise.all([...workerDbs.values()].map((client) => client.end()));
   workerDbs.clear();
 }

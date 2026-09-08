@@ -1,0 +1,11 @@
+[package]
+name = "qd-db"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sqlx = { version = "0.9", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "json"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+sha2 = "0.10"

@@ -25,9 +25,9 @@ export async function openNewEntity(
 // ─── Save ────────────────────────────────────────────────────────────────────
 
 /**
- * Click the save button and wait for the corresponding tRPC mutation response.
+ * Click the save button and wait for the corresponding REST mutation response.
  *
- * @param entityType - The tRPC entity namespace (e.g. "items", "units")
+ * @param entityType - The REST entity namespace (e.g. "items", "units")
  * @param mutation - "create" or "update"
  * @param opts.saveButtonTestId - Override save button test ID (default: "entity-save-button")
  */
@@ -35,16 +35,16 @@ export async function saveEntityAndWait(
   page: Page,
   entityType: "effects" | "items" | "units" | "scenarios",
   mutation: "create" | "update",
-  opts?: { saveButtonTestId?: string },
+  opts?: { saveButtonTestId?: string; expectedStatus?: number },
 ): Promise<void> {
   const buttonTestId = opts?.saveButtonTestId ?? "entity-save-button";
   const saveButton = page.getByTestId(buttonTestId);
   await Promise.all([
     page.waitForResponse(
       (response) =>
-        response.url().includes(`/api/trpc/scenarioBuilder.${entityType}.${mutation}`) &&
-        response.request().method() === "POST" &&
-        response.ok(),
+        new URL(response.url()).pathname.startsWith(`/api/v1/${entityType}`) &&
+        response.request().method() === (mutation === "create" ? "POST" : "PUT") &&
+        response.status() === (opts?.expectedStatus ?? 200),
     ),
     saveButton.click(),
   ]);

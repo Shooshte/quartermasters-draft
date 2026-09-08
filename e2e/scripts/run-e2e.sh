@@ -14,8 +14,15 @@ IMAGE_INPUTS=(
   pnpm-lock.yaml
   pnpm-workspace.yaml
   turbo.json
+  Cargo.toml
+  Cargo.lock
+  rust-toolchain.toml
+  crates
+  fixtures
+  scripts
   apps
   packages
+  reference
 )
 
 hash_stream() {

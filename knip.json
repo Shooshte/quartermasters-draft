@@ -9,6 +9,7 @@
       "entry": [
         "vite.config.ts",
         "vitest.config.ts",
+        "src/main.tsx",
         "src/router.tsx",
         "src/routes/**/*.ts",
         "src/routes/**/*.tsx",
@@ -16,15 +17,15 @@
       ],
       "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"]
     },
-    "packages/api": {
+    "reference/api": {
       "entry": ["src/index.ts", "vitest.config.ts", "vitest.setup.ts"],
       "project": ["src/**/*.ts"]
     },
-    "packages/db": {
+    "reference/db": {
       "entry": ["src/index.ts", "src/seed.ts", "drizzle.config.ts", "vitest.config.ts"],
       "project": ["src/**/*.ts"]
     },
-    "packages/engine": {
+    "reference/engine": {
       "entry": ["src/index.ts", "vitest.config.ts"],
       "project": ["src/**/*.ts"]
     },

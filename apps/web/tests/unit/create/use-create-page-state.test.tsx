@@ -148,8 +148,8 @@ const {
   };
 });
 
-vi.mock("~/lib/trpc", () => ({
-  trpc: {
+vi.mock("~/lib/api", () => ({
+  api: {
     scenarioBuilder: {
       effects: {
         list: { query: mockEffectsList },

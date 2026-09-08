@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { trpc } from "~/lib/trpc";
+import { api } from "~/lib/api";
 import { BattleResultView } from "./battle-result";
 import { type BattleSetup, BattleSetupForm } from "./battle-setup-form";
 
@@ -29,14 +29,14 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
 
   const optionsQuery = useQuery({
     queryKey: ["battleLab", "scenarioOptions"],
-    queryFn: () => trpc.battleLab.scenarioOptions.query(),
+    queryFn: () => api.battleLab.scenarioOptions.query(),
   });
 
   const replayQuery = useQuery({
     queryKey: ["battleLab", "replay", replayId],
     queryFn: () => {
       if (!replayId) throw new Error("Replay ID is required.");
-      return trpc.battleLab.get.query({ id: replayId });
+      return api.battleLab.get.query({ id: replayId });
     },
     enabled: Boolean(replayId),
     refetchOnMount: "always",
@@ -64,7 +64,7 @@ export function BattleWorkbench({ replayId }: BattleWorkbenchProps) {
   }, [replayId, replayQuery.data, replayQuery.isError, replayQuery.isFetching]);
 
   const createReplay = useMutation({
-    mutationFn: (input: BattleSetup) => trpc.battleLab.create.mutate(input),
+    mutationFn: (input: BattleSetup) => api.battleLab.create.mutate(input),
     onSuccess: ({ replay }) => {
       navigate({
         to: "/replay/$id",

@@ -1,6 +1,6 @@
 import { expect, test } from "../db-reset.fixture";
+import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/rest-api";
 import { BARBARIAN_ID } from "../helpers/seed-constants";
-import { deleteEntityViaApi, listEntityIdsViaApi } from "../helpers/trpc-api";
 import { LibraryTabPage } from "../pages/library-tab.page";
 import { UNITS_TAB } from "../pages/library-tab-configs";
 

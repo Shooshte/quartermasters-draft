@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FullConfig } from "@playwright/test";
@@ -30,18 +30,26 @@ function appRun(envDb: string, cmd: string) {
 
 export default async function globalSetup(_config: FullConfig) {
   console.log(`[global-setup] Preparing ${WORKERS} workers...`);
+  execFileSync(
+    "docker",
+    ["run", "--rm", IMAGE, "sh", "-c", "! command -v node && ! command -v pnpm"],
+    {
+      stdio: "pipe",
+      timeout: 15_000,
+    },
+  );
 
   // Phase 1: Create and fully seed worker 0
   const db0 = "qd_worker_0";
   psql("postgres", `DROP DATABASE IF EXISTS ${db0}`);
   psql("postgres", `CREATE DATABASE ${db0}`);
-  appRun(dbUrl(db0), "pnpm --filter @qd/db db:push");
-  appRun(dbUrl(db0), "pnpm --filter @qd/db db:seed");
+  appRun(dbUrl(db0), "qd-db migrate");
+  appRun(dbUrl(db0), "qd-db seed");
 
   // Phase 2: Dump worker 0 seed data inside postgres container for fast cloning
   execSync(
     `docker compose -f "${COMPOSE_FILE}" exec -T postgres ` +
-      `pg_dump -U postgres -d ${db0} --data-only --no-owner --no-acl -f /tmp/qd-seed-dump.sql`,
+      `pg_dump -U postgres -d ${db0} --no-owner --no-acl -f /tmp/qd-seed-dump.sql`,
     { stdio: "pipe", timeout: 30_000 },
   );
 
@@ -50,7 +58,6 @@ export default async function globalSetup(_config: FullConfig) {
     const dbName = `qd_worker_${i}`;
     psql("postgres", `DROP DATABASE IF EXISTS ${dbName}`);
     psql("postgres", `CREATE DATABASE ${dbName}`);
-    appRun(dbUrl(dbName), "pnpm --filter @qd/db db:push");
     execSync(
       `docker compose -f "${COMPOSE_FILE}" exec -T postgres psql -U postgres -d ${dbName} -f /tmp/qd-seed-dump.sql`,
       { stdio: "pipe", timeout: 15_000 },
@@ -72,7 +79,7 @@ export default async function globalSetup(_config: FullConfig) {
         `-e BETTER_AUTH_URL=http://localhost:${port}`,
         `-e PORT=${port}`,
         `-e HOST=0.0.0.0`,
-        `${IMAGE} node apps/web/.output/server/index.mjs`,
+        `${IMAGE} qd-server`,
       ].join(" "),
       { stdio: "pipe", timeout: 15_000 },
     );

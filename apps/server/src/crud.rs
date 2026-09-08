@@ -312,7 +312,7 @@ async fn save(
     value: Value,
 ) -> Result<Value> {
     let value = normalized(entity, value)?;
-    let mut tx = state.pool.begin().await?;
+    let mut tx = crate::transaction::begin(&state.pool).await?;
     let mut scenario_rows = vec![];
     if let Some(entity_id) = entity_id {
         let sql = format!("SELECT id FROM {} WHERE id=$1 FOR UPDATE", entity.table());
@@ -637,7 +637,7 @@ async fn list(
     };
     let (condition, scenario_id) = linkage_sql(entity, &input.linkage_filter)?;
     // Repeatable read keeps count and rows from one database snapshot.
-    let mut tx = state.pool.begin().await?;
+    let mut tx = crate::transaction::begin(&state.pool).await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         .execute(&mut *tx)
         .await?;

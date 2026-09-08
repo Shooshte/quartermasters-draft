@@ -22,6 +22,7 @@ IMAGE_INPUTS=(
   scripts
   apps
   packages
+  reference
 )
 
 hash_stream() {

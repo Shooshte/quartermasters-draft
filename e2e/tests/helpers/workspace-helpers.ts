@@ -35,7 +35,7 @@ export async function saveEntityAndWait(
   page: Page,
   entityType: "effects" | "items" | "units" | "scenarios",
   mutation: "create" | "update",
-  opts?: { saveButtonTestId?: string },
+  opts?: { saveButtonTestId?: string; expectedStatus?: number },
 ): Promise<void> {
   const buttonTestId = opts?.saveButtonTestId ?? "entity-save-button";
   const saveButton = page.getByTestId(buttonTestId);
@@ -44,7 +44,7 @@ export async function saveEntityAndWait(
       (response) =>
         new URL(response.url()).pathname.startsWith(`/api/v1/${entityType}`) &&
         response.request().method() === (mutation === "create" ? "POST" : "PUT") &&
-        response.ok(),
+        response.status() === (opts?.expectedStatus ?? 200),
     ),
     saveButton.click(),
   ]);

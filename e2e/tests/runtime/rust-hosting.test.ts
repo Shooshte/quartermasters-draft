@@ -1,7 +1,7 @@
 import { expect, test } from "../db-reset.fixture";
 
 test("protected editor deep links survive browser refresh", async ({ gmPage }) => {
-  await gmPage.goto("/create?tab=units");
+  await gmPage.goto("/create?tab=Units");
   await expect(gmPage.getByRole("tab", { name: "Units", exact: true })).toHaveAttribute(
     "aria-selected",
     "true",

@@ -165,34 +165,55 @@
           },
           "criticalChance": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "directHealing": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "directMeleeDmg": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "directRangedDmg": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "directSpellDmg": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "dodge": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "effectType": {
             "$ref": "#/components/schemas/EffectCategory"
           },
           "health": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "id": {
             "type": "string"
@@ -202,49 +223,79 @@
           },
           "lastsForActions": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "mana": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "manaRegen": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "meleeDmg": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "name": {
             "type": "string"
           },
           "rangedDmg": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "shield": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "speed": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "spellDmg": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "timingType": {
             "$ref": "#/components/schemas/EffectTimingType"
           },
           "triggerCount": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "triggerEveryActions": {
             "format": "double",
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [

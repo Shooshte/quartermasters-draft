@@ -782,57 +782,125 @@ pub struct BattleEffectTemplate {
     pub timing_type: EffectTimingType,
     pub effect_type: EffectCategory,
     pub is_taunt: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub trigger_every_actions: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub trigger_count: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub lasts_for_actions: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub health: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub mana: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub melee_dmg: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub ranged_dmg: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub mana_regen: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub spell_dmg: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub speed: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub dodge: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub critical_chance: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub shield: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub direct_healing: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub direct_melee_dmg: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub direct_ranged_dmg: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schema(nullable = false)]
-    pub direct_spell_dmg: Option<f64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub trigger_every_actions: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub trigger_count: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub lasts_for_actions: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub health: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub mana: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub melee_dmg: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub ranged_dmg: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub mana_regen: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub spell_dmg: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub speed: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub dodge: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub critical_chance: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub shield: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub direct_healing: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub direct_melee_dmg: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub direct_ranged_dmg: Option<Option<f64>>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schema(nullable = true)]
+    pub direct_spell_dmg: Option<Option<f64>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schema(nullable = false)]
     pub bypasses_shield: Option<bool>,
@@ -1095,4 +1163,13 @@ fn default_target_priority() -> TargetPriority {
 }
 fn default_selection_shape() -> TargetSelectionShape {
     TargetSelectionShape::Individual
+}
+
+// Outer None is omitted; Some(None) is a JSON null in an engine effect template.
+fn deserialize_nullable<'de, D, T>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer).map(Some)
 }

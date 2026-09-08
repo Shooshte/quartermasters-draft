@@ -4,10 +4,10 @@ Scope: `apps/web`, `packages/api-client`, `crates/qd-api-types`. Parent owns bac
 
 ## Implementation
 
-- Converted React to a browser app: Vite React + TanStack Router plugin, `index.html`/`main.tsx`, QueryClientProvider, regenerated browser-only routes, CSS client declaration. Production output is `apps/web/dist` for Rust static serving; development `/api` proxy targets port 3001.
+- Converted React to a browser app: Vite React + TanStack Router plugin, `index.html`/`main.tsx`, QueryClientProvider, regenerated browser-only routes, CSS client declaration. Production output is `apps/web/dist` for Rust static serving; development `/api` proxy targets port 3001. Router plugin 1.167.0 declares a peer range compatible with the retained React Router 1.169.2.
 - Removed TanStack Start, Nitro, SSR query integration, server functions, auth/tRPC server routes, Better Auth implementation and server dependencies from web. Production UI imports no `@qd/api`, `@qd/db`, `@qd/engine`, tRPC, Better Auth or Start. Shared role enum remains `@qd/shared`.
 - Added authoritative Serde + utoipa public DTOs and OpenAPI for editor CRUD/list filters, auth, replays, full battle state and typed log variants. Public battle DTOs are independent of private Rust engine types. Input defaults reflect prior HTTP behavior; nullable effect fields permit omission, output fields remain required/null as applicable. Unit targeting defaults have a direct Rust test.
-- Added generated OpenAPI and TypeScript artifacts, pinned openapi-typescript 7.10.1 generation and drift check; package exports built dist files. Adapter uses `/api/v1` plain JSON, resource PUT/DELETE routes, URL-encoded JSON `input` list query, same-origin credentials, no-store requests, explicit errors with status/code/details and Date restoration only for timestamps.
+- Added generated OpenAPI and TypeScript artifacts, pinned openapi-typescript 7.10.1 with package-local TypeScript 5.9.3 generation and drift check; package exports built dist files. Adapter uses `/api/v1` plain JSON, resource PUT/DELETE routes, URL-encoded JSON `input` list query, same-origin credentials, no-store requests, explicit errors with status/code/details and Date restoration only for timestamps.
 - Preserved editor/battle component behavior and query wrappers, replacing production backend type inference with generated contract types. Existing component test assertions retained while switching mocks to the REST adapter.
 - Browser route guards query Rust session directly, retain expired-session notices and full return URLs. Login/logout and authorization failures trigger session/query revalidation. Login now visibly reports session-read unavailability instead of silently displaying an anonymous form.
 
@@ -18,7 +18,8 @@ Scope: `apps/web`, `packages/api-client`, `crates/qd-api-types`. Parent owns bac
 3. Added unit-target default/nullable effect test; failed deserializing missing `targetScope`. Added exact legacy defaults; passed.
 4. Added login session-service error test; failed because no alert rendered. Added explicit alert; passed.
 5. Added browser integration tests for expired protected deep links, public shell/login, player direct editor denial; added real adapter/hook login/logout tests. Existing UI coverage retained.
-6. Added contract compatibility test deserializing every fixture's initial state and every resolved batch into public BattleState DTOs; all passed.
+6. Added an explicit null/omission roundtrip test for battle effect templates; it failed because `health: null` was omitted. Preserved the distinction with a nullable deserializer and regenerated nullable TypeScript fields; passed.
+7. Added contract compatibility test deserializing every fixture's initial state and every resolved batch into public BattleState DTOs; all passed.
 
 ## Removed legacy test mapping
 
@@ -43,7 +44,7 @@ Retained web acceptance behavior tests: login form, invalid credentials, safe re
 - `pnpm --filter @qd/web build`: passed, static browser output only.
 - `pnpm --filter @qd/api-client generate` / `build`: passed.
 - `pnpm --filter @qd/api-client check:generated`: passed.
-- `cargo test -p qd-api-types`: 3 integration tests passed, doc/unit targets passed.
+- `cargo test -p qd-api-types`: 4 integration tests passed, doc/unit targets passed.
 - `cargo clippy -p qd-api-types --all-targets -- -D warnings`: passed.
 - `cargo fmt -p qd-api-types`: applied; `git diff --check` scoped files clean.
 - Biome scoped check: 139 files checked, no errors/fixes remaining.

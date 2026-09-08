@@ -9,22 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as Authenticated403RouteImport } from './routes/_authenticated/403'
-import { Route as AuthenticatedBattleRouteImport } from './routes/_authenticated/battle'
-import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedPlayRouteImport } from './routes/_authenticated/play'
+import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
+import { Route as AuthenticatedBattleRouteImport } from './routes/_authenticated/battle'
+import { Route as Authenticated403RouteImport } from './routes/_authenticated/403'
 import { Route as AuthenticatedReplayIdRouteImport } from './routes/_authenticated/replay.$id'
 
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -32,14 +32,9 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const Authenticated403Route = Authenticated403RouteImport.update({
-  id: '/403',
-  path: '/403',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedBattleRoute = AuthenticatedBattleRouteImport.update({
-  id: '/battle',
-  path: '/battle',
+const AuthenticatedPlayRoute = AuthenticatedPlayRouteImport.update({
+  id: '/play',
+  path: '/play',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
@@ -47,9 +42,14 @@ const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
   path: '/create',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedPlayRoute = AuthenticatedPlayRouteImport.update({
-  id: '/play',
-  path: '/play',
+const AuthenticatedBattleRoute = AuthenticatedBattleRouteImport.update({
+  id: '/battle',
+  path: '/battle',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const Authenticated403Route = Authenticated403RouteImport.update({
+  id: '/403',
+  path: '/403',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedReplayIdRoute = AuthenticatedReplayIdRouteImport.update({
@@ -118,18 +118,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -139,18 +139,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/403': {
-      id: '/_authenticated/403'
-      path: '/403'
-      fullPath: '/403'
-      preLoaderRoute: typeof Authenticated403RouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/battle': {
-      id: '/_authenticated/battle'
-      path: '/battle'
-      fullPath: '/battle'
-      preLoaderRoute: typeof AuthenticatedBattleRouteImport
+    '/_authenticated/play': {
+      id: '/_authenticated/play'
+      path: '/play'
+      fullPath: '/play'
+      preLoaderRoute: typeof AuthenticatedPlayRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/create': {
@@ -160,11 +153,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreateRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/play': {
-      id: '/_authenticated/play'
-      path: '/play'
-      fullPath: '/play'
-      preLoaderRoute: typeof AuthenticatedPlayRouteImport
+    '/_authenticated/battle': {
+      id: '/_authenticated/battle'
+      path: '/battle'
+      fullPath: '/battle'
+      preLoaderRoute: typeof AuthenticatedBattleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/403': {
+      id: '/_authenticated/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof Authenticated403RouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/replay/$id': {

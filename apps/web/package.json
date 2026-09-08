@@ -40,6 +40,6 @@
     "typescript": "^6.0.3",
     "vite": "^8.0.13",
     "vitest": "^4.1.6",
-    "@tanstack/router-plugin": "1.168.36"
+    "@tanstack/router-plugin": "1.167.0"
   }
 }

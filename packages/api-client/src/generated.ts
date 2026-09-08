@@ -2253,44 +2253,44 @@ export interface components {
         BattleEffectTemplate: {
             bypassesShield?: boolean;
             /** Format: double */
-            criticalChance?: number;
+            criticalChance?: number | null;
             /** Format: double */
-            directHealing?: number;
+            directHealing?: number | null;
             /** Format: double */
-            directMeleeDmg?: number;
+            directMeleeDmg?: number | null;
             /** Format: double */
-            directRangedDmg?: number;
+            directRangedDmg?: number | null;
             /** Format: double */
-            directSpellDmg?: number;
+            directSpellDmg?: number | null;
             /** Format: double */
-            dodge?: number;
+            dodge?: number | null;
             effectType: components["schemas"]["EffectCategory"];
             /** Format: double */
-            health?: number;
+            health?: number | null;
             id?: string;
             isTaunt: boolean;
             /** Format: double */
-            lastsForActions?: number;
+            lastsForActions?: number | null;
             /** Format: double */
-            mana?: number;
+            mana?: number | null;
             /** Format: double */
-            manaRegen?: number;
+            manaRegen?: number | null;
             /** Format: double */
-            meleeDmg?: number;
+            meleeDmg?: number | null;
             name?: string;
             /** Format: double */
-            rangedDmg?: number;
+            rangedDmg?: number | null;
             /** Format: double */
-            shield?: number;
+            shield?: number | null;
             /** Format: double */
-            speed?: number;
+            speed?: number | null;
             /** Format: double */
-            spellDmg?: number;
+            spellDmg?: number | null;
             timingType: components["schemas"]["EffectTimingType"];
             /** Format: double */
-            triggerCount?: number;
+            triggerCount?: number | null;
             /** Format: double */
-            triggerEveryActions?: number;
+            triggerEveryActions?: number | null;
         };
         BattleEndLogEntry: components["schemas"]["BaseLogEntry"] & {
             outcome: string;

@@ -53,3 +53,10 @@ fn battle_state_schema_accepts_every_reference_engine_state() {
         }
     }
 }
+
+#[test]
+fn battle_effect_template_preserves_omitted_and_explicit_null_fields() {
+    let input = serde_json::json!({"timingType":"instant","effectType":"damage","isTaunt":false,"health":null});
+    let effect: qd_api_types::BattleEffectTemplate = serde_json::from_value(input.clone()).unwrap();
+    assert_eq!(serde_json::to_value(effect).unwrap(), input);
+}

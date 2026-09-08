@@ -1,8 +1,9 @@
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { api, clearApiSessionExpiry } from "../../src/lib/api";
 import { authClient } from "../../src/lib/auth-client";
+import { watchSessionChanges } from "../../src/lib/session-revalidation";
 import { getRouter } from "../../src/router";
 
 afterEach(() => {
@@ -111,11 +112,7 @@ it.each([
   });
   render(<RouterProvider router={router} />);
   await screen.findByRole("button", { name: "Log out" });
-  const revalidate = () => {
-    router.options.context.queryClient.clear();
-    void router.invalidate();
-  };
-  window.addEventListener("qd:authorization-failure", revalidate);
+  const stopWatching = watchSessionChanges(router);
   try {
     await act(async () => {
       await expect(api.battleLab.scenarioOptions.query()).rejects.toMatchObject({ status });
@@ -132,7 +129,7 @@ it.each([
         screen.queryByText("Session expired, please log in to continue"),
       ).not.toBeInTheDocument();
   } finally {
-    window.removeEventListener("qd:authorization-failure", revalidate);
+    stopWatching();
   }
 });
 
@@ -169,4 +166,56 @@ it.each(["login", "logout"])("clears remembered API expiry after successful %s",
   render(<RouterProvider router={router} />);
   await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
   expect(router.state.location.search.reason).toBeUndefined();
+});
+
+it("lets the logout button's document navigation finish without a competing guard redirect", async () => {
+  let authenticated = true;
+  const assign = vi.fn();
+  vi.stubGlobal("location", {
+    ...window.location,
+    origin: "http://localhost:3000",
+    href: "http://localhost:3000/play?view=party",
+    pathname: "/play",
+    assign,
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockImplementation(async (url: string) => {
+      if (url === "/api/v1/auth/logout") {
+        authenticated = false;
+        return new Response(JSON.stringify({ success: true }));
+      }
+      if (url === "/api/v1/battle/scenario-options")
+        return new Response(
+          JSON.stringify({ error: { code: "UNAUTHORIZED", message: "Session expired" } }),
+          { status: 401 },
+        );
+      return new Response(
+        JSON.stringify(
+          authenticated
+            ? { authenticated: true, userId: "gm", userRole: "game_master" }
+            : { authenticated: false, hadSession: false },
+        ),
+      );
+    }),
+  );
+  const router = getRouter();
+  router.update({
+    context: router.options.context,
+    history: createMemoryHistory({ initialEntries: ["/play?view=party"] }),
+  });
+  const stopWatching = watchSessionChanges(router);
+  try {
+    render(<RouterProvider router={router} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Log out" }));
+    await waitFor(() => expect(assign).toHaveBeenCalledTimes(1));
+    expect(assign).toHaveBeenCalledWith("http://localhost:3000/login?next=%2Fplay%3Fview%3Dparty");
+    await act(async () => {
+      await expect(api.battleLab.scenarioOptions.query()).rejects.toMatchObject({ status: 401 });
+    });
+    await waitFor(() => expect(router.state.isLoading).toBe(false));
+    expect(router.state.location.pathname).toBe("/play");
+  } finally {
+    stopWatching();
+  }
 });

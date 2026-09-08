@@ -66,3 +66,13 @@ The browser adapter now records protected 401 expiry context before emitting its
 Test-first evidence: the integrated real adapter callback + router guard regression failed with `reason` undefined after a simulated401/cookie-clear/session-false sequence. The403 control passed. Separate successful-login/logout reset tests failed with stale `reason=expired` before adding their reset; all now pass. Existing deep-link `next` URL and visible expired notice assertions remain intact.
 
 Follow-up verification: `pnpm --filter @qd/web test` passed419 tests/47 files; targeted browser/session tests passed9; web typecheck and production build passed; scoped Biome and diff checks passed. Rust numeric contract changes and overall root/E2E checks remain parent-owned.
+
+## E2E follow-up: one logout navigation owner
+
+Investigated the logout navigation race reported by `auth/logout.test.ts:35`: successful signOut synchronously dispatched the generic session-change event, whose main listener started a router guard invalidation; the logout button then issued its own full-document login navigation. The second navigation could arrive after the E2E helper observed the first login URL and interrupt a subsequent protected-route request.
+
+Extracted the unchanged application session listener into `watchSessionChanges` and reproduced the competing redirect with a failing integrated regression: real logout button, real auth client, actual application listener and route guard, stubbed document navigation, plus a late protected401. Before the fix the guard moved to `/login` alongside the button's assigned URL. Auth-change events now identify login vs logout. On logout the listener clears cached data and lets the button own document navigation, ignoring late authorization failures while leaving; login restores ordinary route revalidation. Session hook updates and expiry clearing remain active.
+
+The prior protected401 expiry regressions now use the actual shared application listener rather than duplicating its callback in the test. No E2E assertions or timeouts were modified.
+
+Logout follow-up verification: targeted browser/session/logout tests passed19; full web suite passed420 tests/47files; typecheck, scoped Biome and diff checks passed. Production rebuild and E2E rerun deferred to parent integration to avoid competing with its live database-load diagnostic, as requested.

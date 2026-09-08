@@ -9,9 +9,9 @@ function toSession(response: SessionResponse): BrowserSession {
     : null;
 }
 
-function notifySessionChanged() {
+function notifySessionChanged(action: "login" | "logout") {
   clearApiSessionExpiry();
-  window.dispatchEvent(new Event("qd:session-changed"));
+  window.dispatchEvent(new CustomEvent("qd:session-changed", { detail: { action } }));
 }
 async function getSession() {
   return { data: toSession(await api.auth.session()) };
@@ -23,7 +23,7 @@ export const authClient = {
     async email(input: { email: string; password: string; rememberMe: boolean }) {
       try {
         const response = await api.auth.login(input);
-        notifySessionChanged();
+        notifySessionChanged("login");
         return { data: toSession(response), error: null };
       } catch (error) {
         return { data: null, error };
@@ -32,7 +32,7 @@ export const authClient = {
   },
   async signOut() {
     await api.auth.logout();
-    notifySessionChanged();
+    notifySessionChanged("logout");
   },
   useSession() {
     const [state, setState] = useState<{

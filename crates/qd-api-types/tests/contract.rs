@@ -60,3 +60,28 @@ fn battle_effect_template_preserves_omitted_and_explicit_null_fields() {
     let effect: qd_api_types::BattleEffectTemplate = serde_json::from_value(input.clone()).unwrap();
     assert_eq!(serde_json::to_value(effect).unwrap(), input);
 }
+
+#[test]
+fn public_contract_accepts_actual_rust_engine_states() {
+    for line in include_str!("../../../fixtures/engine-parity/battles.jsonl").lines() {
+        let fixture: serde_json::Value = serde_json::from_str(line).unwrap();
+        let mut engine =
+            qd_engine::BattleEngine::new(fixture["input"].clone(), fixture["options"].clone())
+                .unwrap();
+        for step in 0..=fixture["expected"]["batches"].as_array().unwrap().len() {
+            let state = if step == 0 {
+                engine.get_state()
+            } else {
+                engine.resolve_next_batch()
+            };
+            let wire = serde_json::to_string(&state).unwrap();
+            let parsed = serde_json::from_str::<qd_api_types::BattleState>(&wire);
+            assert!(
+                parsed.is_ok(),
+                "{} batch {step}: {:?}",
+                fixture["name"],
+                parsed.err()
+            );
+        }
+    }
+}

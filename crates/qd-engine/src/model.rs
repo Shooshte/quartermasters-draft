@@ -41,17 +41,26 @@ pub(crate) fn modified_damage(base: f64, crit: f64, dodge: f64) -> f64 {
     js_round(base * (1.0 + crit / 100.0) * (1.0 - dodge / 100.0))
 }
 pub(crate) fn js_number(v: f64) -> String {
-    if v == 0.0 {
-        return "0".into();
+    ryu_js::Buffer::new().format(v).to_owned()
+}
+// JSON.stringify emits integral JavaScript numbers without a decimal suffix.
+// Preserve that wire representation so native consumers can decode integer counters.
+fn wire_numbers(mut value: Value) -> Value {
+    fn normalize(value: &mut Value) {
+        match value {
+            Value::Number(number) if number.is_f64() => {
+                let n = number.as_f64().unwrap();
+                if n.fract() == 0.0 && n.abs() <= 9_007_199_254_740_991.0 {
+                    *value = Value::from(n as i64);
+                }
+            }
+            Value::Array(values) => values.iter_mut().for_each(normalize),
+            Value::Object(values) => values.values_mut().for_each(normalize),
+            _ => {}
+        }
     }
-    if v.abs() >= 1e21 || v.abs() < 1e-6 {
-        let text = format!("{v:e}");
-        let (m, e) = text.split_once('e').unwrap();
-        let e: i32 = e.parse().unwrap();
-        format!("{m}e{}{e}", if e >= 0 { "+" } else { "" })
-    } else {
-        v.to_string()
-    }
+    normalize(&mut value);
+    value
 }
 fn js_whitespace(c: char) -> bool {
     matches!(c,'\u{0009}'..='\u{000d}'|'\u{0020}'|'\u{00a0}'|'\u{1680}'|'\u{2000}'..='\u{200a}'|'\u{2028}'|'\u{2029}'|'\u{202f}'|'\u{205f}'|'\u{3000}'|'\u{feff}')
@@ -285,7 +294,9 @@ impl BattleEngine {
                 v
             })
             .collect();
-        json!({"actionCount":self.actions,"batchCount":self.batch,"status":if self.finished{"finished"}else{"active"},"winnerId":self.winner,"scenarios":scenarios,"log":self.log,"fatigueActionThreshold":self.threshold,"fatigueDamageStart":self.fatigue})
+        wire_numbers(
+            json!({"actionCount":self.actions,"batchCount":self.batch,"status":if self.finished{"finished"}else{"active"},"winnerId":self.winner,"scenarios":scenarios,"log":self.log,"fatigueActionThreshold":self.threshold,"fatigueDamageStart":self.fatigue}),
+        )
     }
     pub(crate) fn effect_id(&mut self) -> String {
         self.effect_counter += 1;
@@ -407,7 +418,9 @@ impl BattleEngine {
         while !self.finished {
             self.resolve_next_batch();
         }
-        json!({"winnerId":self.winner,"actionsResolved":self.actions,"finalState":self.get_state(),"log":self.log})
+        wire_numbers(
+            json!({"winnerId":self.winner,"actionsResolved":self.actions,"finalState":self.get_state(),"log":self.log}),
+        )
     }
     pub(crate) fn log_death(&mut self, i: usize, origin: Option<Value>) {
         let u = &self.units[i];

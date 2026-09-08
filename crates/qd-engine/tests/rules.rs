@@ -263,3 +263,13 @@ fn default_battle_matches_original_zero_argument_constructor() {
     );
     assert_eq!(battle.resolve()["actionsResolved"], 20);
 }
+
+#[test]
+fn fractional_numeric_seed_uses_ecmascript_shortest_decimal_tie_breaking() {
+    // JavaScript String(817617690019844.2) ends in .2, while Rust Display ends in .3.
+    // Both denote the same binary64 number; hashing the wrong text changes targeting.
+    assert_eq!(
+        random_sequence(&json!(817617690019844.2), 32).unwrap(),
+        random_sequence(&json!("817617690019844.2"), 32).unwrap()
+    );
+}

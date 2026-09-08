@@ -52,6 +52,15 @@ pub async fn migrate(pool: &PgPool) -> DbResult<()> {
                 .into());
             }
         }
+        let actual: serde_json::Value = sqlx::query_scalar(include_str!("schema-signature.sql"))
+            .fetch_one(&mut *tx)
+            .await?;
+        // Each snapshot was captured after the corresponding unchanged legacy SQL prefix.
+        let schemas: Vec<serde_json::Value> =
+            serde_json::from_str(include_str!("../legacy-schema-signatures.json"))?;
+        if schemas.get(history.len()) != Some(&actual) {
+            return Err("Existing schema differs from its verified Drizzle migration history; refusing adoption. No data was changed.".into());
+        }
         sqlx::raw_sql("CREATE TABLE public._sqlx_migrations (version BIGINT PRIMARY KEY, description TEXT NOT NULL, installed_on TIMESTAMPTZ NOT NULL DEFAULT now(), success BOOLEAN NOT NULL, checksum BYTEA NOT NULL, execution_time BIGINT NOT NULL)").execute(&mut *tx).await?;
         for migration in MIGRATOR.iter().take(history.len()) {
             sqlx::query("INSERT INTO public._sqlx_migrations(version,description,success,checksum,execution_time) VALUES($1,$2,true,$3,0)")

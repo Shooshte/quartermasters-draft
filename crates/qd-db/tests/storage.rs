@@ -66,11 +66,22 @@ async fn unknown_legacy_history_is_rejected_without_claiming_adoption(pool: PgPo
 async fn install_legacy_for_test(
     pool: &PgPool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    install_legacy_prefix(pool, 21).await
+}
+
+async fn install_legacy_prefix(
+    pool: &PgPool,
+    count: usize,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use sha2::{Digest, Sha256};
     sqlx::raw_sql("CREATE SCHEMA drizzle; CREATE TABLE drizzle.__drizzle_migrations (id serial PRIMARY KEY, hash text NOT NULL, created_at bigint)").execute(pool).await?;
     let entries: Vec<serde_json::Value> =
         serde_json::from_str(include_str!("../legacy-manifest.json"))?;
-    for (migration, entry) in sqlx::migrate!("./migrations").iter().zip(entries) {
+    for (migration, entry) in sqlx::migrate!("./migrations")
+        .iter()
+        .zip(entries)
+        .take(count)
+    {
         sqlx::raw_sql(migration.sql.clone()).execute(pool).await?;
         let hash = format!("{:x}", Sha256::digest(migration.sql.as_str().as_bytes()));
         sqlx::query("INSERT INTO drizzle.__drizzle_migrations(hash,created_at) VALUES ($1,$2)")
@@ -114,4 +125,52 @@ async fn drifted_history_free_schema_is_rejected(pool: PgPool) {
             .await
             .unwrap();
     assert!(!adopted);
+}
+
+#[sqlx::test(migrations = false)]
+async fn matching_history_with_schema_drift_is_rejected(pool: PgPool) {
+    install_legacy_for_test(&pool).await.unwrap();
+    sqlx::query("ALTER TABLE effects DROP CONSTRAINT effects_name_unique")
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert!(migrate(&pool).await.is_err());
+    let adopted: bool =
+        sqlx::query_scalar("SELECT to_regclass('public._sqlx_migrations') IS NOT NULL")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert!(!adopted);
+}
+
+#[sqlx::test(migrations = false)]
+async fn verified_older_history_is_adopted_and_remaining_migrations_run(pool: PgPool) {
+    install_legacy_prefix(&pool, 20).await.unwrap();
+    migrate(&pool).await.unwrap();
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM _sqlx_migrations")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(count, 21);
+    let has_policy: bool = sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='session' AND column_name='remember_me')").fetch_one(&pool).await.unwrap();
+    assert!(has_policy);
+}
+
+#[sqlx::test(migrations = false)]
+async fn seed_preserves_reference_update_dates_for_library_sorting(pool: PgPool) {
+    migrate(&pool).await.unwrap();
+    seed(&pool).await.unwrap();
+    for (table, name, expected) in [
+        ("items", "Iron Sword", "2025-01-01"),
+        ("units", "Barbarian", "2025-01-01"),
+        ("scenarios", "Ambush at Dawn", "2025-04-01"),
+    ] {
+        let query = format!("SELECT to_char(updated_at, 'YYYY-MM-DD') FROM {table} WHERE name=$1");
+        let date: String = sqlx::query_scalar(sqlx::AssertSqlSafe(query))
+            .bind(name)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(date, expected, "{table} seed update date");
+    }
 }

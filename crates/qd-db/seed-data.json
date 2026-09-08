@@ -194,7 +194,8 @@
       "dodge": 0,
       "critical_chance": 5,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-01-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000002",
@@ -207,7 +208,8 @@
       "dodge": 0,
       "critical_chance": 0,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-02-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000003",
@@ -220,7 +222,8 @@
       "dodge": 10,
       "critical_chance": 0,
       "activation_mana_cost": 5,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-03-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000004",
@@ -233,7 +236,8 @@
       "dodge": 0,
       "critical_chance": 8,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-04-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000005",
@@ -246,7 +250,8 @@
       "dodge": 0,
       "critical_chance": 0,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-05-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000006",
@@ -259,7 +264,8 @@
       "dodge": 0,
       "critical_chance": 5,
       "activation_mana_cost": 5,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-06-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000007",
@@ -272,7 +278,8 @@
       "dodge": 15,
       "critical_chance": 0,
       "activation_mana_cost": 8,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-07-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000008",
@@ -285,7 +292,8 @@
       "dodge": 0,
       "critical_chance": 3,
       "activation_mana_cost": 10,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-08-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000009",
@@ -298,7 +306,8 @@
       "dodge": 0,
       "critical_chance": 10,
       "activation_mana_cost": 0,
-      "activation_health_cost": 5
+      "activation_health_cost": 5,
+      "updated_at": "2025-09-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000010",
@@ -311,7 +320,8 @@
       "dodge": 0,
       "critical_chance": 12,
       "activation_mana_cost": 0,
-      "activation_health_cost": 3
+      "activation_health_cost": 3,
+      "updated_at": "2025-10-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000011",
@@ -324,7 +334,8 @@
       "dodge": 20,
       "critical_chance": 0,
       "activation_mana_cost": 12,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-11-01T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000012",
@@ -337,7 +348,8 @@
       "dodge": 1,
       "critical_chance": 2,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-03-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000013",
@@ -350,7 +362,8 @@
       "dodge": 0,
       "critical_chance": 6,
       "activation_mana_cost": 4,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-04-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000014",
@@ -363,7 +376,8 @@
       "dodge": 12,
       "critical_chance": 0,
       "activation_mana_cost": 3,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-05-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000015",
@@ -376,7 +390,8 @@
       "dodge": 6,
       "critical_chance": 1,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-06-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000016",
@@ -389,7 +404,8 @@
       "dodge": 0,
       "critical_chance": 4,
       "activation_mana_cost": 6,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-07-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000017",
@@ -402,7 +418,8 @@
       "dodge": 2,
       "critical_chance": 7,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-08-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000018",
@@ -415,7 +432,8 @@
       "dodge": 9,
       "critical_chance": 0,
       "activation_mana_cost": 8,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-09-15T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000019",
@@ -428,7 +446,8 @@
       "dodge": 3,
       "critical_chance": 11,
       "activation_mana_cost": 0,
-      "activation_health_cost": 2
+      "activation_health_cost": 2,
+      "updated_at": "2025-09-20T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000020",
@@ -441,7 +460,8 @@
       "dodge": 4,
       "critical_chance": 9,
       "activation_mana_cost": 0,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-09-25T00:00:00.000Z"
     },
     {
       "id": "d0000000-0000-0000-0000-000000000021",
@@ -454,7 +474,8 @@
       "dodge": 5,
       "critical_chance": 3,
       "activation_mana_cost": 4,
-      "activation_health_cost": 0
+      "activation_health_cost": 0,
+      "updated_at": "2025-09-30T00:00:00.000Z"
     }
   ],
   "items_allowed_rows": [
@@ -1035,7 +1056,8 @@
       "spell_dmg": 0,
       "speed": 0.8,
       "dodge": 5,
-      "critical_chance": 10
+      "critical_chance": 10,
+      "updated_at": "2025-01-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000002",
@@ -1052,7 +1074,8 @@
       "spell_dmg": 30,
       "speed": 0.6,
       "dodge": 3,
-      "critical_chance": 15
+      "critical_chance": 15,
+      "updated_at": "2025-02-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000003",
@@ -1069,7 +1092,8 @@
       "spell_dmg": 5,
       "speed": 1,
       "dodge": 12,
-      "critical_chance": 20
+      "critical_chance": 20,
+      "updated_at": "2025-03-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000004",
@@ -1086,7 +1110,8 @@
       "spell_dmg": 0,
       "speed": 0.9,
       "dodge": 8,
-      "critical_chance": 18
+      "critical_chance": 18,
+      "updated_at": "2025-04-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000005",
@@ -1103,7 +1128,8 @@
       "spell_dmg": 10,
       "speed": 0.5,
       "dodge": 6,
-      "critical_chance": 5
+      "critical_chance": 5,
+      "updated_at": "2025-05-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000006",
@@ -1120,7 +1146,8 @@
       "spell_dmg": 5,
       "speed": 0.6,
       "dodge": 4,
-      "critical_chance": 8
+      "critical_chance": 8,
+      "updated_at": "2025-06-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000007",
@@ -1137,7 +1164,8 @@
       "spell_dmg": 8,
       "speed": 0.8,
       "dodge": 10,
-      "critical_chance": 12
+      "critical_chance": 12,
+      "updated_at": "2025-07-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000008",
@@ -1154,7 +1182,8 @@
       "spell_dmg": 0,
       "speed": 0.7,
       "dodge": 3,
-      "critical_chance": 15
+      "critical_chance": 15,
+      "updated_at": "2025-08-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000009",
@@ -1171,7 +1200,8 @@
       "spell_dmg": 35,
       "speed": 0.5,
       "dodge": 2,
-      "critical_chance": 20
+      "critical_chance": 20,
+      "updated_at": "2025-09-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000010",
@@ -1188,7 +1218,8 @@
       "spell_dmg": 0,
       "speed": 0.6,
       "dodge": 7,
-      "critical_chance": 5
+      "critical_chance": 5,
+      "updated_at": "2025-10-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000011",
@@ -1205,7 +1236,8 @@
       "spell_dmg": 10,
       "speed": 1.2,
       "dodge": 18,
-      "critical_chance": 22
+      "critical_chance": 22,
+      "updated_at": "2025-11-01T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000012",
@@ -1222,7 +1254,8 @@
       "spell_dmg": 18,
       "speed": 0.9,
       "dodge": 9,
-      "critical_chance": 11
+      "critical_chance": 11,
+      "updated_at": "2025-03-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000013",
@@ -1239,7 +1272,8 @@
       "spell_dmg": 4,
       "speed": 1.1,
       "dodge": 13,
-      "critical_chance": 17
+      "critical_chance": 17,
+      "updated_at": "2025-04-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000014",
@@ -1256,7 +1290,8 @@
       "spell_dmg": 0,
       "speed": 0.5,
       "dodge": 4,
-      "critical_chance": 7
+      "critical_chance": 7,
+      "updated_at": "2025-05-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000015",
@@ -1273,7 +1308,8 @@
       "spell_dmg": 28,
       "speed": 0.7,
       "dodge": 5,
-      "critical_chance": 14
+      "critical_chance": 14,
+      "updated_at": "2025-06-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000016",
@@ -1290,7 +1326,8 @@
       "spell_dmg": 6,
       "speed": 1,
       "dodge": 14,
-      "critical_chance": 19
+      "critical_chance": 19,
+      "updated_at": "2025-07-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000017",
@@ -1307,7 +1344,8 @@
       "spell_dmg": 19,
       "speed": 0.6,
       "dodge": 6,
-      "critical_chance": 9
+      "critical_chance": 9,
+      "updated_at": "2025-08-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000018",
@@ -1324,7 +1362,8 @@
       "spell_dmg": 3,
       "speed": 0.7,
       "dodge": 5,
-      "critical_chance": 10
+      "critical_chance": 10,
+      "updated_at": "2025-09-15T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000019",
@@ -1341,7 +1380,8 @@
       "spell_dmg": 0,
       "speed": 0.8,
       "dodge": 8,
-      "critical_chance": 13
+      "critical_chance": 13,
+      "updated_at": "2025-09-20T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000020",
@@ -1358,7 +1398,8 @@
       "spell_dmg": 0,
       "speed": 0.9,
       "dodge": 9,
-      "critical_chance": 16
+      "critical_chance": 16,
+      "updated_at": "2025-09-25T00:00:00.000Z"
     },
     {
       "id": "f0000000-0000-0000-0000-000000000021",
@@ -1375,7 +1416,8 @@
       "spell_dmg": 0,
       "speed": 0.4,
       "dodge": 2,
-      "critical_chance": 6
+      "critical_chance": 6,
+      "updated_at": "2025-09-30T00:00:00.000Z"
     }
   ],
   "units_items": [
@@ -1401,87 +1443,129 @@
   "scenarios": [
     {
       "id": "a2000000-0000-0000-0000-000000000001",
-      "name": "Ambush at Dawn"
+      "name": "Ambush at Dawn",
+      "created_at": "2025-04-01T00:00:00.000Z",
+      "updated_at": "2025-04-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000002",
-      "name": "Castle Siege"
+      "name": "Castle Siege",
+      "created_at": "2025-05-01T00:00:00.000Z",
+      "updated_at": "2025-05-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000003",
-      "name": "Bridge Defense"
+      "name": "Bridge Defense",
+      "created_at": "2025-07-01T00:00:00.000Z",
+      "updated_at": "2025-07-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000004",
-      "name": "Dragon's Lair"
+      "name": "Dragon's Lair",
+      "created_at": "2025-08-01T00:00:00.000Z",
+      "updated_at": "2025-08-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000005",
-      "name": "Eclipse Ritual"
+      "name": "Eclipse Ritual",
+      "created_at": "2025-09-01T00:00:00.000Z",
+      "updated_at": "2025-09-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000006",
-      "name": "Forest Ambush"
+      "name": "Forest Ambush",
+      "created_at": "2025-10-01T00:00:00.000Z",
+      "updated_at": "2025-10-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000007",
-      "name": "Goblin Raid"
+      "name": "Goblin Raid",
+      "created_at": "2025-11-01T00:00:00.000Z",
+      "updated_at": "2025-11-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000008",
-      "name": "Harbor Assault"
+      "name": "Harbor Assault",
+      "created_at": "2025-12-01T00:00:00.000Z",
+      "updated_at": "2025-12-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000009",
-      "name": "Ice Cavern"
+      "name": "Ice Cavern",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "updated_at": "2026-01-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000010",
-      "name": "Jungle Trek"
+      "name": "Jungle Trek",
+      "created_at": "2026-02-01T00:00:00.000Z",
+      "updated_at": "2026-02-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000011",
-      "name": "Zombie Horde"
+      "name": "Zombie Horde",
+      "created_at": "2025-06-01T00:00:00.000Z",
+      "updated_at": "2025-06-01T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000012",
-      "name": "Kraken Depths"
+      "name": "Kraken Depths",
+      "created_at": "2025-07-15T00:00:00.000Z",
+      "updated_at": "2025-07-15T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000013",
-      "name": "Lunar Outpost"
+      "name": "Lunar Outpost",
+      "created_at": "2025-08-15T00:00:00.000Z",
+      "updated_at": "2025-08-15T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000014",
-      "name": "Molten Crossing"
+      "name": "Molten Crossing",
+      "created_at": "2025-09-15T00:00:00.000Z",
+      "updated_at": "2025-09-15T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000015",
-      "name": "Nightfall Bastion"
+      "name": "Nightfall Bastion",
+      "created_at": "2025-10-15T00:00:00.000Z",
+      "updated_at": "2025-10-15T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000016",
-      "name": "Obsidian Pass"
+      "name": "Obsidian Pass",
+      "created_at": "2025-11-15T00:00:00.000Z",
+      "updated_at": "2025-11-15T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000017",
-      "name": "Phantom Encampment"
+      "name": "Phantom Encampment",
+      "created_at": "2025-12-15T00:00:00.000Z",
+      "updated_at": "2025-12-15T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000018",
-      "name": "Runic Stronghold"
+      "name": "Runic Stronghold",
+      "created_at": "2025-07-20T00:00:00.000Z",
+      "updated_at": "2025-07-20T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000019",
-      "name": "Sunken Vault"
+      "name": "Sunken Vault",
+      "created_at": "2025-08-20T00:00:00.000Z",
+      "updated_at": "2025-08-20T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000020",
-      "name": "Titan's Wake"
+      "name": "Titan's Wake",
+      "created_at": "2025-09-20T00:00:00.000Z",
+      "updated_at": "2025-09-20T00:00:00.000Z"
     },
     {
       "id": "a2000000-0000-0000-0000-000000000021",
-      "name": "Zorath Keep"
+      "name": "Zorath Keep",
+      "created_at": "2025-10-20T00:00:00.000Z",
+      "updated_at": "2025-10-20T00:00:00.000Z"
     }
   ],
   "scenarios_rows": [
